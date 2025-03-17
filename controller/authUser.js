@@ -8,7 +8,6 @@ exports.authUser = async (request, reply) => {
     let user = await verifyToken(token);
 
     let response = await USER_API.get(`/user/${user.id}`);
-
     let verifyUser = response.data;
 
     if (!verifyUser) {

@@ -56,34 +56,35 @@ app.register(fastifySwaggerUi, {
 });
 
 // Usando o hook onError para tratamento global de erros
-app.setErrorHandler(( error, request, reply) => {
+app.setErrorHandler((error, request, reply) => {
   const statusCode = error.statusCode || error.status || 500;
-  app.log.error(error)
-
+  console.log(error)
+  let messageError =
+    error.response?.data.message || error.message || "Erro desconhecido";
   // Verifica o tipo de erro e responde com o status adequado
   if (statusCode === 400) {
     reply.status(400).send({
       statusCode: 400,
       error: "Bad Request",
-      message: "Bad Request",
+      message: "Bad Request " + messageError,
     });
   } else if (statusCode === 404) {
     reply.status(404).send({
       statusCode: 404,
       error: "Not Found",
-      message: "A serviço solicitada não foi encontrada.",
+      message: "O serviço solicitado não foi encontrada. " + messageError,
     });
   } else if (statusCode === 401) {
     reply.status(401).send({
       statusCode: 401,
       error: "Unauthorized",
-      message: "Você não está autorizado a acessar este serviço.",
+      message: "Não está autorizado. " + messageError,
     });
   } else {
     reply.status(500).send({
       statusCode: 500,
       error: "Server Error",
-      message: "Erro interno no servidor.",
+      message: "Erro interno no servidor. " + messageError,
     });
   }
 });
