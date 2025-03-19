@@ -5,6 +5,7 @@ const fastifySwaggerUi = require("@fastify/swagger-ui");
 
 const routes = require("./router/routes");
 
+const port = 8001;
 const app = fatify();
 
 app.register(cors, {
@@ -19,11 +20,6 @@ app.register(fastifySwagger, {
     openapi: "3.0.0",
     components: {
       securitySchemes: {
-        JWTAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
         APIKey: {
           type: "apiKey",
           in: "header",
@@ -39,11 +35,11 @@ app.register(fastifySwagger, {
     },
     servers: [
       {
-        url: "http://192.168.16.13:8001",
+        url: `http://192.168.16.13:${port}`,
         description: "Development server",
       },
       {
-        url: "http://192.168.16.80:8001",
+        url: `http://192.168.16.80:${port}`,
         description: "prodution server",
       },
     ],
@@ -89,8 +85,6 @@ app.setErrorHandler((error, request, reply) => {
 });
 
 app.register(routes);
-
-const port = 8001;
 
 const start = () => {
   try {
