@@ -21,8 +21,13 @@ exports.login = async (request, reply) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, name: user.name, role: user.role },
-      process.env.JWT_KEY
+      {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        exp: Math.floor(Date.now() / 1000) + (3600 * 8),
+      },
+      process.env.JWT_KEY,
     );
 
     let payload = {
