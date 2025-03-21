@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
+require("dotenv").config({path: `${__dirname}/../config/.env`});
 
 const bcrypt = require("bcryptjs"); // Para comparação de senha criptografada
 const USER_API = require("../service/user_api");
@@ -41,8 +41,6 @@ exports.login = async (request, reply) => {
 
     reply.status(200).send(payload);
   } catch (error) {
-    return reply
-      .status(error.status || 500)
-      .send(error.message || "Erro interno no servidor");
+    throw error
   }
 };

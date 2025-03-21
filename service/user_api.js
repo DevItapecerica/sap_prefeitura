@@ -1,4 +1,5 @@
-require("dotenv").config();
+require("dotenv").config({path: `${__dirname}/../config/.env`});
+
 const axios = require("axios");
 
 const USER_API = axios.create({
