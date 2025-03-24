@@ -2,30 +2,23 @@ const fatify = require("fastify");
 const cors = require("@fastify/cors");
 const fastifySwagger = require("@fastify/swagger");
 const fastifySwaggerUi = require("@fastify/swagger-ui");
-const swaggerConfig = require('./config/swaggerConfig');
+
+const {swaggerConfig, swaggerUiConfig} = require('./config/swaggerConfig');
+const { corsConfig } = require("./config/corsConfig");
 
 const routes = require("./router/routes");
 
-const port = 8001;
+const port = process.env.APPLICATION_PORT || 8001;
 const app = fatify();
 
-app.register(cors, {
-  allowOrigin: "*",
-  allowedHeaders: ["Content-Type", "Authorization"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  withCredentials: true,
-});
+app.register(cors, corsConfig);
 
-app.register(fastifySwagger, swaggerConfig);
-
-app.register(fastifySwaggerUi, {
-  routePrefix: "/docs",
-  exposeRoute: true,
-});
+app.register(fastifySwagger, swaggerConfig(port));
+app.register(fastifySwaggerUi, swaggerUiConfig);
 
 // Usando o hook onError para tratamento global de erros
 app.setErrorHandler((error, request, reply) => {
-  const statusCode = error.statusCode || error.status || 500;
+  const statusCode = error.statusCode || error.status || 500
   let messageError =
     error.response?.data.message || error.message || "Erro desconhecido";
   // Verifica o tipo de erro e responde com o status adequado
