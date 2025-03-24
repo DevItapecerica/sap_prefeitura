@@ -1,11 +1,6 @@
 const authSchema = {
   description: "Verificação de usuário",
   tags: ["Auth"],
-  headers: {
-    required: ["x-api-key"],
-    type: "object",
-    properties: { ["x-api-key"]: { type: "string" } },
-  },
   security: [{ APIKey: [] }],
   body: {
     type: "object",
