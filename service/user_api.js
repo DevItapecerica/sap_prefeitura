@@ -3,7 +3,7 @@ require("dotenv").config({path: `${__dirname}/../config/.env`});
 const axios = require("axios");
 
 const USER_API = axios.create({
-  baseURL: "http://192.168.16.13:8002",
+  baseURL: process.env.USER_API_HOST,
   headers: {
     "Content-Type": "application/json",
   },
