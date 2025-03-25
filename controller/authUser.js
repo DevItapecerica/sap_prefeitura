@@ -3,13 +3,12 @@ const USER_API = require("../service/user_api");
 
 exports.authUser = async (request, reply) => {
   let token = request.body.token;
-
   try {
     let user = await verifyToken(token);
 
     let response = await USER_API.get(`/user/${user.id}`);
+    
     let verifyUser = response.data;
-
     if (!verifyUser) {
       const error = new Error("User not found");
       error.status = 401;

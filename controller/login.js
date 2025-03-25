@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const DBUser = require("../db/model/UserModel");
 require("dotenv").config({path: `${__dirname}/../config/.env`});
 
 const bcrypt = require("bcryptjs"); // Para comparação de senha criptografada
@@ -8,11 +9,15 @@ exports.login = async (request, reply) => {
   const { email, password } = request.body;
 
   try {
-    const response = await USER_API.post(`/user/login`, {
-      email: email,
+    const user = await DBUser.findOne({
+      where: { email: email },
     });
 
-    const user = response.data;
+    if (!user) {
+      let error = new Error("Email ou senha incorretos");
+      error.status = 401;
+      throw error;
+    }
 
     const validPassword = await bcrypt.compare(password, user.password);
 

@@ -12,7 +12,6 @@ exports.verifyToken = (token) => {
     }
     return ({ auth: true, role: decoded.role, id: decoded.id });
   });
-console.log(result)
 
   return result
 };

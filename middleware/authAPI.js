@@ -1,7 +1,6 @@
 require("dotenv").config({ path: `${__dirname}/../config/.env` });
 
 const auth = (request, reply, next) => {
-  console.log("request.headers");
 const apiKey = request.headers["x-api-key"];
   if (apiKey !== process.env.API_KEY) {
     const error = new Error('not authorized');
