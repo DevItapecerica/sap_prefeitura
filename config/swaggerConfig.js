@@ -16,7 +16,7 @@ const swaggerConfig = (port) => {
       },
       info: {
         title: "Login Microservice API",
-        description: "API principal de consumo de microserviços",
+        description: "API principal para o login e authenticação de usuários",
         version: "2.0.0",
       },
       servers: [
