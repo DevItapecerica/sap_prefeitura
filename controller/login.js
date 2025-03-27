@@ -21,7 +21,7 @@ exports.login = async (request, reply) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
 
-    if (!validPassword && password != user.password) {
+    if (!validPassword) {
       throw { message: "Email ou senha incorretos", status: 401 };
     }
 
