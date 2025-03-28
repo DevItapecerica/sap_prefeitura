@@ -3,7 +3,6 @@ const DBUser = require("../db/model/UserModel");
 require("dotenv").config({path: `${__dirname}/../config/.env`});
 
 const bcrypt = require("bcryptjs"); // Para comparação de senha criptografada
-const USER_API = require("../service/user_api");
 
 exports.login = async (request, reply) => {
   const { email, password } = request.body;
@@ -24,12 +23,12 @@ exports.login = async (request, reply) => {
     if (!validPassword) {
       throw { message: "Email ou senha incorretos", status: 401 };
     }
-
+    console.log(user)
     const token = jwt.sign(
       {
         id: user.id,
         name: user.name,
-        role: user.role,
+        role: user.role_id,
         exp: Math.floor(Date.now() / 1000) + (3600 * 8),
       },
       process.env.JWT_KEY,
@@ -41,7 +40,7 @@ exports.login = async (request, reply) => {
       name: user.name,
       token: token,
       ip: request.ip,
-      scopo: user.role,
+      scopo: user.role_id,
     };
 
     reply.status(200).send(payload);

@@ -34,7 +34,7 @@ const User = db.define(
       allowNull: true,
       defaultValue: 0,
     },
-    role: {
+    role_id: {
       type: Sequelize.STRING(10),
       allowNull: false,
     },
