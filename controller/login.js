@@ -28,7 +28,7 @@ exports.login = async (request, reply) => {
       {
         id: user.id,
         name: user.name,
-        role: user.role_id,
+        role: user.role,
         exp: Math.floor(Date.now() / 1000) + (3600 * 8),
       },
       process.env.JWT_KEY,
@@ -40,7 +40,7 @@ exports.login = async (request, reply) => {
       name: user.name,
       token: token,
       ip: request.ip,
-      scopo: user.role_id,
+      scopo: user.role,
     };
 
     reply.status(200).send(payload);

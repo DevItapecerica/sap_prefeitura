@@ -8,7 +8,7 @@ const loginSchema = {
     properties: {
       email: {
         type: "string",
-        // format: "email",
+        format: "email",
       },
       password: {
         type: "string",
