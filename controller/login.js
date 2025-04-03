@@ -23,7 +23,7 @@ exports.login = async (request, reply) => {
     if (!validPassword) {
       throw { message: "Email ou senha incorretos", status: 401 };
     }
-    console.log(user)
+
     const token = jwt.sign(
       {
         id: user.id,
