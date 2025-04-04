@@ -10,7 +10,8 @@ exports.verifyToken = (token) => {
     if (err) {
       throw { status: 401, message: "Incorrect Token." };
     }
-    return ({ auth: true, role: decoded.role, id: decoded.id });
+    console.log(decoded)
+    return ({ auth: true, role: decoded.role_id, id: decoded.id });
   });
 
   return result

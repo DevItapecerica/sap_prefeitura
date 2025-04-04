@@ -34,8 +34,8 @@ const User = db.define(
       allowNull: true,
       defaultValue: 0,
     },
-    role: {
-      type: Sequelize.STRING(10),
+    role_id: {
+      type: Sequelize.INTEGER,
       allowNull: false,
     },
     firstLogin: {

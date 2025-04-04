@@ -15,7 +15,7 @@ exports.authUser = async (request, reply) => {
 
     reply.status(200).send({
       message: "Usuário authenticado",
-      scopo: verifyUser.role,
+      scopo: verifyUser.role_id,
       user: user,
     });
   } catch (error) {
