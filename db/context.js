@@ -32,4 +32,4 @@ Sequelize.authenticate()
 //      console.error("Erro ao sincronizar modelos:", err);
 //  });
 
-// module.exports = Sequelize;
+module.exports = Sequelize;
