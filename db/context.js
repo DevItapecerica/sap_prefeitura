@@ -23,13 +23,13 @@ Sequelize.authenticate()
     console.log(`Sem sucesso na conexão com o banco de dados ${err} `);
   });
 
-// Sincronizar modelos sem excluir tabelas existentes
- Sequelize.sync({ alter: true })
- .then(() => {
-     console.log("Modelos sincronizados com sucesso!");
- })
- .catch((err) => {
-     console.error("Erro ao sincronizar modelos:", err);
- });
+// // Sincronizar modelos sem excluir tabelas existentes
+//  Sequelize.sync({ alter: true })
+//  .then(() => {
+//      console.log("Modelos sincronizados com sucesso!");
+//  })
+//  .catch((err) => {
+//      console.error("Erro ao sincronizar modelos:", err);
+//  });
 
-module.exports = Sequelize;
+// module.exports = Sequelize;
