@@ -1,4 +1,5 @@
-require('dotenv').config({path: `${__dirname}/config/.env`});
+require("dotenv").config({ path: `${__dirname}/config/.env` });
+
 const port = process.env.APPLICATION_PORT || 8001;
 
 // fastify

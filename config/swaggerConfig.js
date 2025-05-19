@@ -1,5 +1,3 @@
-require("dotenv").config({ path: `${__dirname}/.env` });
-
 const swaggerConfig = (port) => {
   return {
     openapi: {

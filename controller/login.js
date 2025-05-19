@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
 const DBUser = require("../db/model/UserModel");
-require("dotenv").config({path: `${__dirname}/../config/.env`});
 
 const bcrypt = require("bcryptjs"); // Para comparação de senha criptografada
 

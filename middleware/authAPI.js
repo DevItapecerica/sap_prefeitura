@@ -1,5 +1,3 @@
-require("dotenv").config({ path: `${__dirname}/../config/.env` });
-
 const auth = (request, reply, next) => {
 const apiKey = request.headers["x-api-key"];
   if (apiKey !== process.env.API_KEY) {

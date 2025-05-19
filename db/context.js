@@ -1,5 +1,4 @@
 const sequelize = require('sequelize');
-require("dotenv").config({path: `${__dirname}/../config/.env`});
 
 const DUser = process.env.DATABASE_USER;
 const DKey = process.env.DATABASE_KEY;
