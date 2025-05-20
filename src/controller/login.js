@@ -1,7 +1,9 @@
 const jwt = require("jsonwebtoken");
 const DBUser = require("../db/model/UserModel");
 
-const bcrypt = require("bcryptjs"); // Para comparação de senha criptografada
+const bcrypt = require("bcryptjs");
+
+const { SECRET_KEY } = require("../config/env")
 
 exports.login = async (request, reply) => {
   const { email, password } = request.body;
@@ -30,7 +32,7 @@ exports.login = async (request, reply) => {
         role_id: user.role_id,
         exp: Math.floor(Date.now() / 1000) + (3600 * 8),
       },
-      process.env.JWT_KEY,
+      SECRET_KEY,
     );
 
     let payload = {
