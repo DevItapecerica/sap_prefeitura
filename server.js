@@ -19,6 +19,7 @@ const { errorHook } = require("./src/hooks/errorHook");
 const routes = require("./src/router/routes");
 
 // plugins
+// await fastify.register(loggerPlugin);
 fastify.register(cors, corsConfig);
 
 fastify.register(fastifySwagger, swaggerConfig(port));
