@@ -1,4 +1,5 @@
-const errorSchema = require("./errorSchema");
+import errorSchema from "./errorSchema.js";
+
 const loginSchema = {
   description: "Verificação de usuário",
   tags: ["Auth"],
@@ -18,7 +19,7 @@ const loginSchema = {
 
   response: {
     200: {
-      description: "Verificação bem sucedido",
+      description: "Verificação bem sucedida",
       type: "object",
       properties: {
         message: { type: "string", example: "Login bem sucedido" },
@@ -32,4 +33,5 @@ const loginSchema = {
     ...errorSchema,
   },
 };
-module.exports = loginSchema;
+
+export default loginSchema;

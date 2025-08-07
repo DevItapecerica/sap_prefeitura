@@ -14,7 +14,7 @@ const swaggerConfig = (port) => {
       },
       info: {
         title: "Login Microservice API",
-        description: "API principal para o login e authenticação de usuários",
+        description: "API principal para o login e autenticação de usuários",
         version: "2.0.0",
       },
       servers: [
@@ -24,7 +24,7 @@ const swaggerConfig = (port) => {
         },
         {
           url: `http://192.168.16.80:${port}`,
-          description: "prodution server",
+          description: "Production server",
         },
       ],
     },
@@ -36,4 +36,4 @@ const swaggerUiConfig = {
   exposeRoute: true,
 };
 
-module.exports = { swaggerConfig, swaggerUiConfig };
+export { swaggerConfig, swaggerUiConfig };

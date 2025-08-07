@@ -1,22 +1,22 @@
-const { authUser } = require("../controller/authUser");
-const { login } = require("../controller/login");
-const auth = require("../middleware/authAPI.js");
-const loginSchema = require("../schema/loginSchema.js");
-const authSchema = require("../schema/authSchema.js");
+import { authUser } from "../controller/authUser.js";
+import { login } from "../controller/login.js";
+import auth from "../middleware/authAPI.js";
+import loginSchema from "../schema/loginSchema.js";
+import authSchema from "../schema/authSchema.js";
 
 const routes = async (fastify, options) => {
-  //Login route
+  // Login route
   fastify.route({
-    method: "post",
+    method: "POST",
     url: "/login",
     preHandler: [auth],
     schema: loginSchema,
     handler: login,
   });
 
-  //Auth route
+  // Auth route
   fastify.route({
-    method: "post",
+    method: "POST",
     url: "/authUser",
     preHandler: [auth],
     schema: authSchema,
@@ -24,4 +24,4 @@ const routes = async (fastify, options) => {
   });
 };
 
-module.exports = routes;
+export default routes;

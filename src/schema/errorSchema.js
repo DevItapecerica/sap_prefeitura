@@ -16,7 +16,7 @@ const errorResponseSchema = {
     },
   },
   403: {
-    description: "Ação Não permitida",
+    description: "Ação não permitida",
     type: "object",
     properties: {
       message: { type: "string", example: "Ação não permitida" },
@@ -31,4 +31,4 @@ const errorResponseSchema = {
   },
 };
 
-module.exports = errorResponseSchema
+export default errorResponseSchema;

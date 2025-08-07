@@ -1,20 +1,18 @@
-const jwt = require("jsonwebtoken");
-const DBUser = require("../db/model/UserModel");
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import DBUser from "../db/model/UserModel.js";
+import { SECRET_KEY } from "../config/env.js";
 
-const bcrypt = require("bcryptjs");
-
-const { SECRET_KEY } = require("../config/env")
-
-exports.login = async (request, reply) => {
+const login = async (request, reply) => {
   const { email, password } = request.body;
 
   try {
     const user = await DBUser.findOne({
-      where: { email: email },
+      where: { email },
     });
 
     if (!user) {
-      let error = new Error("Email ou senha incorretos");
+      const error = new Error("Email ou senha incorretos");
       error.status = 401;
       throw error;
     }
@@ -30,22 +28,24 @@ exports.login = async (request, reply) => {
         id: user.id,
         name: user.name,
         role_id: user.role_id,
-        exp: Math.floor(Date.now() / 1000) + (3600 * 8),
+        exp: Math.floor(Date.now() / 1000) + 3600 * 8, // 8 horas
       },
-      SECRET_KEY,
+      SECRET_KEY
     );
 
-    let payload = {
+    const payload = {
       message: "Login bem sucedido",
       firstLogin: user.firstLogin,
       name: user.name,
-      token: token,
+      token,
       ip: request.ip,
       scopo: user.role_id,
     };
 
     reply.status(200).send(payload);
   } catch (error) {
-    throw error
+    throw error;
   }
 };
+
+export { login };

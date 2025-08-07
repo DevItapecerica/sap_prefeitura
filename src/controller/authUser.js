@@ -1,20 +1,20 @@
-const { verifyToken } = require("../utils/verifyToken");
-const USER_API = require("../service/user_api");
+import { verifyToken } from "../utils/verifyToken.js";
+import USER_API from "../service/user_api.js";
 
-exports.authUser = async (request, reply) => {
-  let token = request.body.token;
+const authUser = async (request, reply) => {
+  const token = request.body.token;
+
   try {
-    let user = await verifyToken(token);
+    const user = await verifyToken(token);
+    const response = await USER_API.get(`/user/${user.id}`);
+    const verifyUser = response.data;
 
-    let response = await USER_API.get(`/user/${user.id}`);
-
-    let verifyUser = response.data;
     if (!verifyUser) {
       throw { message: "User not found", status: 401 };
     }
 
     reply.status(200).send({
-      message: "Usuário authenticado",
+      message: "Usuário autenticado",
       scopo: verifyUser.role_id,
       user: user,
     });
@@ -22,3 +22,5 @@ exports.authUser = async (request, reply) => {
     throw error;
   }
 };
+
+export { authUser };

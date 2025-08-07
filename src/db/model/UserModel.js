@@ -1,5 +1,5 @@
-const Sequelize = require("sequelize");
-const db = require("../context");
+import Sequelize from "sequelize";
+import db from "../context.js";
 
 const User = db.define(
   "User",
@@ -49,4 +49,4 @@ const User = db.define(
   }
 );
 
-module.exports = User;
+export default User;
