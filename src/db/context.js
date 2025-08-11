@@ -16,7 +16,7 @@ const Sequelize = new SequelizeLib(DATABASE_NAME, DATABASE_USER, DATABASE_KEY, {
 
 Sequelize.authenticate()
   .then(() => {
-    console.log("Conectado ao banco de dados");
+    console.log("✅ Conectado ao banco de dados");
   })
   .catch((err) => {
     console.log(`Sem sucesso na conexão com o banco de dados: ${err}`);
