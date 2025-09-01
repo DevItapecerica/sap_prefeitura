@@ -8,7 +8,6 @@ const auth = (request, reply, next) => {
     error.status = 401;
     throw error;
   }
-
   next();
 };
 

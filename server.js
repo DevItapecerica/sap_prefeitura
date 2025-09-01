@@ -30,7 +30,7 @@ await fastify.register(fastifySwaggerUi, swaggerUiConfig);
 // hooks
 fastify.setErrorHandler((error, request, reply) => {
   console.error("----------------------------------------------------------");
-  console.error("Error:", error);
+  // console.error("Error:", error);
   console.error("----------------------------------------------------------");
   errorHook(error, reply);
 });
