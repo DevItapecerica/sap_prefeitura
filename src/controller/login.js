@@ -12,15 +12,23 @@ const login = async (request, reply) => {
     });
 
     if (!user) {
-      const error = new Error("Email ou senha incorretos");
-      error.status = 401;
-      throw error;
+      throw {
+        ok: false,
+        message: "Email ou senha incorretos",
+        code: 401,
+        api: "login",
+      };
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
-      throw { message: "Email ou senha incorretos", status: 401 };
+      throw {
+        ok: false,
+        message: "Email ou senha incorretos",
+        code: 401,
+        api: "login",
+      };
     }
 
     const token = jwt.sign(
