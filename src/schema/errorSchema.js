@@ -3,8 +3,9 @@ const errorResponseSchema = {
     description: "Erro no 400",
     type: "object",
     properties: {
-      statusCode: { type: "integer", example: 400 },
-      error: { type: "string", example: "Bad Request" },
+      ok: { type: "boolean", example: false },
+      api: { type: "string", example: "auth" },
+      validation: { type: "boolean", example: false },
       message: { type: "string", example: "Bad Request" },
     },
   },
@@ -13,6 +14,9 @@ const errorResponseSchema = {
     type: "object",
     properties: {
       message: { type: "string", example: "Token de autenticação inválido" },
+      ok: { type: "boolean", example: false },
+      api: { type: "string", example: "auth" },
+      validation: { type: "boolean", example: false },
     },
   },
   403: {
@@ -20,6 +24,9 @@ const errorResponseSchema = {
     type: "object",
     properties: {
       message: { type: "string", example: "Ação não permitida" },
+      ok: { type: "boolean", example: false },
+      api: { type: "string", example: "auth" },
+      validation: { type: "boolean", example: false },
     },
   },
   500: {
@@ -27,6 +34,9 @@ const errorResponseSchema = {
     type: "object",
     properties: {
       message: { type: "string", example: "Erro interno no servidor" },
+      ok: { type: "boolean", example: false },
+      api: { type: "string", example: "auth" },
+      validation: { type: "boolean", example: false },
     },
   },
 };

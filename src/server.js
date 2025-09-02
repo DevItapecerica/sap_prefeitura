@@ -35,6 +35,9 @@ await fastify.register(cors, corsConfig);
 await fastify.register(fastifySwagger, swaggerConfig(PORT));
 await fastify.register(fastifySwaggerUi, swaggerUiConfig);
 
+// rotas
+fastify.register(routes);
+
 // hooks
 fastify.setErrorHandler((error, request, reply) => {
   // Obtém o código de status ou define como 500 por padrão
@@ -60,7 +63,7 @@ fastify.setErrorHandler((error, request, reply) => {
       ok: ok,
       validation: validation,
       message: messageError,
-      api: api || "login",
+      api: "login",
     };
   } else {
     fastify.log.error(error);
@@ -68,7 +71,7 @@ fastify.setErrorHandler((error, request, reply) => {
       ok: ok,
       validation: validation,
       message: messageError,
-      api: api,
+      api: "login",
     };
   }
 
@@ -78,9 +81,6 @@ fastify.setErrorHandler((error, request, reply) => {
     .header("Content-Type", "application/json; charset=utf-8")
     .send(errorResponse);
 });
-
-// rotas
-fastify.register(routes);
 
 // inicialização
 const start = () => {
