@@ -1,6 +1,4 @@
-import errorSchema from "./errorSchema.js";
-
-const loginSchema = {
+const LoginSchema = {
   description: "Verificação de usuário",
   tags: ["Auth"],
   security: [{ APIKey: [] }],
@@ -16,7 +14,6 @@ const loginSchema = {
       },
     },
   },
-
   response: {
     200: {
       description: "Verificação bem sucedida",
@@ -30,8 +27,34 @@ const loginSchema = {
         scopo: { type: "string", example: "admin" },
       },
     },
-    ...errorSchema,
+    500: {
+      description: "Erro interno do servidor",
+      type: "object",
+      properties: {
+        message: { type: "string", example: "Erro interno do servidor" },
+      },
+    },
+    401: {
+      description: "Erro de validação",
+      type: "object",
+      properties: {
+        ok: { type: "boolean", example: false },
+        api: { type: "string", example: "auth" },
+        validation: { type: "boolean", example: false },
+        message: { type: "string", example: "Bad Request" },
+      },
+    },
+    400: {
+      description: "Erro de validação",
+      type: "object",
+      properties: {
+        ok: { type: "boolean", example: false },
+        api: { type: "string", example: "auth" },
+        validation: { type: "boolean", example: true },
+        message: { type: "string", example: "Bad Request" },
+      },
+    },
   },
 };
 
-export default loginSchema;
+export default LoginSchema;

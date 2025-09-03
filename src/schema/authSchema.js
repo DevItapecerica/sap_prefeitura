@@ -20,12 +20,11 @@ const authSchema = {
       type: "object",
       properties: {
         message: { type: "string", example: "Usuário autenticado" },
-        scopo: { type: "string", example: "admin" },
         user: {
           type: "object",
           properties: {
             id: { type: "integer", example: 1 },
-            role: { type: "string", example: "admin" },
+            role: { type: "integer", example: 1 },
           },
         },
       },

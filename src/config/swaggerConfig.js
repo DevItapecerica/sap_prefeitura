@@ -19,7 +19,7 @@ const swaggerConfig = (port) => {
       },
       servers: [
         {
-          url: `http://192.168.16.13:${port}`,
+          url: `http://localhost:${port}`,
           description: "Development server",
         },
         {

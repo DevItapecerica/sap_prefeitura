@@ -3,19 +3,23 @@ import { SECRET_KEY } from "../config/env.js";
 
 const verifyToken = (token) => {
   if (!token) {
-    throw { status: 401, message: "Sem token fornecido" };
+    throw { ok: false, message: "Sem token fornecido", code: 401 };
   }
 
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-    console.log(decoded);
     return {
-      auth: true,
+      ok: true,
+      message: "Token autenticado com sucesso.",
       role: decoded.role_id,
       id: decoded.id,
     };
   } catch (err) {
-    throw { status: 401, message: "Token incorreto." };
+    return {
+      ok: false,
+      message: "Falha ao autenticar o token.",
+      code: 401,
+    };
   }
 };
 

@@ -1,8 +1,8 @@
 import { authUser } from "../controller/authUser.js";
 import { login } from "../controller/login.js";
 import auth from "../middleware/authAPI.js";
-import loginSchema from "../schema/loginSchema.js";
 import authSchema from "../schema/authSchema.js";
+import LoginSchema from "../schema/loginSchema.js";
 
 const routes = async (fastify, options) => {
   // Login route
@@ -10,7 +10,7 @@ const routes = async (fastify, options) => {
     method: "POST",
     url: "/login",
     preHandler: [auth],
-    schema: loginSchema,
+    schema: LoginSchema,
     handler: login,
   });
 

@@ -1,16 +1,31 @@
 import { verifyToken } from "../utils/verifyToken.js";
-import USER_API from "../service/user_api.js";
+import { getUser } from "../service/user.js";
 
 const authUser = async (request, reply) => {
   const token = request.body.token;
 
   try {
-    const user = await verifyToken(token);
-    const response = await USER_API.get(`/user/${user.id}`);
-    const verifyUser = response.data;
+    const decoded = await verifyToken(token);
+    if (!decoded.ok) {
+      throw {
+        code: 401,
+        message: decoded.message,
+        ok: decoded.ok,
+        api: "Login",
+      };
+    }
+    const user = { id: decoded.id, role: decoded.role };
+
+    // Verifica se o usuário existe no sistema
+    const verifyUser = await getUser(user.id);
 
     if (!verifyUser) {
-      throw { message: "User not found", status: 401 };
+      throw {
+        code: 401,
+        message: "Usuário não encontrado",
+        ok: false,
+        api: "Login",
+      };
     }
 
     reply.status(200).send({
@@ -19,7 +34,12 @@ const authUser = async (request, reply) => {
       user: user,
     });
   } catch (error) {
-    throw error;
+    throw {
+      code: error.code,
+      message: error.message,
+      ok: error.ok,
+      api: error.api,
+    };
   }
 };
 

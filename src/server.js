@@ -41,10 +41,13 @@ fastify.register(routes);
 // hooks
 fastify.setErrorHandler((error, request, reply) => {
   // Obtém o código de status ou define como 500 por padrão
-  const { code, message, ok, api, validation } = error;
-
-  // Constrói uma mensagem de erro apropriada
-  let messageError = message || "Erro interno no servidor";
+  var {
+    code = 500,
+    message = "Internal Server Error",
+    ok = false,
+    api = "Login",
+    validation = false,
+  } = error;
 
   // Loga o erro em ambiente de desenvolvimento
   if (
@@ -59,19 +62,20 @@ fastify.setErrorHandler((error, request, reply) => {
 
   // Se for erro de validação, adiciona detalhes
   if (validation) {
+    code = 400;
     errorResponse = {
-      ok: ok,
-      validation: validation,
-      message: messageError,
-      api: "login",
+      ok,
+      validation: true,
+      message: "Confira o corpo da requisição e tente novamente",
+      api: api,
     };
   } else {
     fastify.log.error(error);
     errorResponse = {
-      ok: ok,
-      validation: validation,
-      message: messageError,
-      api: "login",
+      ok,
+      validation,
+      message: message,
+      api: api,
     };
   }
 
