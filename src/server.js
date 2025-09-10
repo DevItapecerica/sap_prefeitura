@@ -16,16 +16,14 @@ import routes from "./router/routes.js";
 // instância do fastify
 const fastify = Fastify({
   logger: {
-    level: "info",
-    file: "./logs/server.log",
-    serializers: {
-      req: (req) => ({
-        method: req.method,
-        url: req.url,
-      }),
-      res: (res) => ({
-        statusCode: res.statusCode,
-      }),
+    transport: {
+      target: "pino-pretty",
+      options: {
+        translateTime: "HH:MM:ss",
+        ignore: "pid,hostname",
+        colorize: false,
+        destination: "logs/server.log",
+      },
     },
   },
 });
@@ -39,23 +37,19 @@ await fastify.register(fastifySwaggerUi, swaggerUiConfig);
 fastify.register(routes);
 
 // hooks
+
 fastify.setErrorHandler((error, request, reply) => {
   // Obtém o código de status ou define como 500 por padrão
-  var {
-    code = 500,
-    message = "Internal Server Error",
-    ok = false,
-    api = "Login",
-    validation = false,
-  } = error;
+  var { code, message, ok, api, validation = false } = error;
 
   // Loga o erro em ambiente de desenvolvimento
   if (
     process.env.NODE_ENV === "development" ||
     process.env.NODE_ENV === "dev"
   ) {
-    console.error("Error details:", error);
+    console.log("Error details:", error);
   }
+  fastify.log.error("Error details:", error);
 
   // Formata resposta de erro de forma padronizada
   var errorResponse = {};
@@ -64,24 +58,24 @@ fastify.setErrorHandler((error, request, reply) => {
   if (validation) {
     code = 400;
     errorResponse = {
-      ok,
-      validation: true,
+      ok: false,
+      validation: validation,
       message: "Confira o corpo da requisição e tente novamente",
-      api: api,
+      api: api || "Login",
     };
   } else {
-    fastify.log.error(error);
+    if (typeof code === "string") code = 500;
     errorResponse = {
-      ok,
-      validation,
-      message: message,
-      api: api,
+      ok: ok || false,
+      validation: false,
+      message: message || "Internal Server Error",
+      api: api || "Login",
     };
   }
 
   // Envia resposta com o código de status apropriado
   reply
-    .code(code)
+    .code(code || 500)
     .header("Content-Type", "application/json; charset=utf-8")
     .send(errorResponse);
 });
