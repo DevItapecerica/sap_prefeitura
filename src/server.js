@@ -20,9 +20,10 @@ const fastify = Fastify({
       target: "pino-pretty",
       options: {
         translateTime: "HH:MM:ss",
-        ignore: "pid,hostname",
+        ignore: "hostname",
         colorize: false,
         destination: "logs/server.log",
+        mkdir: true,
       },
     },
   },
