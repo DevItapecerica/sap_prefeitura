@@ -2,7 +2,7 @@ import Sequelize from "sequelize";
 import db from "../context.js";
 
 const User = db.define(
-  "User",
+  "user",
   {
     id: {
       type: Sequelize.INTEGER,
