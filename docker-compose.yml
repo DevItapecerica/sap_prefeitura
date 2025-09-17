@@ -1,6 +1,7 @@
 services:
   login:
     image: node:18
+    container_name: app_prefeitura_login
     build:
       context: ./
       dockerfile: ./Dockerfile
