@@ -35,7 +35,7 @@ await fastify.register(fastifySwagger, swaggerConfig(PORT));
 await fastify.register(fastifySwaggerUi, swaggerUiConfig);
 
 // rotas
-fastify.register(routes);
+fastify.register(routes, { prefix: "/api/v2" });
 
 // hooks
 
