@@ -23,8 +23,13 @@ const authSchema = {
         user: {
           type: "object",
           properties: {
-            id: { type: "integer", example: 1 },
-            role: { type: "integer", example: 1 },
+            id: { type: "number", example: 1 },
+            name: { type: "string", example: "admin" },
+            mail: { type: "string", example: "admin" },
+            ramal: { type: "string", example: "admin" },
+            setor: { type: "string", example: "admin" },
+            role: { type: "string", example: "admin" },
+            ip: { type: "string", example: "192.168.1.1" },
           },
         },
       },

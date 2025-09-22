@@ -63,12 +63,12 @@ const authUser = async (request, reply) => {
         api: "Login",
       };
     }
-    const user = { id: decoded.id, role: decoded.role };
+    const decodedUser = { id: decoded.id, role: decoded.role };
 
     // Verifica se o usuário existe no sistema
-    const verifyUser = await getUser(user.id);
+    const { user } = await getUser(decodedUser.id);
 
-    if (!verifyUser) {
+    if (!user) {
       throw {
         code: 401,
         message: "Usuário não encontrado",
@@ -79,8 +79,16 @@ const authUser = async (request, reply) => {
 
     reply.status(200).send({
       message: "Usuário autenticado",
-      scopo: verifyUser.role_id,
-      user: user,
+      scopo: user.role_id,
+      user: {
+        id: user.id,
+        name: user.name,
+        mail: user.email,
+        ramal: user.ramal,
+        setor: user.setor_id,
+        role: user.role_id,
+        ip: request.headers["x-real-ip"] || request.ip,
+      },
     });
   } catch (error) {
     throw {
