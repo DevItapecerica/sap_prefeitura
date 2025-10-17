@@ -1,4 +1,4 @@
-import { PORT } from "./config/env.js";
+import { NODE_ENV, PORT } from "./config/env.js";
 
 // fastify
 import Fastify from "fastify";
@@ -13,18 +13,23 @@ import { corsConfig } from "./config/corsConfig.js";
 // routes
 import routes from "./router/routes.js";
 
-// instância do fastify
-const fastify = Fastify({
-  logger: {
-    transport: {
-      target: "pino-pretty",
-      options: {
+const logg =
+  NODE_ENV === "prod"
+    ? {
         translateTime: "HH:MM:ss",
         ignore: "hostname",
         colorize: false,
         destination: "logs/server.log",
         mkdir: true,
-      },
+      }
+    : { translateTime: "HH:MM:ss", ignore: "hostname" };
+
+const fastify = Fastify({
+  logger: {
+    level: "info",
+    transport: {
+      target: "pino-pretty",
+      options: logg,
     },
   },
 });
@@ -44,13 +49,11 @@ fastify.setErrorHandler((error, request, reply) => {
   var { code, message, ok, api, validation = false } = error;
 
   // Loga o erro em ambiente de desenvolvimento
-  if (
-    process.env.NODE_ENV === "development" ||
-    process.env.NODE_ENV === "dev"
-  ) {
+  if (process.env.NODE_ENV === "dev") {
     console.log("Error details:", error);
+  } else {
+    fastify.log.error("Error details:", error);
   }
-  fastify.log.error("Error details:", error);
 
   // Formata resposta de erro de forma padronizada
   var errorResponse = {};
@@ -85,7 +88,6 @@ fastify.setErrorHandler((error, request, reply) => {
 const start = () => {
   try {
     fastify.listen({ port: PORT, host: "0.0.0.0" });
-    console.log(`🚀 Server is running on port ${PORT}`);
   } catch (error) {
     console.error("❌ Erro ao iniciar o servidor:", error);
     process.exit(1);

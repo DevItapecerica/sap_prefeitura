@@ -23,7 +23,7 @@ const swaggerConfig = (port) => {
           description: "Development server",
         },
         {
-          url: `http://192.168.16.80:${port}`,
+          url: `http://189.20.193.252:${port}`,
           description: "Production server",
         },
       ],
