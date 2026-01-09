@@ -14,7 +14,7 @@ import { corsConfig } from "./config/corsConfig.js";
 import routes from "./router/routes.js";
 
 const logg =
-  NODE_ENV === "prod"
+  NODE_ENV === "production"
     ? {
         translateTime: "HH:MM:ss",
         ignore: "hostname",
