@@ -13,16 +13,7 @@ import { corsConfig } from "./config/corsConfig.js";
 // routes
 import routes from "./router/routes.js";
 
-const logg =
-  NODE_ENV === "production"
-    ? {
-        translateTime: "HH:MM:ss",
-        ignore: "hostname",
-        colorize: false,
-        destination: "logs/server.log",
-        mkdir: true,
-      }
-    : { translateTime: "HH:MM:ss", ignore: "hostname" };
+const logg = { translateTime: "HH:MM:ss", ignore: "hostname", colorize: true };
 
 const fastify = Fastify({
   logger: {
