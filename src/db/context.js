@@ -3,7 +3,9 @@ import { DATABASE_URL } from "../config/env.js";
 
 const Sequelize = new SequelizeLib(DATABASE_URL, {
   dialect: "mariadb",
-  connectTimeout: 10000,
+  dialectOptions: {
+      connectTimeout: 10000
+    }
 });
 
 Sequelize.authenticate()
