@@ -63,7 +63,7 @@ const authUser = async (request, reply) => {
         api: "Login",
       };
     }
-    const decodedUser = { id: decoded.id, role: decoded.role };
+    const decodedUser = { id: decoded.id, role: decoded.role, name: decoded.name };
 
     // Verifica se o usuário existe no sistema
     const { user } = await getUser(decodedUser.id);

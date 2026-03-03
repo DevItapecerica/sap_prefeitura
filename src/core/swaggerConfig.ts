@@ -1,4 +1,7 @@
-const swaggerConfig = (port) => {
+import { SwaggerOptions } from "@fastify/swagger";
+import { FastifyRegisterOptions } from "fastify";
+
+const swaggerConfig = (port: number): FastifyRegisterOptions<SwaggerOptions> => {
   return {
     openapi: {
       openapi: "3.0.0",

@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 
-const HashPass = async (password) => {
+const genHash = async (password: string): Promise<string> => {
   const hashedPassword = await bcrypt.hash(password, 10);
   return hashedPassword;
 };
 
-export default HashPass;
+export default genHash;
