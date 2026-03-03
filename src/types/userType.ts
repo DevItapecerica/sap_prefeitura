@@ -1,4 +1,4 @@
-import { UserDB } from "../db/models/UserModel.js";
+import { UserDB } from "../db/models/user.model.js";
 
 export type userParams = Pick<UserDB, "id">;
 

@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-// import * as User from "../controller/adminUserController.js";
+import UserService from "./service.js";
 // import auth from "../middleware/authKey.js";
 // import * as schema from "../schema/userSchema.js";
 
@@ -12,13 +12,13 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
   //   handler: User.getAllUser,
   // });
 
-  // fastify.route({
-  //   method: "GET",
-  //   url: "/user/:id",
-  //   preHandler: [auth],
-  //   schema: schema.getOneUserSchema,
-  //   handler: User.getOneUser,
-  // });
+  fastify.route({
+    method: "GET",
+    url: "/user/:id",
+    // preHandler: [auth],
+    // schema: schema.getOneUserSchema,
+    handler: UserService.getOne,
+  });
 
   // fastify.route({
   //   method: "POST",

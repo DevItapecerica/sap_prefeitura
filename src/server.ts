@@ -5,17 +5,18 @@ import Fastify from "fastify";
 import logConfig from "./core/logConfig.js";
 
 // Cors
-import cors from "@fastify/cors";
-import { corsConfig } from "./core/corsConfig.js";
+import corsConfig from "./core/plugin/CorsConfig.js";
 
 // Swagger
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import { swaggerConfig, swaggerUiConfig } from "./core/swaggerConfig.js";
 
-// Logger
-import LoggerResponse from "./plugins/LoggerResponse.js";
-import errorResponse from "./plugins/errorResponse.js";
+// Hooks
+import LoggerResponse from "./core/hooks/LoggerResponse.js";
+import ErrorHook from "./core/hooks/ErrorHook.js";
+
+// App
 import App from "./app.js";
 
 const fastify = Fastify(logConfig);
@@ -24,7 +25,7 @@ const port: number = Number(PORT);
 
 // Registrando Plugins
 fastify.log.info("Registrando plugins");
-await fastify.register(cors, corsConfig);
+await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
 
 await fastify.register(fastifySwagger, swaggerConfig(port));
@@ -33,10 +34,11 @@ fastify.log.info("Swagger Registrado");
 await fastify.register(fastifySwaggerUi, swaggerUiConfig);
 fastify.log.info("SwaggerUi Registrado");
 
+// Registrando hooks
 await fastify.register(LoggerResponse)
 fastify.log.info("Logger Registrado");
 
-await fastify.register(errorResponse);
+await fastify.register(ErrorHook);
 fastify.log.info("Error Registrado");
 
 //Inicialização de APP

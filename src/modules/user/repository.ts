@@ -1,22 +1,23 @@
-import db from "../../core/db.js";
-import { userRequired } from "../../types/userType.js";
+import db from "../../db/db.js";
+import { userParams, userRequired } from "../../types/userType.js";
 
 
 
 export default class UserRepository {
-    static create = (data: userRequired) => {
+    static create = (user: userRequired, password: string) => {
          const payload = {
-            name: data.name,
-            email: data.email,
-            ramal: data.ramal,
-            setor_id: data.setor_id,
-            firstLogin: data.firstLogin,
-            role_id: data.role_id
+            name: user.name,
+            email: user.email,
+            ramal: user.ramal,
+            password: password,
+            setor_id: user.setor_id,
+            firstLogin: user.firstLogin,
+            role_id: user.role_id
         }
         return db.UserModel.create(payload);
     }
 
-    static getById = (id: number) => {
+    static getById = (id: userParams) => {
         return db.UserModel.findByPk(id);
     }
 

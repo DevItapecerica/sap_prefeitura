@@ -3,11 +3,11 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 import { Sequelize, Options, DataTypes } from "sequelize";
-import { NODE_ENV } from "./env.js";
+import { NODE_ENV } from "../core/env.js";
 
 import { DbConfig, DbObject } from "../types/DbTypes.js";
 
-import configFile from "../db/config/config.js";
+import configFile from "./config/config.js";
 
 const __filename: string = fileURLToPath(import.meta.url);
 const __dirname: string = path.dirname(__filename);
@@ -36,10 +36,10 @@ if (config.use_env_variable) {
 }
 
 // Carrega todos os models da pasta /model
-const modelDir = path.join(__dirname, "../db/models");
+const modelDir = path.join(__dirname, "./models");
 const modelFiles = fs
   .readdirSync(modelDir)
-  .filter((file) => (file.endsWith(".js") || file.endsWith(".ts")) && (!file.endsWith(".test.js") || !file.endsWith(".test.ts")));
+  .filter((file) => (file.endsWith("model.js") || file.endsWith("model.ts")) && (!file.endsWith("model.test.js") || !file.endsWith("model.test.ts")));
 
 for (const file of modelFiles) {
   if (file === basename) {
