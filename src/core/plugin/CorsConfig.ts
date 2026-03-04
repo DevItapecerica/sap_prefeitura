@@ -6,10 +6,7 @@ const CorsConfig: FastifyPluginAsync = async (fastify, opts)  => {
 
   fastify.register(Cors, {
     ...opts,
-    origin: [
-      /^https?:\/\/192\.168\.16\.200(:\d+)?$/,
-      /^https?:\/\/189\.20\.192\.251(:\d+)?$/,
-    ],
+    origin: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: [
       "Content-Type",

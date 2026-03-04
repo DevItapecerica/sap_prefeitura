@@ -1,7 +1,7 @@
 import { sendMail } from "./mailler.js";
 import bcrypt from "bcryptjs";
 
-export const GenAndSendPass = async (mail: string, password: string): Promise<string> => {
+export const sendPass = async (mail: string, password: string): Promise<string> => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   await sendMail(

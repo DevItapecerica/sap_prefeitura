@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 
 import { MAIL_ADRESS, MAIL_HOST, MAIL_PASSWORD } from "../core/env.js";
+import AppError from "../core/appError.js";
 
 const transporter = nodemailer.createTransport({
   host: MAIL_HOST,
@@ -23,12 +24,7 @@ export const sendMail = async (to: string, subject: string, text: string, html: 
     });
     return true;
   } catch (error: any) {
-    throw {
-      code: error.code || 500,
-      ok: false,
-      message: "Erro ao enviar e-mail: " + error.message,
-      original_error: error,
-      validation: false,
-    };
+    const err = new AppError("Erro ao enviar e-mail: " + error.message, 500, "INTERNAL_ERROR");
+    throw err;
   }
 };

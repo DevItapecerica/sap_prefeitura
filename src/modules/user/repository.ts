@@ -14,7 +14,10 @@ export default class UserRepository {
       firstLogin: user.firstLogin,
       role_id: user.role_id,
     };
-    return db.UserModel.create(payload);
+
+    const newUser = await db.UserModel.create(payload);
+
+    return newUser;
   };
 
   static getById = async (id: userParams) => {
@@ -54,7 +57,7 @@ export default class UserRepository {
     };
   };
 
-  static update = async (id: number, data: userRequired) => {
+  static update = async (id: userParams, data: userRequired) => {
     const payload = {
       name: data.name,
       email: data.email,
@@ -63,11 +66,20 @@ export default class UserRepository {
       firstLogin: data.firstLogin,
       role_id: data.role_id,
     };
-    return db.UserModel.update(payload, { where: { id } });
+
+    const user = await db.UserModel.findByPk(id, {
+      attributes: { exclude: ["password"] },
+    });
+
+    user.update(payload);
+    
+    return user;
   };
 
   static delete = async (id: userParams) => {
-    return db.UserModel.destroy({ where: { id } });
+    await db.UserModel.destroy({ where: { id } });
+
+    return true
   };
 
   static deleteBySetor = async (setorId: number) => {
@@ -76,5 +88,11 @@ export default class UserRepository {
 
   static alterarSenha = async (id: number, password: string) => {
     return db.UserModel.update({ password }, { where: { id } });
+  };
+
+  static getByEmail = async (email: string) => {
+    const user = await db.UserModel.findOne({ where: { email } });
+
+    return user;
   };
 }
