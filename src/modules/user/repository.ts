@@ -90,8 +90,9 @@ export default class UserRepository {
     return db.UserModel.update({ password }, { where: { id } });
   };
 
-  static getByEmail = async (email: string) => {
-    const user = await db.UserModel.findOne({ where: { email } });
+  static getByEmail = async (email: string, excludeId?: userParams) => {
+    const where = excludeId ? { email, id: { [Op.ne]: excludeId} } : { email };
+    const user = await db.UserModel.findOne({ where});
 
     return user;
   };

@@ -7,6 +7,7 @@ import AppError from "../../core/appError.js";
 import { QueryParams } from "../../types/genericTypes.js";
 import ValidateQueryOrder from "../../utils/ValidateQueryOrder.js";
 import { ok } from "assert";
+import validarEmailDuplicado from "./utils.js";
 export default class UserService {
   private static valuesOrder = ["id", "name", "email", "createdAt"];
 
@@ -17,11 +18,9 @@ export default class UserService {
     const { user } = request.body;
 
     request.log.info("Validando duplicidade de email");
-    const userExists = await UserRepository.getByEmail(user.email);
+    const userEmailExists = await validarEmailDuplicado(user.email);
 
-    console.log(userExists);
-
-    if (userExists) {
+    if (userEmailExists) {
       request.log.info("Usuário com email ja cadastrado");
       const error = new AppError(
         "Usuário com email ja cadastrado",
@@ -30,6 +29,7 @@ export default class UserService {
       );
       throw error;
     }
+
     request.log.info("Usuário com email nao cadastrado");
 
     request.log.info("Gerando senha");
@@ -53,7 +53,11 @@ export default class UserService {
     );
     repply
       .status(201)
-      .send({ message: "Usuário criado com sucesso", id: newUser.id, ok: true });
+      .send({
+        message: "Usuário criado com sucesso",
+        id: newUser.id,
+        ok: true,
+      });
   };
 
   static update = async (
@@ -65,6 +69,19 @@ export default class UserService {
   ) => {
     const { id } = request.params;
     const { user } = request.body;
+
+    request.log.info("Validando duplicidade de email");
+    const userEmailExists = await validarEmailDuplicado(user.email, id);
+
+    if (userEmailExists) {
+      request.log.info("Usuário com email ja cadastrado");
+      const error = new AppError(
+        "Usuário com email ja cadastrado",
+        403,
+        "USER_EMAIL_EXISTS",
+      );
+      throw error;
+    }
 
     request.log.info("Buscando usuário");
     const userExists = await UserRepository.getById(id);
