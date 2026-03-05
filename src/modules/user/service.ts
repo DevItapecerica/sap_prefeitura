@@ -1,27 +1,30 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { userParams, userRequired } from "../../types/userType.js";
-import { sendPass } from "../../utils/sendPass.js";
-import { generateRandomPassword } from "../../utils/generateRandomPassword.js";
+import {
+  userParams,
+  userRequired,
+  userResponse,
+  userResponseAll,
+} from "./types.js";
+import { sendPass } from "../../core/utils/sendPass.js";
+import { generateRandomPassword } from "../../core/utils/generateRandomPassword.js";
 import UserRepository from "./repository.js";
 import AppError from "../../core/appError.js";
 import { QueryParams } from "../../types/genericTypes.js";
-import ValidateQueryOrder from "../../utils/ValidateQueryOrder.js";
-import { ok } from "assert";
-import validarEmailDuplicado from "./utils.js";
+import ValidateQueryOrder from "../../core/utils/ValidateQueryOrder.js";
 export default class UserService {
-  private static valuesOrder = ["id", "name", "email", "createdAt"];
+  constructor(
+    private userRepository: UserRepository,
+    private logger: any,
+  ) {}
 
-  static cadastrar = async (
-    request: FastifyRequest<{ Body: { user: userRequired } }>,
-    repply: FastifyReply,
-  ) => {
-    const { user } = request.body;
+  private valuesOrder = ["id", "name", "email", "createdAt"];
 
-    request.log.info("Validando duplicidade de email");
-    const userEmailExists = await validarEmailDuplicado(user.email);
+  cadastrar = async (user: userRequired): Promise<userResponse> => {
+    this.logger.info("Validando duplicidade de email");
+    const userEmailExists = await this.userRepository.getByEmail(user.email);
 
     if (userEmailExists) {
-      request.log.info("Usuário com email ja cadastrado");
+      this.logger.info("Usuário com email ja cadastrado");
       const error = new AppError(
         "Usuário com email ja cadastrado",
         403,
@@ -30,51 +33,29 @@ export default class UserService {
       throw error;
     }
 
-    request.log.info("Usuário com email nao cadastrado");
+    this.logger.info("Usuário com email nao cadastrado");
 
-    request.log.info("Gerando senha");
+    this.logger.info("Gerando senha");
     const password = generateRandomPassword();
 
-    request.log.info("Enviando senha");
+    this.logger.info("Enviando senha");
     const hashedPassword = await sendPass(user.email, password);
 
-    request.log.info("Criando usuário");
-    const newUser = await UserRepository.create(user, hashedPassword);
+    this.logger.info("Criando usuário");
+    const newUser = await this.userRepository.create(user, hashedPassword);
 
-    console.log(newUser.id);
-
-    request.log.info(
-      "Usuário criado com sucesso: " +
-        newUser.id +
-        " - " +
-        newUser.name +
-        " - por: " +
-        request.user?.id,
-    );
-    repply
-      .status(201)
-      .send({
-        message: "Usuário criado com sucesso",
-        id: newUser.id,
-        ok: true,
-      });
+    return newUser;
   };
 
-  static update = async (
-    request: FastifyRequest<{
-      Body: { user: userRequired };
-      Params: { id: userParams };
-    }>,
-    repply: FastifyReply,
-  ) => {
-    const { id } = request.params;
-    const { user } = request.body;
-
-    request.log.info("Validando duplicidade de email");
-    const userEmailExists = await validarEmailDuplicado(user.email, id);
+  update = async (
+    user: userRequired,
+    id: userParams,
+  ): Promise<userResponse> => {
+    this.logger.info("Validando duplicidade de email");
+    const userEmailExists = await this.userRepository.getByEmail(user.email, id);
 
     if (userEmailExists) {
-      request.log.info("Usuário com email ja cadastrado");
+      this.logger.info("Usuário com email ja cadastrado");
       const error = new AppError(
         "Usuário com email ja cadastrado",
         403,
@@ -83,11 +64,11 @@ export default class UserService {
       throw error;
     }
 
-    request.log.info("Buscando usuário");
-    const userExists = await UserRepository.getById(id);
+    this.logger.info("Buscando usuário");
+    const userExists = await this.userRepository.getById(id);
 
     if (!userExists) {
-      request.log.info("Usuário nao encontrado");
+      this.logger.info("Usuário nao encontrado");
 
       const error = new AppError(
         "Usuário nao encontrado",
@@ -98,29 +79,20 @@ export default class UserService {
       throw error;
     }
 
-    request.log.info("Usuário encontrado");
+    this.logger.info("Usuário encontrado");
 
-    request.log.info("Atualizando usuário");
-    const updatedUser = await UserRepository.update(id, user);
+    this.logger.info("Atualizando usuário");
+    const updatedUser = await this.userRepository.update(id, user);
 
-    repply.status(200).send({
-      message: "Usuário atualizado com sucesso",
-      id: id,
-      user: updatedUser,
-    });
+    return updatedUser;
   };
 
-  static getOne = async (
-    request: FastifyRequest<{ Params: { id: userParams } }>,
-    repply: FastifyReply,
-  ) => {
-    const { id } = request.params;
-
-    request.log.info("Buscando usuário");
-    const user = await UserRepository.getById(id);
+  getOne = async (id: userParams): Promise<userResponse> => {
+    this.logger.info("Buscando usuário");
+    const user = await this.userRepository.getById(id);
 
     if (!user) {
-      request.log.info("Usuário nao encontrado");
+      this.logger.info("Usuário nao encontrado");
 
       const error = new AppError(
         "Usuário nao encontrado",
@@ -131,23 +103,16 @@ export default class UserService {
       throw error;
     }
 
-    request.log.info("Usuário encontrado");
-    repply.status(200).send({ user, message: "Usuário encontrado", ok: true });
+    this.logger.info("Usuário encontrado");
+
+    return user;
   };
 
-  static getAllByQuery = async (
-    request: FastifyRequest<{ Querystring: QueryParams }>,
-    repply: FastifyReply,
-  ) => {
-    const {
-      search,
-      page = 1,
-      limit = 10,
-      order = "createdAt:desc",
-    } = request.query;
+  getAllByQuery = async (query: QueryParams): Promise<userResponseAll> => {
+    const { search, page = 1, limit = 10, order = "createdAt:desc" } = query;
 
     if (page < 1) {
-      request.log.info("Pagina invalida");
+      this.logger.info("Pagina invalida");
       const error = new AppError("Pagina invalida", 400, "INVALID_PAGE");
       throw error;
     }
@@ -155,7 +120,7 @@ export default class UserService {
     const isValidQuery = await ValidateQueryOrder(order, this.valuesOrder);
 
     if (!isValidQuery) {
-      request.log.info("Ordem de busca invalida");
+      this.logger.info("Ordem de busca invalida");
       const error = new AppError(
         "Ordem de busca invalida",
         400,
@@ -171,25 +136,18 @@ export default class UserService {
       order,
     };
 
-    request.log.info("Buscando usuários");
-    const response = await UserRepository.getAll(q);
+    this.logger.info("Buscando usuários");
+    const response = await this.userRepository.getAll(q);
 
-    request.log.info("Usuários encontrados");
-    repply
-      .status(200)
-      .send({ message: "Usuários encontrados", ...response, ok: true });
+    this.logger.info("Usuários encontrados");
+    return response;
   };
 
-  static delete = async (
-    request: FastifyRequest<{ Params: { id: userParams } }>,
-    repply: FastifyReply,
-  ) => {
-    const { id } = request.params;
-
-    const user = await UserRepository.getById(id);
+  delete = async (id: userParams): Promise<boolean> => {
+    const user = await this.userRepository.getById(id);
 
     if (!user) {
-      request.log.info("Usuário nao encontrado");
+      this.logger.info("Usuário nao encontrado");
       const error = new AppError(
         "Usuário nao encontrado",
         404,
@@ -198,13 +156,10 @@ export default class UserService {
       throw error;
     }
 
-    request.log.info("Deletando usuário");
-    await UserRepository.delete(id);
+    this.logger.info("Deletando usuário");
+    await this.userRepository.delete(id);
 
-    request.log.info("Usuário deletado com sucesso");
-    repply.status(200).send({
-      message: "Usuário deletado com sucesso",
-      ok: true,
-    });
+    this.logger.info("Usuário deletado com sucesso");
+    return true;
   };
 }

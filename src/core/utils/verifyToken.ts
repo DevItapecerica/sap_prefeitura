@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { SECRET_KEY } from "../core/env.js";
+import { SECRET_KEY } from "../env.js";
 
 const verifyToken = (token: string) => {
   if (!token) {

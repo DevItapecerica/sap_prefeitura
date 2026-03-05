@@ -1,10 +1,11 @@
 import { FastifyPluginAsync } from "fastify";
-import UserService from "./service.js";
 import errorResponseSchema from "../../core/shared/schema/errorSchema.js";
-// import auth from "../middleware/authKey.js";
-// import * as schema from "../schema/userSchema.js";
+import UserController from "./controller.js";
+import AuthMiddleware from "../auth/auth.middleware.js";
 
 const userRouter: FastifyPluginAsync = async (fastify, options) => {
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+
   const userResponse = {
     type: "object",
     properties: {
@@ -32,6 +33,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
     },
   };
 
+  // === GET ===
   fastify.route({
     method: "GET",
     url: "/user",
@@ -69,7 +71,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
         ...errorResponseSchema,
       },
     },
-    handler: UserService.getAllByQuery,
+    handler: UserController.getAllByQuery,
   });
 
   fastify.route({
@@ -77,9 +79,10 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
     url: "/user/:id",
     // preHandler: [auth],
     // schema: schema.getOneUserSchema,
-    handler: UserService.getOne,
+    handler: UserController.getOne,
   });
 
+  // === POST ===
   fastify.route({
     method: "POST",
     url: "/user",
@@ -96,17 +99,19 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
         },
       },
     },
-    handler: UserService.cadastrar,
+    handler: UserController.cadastrar,
   });
 
+  // === DELETE ===
   fastify.route({
     method: "DELETE",
     url: "/user/:id",
     // preHandler: [auth],
     // schema: schema.deleteUserSchema,
-    handler: UserService.delete,
+    handler: UserController.delete,
   });
 
+  // === PUT ===
   fastify.route({
     method: "PUT",
     url: "/user/:id",
@@ -123,7 +128,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
         },
       },
     },
-    handler: UserService.update,
+    handler: UserController.update,
   });
 };
 

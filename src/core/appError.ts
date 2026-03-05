@@ -4,7 +4,7 @@ export class AppError extends Error {
   public isOperational: boolean;
   public originalError: any;
 
-  constructor(message: string, statusCode = 500, code = "INTERNAL_ERROR", originalError?: any) {
+  constructor(message: string, statusCode = 500, code = "INTERNAL_ERROR") {
     super(message);
     this.statusCode = statusCode;
     this.code = code;

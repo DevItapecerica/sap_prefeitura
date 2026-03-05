@@ -1,13 +1,3 @@
-export type genericResponse = {
-    ok: boolean;
-    code: number;
-    message: string;
-}
-
-export interface interfaceErrorResponse extends genericResponse {
-    codeStatus?: any;
-}
-
 export type QueryParams = {
   search?: string;
   page?: number;

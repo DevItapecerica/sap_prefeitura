@@ -1,10 +1,10 @@
 import { Op } from "sequelize";
 import db from "../../db/db.js";
 import { QueryParams } from "../../types/genericTypes.js";
-import { userParams, userRequired } from "../../types/userType.js";
+import { userParams, userRequired, userResponse, userResponseAll } from "./types.js";
 
 export default class UserRepository {
-  static create = async (user: userRequired, password: string) => {
+  create = async (user: userRequired, password: string): Promise<userResponse> => {
     const payload = {
       name: user.name,
       email: user.email,
@@ -20,12 +20,12 @@ export default class UserRepository {
     return newUser;
   };
 
-  static getById = async (id: userParams) => {
+  getById = async (id: userParams): Promise<userResponse> => {
     const user = await db.UserModel.findByPk(id);
     return user;
   };
 
-  static getAll = async (query: QueryParams) => {
+  getAll = async (query: QueryParams): Promise<userResponseAll> => {
     const { page, limit, search, order } = query;
     const queryOrder = order ? order.split(":") : ["createdAt", "desc"];
 
@@ -57,7 +57,7 @@ export default class UserRepository {
     };
   };
 
-  static update = async (id: userParams, data: userRequired) => {
+  update = async (id: userParams, data: userRequired): Promise<userResponse> => {
     const payload = {
       name: data.name,
       email: data.email,
@@ -71,26 +71,28 @@ export default class UserRepository {
       attributes: { exclude: ["password"] },
     });
 
-    user.update(payload);
+    await user.update(payload);
     
     return user;
   };
 
-  static delete = async (id: userParams) => {
+  delete = async (id: userParams): Promise<boolean> => {
     await db.UserModel.destroy({ where: { id } });
 
     return true
   };
 
-  static deleteBySetor = async (setorId: number) => {
-    return db.UserModel.destroy({ where: { setor_id: setorId } });
+  deleteBySetor = async (setorId: number): Promise<boolean> => {
+    await db.UserModel.destroy({ where: { setor_id: setorId } });
+    return true;
   };
 
-  static alterarSenha = async (id: number, password: string) => {
-    return db.UserModel.update({ password }, { where: { id } });
+  alterarSenha = async (id: number, password: string): Promise<boolean> => {
+    await db.UserModel.update({ password }, { where: { id } })
+    return true;
   };
 
-  static getByEmail = async (email: string, excludeId?: userParams) => {
+  getByEmail = async (email: string, excludeId?: userParams): Promise<userResponse> => {
     const where = excludeId ? { email, id: { [Op.ne]: excludeId} } : { email };
     const user = await db.UserModel.findOne({ where});
 

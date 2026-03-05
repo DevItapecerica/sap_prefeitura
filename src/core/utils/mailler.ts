@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
-import { MAIL_ADRESS, MAIL_HOST, MAIL_PASSWORD } from "../core/env.js";
-import AppError from "../core/appError.js";
+import { MAIL_ADRESS, MAIL_HOST, MAIL_PASSWORD } from "../env.js";
+import AppError from "../appError.js";
 
 const transporter = nodemailer.createTransport({
   host: MAIL_HOST,

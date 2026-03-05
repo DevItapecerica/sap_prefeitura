@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { MAIL_HOST, SECRET_EMAIL, SECRET_PASSWORD } from "../core/env.js";
+import { MAIL_HOST, SECRET_EMAIL, SECRET_PASSWORD } from "../env.js";
 
 export async function sendMail(to: string, subject: string, text: string) {
 
