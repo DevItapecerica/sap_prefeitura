@@ -37,7 +37,6 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.route({
     method: "GET",
     url: "/user",
-    // preHandler: [auth],
     schema: {
       tags: ["Users"],
       description:
@@ -61,11 +60,13 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
               type: "string",
               example: "Usuários selecionados com sucesso",
             },
+
             user: {
               type: "array",
               items: userResponse,
             },
             count: { type: "integer", example: 1 },
+            ok: { type: "boolean", example: true },
           },
         },
         ...errorResponseSchema,
@@ -77,8 +78,36 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.route({
     method: "GET",
     url: "/user/:id",
-    // preHandler: [auth],
-    // schema: schema.getOneUserSchema,
+    schema: {
+      tags: ["Users"],
+      description:
+        "Pegue todos os usuários com base em seus parâmetros passados via queryString. \n Parâmetros: limit, page, search e order. \n Order segue o seguinte formato: coluna:asc ou coluna:desc. (Colunas aceitas: id, name, email, ramal, createdAt)",
+      summary: "Pegue todos os usuários",
+      querystring: {
+        type: "object",
+        properties: {
+          limit: { type: "integer", default: 10 },
+          page: { type: "integer", default: 1 },
+          search: { type: "string" },
+          order: { type: "string", default: "createdAt:desc" },
+        },
+      },
+      response: {
+        200: {
+          description: "Requisição bem sucedida",
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Usuário selecionado com sucesso",
+            },
+            user: userResponse,
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
     handler: UserController.getOne,
   });
 
@@ -86,7 +115,6 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.route({
     method: "POST",
     url: "/user",
-    // preHandler: [auth],
     schema: {
       tags: ["Users"],
       description: "Crie um usuário",
@@ -98,6 +126,21 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
           user: userRequired,
         },
       },
+      response: {
+        201: {
+          description: "Requisição bem sucedida",
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Usuário criado com sucesso",
+            },
+            id: { type: "integer", example: 1 },
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
     },
     handler: UserController.cadastrar,
   });
@@ -106,8 +149,26 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.route({
     method: "DELETE",
     url: "/user/:id",
-    // preHandler: [auth],
-    // schema: schema.deleteUserSchema,
+    schema: {
+      tags: ["Users"],
+      description: "Delete um usuário",
+      summary: "Delete um usuário",
+      response: {
+        200: {
+          description: "Requisição bem sucedida",
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Usuário deletado com sucesso",
+            },
+            id: { type: "integer", example: 1 },
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
     handler: UserController.delete,
   });
 
@@ -115,7 +176,6 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.route({
     method: "PUT",
     url: "/user/:id",
-    // preHandler: [auth],
     schema: {
       tags: ["Users"],
       description: "Atualize um usuário",
@@ -126,6 +186,21 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
         properties: {
           user: userRequired,
         },
+      },
+      response: {
+        200: {
+          description: "Requisição bem sucedida",
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Usuário atualizado com sucesso",
+            },
+            user: userResponse,
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
       },
     },
     handler: UserController.update,

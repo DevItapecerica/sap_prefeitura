@@ -50,7 +50,6 @@ export default class UserController {
 
     repply.status(200).send({
       message: "Usuário atualizado com sucesso",
-      id: id,
       user: updatedUser,
       ok: true,
     });
@@ -94,6 +93,7 @@ export default class UserController {
 
     repply.status(200).send({
       message: "Usuário deletado com sucesso",
+      id: id,
       ok: true,
     });
   };
