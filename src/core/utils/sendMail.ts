@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { MAIL_HOST, SECRET_EMAIL, SECRET_PASSWORD } from "../env.js";
+import { MAIL_HOST, MAIL_ADRESS, MAIL_PASSWORD } from "../env.js";
 
 export async function sendMail(to: string, subject: string, text: string) {
 
@@ -8,8 +8,8 @@ export async function sendMail(to: string, subject: string, text: string) {
     port: 25,
     secure: false, // true para porta 465
     auth: {
-      user: SECRET_EMAIL,
-      pass: SECRET_PASSWORD,
+      user: MAIL_ADRESS,
+      pass: MAIL_PASSWORD,
     },
   });
 
