@@ -51,7 +51,7 @@ await fastify.register(notFoundHook);
 fastify.log.info("NotFound Registrado");
 
 //Inicialização de APP
-fastify.register(App);
+fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
 
 // inicialização

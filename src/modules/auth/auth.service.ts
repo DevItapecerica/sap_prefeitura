@@ -1,6 +1,6 @@
 import AppError from "../../core/appError.js";
-import comparePass from "../../core/utils/comparePass.js";
-import UserRepository from "../user/repository.js";
+import comparePass from "../../core/shared/utils/comparePass.js";
+import UserRepository from "../user/user.repository.js";
 import { AuthLoginResponse } from "./types.js";
 
 export default class authService {
@@ -11,7 +11,7 @@ export default class authService {
 
   async login(email: string, password: string): Promise<AuthLoginResponse> {
     this.logger.info("Validando login");
-    const user = await this.userRepository.getByEmail(email);
+    const user = await this.userRepository.getUserByEmail(email);
 
     if (!user) {
       const error = new AppError(

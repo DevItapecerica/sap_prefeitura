@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import AppError from "../../core/appError.js";
-import JwtServices from "./jwt.services.js";
+import JwtServices from "./utils/jwt.service.js";
 
 export default class AuthMiddleware {
   static verifyJWT = async (request: FastifyRequest, reply: FastifyReply) => {

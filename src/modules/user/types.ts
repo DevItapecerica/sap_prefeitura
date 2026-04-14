@@ -1,4 +1,4 @@
-import { UserDB } from "../../db/models/user.model.js";
+import { UserDB } from "../../infra/database/sequelize/models/user.model.js";
 
 export type userParams = Pick<UserDB, "id">;
 
