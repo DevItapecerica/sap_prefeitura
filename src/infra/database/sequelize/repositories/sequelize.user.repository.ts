@@ -1,10 +1,10 @@
 import { Op } from "sequelize";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
-import { Setor } from "../../../../modules/setor/setor.entity.js";
 import {
   userParams,
   userRequired,
 } from "../../../../modules/user/types.js";
+
 import UserRepository from "../../../../modules/user/user.repository.js";
 import db from "../index.js";
 import { User } from "../../../../modules/user/user.entity.js";

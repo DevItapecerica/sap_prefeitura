@@ -16,6 +16,7 @@ export default {
           ramal: "0000",
           password:
             "$2b$10$w8N0Uh0uIb1cKkxK9tZU2OmTQ1ySE1PIx1e7h/AOH6p8L68LSCrN2",
+            // Senha padrão: admin
           setor_id: 1,
           firstLogin: true,
           role_id: 1,
