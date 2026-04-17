@@ -8,23 +8,23 @@ import {
 } from "sequelize";
 
 // ─── Classe do modelo ────────────────────────────────────────────
-export class UserDB extends Model<
+export interface UserDB extends Model<
   InferAttributes<UserDB>,
   InferCreationAttributes<UserDB>
 > {
-  declare id: CreationOptional<number>;
-  declare name: string;
-  declare email: string;
-  declare ramal: string;
-  declare password: string;
+   id: CreationOptional<number>;
+   name: string;
+   email: string;
+   ramal: string;
+   password: string;
 
-  declare setor_id: number;
-  declare role_id: number;
-  declare firstLogin: boolean;
+   setor_id: number;
+   role_id: number;
+   firstLogin: boolean;
 
-  declare createdAt: CreationOptional<Date>;
-  declare updatedAt: CreationOptional<Date>;
-  declare deletedAt: CreationOptional<Date | null>;
+   createdAt: CreationOptional<Date>;
+   updatedAt: CreationOptional<Date>;
+   deletedAt: CreationOptional<Date | null>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {

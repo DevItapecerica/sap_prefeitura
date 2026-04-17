@@ -9,18 +9,18 @@ import {
 
 // ─── Classe do modelo ────────────────────────────────────────────
 
-export class ServiceDB extends Model<
+export interface ServiceDB extends Model<
   InferAttributes<ServiceDB>,
   InferCreationAttributes<ServiceDB>
 > {
-  declare id: CreationOptional<number>;
-  declare name: string;
-  declare description: string;
-  declare tag: string;
-  declare url: string;
-  declare createdAt: CreationOptional<Date>;
-  declare updatedAt: CreationOptional<Date>;
-  declare deletedAt: CreationOptional<Date>;
+  id: CreationOptional<number>;
+  name: string;
+  description: string;
+  tag: string;
+  url: string;
+  createdAt: CreationOptional<Date>;
+  updatedAt: CreationOptional<Date>;
+  deletedAt: CreationOptional<Date>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {

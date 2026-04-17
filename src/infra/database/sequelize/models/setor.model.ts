@@ -8,13 +8,13 @@ import {
 } from "sequelize";
 
 // ─── Classe do modelo ────────────────────────────────────────────
-export class SetorDB extends Model<
+export interface SetorDB extends Model<
   InferAttributes<SetorDB>,
   InferCreationAttributes<SetorDB>
 > {
-  declare id: CreationOptional<number>;
-  declare name: string;
-  declare description: CreationOptional<string>;
+  id: CreationOptional<number>;
+  name: string;
+  description: CreationOptional<string>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
