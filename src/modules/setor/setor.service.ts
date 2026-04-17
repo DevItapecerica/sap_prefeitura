@@ -1,5 +1,5 @@
 import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import UserService from "../user/user.service.js";
+import UserService from "../user/application/use-case/user.use-case.js";
 import { CreateSetorDto } from "./dto/setor.dto.js";
 import { Setor } from "./setor.entity.js";
 import { SetorRepository } from "./setor.repository.js";

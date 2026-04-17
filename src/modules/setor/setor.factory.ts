@@ -1,7 +1,7 @@
 import db from "../../infra/database/sequelize/index.js";
 import { SequelizeSetorRepository } from "../../infra/database/sequelize/repositories/sequelize.setor.repository.js";
 import { SequelizeUserRepository } from "../../infra/database/sequelize/repositories/sequelize.user.repository.js";
-import UserService from "../user/user.service.js";
+import UserService from "../user/application/use-case/user.use-case.js";
 import { SetorService } from "./setor.service.js";
 
 const setorFactory = (logger: any): SetorService => {

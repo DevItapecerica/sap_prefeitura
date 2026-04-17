@@ -5,78 +5,49 @@ import setorFactory from "./setor.factory.js";
 
 export default class SetorController {
   static getSetores = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
+
       const service = setorFactory(request.log);
       const setores = await service.findAllSetor();
       reply.status(200).send({ setores });
-    } catch (error: any) {
-      throw {
-        code: error.code,
-        message: error.message,
-        ok: false,
-        api: "Services",
-      };
-    }
+
   };
 
   static getOneSetor = async (
     request: FastifyRequest<{ Params: FindOneSetorDto }>,
     reply: FastifyReply,
   ) => {
-    try {
+
       const id = request.params.id;
       const service = setorFactory(request.log);
       const setor = await service.findOneSetor(id);
       reply.status(200).send({ setor });
-    } catch (error: any) {
-      throw {
-        code: error.code,
-        message: error.message,
-        ok: false,
-        api: "Services",
-      };
-    }
+
   };
 
   static postSetor = async (
     request: FastifyRequest<{ Body: { setor: CreateSetorDto } }>,
     reply: FastifyReply,
   ) => {
-    try {
+
       const { name, description } = request.body.setor;
       const service = setorFactory(request.log);
       const setor = await service.createSetor({ name, description });
       reply.status(201).send({ setor });
-    } catch (error: any) {
-      throw {
-        code: error.code,
-        message: error.message,
-        ok: false,
-        api: "Services",
-      };
-    }
+
   };
 
   static updateSetor = async (request: FastifyRequest<{ Params: { id: number }; Body: { setor: UpdateSetorDto } }>, reply: FastifyReply) => {
-    try {
+
       const setor = request.body.setor;
       const id = request.params.id;
 
       const service = setorFactory(request.log);
       await service.updateSetor(id, setor);
       reply.status(204).send(); // importante: precisa chamar .send()
-    } catch (error: any) {
-      throw {
-        code: error.code,
-        message: error.message,
-        ok: false,
-        api: "Services",
-      };
-    }
+
   };
 
   static deleteSetor = async (request: FastifyRequest<{ Params: DeleteSetorDto }>, reply: FastifyReply) => {
-    try {
       const id = request.params.id;
       const service = setorFactory(request.log);
 
@@ -101,13 +72,6 @@ export default class SetorController {
       }
 
       reply.status(204).send();
-    } catch (error: any) {
-      throw {
-        code: error.code,
-        message: error.message,
-        ok: false,
-        api: "Services",
-      };
-    }
+
   };
 }
