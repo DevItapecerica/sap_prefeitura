@@ -19,7 +19,7 @@ export class SequelizeUserRepository implements UserRepository {
       ramal: user.ramal,
       password: password,
       setor_id: user.setor_id,
-      firstLogin: user.firstLogin,
+      firstLogin: true,
       role_id: user.role_id,
     };
 
@@ -76,7 +76,7 @@ export class SequelizeUserRepository implements UserRepository {
       email: data.email,
       ramal: data.ramal,
       setor_id: data.setor_id,
-      firstLogin: data.firstLogin,
+      firstLogin: true,
       role_id: data.role_id,
     };
 
@@ -108,10 +108,12 @@ export class SequelizeUserRepository implements UserRepository {
   getUserByEmail = async (
     email: string,
     excludeId?: userParams,
-  ): Promise<User> => {
+  ): Promise<User | null> => {
     console.log(this.model);
     const where = excludeId ? { email, id: { [Op.ne]: excludeId } } : { email };
     const user = await this.model.findOne({ where });
+
+    if (!user) return null;
 
     return this.toEntity(user);
   };
@@ -119,14 +121,15 @@ export class SequelizeUserRepository implements UserRepository {
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: any): User {
     return new User(
-      data.id,
       data.name,
       data.email,
       data.ramal,
-      data.password,
       data.setor_id,
-      data.firstLogin,
       data.role_id,
+
+      data.id,
+      data.firstLogin,
+      data.password,
       data.createdAt,
       data.updatedAt,
       data.deletedAt,

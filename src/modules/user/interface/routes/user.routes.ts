@@ -4,7 +4,7 @@ import UserController from "../controller/user.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 
 const userRouter: FastifyPluginAsync = async (fastify, options) => {
-  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  // fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
 
   const userResponse = {
     type: "object",

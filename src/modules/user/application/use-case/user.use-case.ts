@@ -1,7 +1,4 @@
-import {
-  userParams,
-  userRequired,
-} from "../dto/user.dto.js";
+import { userParams, userRequired } from "../dto/user.dto.js";
 import { sendPass } from "../../../../core/shared/utils/sendPass.js";
 import { generateRandomPassword } from "../../../../core/shared/utils/generateRandomPassword.js";
 import UserRepository from "../../domain/repository/user.repository.js";
@@ -9,17 +6,29 @@ import AppError from "../../../../core/appError.js";
 import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder.js";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import { User } from "../../domain/entity/User.js";
+import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
 export default class UserService {
   constructor(
     private userRepository: UserRepository,
+    private emailPolicyService: EmailPolicyService,
     private logger: any,
   ) {}
 
   private valuesOrder = ["id", "name", "email", "createdAt"];
 
-  cadastrar = async (user: userRequired): Promise<User> => {
+  cadastrar = async (data: userRequired): Promise<User> => {
+    const user = new User(
+      data.name,
+      data.email,
+      data.ramal,
+      data.setor_id,
+      data.role_id,
+    );
+
     this.logger.info("Validando duplicidade de email");
-    const userEmailExists = await this.userRepository.getUserByEmail(user.email);
+    const userEmailExists = await this.userRepository.getUserByEmail(
+      user.email,
+    );
 
     if (userEmailExists) {
       this.logger.info("Usuário com email ja cadastrado");
@@ -29,6 +38,23 @@ export default class UserService {
         "USER_EMAIL_EXISTS",
       );
       throw error;
+    }
+
+    this.logger.info("Validando email");
+    if (!user.IsValidEmail) {
+      this.logger.info("Email invalido");
+      const error = new AppError("Email invalido", 403, "USER_EMAIL_INVALID");
+      throw error;
+    }
+
+    this.logger.info("Validando email institucional");
+    if (!this.emailPolicyService.isInstitutional(user.email)) {
+      this.logger.info("Email nao institucional");
+      throw new AppError(
+        "Email nao institucional",
+        403,
+        "USER_EMAIL_INSTITUTIONAL",
+      );
     }
 
     this.logger.info("Usuário com email nao cadastrado");
@@ -45,11 +71,16 @@ export default class UserService {
     return newUser;
   };
 
-  update = async (
-    user: userRequired,
-    id: userParams,
-  ): Promise<User> => {
+  update = async (data: userRequired, id: userParams): Promise<User> => {
     this.logger.info("Validando duplicidade de email");
+    const user = new User(
+      data.name,
+      data.email,
+      data.ramal,
+      data.setor_id,
+      data.role_id,
+    );
+
     const userEmailExists = await this.userRepository.getUserByEmail(
       user.email,
       id,
@@ -63,6 +94,23 @@ export default class UserService {
         "USER_EMAIL_EXISTS",
       );
       throw error;
+    }
+
+    this.logger.info("Validando email");
+    if (!user.IsValidEmail) {
+      this.logger.info("Email invalido");
+      const error = new AppError("Email invalido", 403, "USER_EMAIL_INVALID");
+      throw error;
+    }
+
+    this.logger.info("Validando email institucional");
+    if (!this.emailPolicyService.isInstitutional(user.email)) {
+      this.logger.info("Email nao institucional");
+      throw new AppError(
+        "Email nao institucional",
+        403,
+        "USER_EMAIL_INSTITUTIONAL",
+      );
     }
 
     this.logger.info("Buscando usuário");
@@ -109,7 +157,9 @@ export default class UserService {
     return user;
   };
 
-  getAllByQuery = async (query: QueryParams): Promise<{ user: User[]; count: number }> => {
+  getAllByQuery = async (
+    query: QueryParams,
+  ): Promise<{ user: User[]; count: number }> => {
     const { search, page = 1, limit = 10, order = "createdAt:desc" } = query;
 
     if (page < 1) {
@@ -164,7 +214,7 @@ export default class UserService {
     return true;
   };
 
-  getUserByEmail = async (email: string): Promise<User> => {
+  getUserByEmail = async (email: string): Promise<User | null> => {
     this.logger.info("Buscando usuário por email");
     const user = await this.userRepository.getUserByEmail(email);
     return user;

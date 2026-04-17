@@ -1,17 +1,15 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { userParams, userRequired } from "../../application/dto/user.dto.js";
-import UserService from "../../application/use-case/user.use-case.js";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
-import { SequelizeUserRepository } from "../../../../infra/database/sequelize/repositories/sequelize.user.repository.js";
+import { UserServiceFactory } from "../../factories/user-service.factory.js";
 
 export default class UserController {
-
   static cadastrar = async (
     request: FastifyRequest<{ Body: { user: userRequired } }>,
     repply: FastifyReply,
   ) => {
-    const service = new UserService(new SequelizeUserRepository(), request.log);
     const { user } = request.body;
+    const service = UserServiceFactory(request.log);
 
     const newUser = await service.cadastrar(user);
 
@@ -38,7 +36,7 @@ export default class UserController {
     }>,
     repply: FastifyReply,
   ) => {
-    const service = new UserService(new SequelizeUserRepository(), request.log);
+    const service = UserServiceFactory(request.log);
 
     const { id } = request.params;
     const { user } = request.body;
@@ -56,7 +54,8 @@ export default class UserController {
     request: FastifyRequest<{ Params: { id: userParams } }>,
     repply: FastifyReply,
   ) => {
-    const service = new UserService(new SequelizeUserRepository(), request.log);
+    const service = UserServiceFactory(request.log);
+
     const { id } = request.params;
 
     const user = await service.getOne(id);
@@ -68,7 +67,7 @@ export default class UserController {
     request: FastifyRequest<{ Querystring: QueryParams }>,
     repply: FastifyReply,
   ) => {
-    const service = new UserService(new SequelizeUserRepository(), request.log);
+    const service = UserServiceFactory(request.log);
 
     const query = request.query;
 
@@ -76,14 +75,20 @@ export default class UserController {
 
     repply
       .status(200)
-      .send({ message: "Usuários encontrados", count: response.count, user: response.user, ok: true });
+      .send({
+        message: "Usuários encontrados",
+        count: response.count,
+        user: response.user,
+        ok: true,
+      });
   };
 
   static delete = async (
     request: FastifyRequest<{ Params: { id: userParams } }>,
     repply: FastifyReply,
   ) => {
-    const service = new UserService(new SequelizeUserRepository(), request.log);
+    const service = UserServiceFactory(request.log);
+
     const { id } = request.params;
 
     await service.delete(id);
