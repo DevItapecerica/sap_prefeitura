@@ -3,11 +3,11 @@ import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import {
   userParams,
   userRequired,
-} from "../../../../modules/user/types.js";
+} from "../../../../modules/user/application/dto/user.dto.js";
 
-import UserRepository from "../../../../modules/user/user.repository.js";
+import UserRepository from "../../../../modules/user/domain/repository/user.repository.js";
 import db from "../index.js";
-import { User } from "../../../../modules/user/user.entity.js";
+import { User } from "../../../../modules/user/domain/entity/User.js";
 
 export class SequelizeUserRepository implements UserRepository {
   private model = db.UserModel;
