@@ -1,8 +1,9 @@
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import { RolesRepository } from "../../domain/repository/roles.repository.js";
 import { CreateRoleDto, UpdateRoleDto } from "../dto/roles.dto.js";
-import PermissionService from "../../../permission/permission.service.js";
+import PermissionService from "../../../permission/application/use-case/permission.service.js";
 import { Roles } from "../../domain/entity/Role.js";
+import { Json } from "sequelize/lib/utils";
 
 export default class RolesService {
   constructor(
@@ -14,6 +15,7 @@ export default class RolesService {
   getAllRoles = async (
     query: QueryParams,
   ): Promise<{ roles: Roles[]; count: number }> => {
+    
     const data = await this.repo.getAllRoles(query);
     this.logger.info("Roles recuperadas com sucesso");
     return data;
@@ -28,9 +30,9 @@ export default class RolesService {
   createRole = async (role: CreateRoleDto): Promise<Roles> => {
     const newRole = await this.repo.createRoles(role);
 
-    this.permissionService.createPermissionsAllServices(newRole);
+    this.permissionService.createPermissionsAllServices(newRole.id);
 
-    this.logger.info("Role criada com sucesso");
+    this.logger.info("Role criada com sucesso: " + newRole.id);
     return newRole;
   };
 
@@ -41,7 +43,7 @@ export default class RolesService {
       throw new Error("Role não encontrada");
     }
 
-    this.logger.info("Role deletada com sucesso");
+    this.logger.info("Role deletada com sucesso: " + id);
     return deletedCount;
   };
 
@@ -49,13 +51,15 @@ export default class RolesService {
     id: number,
     role: UpdateRoleDto,
   ): Promise<Roles | null> => {
-    const updated = await this.repo.updateRoles(id, role);
+    const roleExists = await this.repo.getOneRoles(id);
 
-    if (!updated) {
+    if (!roleExists) {
       throw new Error("Role não encontrada");
     }
 
-    this.logger.info("Roles atualizada com sucesso");
+    const updated = await this.repo.updateRoles(id, role);
+
+    this.logger.info(`Roles atualizada com sucesso \n old: ${JSON.stringify(roleExists)} \n new: ${JSON.stringify(updated)}`);
 
     return updated;
   };
