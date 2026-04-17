@@ -26,7 +26,7 @@ export default class UserController {
 
     repply.status(201).send({
       message: "Usuário criado com sucesso",
-      id: newUser.id,
+      user: newUser,
       ok: true,
     });
   };

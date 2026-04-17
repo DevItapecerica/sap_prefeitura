@@ -135,7 +135,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
               type: "string",
               example: "Usuário criado com sucesso",
             },
-            id: { type: "integer", example: 1 },
+            user: userResponse,
             ok: { type: "boolean", example: true },
           },
         },
