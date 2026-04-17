@@ -14,7 +14,7 @@ export class SequelizeRolesRepository implements RolesRepository {
   async getAllRoles(
     query: QueryParams,
   ): Promise<{ roles: Roles[]; count: number }> {
-    const { page = "0", limit, search = null, order = "id:desc" } = query;
+    const { page = "0", limit, search = null, order } = query;
 
     const queryOrder = order ? order.split(":") : ["id", "desc"];
 
@@ -61,8 +61,10 @@ export class SequelizeRolesRepository implements RolesRepository {
       return null;
     }
 
-    const updatedCount = await this.model.update(role, { where: { id } });
-    return this.toEntity(updatedCount);
+    isRole.name = role.name;
+    isRole.save()
+    
+    return this.toEntity(isRole);
   }
 
   // 🔥 mapper (ESSENCIAL)
