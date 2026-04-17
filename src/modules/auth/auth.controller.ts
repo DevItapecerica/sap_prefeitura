@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import authService from "./auth.service.js";
-import UserRepository from "../user/user.repository.js";
+import UserRepository from "../user/domain/repository/user.repository.js";
 import JwtServices from "./utils/jwt.service.js";
 import { SequelizeUserRepository } from "../../infra/database/sequelize/repositories/sequelize.user.repository.js";
 

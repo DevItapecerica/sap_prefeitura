@@ -1,6 +1,6 @@
 import AppError from "../../core/appError.js";
 import comparePass from "../../core/shared/utils/comparePass.js";
-import UserRepository from "../user/user.repository.js";
+import UserRepository from "../user/domain/repository/user.repository.js";
 import { AuthLoginResponse } from "./types.js";
 
 export default class authService {
