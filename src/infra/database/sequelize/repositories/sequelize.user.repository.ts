@@ -37,7 +37,7 @@ export class SequelizeUserRepository implements UserRepository {
     query: QueryParams,
   ): Promise<{ user: User[]; count: number }> => {
     const { page, limit, search, order } = query;
-    const queryOrder = order ? order.split(":") : ["createdAt", "desc"];
+    const queryOrder = order ? order.split(":") : ["id", "desc"];
 
     const offset = limit ? Number(page) * Number(limit) : undefined;
 

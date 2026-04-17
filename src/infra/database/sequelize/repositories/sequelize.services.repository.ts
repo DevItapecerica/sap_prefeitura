@@ -12,9 +12,9 @@ export class SequelizeServicesRepository implements ServicesRepository {
     query: QueryParams,
   ): Promise<{ services: Services[]; count: number }> {
 
-    const { page = "0", limit, search = null, order = "createdAt:desc" } = query;
+    const { page = "0", limit, search = null, order = "id:desc" } = query;
     
-    const queryOrder = order ? order.split(":") : ["createdAt", "desc"];
+    const queryOrder = order ? order.split(":") : ["id", "desc"];
 
     const offset = limit ? Number(page) * Number(limit) : undefined;
 
