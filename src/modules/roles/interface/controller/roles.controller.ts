@@ -78,7 +78,7 @@ export default class RolesController {
       throw new AppError("Role not found", 404, "NOT_FOUND");
     }
 
-    reply.status(200).send({ message: "Role updated successfully", role, ok: true });
+    reply.status(200).send({ message: "Role updated successfully", role: response, ok: true });
   };
 
   // DELETE: Deletar role
@@ -89,6 +89,6 @@ export default class RolesController {
 
     await service.deleteOneRole(id);
 
-    reply.status(204).send();
+    reply.status(200).send({ message: "Role deleted successfully", ok: true });
   };
 }
