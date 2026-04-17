@@ -99,6 +99,7 @@ export default class setoresSchema {
       type: "object",
       required: ["setor"],
       properties: {
+        message: { type: "string" },
         setor: {
           type: "object",
           required: ["name", "description"],
@@ -107,11 +108,26 @@ export default class setoresSchema {
             description: { type: "string" },
           },
         },
+        ok: { type: "boolean" },
       },
     },
     responses: {
-      204: {
+      200: {
         description: "Setor atualizado com sucesso",
+        type: "object",
+        properties: {
+          setor: {
+            type: "object",
+            properties: {
+              id: { type: "integer", example: 1 },
+              name: { type: "string", example: "Tecnologia" },
+              description: {
+                type: "string",
+                example: "Setor de tecnologia",
+              },
+            },
+          },
+        },
       },
       ...errorResponseSchema,
     },

@@ -30,17 +30,13 @@ export class SequelizeSetorRepository implements SetorRepository {
   }
 
   async updateSetor(id: number, setor: Partial<Setor>): Promise<Setor | null> {
-    const [updated] = await this.model.update(
-      {
-        name: setor.name,
-        description: setor.description,
-      },
-      { where: { id } },
-    );
+    const isSetor = await this.model.findByPk(id);
 
-    if (!updated) return null;
+    if (!isSetor) return null;
 
-    return this.findOneSetor(id);
+    isSetor.update(setor)
+
+    return this.toEntity(isSetor);
   }
 
   async deleteSetor(id: number): Promise<boolean> {

@@ -6,7 +6,7 @@ const notFoundHook: FastifyPluginAsync = async (fastify) => {
   await fastify.setNotFoundHandler(
     {
       preHandler: fastify.rateLimit({
-        max: 1,
+        max: 5,
       }),
     },
     function () {

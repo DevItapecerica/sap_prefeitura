@@ -42,8 +42,10 @@ export default class SetorController {
       const id = request.params.id;
 
       const service = setorFactory(request.log);
-      await service.updateSetor(id, setor);
-      reply.status(204).send(); // importante: precisa chamar .send()
+
+      const response = await service.updateSetor(id, setor);
+
+      reply.status(200).send({message: "Setor atualizado com sucesso", setor: response, ok: true}); // importante: precisa chamar .send()
 
   };
 
