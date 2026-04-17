@@ -1,7 +1,7 @@
 import { Op } from "sequelize";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import db from "../index.js";
-import { ServicesRepository } from "../../../../modules/services/servicesRepository.js";
+import { ServicesRepository } from "../../../../modules/services/services.repository.js";
 import { Services } from "../../../../modules/services/services.entity.js";
 import { CreateServicesDto, UpdateServicesDto } from "../../../../modules/services/dto/services.dto.js";
 
@@ -12,26 +12,24 @@ export class SequelizeServicesRepository implements ServicesRepository {
     query: QueryParams,
   ): Promise<{ services: Services[]; count: number }> {
 
-    console.log(this.model)
-
-    const { page = "0", limit = "10", search = null, order = "createdAt:desc" } = query;
+    const { page = "0", limit, search = null, order = "createdAt:desc" } = query;
     
     const queryOrder = order ? order.split(":") : ["createdAt", "desc"];
 
-    const offset = Number(page) * Number(limit);
+    const offset = limit ? Number(page) * Number(limit) : undefined;
 
     const where = search
       ? {
           [Op.or]: [
             { name: { [Op.like]: `%${search}%` } },
-            { email: { [Op.like]: `%${search}%` } },
+            { tag: { [Op.like]: `%${search}%` } },
           ],
         }
       : {};
     const services = await this.model.findAll({
       offset,
       where,
-      limit: Number(limit),
+      limit: limit,
       order: [[queryOrder[0], queryOrder[1]]],
     });
 

@@ -39,7 +39,7 @@ export class SequelizeUserRepository implements UserRepository {
     const { page, limit, search, order } = query;
     const queryOrder = order ? order.split(":") : ["createdAt", "desc"];
 
-    const offset = Number(page) * Number(limit);
+    const offset = limit ? Number(page) * Number(limit) : undefined;
 
     const where = search
       ? {
@@ -53,7 +53,7 @@ export class SequelizeUserRepository implements UserRepository {
     const user = await this.model.findAll({
       offset,
       where,
-      limit: Number(limit),
+      limit: limit,
       order: [[queryOrder[0], queryOrder[1]]],
     });
 
