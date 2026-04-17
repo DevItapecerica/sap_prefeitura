@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
-import errorResponseSchema from "../../core/shared/schema/errorSchema.js";
-import UserController from "./user.controller.js";
-import AuthMiddleware from "../auth/auth.middleware.js";
+import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
+import UserController from "../controller/user.controller.js";
+import AuthMiddleware from "../../../auth/auth.middleware.js";
 
 const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);

@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import userRouter from "./user.routes.js";
+import userRouter from "./interface/routes/user.routes.js";
 
 const userModule: FastifyPluginAsync = async (fastify) => {
 

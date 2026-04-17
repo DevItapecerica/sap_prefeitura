@@ -1,8 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { userParams, userRequired } from "./types.js";
-import UserService from "./user.service.js";
-import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import { SequelizeUserRepository } from "../../infra/database/sequelize/repositories/sequelize.user.repository.js";
+import { userParams, userRequired } from "../../application/dto/user.dto.js";
+import UserService from "../../application/use-case/user.use-case.js";
+import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { SequelizeUserRepository } from "../../../../infra/database/sequelize/repositories/sequelize.user.repository.js";
 
 export default class UserController {
 

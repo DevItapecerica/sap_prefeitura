@@ -1,17 +1,14 @@
-import { FastifyReply, FastifyRequest } from "fastify";
 import {
   userParams,
   userRequired,
-  userResponse,
-  userResponseAll,
-} from "./types.js";
-import { sendPass } from "../../core/shared/utils/sendPass.js";
-import { generateRandomPassword } from "../../core/shared/utils/generateRandomPassword.js";
-import UserRepository from "./user.repository.js";
-import AppError from "../../core/appError.js";
-import ValidateQueryOrder from "../../core/shared/utils/ValidateQueryOrder.js";
-import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import { User } from "./user.entity.js";
+} from "../dto/user.dto.js";
+import { sendPass } from "../../../../core/shared/utils/sendPass.js";
+import { generateRandomPassword } from "../../../../core/shared/utils/generateRandomPassword.js";
+import UserRepository from "../../domain/repository/user.repository.js";
+import AppError from "../../../../core/appError.js";
+import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder.js";
+import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { User } from "../../domain/entity/User.js";
 export default class UserService {
   constructor(
     private userRepository: UserRepository,
