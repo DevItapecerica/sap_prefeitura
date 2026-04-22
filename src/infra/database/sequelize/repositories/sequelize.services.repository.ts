@@ -1,9 +1,9 @@
 import { Op } from "sequelize";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import db from "../index.js";
-import { ServicesRepository } from "../../../../modules/services/services.repository.js";
-import { Services } from "../../../../modules/services/services.entity.js";
-import { CreateServicesDto, UpdateServicesDto } from "../../../../modules/services/dto/services.dto.js";
+import { ServicesRepository } from "../../../../modules/services/domain/repository/services.repository.js";
+import { Services } from "../../../../modules/services/domain/entity/Services.js";
+import { CreateServicesDto, UpdateServicesDto } from "../../../../modules/services/application/dto/services.dto.js";
 
 export class SequelizeServicesRepository implements ServicesRepository {
   private model = db.ServiceModel;

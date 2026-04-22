@@ -1,7 +1,7 @@
-import AppError from "../../core/appError.js";
-import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import { CreateServicesDto, UpdateServicesDto } from "./dto/services.dto.js";
-import { ServicesRepository } from "./services.repository.js";
+import AppError from "../../../../core/appError.js";
+import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { CreateServicesDto, UpdateServicesDto } from "../dto/services.dto.js";
+import { ServicesRepository } from "../../domain/repository/services.repository.js";
 
 export default class ServicesService {
   constructor(private repo: ServicesRepository){}

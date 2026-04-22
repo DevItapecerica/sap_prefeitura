@@ -1,8 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { SequelizeServicesRepository } from "../../infra/database/sequelize/repositories/sequelize.services.repository.js";
-import ServicesService from "./services.service.js";
-import { CreateServicesDto, UpdateServicesDto } from "./dto/services.dto.js";
-import { QueryParams } from "../../core/shared/types/genericTypes.js";
+import { SequelizeServicesRepository } from "../../../../infra/database/sequelize/repositories/sequelize.services.repository.js";
+import ServicesService from "../../application/use-case/services.service.js";
+import { CreateServicesDto, UpdateServicesDto } from "../../application/dto/services.dto.js";
+import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 
 export default class ServicesController {
   private static service = new ServicesService(
