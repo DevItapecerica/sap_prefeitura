@@ -43,7 +43,12 @@ export default class RolesController {
     request: FastifyRequest<{ Querystring: QueryParams }>,
     reply: FastifyReply,
   ) => {
-    const query = request.query;
+    const query = {
+      page: request.query.page,
+      limit: request.query.limit,
+      search: request.query.search,
+      order: request.query.order
+    };
 
     const service = makeRoles(request.log);
 

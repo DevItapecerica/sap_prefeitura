@@ -1,13 +1,20 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import db from "../../infra/database/sequelize/index.js";
 import { CreateSetorDto, DeleteSetorDto, FindOneSetorDto, UpdateSetorDto } from "./dto/setor.dto.js";
 import setorFactory from "./setor.factory.js";
+import { QueryParams } from "../../core/shared/types/genericTypes.js";
 
 export default class SetorController {
-  static getSetores = async (request: FastifyRequest, reply: FastifyReply) => {
+  static getSetores = async (request: FastifyRequest<{ Querystring: QueryParams }>, reply: FastifyReply) => {
+
+    const query = {
+      page: request.query.page,
+      limit: request.query.limit,
+      search: request.query.search,
+      order: request.query.order
+    };
 
       const service = setorFactory(request.log);
-      const setores = await service.findAllSetor();
+      const setores = await service.findAllSetor(query);
       reply.status(200).send({ setores });
 
   };

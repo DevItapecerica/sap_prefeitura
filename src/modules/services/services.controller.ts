@@ -3,8 +3,6 @@ import { SequelizeServicesRepository } from "../../infra/database/sequelize/repo
 import ServicesService from "./services.service.js";
 import { CreateServicesDto, UpdateServicesDto } from "./dto/services.dto.js";
 import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import { Services } from "./services.entity.js";
-import { count } from "console";
 
 export default class ServicesController {
   private static service = new ServicesService(
@@ -15,7 +13,12 @@ export default class ServicesController {
     request: FastifyRequest<{ Querystring: QueryParams }>,
     reply: FastifyReply,
   ) => {
-    const query = request.query;
+    const query = {
+      page: request.query.page,
+      limit: request.query.limit,
+      search: request.query.search,
+      order: request.query.order
+    };
 
     const response = await this.service.getAll(query);
 

@@ -69,7 +69,12 @@ export default class UserController {
   ) => {
     const service = UserServiceFactory(request.log);
 
-    const query = request.query;
+    const query = {
+      page: request.query.page,
+      limit: request.query.limit,
+      search: request.query.search,
+      order: request.query.order
+    };
 
     const response = await service.getAllByQuery(query);
 
