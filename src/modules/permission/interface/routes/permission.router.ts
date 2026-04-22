@@ -1,18 +1,31 @@
-import Services from "../controller/permission.controller.js";
 import { FastifyPluginAsync } from "fastify";
 import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
+import PermissionController from "../controller/permission.controller.js";
 
-const serviceRouter: FastifyPluginAsync = async (fastify) => {
-  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+const permissionRouter: FastifyPluginAsync = async (fastify) => {
 
-  const serviceProperties = {
+  const PermissionSchema = {
+    type: "object",
+    required: ["read", "write", "edit", "del"],
+    properties: {
+      read: { type: "boolean" },
+      write: { type: "boolean" },
+      edit: { type: "boolean" },
+      del: { type: "boolean" },
+    },
+  };
+
+  const permissionResponseSchema = {
+    type: "object",
     properties: {
       id: { type: "integer", example: 1 },
-      name: { type: "string", example: "Serviço 1" },
-      description: { type: "string", example: "Descrição do serviço 1" },
-      tag: { type: "string", example: "tag1" },
-      url: { type: "string", example: "/admin" },
+      service_id: { type: "integer", example: 1 },
+      role_id: { type: "integer", example: 1 },
+      read: { type: "boolean", example: true },
+      write: { type: "boolean", example: true },
+      edit: { type: "boolean", example: true },
+      del: { type: "boolean", example: true },
     },
   };
 
@@ -20,23 +33,30 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
     method: "GET",
     url: "/",
     schema: {
-      description: "Retorna todos os serviços",
+      summary: "Retorna todas as Permissões",
+      description:
+        "Retorna todas as Permissões com base na query de busca, order, limit, page e search, caso nao seja passado retorna 10 e page 0, sem search e com order by id desc, a query de order deve ser passado da seguinte forma: id:desc ou id:asc (campo:ordem)",
       type: "object",
-      tags: ["Services"],
+      tags: ["Permission"],
       security: [{ APIKey: [] }],
+      querystring: {
+        type: "object",
+        properties: {
+          page: { type: "number", default: 0 },
+          limit: { type: "number", default: 10 },
+          search: { type: "string", default: "" },
+          order: { type: "string", default: "id:desc" },
+        },
+      },
       response: {
         200: {
           description: "Verificação bem sucedido",
           type: "object",
           properties: {
-            services: {
+            message: { type: "string", example: "Permissões recuperadas com sucesso" },
+            permission: {
               type: "array",
-              example: {
-                id: 1,
-                name: "Serviço 1",
-                description: "Descrição do serviço 1",
-                url: "/admin",
-              },
+              items: permissionResponseSchema,
             },
             count: { type: "number", example: 1 },
             ok: { type: "boolean", example: true },
@@ -45,99 +65,68 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
-    handler: Services.getService,
+    handler: PermissionController.getPermissions,
   });
 
   fastify.route({
     method: "GET",
     url: "/:id",
     schema: {
-      description: "Retorna o serviço pelo ID",
+      summary: "Retorna permission pelo ID",
+      description:
+        "Retorna uma permissão com base no Id da permissão, caso não seja encontrado retorna um erro 404",
       type: "object",
-      tags: ["Services"],
+      tags: ["Permission"],
       security: [{ APIKey: [] }],
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: { type: "number" },
+        },
+      },
       response: {
         200: {
-          description: "Verificação bem sucedido",
-          type: "object",
-          ...serviceProperties,
-        },
-
-        ...errorResponseSchema,
-      },
-    },
-    handler: Services.getOneService,
-  });
-
-  fastify.route({
-    method: "POST",
-    url: "/",
-    schema: {
-      description: "Cria um serviço",
-      type: "object",
-      tags: ["Services"],
-      security: [{ APIKey: [] }],
-      body: {
-        type: "object",
-        required: ["service"],
-        properties: {
-          service: {
-            required: ["name", "description", "url"],
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              description: { type: "string" },
-              url: { type: "string" },
-            },
-          },
-        },
-      },
-      response: {
-        201: {
-          description: "Post bem sucedido",
+          description: "Get bem sucedido",
           type: "object",
           properties: {
-            service: {
-              type: "object",
-              properties: {
-                id: { type: "integer", example: 1 },
-                name: { type: "string", example: "Serviço 1" },
-                description: {
-                  type: "string",
-                  example: "Descrição do serviço 1",
-                },
-                url: { type: "string", example: "/admin" },
-              },
+            message: {
+              type: "string",
+              example: "Permissão recuperada com sucesso",
             },
+            permission: permissionResponseSchema,
+            ok: { type: "boolean", example: true },
           },
         },
+
         ...errorResponseSchema,
       },
     },
-    handler: Services.createService,
+    handler: PermissionController.getOnePermission,
   });
 
   fastify.route({
     method: "PUT",
     url: "/:id",
     schema: {
-      description: "Atualiza um serviço",
+      summary: "Atualizar uma permissão",
+      description:
+        "Atualiza uma permissão com base no Id da permissão, caso não seja encontrado retorna um erro 404",
       type: "object",
-      tags: ["Services"],
+      tags: ["Permission"],
       security: [{ APIKey: [] }],
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: { type: "number" },
+        },
+      },
       body: {
         type: "object",
-        required: ["service"],
+        required: ["permission"],
         properties: {
-          service: {
-            required: ["name", "description", "url"],
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              description: { type: "string" },
-              url: { type: "string" },
-            },
-          },
+          permission: PermissionSchema,
         },
       },
       response: {
@@ -149,39 +138,15 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
               type: "string",
               example: "Serviço atualizado com sucesso",
             },
+            permission: permissionResponseSchema,
+            ok: { type: "boolean", example: true },
           },
         },
         ...errorResponseSchema,
       },
     },
-    handler: Services.updateService,
-  });
-
-  fastify.route({
-    method: "DELETE",
-    url: "/:id",
-    schema: {
-      description: "Exclude um serviço",
-      type: "object",
-      tags: ["Services"],
-      security: [{ APIKey: [] }],
-      response: {
-        200: {
-          description: "Excluido com sucesso",
-          type: "object",
-          properties: {
-            message: {
-              type: "string",
-              example: "Serviço excluído com sucesso",
-            },
-          },
-        },
-
-        ...errorResponseSchema,
-      },
-    },
-    handler: Services.deleteService,
+    handler: PermissionController.updatePermission,
   });
 };
 
-export default serviceRouter;
+export default permissionRouter;
