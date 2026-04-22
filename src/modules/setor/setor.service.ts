@@ -1,12 +1,11 @@
 import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import UserService from "../user/application/use-case/user.use-case.js";
 import { CreateSetorDto } from "./dto/setor.dto.js";
 import { Setor } from "./setor.entity.js";
 import { SetorRepository } from "./setor.repository.js";
 
 
 export class SetorService {
-    constructor(private repo: SetorRepository, userService: UserService, private logger: any) {}
+    constructor(private repo: SetorRepository, private logger: any) {}
 
     async createSetor(setor: CreateSetorDto) {
         this.logger.info(setor);
