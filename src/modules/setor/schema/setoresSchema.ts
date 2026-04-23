@@ -3,7 +3,7 @@ import errorResponseSchema from "../../../core/shared/schema/errorSchema.js";
 export default class setoresSchema {
   static getSetores = {
     tags: ["Setores"],
-    security: [{ APIKey: [] }],
+    security: [{ JWTToken: [] }],
     response: {
       200: {
         description: "Lista de setores",
@@ -28,7 +28,7 @@ export default class setoresSchema {
 
   static getOneSetor = {
     tags: ["Setores"],
-    security: [{ APIKey: [] }],
+    security: [{ JWTToken: [] }],
     response: {
       200: {
         description: "Setor específico",
@@ -54,7 +54,7 @@ export default class setoresSchema {
   static postSetor = {
     tags: ["Setores"],
     description: "Cria um novo setor",
-    security: [{ APIKey: [] }],
+    security: [{ JWTToken: [] }],
     body: {
       type: "object",
       required: ["setor"],
@@ -94,7 +94,7 @@ export default class setoresSchema {
   static updateSetor = {
     tags: ["Setores"],
     description: "Atualiza um setor existente",
-    security: [{ APIKey: [] }],
+    security: [{ JWTToken: [] }],
     body: {
       type: "object",
       required: ["setor"],
@@ -135,7 +135,7 @@ export default class setoresSchema {
 
   static deleteSetor = {
     tags: ["Setores"],
-    security: [{ APIKey: [] }],
+    security: [{ JWTToken: [] }],
     response: {
       204: {
         description: "Setor deletado com sucesso",

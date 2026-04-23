@@ -3,7 +3,10 @@ import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import db from "../index.js";
 import { PermissionRepository } from "../../../../modules/permission/domain/repository/permission.repository.js";
 import { Permissions } from "../../../../modules/permission/domain/entity/Permission.js";
-import { CreatePermissionsDto, UpdatePermissionsDto } from "../../../../modules/permission/application/dto/permissions.dto.js";
+import {
+  CreatePermissionsDto,
+  UpdatePermissionsDto,
+} from "../../../../modules/permission/application/dto/permissions.dto.js";
 import AppError from "../../../../core/appError.js";
 
 export class SequelizePermissionRepository implements PermissionRepository {
@@ -73,7 +76,7 @@ export class SequelizePermissionRepository implements PermissionRepository {
     data: CreatePermissionsDto[],
   ): Promise<Permissions[]> => {
     const newPermissions = await this.model.bulkCreate(data);
-    return newPermissions.map((p : Permissions) => this.toEntity(p));
+    return newPermissions.map((p: Permissions) => this.toEntity(p));
   };
 
   updatePermissions = async (
@@ -86,7 +89,7 @@ export class SequelizePermissionRepository implements PermissionRepository {
     }
     await permission.update(data);
     return this.toEntity(permission);
-  } ;
+  };
 
   deleteOnePermissions = async (id: number): Promise<boolean> => {
     const permission = await this.model.findByPk(id);
@@ -103,8 +106,8 @@ export class SequelizePermissionRepository implements PermissionRepository {
         role_id: roleId,
       },
     });
-    return permissions.map((p : Permissions) => this.toEntity(p));
-  }
+    return permissions.map((p: Permissions) => this.toEntity(p));
+  };
 
   getByServiceId = async (serviceId: number): Promise<Permissions[]> => {
     const permissions = await this.model.findAll({
@@ -112,8 +115,39 @@ export class SequelizePermissionRepository implements PermissionRepository {
         service_id: serviceId,
       },
     });
-    return permissions.map((p : Permissions) => this.toEntity(p));
-  }
+    return permissions.map((p: Permissions) => this.toEntity(p));
+  };
+
+  updatePermissionsByRoleAndSetor = async (
+    roleId: number,
+    serviceId: number,
+    data: UpdatePermissionsDto,
+  ): Promise<Permissions> => {
+    const permission = await this.model.findOne({
+      where: {
+        role_id: roleId,
+        service_id: serviceId,
+      },
+    });
+    if (!permission) {
+      throw new AppError("Permission not found", 404, "PERMISSION_NOT_FOUND");
+    }
+    await permission.update(data);
+    return this.toEntity(permission);
+  };
+
+  getTrueReadPermissionByRoleId = async (
+    roleId: number | string,
+  ): Promise<Permissions[]> => {
+    const permissions = await this.model.findAll({
+      where: {
+        role_id: roleId,
+        read: true,
+      },
+    });
+    return permissions.map((p: Permissions) => this.toEntity(p));
+  };
+
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: Permissions): Permissions {
     return new Permissions(
@@ -123,7 +157,7 @@ export class SequelizePermissionRepository implements PermissionRepository {
       data.write,
       data.edit,
       data.del,
-      data.id
+      data.id,
     );
   }
 }

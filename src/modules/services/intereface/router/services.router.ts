@@ -1,10 +1,19 @@
 import Services from "../controller/services.controller.js";
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
+import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 const serviceRouter: FastifyPluginAsync = async (fastify) => {
-    fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", async (request: FastifyRequest) => {
+    const verifyAuthorization = authorizationFactory(request.log);
+    await verifyAuthorization.authorize(
+      Number(request.user.id),
+      3,
+      request.method,
+    );
+  });
 
   const serviceProperties = {
     type: "object",
@@ -53,7 +62,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
       description: "Retorna todos os serviços",
       type: "object",
       tags: ["Services"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       response: {
         200: {
           description: "Verificação bem sucedido",
@@ -76,6 +85,33 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
 
   fastify.route({
     method: "GET",
+    url: "/user",
+    schema: {
+      description: "Retorna todos os serviços",
+      type: "object",
+      tags: ["Services"],
+      security: [{ JWTToken: [] }],
+      response: {
+        200: {
+          description: "Verificação bem sucedido",
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Serviços encontrado" },
+            services: {
+              type: "array",
+              items: serviceProperties,
+            },
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: Services.getVisiblesServices,
+  });
+
+  fastify.route({
+    method: "GET",
     url: "/:id",
     schema: {
       description: "Retorna o serviço pelo ID",
@@ -88,7 +124,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
       },
       type: "object",
       tags: ["Services"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       response: {
         200: {
           description: "Verificação bem sucedido",
@@ -115,7 +151,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
       description: "Cria um serviço",
       type: "object",
       tags: ["Services"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       body: {
         type: "object",
         required: ["service"],
@@ -163,7 +199,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
       description: "Atualiza um serviço",
       type: "object",
       tags: ["Services"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       body: {
         type: "object",
         required: ["service"],
@@ -203,7 +239,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
       description: "Exclude um serviço",
       type: "object",
       tags: ["Services"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       response: {
         200: {
           description: "Excluido com sucesso",

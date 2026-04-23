@@ -36,6 +36,23 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
     return this.toEntity(visibility);
   }
 
+  async findVisibilityBySetor(setor_id: number): Promise<ServiceVisibility[]> {
+    const data = await this.model.findAll({ where: { setor_id: setor_id } });
+    return data.map((item: any) => this.toEntity(item));
+  }
+
+  async updateServiceVisibility(
+    setor_id: number,
+    service_id: number,
+    visibility: boolean,
+  ): Promise<ServiceVisibility[]> {
+    const data = await this.model.update(
+      { visibility: visibility },
+      { where: { setor_id: setor_id, service_id: service_id } },
+    );
+    return data.map((item: any) => this.toEntity(item));
+  }
+
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: ServiceVisibility): ServiceVisibility {
     return new ServiceVisibility(

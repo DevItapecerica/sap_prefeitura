@@ -1,7 +1,7 @@
 import { PORT } from "./core/env.js";
 
 // fastify
-import Fastify, { FastifyRequest } from "fastify";
+import Fastify from "fastify";
 import logConfig from "./core/logConfig.js";
 
 // Cors
@@ -19,7 +19,6 @@ import ErrorHook from "./core/hooks/ErrorHook.js";
 // App
 import App from "./app.js";
 import rateLimit from "./core/plugin/rateLimit.js";
-import AppError from "./core/appError.js";
 import notFoundHook from "./core/hooks/notFoundHook.js";
 
 const fastify = Fastify(logConfig);

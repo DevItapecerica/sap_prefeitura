@@ -72,6 +72,7 @@ export class AuthorizationUseCase {
       throw new AppError("Permission not found", 404, "PERMISSION_NOT_FOUND");
     }
     this.logger.info("Validating permissions do método");
+
     switch (methode) {
       case "GET":
         if (!permissions?.read) {
@@ -112,9 +113,11 @@ export class AuthorizationUseCase {
           );
         }
         break;
+
+      default:
+        throw new AppError("Method not allowed", 405, "METHOD_NOT_ALLOWED");
     }
 
     this.logger.info("User authorized");
-    return;
   };
 }

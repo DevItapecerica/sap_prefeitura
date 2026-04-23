@@ -13,7 +13,6 @@ const routes: FastifyPluginAsync = async (fastify) => {
     schema: {
       description: "Verificação de usuário",
       tags: ["Auth"],
-      security: [{ APIKey: [] }],
       body: {
         type: "object",
         required: ["email", "password"],
@@ -46,6 +45,32 @@ const routes: FastifyPluginAsync = async (fastify) => {
     },
     handler: authController.login,
   });
+
+  fastify.route({
+    method: "GET",
+    url: "/auth",
+    schema: {
+      description: "Verificação de usuário",
+      tags: ["Auth"],
+      response: {
+        200: {
+          description: "Verificação bem sucedida",
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Login bem sucedido" },
+            user: { type: "object", properties: {
+              id: { type: "number", example: 1 },
+              name: { type: "string", example: "admin" },
+              setor_id: { type: "string", example: "admin" },
+              role_id: { type: "string", example: "admin" },
+            } },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: authController.authUser,
+  })
 };
 
 export default routes;

@@ -1,11 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   CreateServicesDto,
+  permissionDto,
   UpdateServicesDto,
+  visibilityDto,
 } from "../../application/dto/services.dto.js";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import serviceFactory from "../../factories/setor.factory.js";
-import { request } from "http";
 
 export default class ServicesController {
   static getService = async (
@@ -22,9 +23,12 @@ export default class ServicesController {
 
     const response = await service.getAll(query);
 
-    return reply
-      .status(200)
-      .send({message: 'serviços recuperados com sucesso', services: response.services, count: response.count, ok: true });
+    return reply.status(200).send({
+      message: "serviços recuperados com sucesso",
+      services: response.services,
+      count: response.count,
+      ok: true,
+    });
   };
 
   static getOneService = async (
@@ -35,7 +39,30 @@ export default class ServicesController {
     const id = parseInt(request.params.id);
     const response = await service.getOne(id);
 
-    return reply.status(200).send({message: "serviços recuperados com sucesso", ...response, ok: true });
+    return reply.status(200).send({
+      message: "serviços recuperados com sucesso",
+      services: response.services,
+      permissions: response.permissions,
+      visibility: response.visibility,
+      ok: true,
+    });
+  };
+
+  static getVisiblesServices = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
+    const user = request.user;
+    const service = serviceFactory(request.log);
+    const response = await service.findVisiblesRoleServices(
+      user.setor_id,
+      user.role_id,
+    );
+    return reply.status(200).send({
+      message: "serviços recuperados com sucesso",
+      services: response,
+      ok: true,
+    });
   };
 
   static createService = async (
@@ -43,20 +70,39 @@ export default class ServicesController {
     reply: FastifyReply,
   ) => {
     const service = serviceFactory(request.log);
-    const response = await service.create(request.body.service);
+    const payload = {
+      name: request.body.service.name,
+      description: request.body.service.description,
+      tag: request.body.service.tag,
+
+      url: request.body.service.url,
+    };
+    const response = await service.create(payload);
     return reply.status(201).send({ service: response, ok: true });
   };
 
   static updateService = async (
     request: FastifyRequest<{
-      Params: { id: string };
-      Body: { service: UpdateServicesDto };
+      Params: { id: number };
+      Body: { service: UpdateServicesDto, permissions: permissionDto[], visibility: visibilityDto[] };
     }>,
     reply: FastifyReply,
   ) => {
     const service = serviceFactory(request.log);
-    const id = parseInt(request.params.id);
-    await service.update(id, request.body.service);
+    const id = request.params.id;
+    const servicePayload = {
+      name: request.body.service.name,
+      description: request.body.service.description,
+      tag: request.body.service.tag,
+
+      url: request.body.service.url,
+    };
+
+    const permissions = request.body.permissions;
+    const visibility = request.body.visibility;
+
+
+    await service.update(id, servicePayload, permissions, visibility);
     reply.status(204).send();
   };
 

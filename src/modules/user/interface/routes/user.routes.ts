@@ -6,9 +6,9 @@ import { authorizationFactory } from "../../../acess-controll/factory/makeAuthor
 
 const userRouter: FastifyPluginAsync = async (fastify, options) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  // fastify.addHook("preHandler", (request: FastifyRequest) => {const verifyAuthorization = authorizationFactory(request.log);
-  //   verifyAuthorization.authorize(Number(request.user.id), 1, request.method);
-  //  });
+  fastify.addHook("preHandler", async (request: FastifyRequest) => {const verifyAuthorization = authorizationFactory(request.log);
+    await verifyAuthorization.authorize(Number(request.user.id), 1, request.method);
+   });
 
   const userResponse = {
     type: "object",
@@ -43,6 +43,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
     url: "/",
     schema: {
       tags: ["Users"],
+      security: [{ JWTToken: [] }],
       description:
         "Pegue todos os usuários com base em seus parâmetros passados via queryString. \n Parâmetros: limit, page, search e order. \n Order segue o seguinte formato: coluna:asc ou coluna:desc. (Colunas aceitas: id, name, email, ramal, createdAt)",
       summary: "Pegue todos os usuários",

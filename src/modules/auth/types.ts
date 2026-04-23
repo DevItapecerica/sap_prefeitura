@@ -5,6 +5,7 @@ export interface AuthLoginResponse {
     role_id: number;
     setor_id: number;
   };
+  token: string;
 }
 
 export type JwtUserPayload = {

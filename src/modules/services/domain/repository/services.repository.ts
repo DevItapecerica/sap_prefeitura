@@ -14,4 +14,6 @@ export interface serviceVisibilityRepository {
     findOneServiceVisibility(service_id: number): Promise<ServiceVisibility[] | null>;
     ServiceVisibilityCreate(setor_id: number, service_id: number): Promise<ServiceVisibility>
     findVisibilityByServiceAndSetor(setor_id: number, service_id: number): Promise<ServiceVisibility | null>
+    findVisibilityBySetor(setor_id: number | string): Promise<ServiceVisibility[]>
+    updateServiceVisibility(setor_id: number, service_id: number, visibility: boolean): Promise<ServiceVisibility[]>
 }

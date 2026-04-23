@@ -1,10 +1,14 @@
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import PermissionController from "../controller/permission.controller.js";
+import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 const permissionRouter: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", async (request: FastifyRequest) => {const verifyAuthorization = authorizationFactory(request.log);
+    await verifyAuthorization.authorize(Number(request.user.id), 3, request.method);
+   });
 
   const PermissionSchema = {
     type: "object",
@@ -39,7 +43,7 @@ const permissionRouter: FastifyPluginAsync = async (fastify) => {
         "Retorna todas as Permissões com base na query de busca, order, limit, page e search, caso nao seja passado retorna 10 e page 0, sem search e com order by id desc, a query de order deve ser passado da seguinte forma: id:desc ou id:asc (campo:ordem)",
       type: "object",
       tags: ["Permission"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       querystring: {
         type: "object",
         properties: {
@@ -78,7 +82,7 @@ const permissionRouter: FastifyPluginAsync = async (fastify) => {
         "Retorna uma permissão com base no Id da permissão, caso não seja encontrado retorna um erro 404",
       type: "object",
       tags: ["Permission"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       params: {
         type: "object",
         required: ["id"],
@@ -115,7 +119,7 @@ const permissionRouter: FastifyPluginAsync = async (fastify) => {
         "Atualiza uma permissão com base no Id da permissão, caso não seja encontrado retorna um erro 404",
       type: "object",
       tags: ["Permission"],
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       params: {
         type: "object",
         required: ["id"],

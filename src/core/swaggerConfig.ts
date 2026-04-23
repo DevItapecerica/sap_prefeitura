@@ -1,17 +1,20 @@
 import { SwaggerOptions } from "@fastify/swagger";
 import { FastifyRegisterOptions } from "fastify";
 
-const swaggerConfig = (port: number): FastifyRegisterOptions<SwaggerOptions> => {
+const swaggerConfig = (
+  port: number,
+): FastifyRegisterOptions<SwaggerOptions> => {
   return {
     openapi: {
       openapi: "3.0.0",
       components: {
         securitySchemes: {
-          APIKey: {
-            type: "apiKey",
-            in: "header",
-            name: "x-api-key",
-            description: "Use a chave de API no cabeçalho como 'x-api-key'",
+          JWTToken: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+            description:
+              "Use o JWT no cabeçalho como 'Authorization: Bearer <token>'",
           },
         },
       },

@@ -4,7 +4,6 @@ import JwtServices from "./utils/jwt.service.js";
 
 export default class AuthMiddleware {
   static verifyJWT = async (request: FastifyRequest, reply: FastifyReply) => {
-    request.log.info("Verificando token");
     const token = request.headers.authorization?.replace("Bearer ", "");
 
     if (!token) {

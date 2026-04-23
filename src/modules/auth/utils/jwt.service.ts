@@ -13,7 +13,7 @@ export default class JwtServices {
       },
       SECRET_KEY,
       {
-        expiresIn: "5m",
+        expiresIn: "5h",
       },
     );
 

@@ -1,10 +1,19 @@
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import RolesController from "../controller/roles.controller.js";
 import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
+import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 const rolesRouter: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", async (request: FastifyRequest) => {
+    const verifyAuthorization = authorizationFactory(request.log);
+    await verifyAuthorization.authorize(
+      Number(request.user.id),
+      4,
+      request.method,
+    );
+  });
 
   const roleResponse = {
     type: "object",
@@ -26,7 +35,7 @@ const rolesRouter: FastifyPluginAsync = async (fastify) => {
     method: "POST",
     url: "/",
     schema: {
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       tags: ["Roles"],
       description:
         "Crie uma nova role, mesmo que já exista com o mesmo nome, ele não irá retornar um erro.",
@@ -57,7 +66,7 @@ const rolesRouter: FastifyPluginAsync = async (fastify) => {
     method: "GET",
     url: "/",
     schema: {
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       tags: ["Roles"],
       description:
         "Pegue todas as Roles com base em seus parâmetros passados via queryString. \n Parâmetros: limit, page, search e order. \n Order segue o seguinte formato: coluna:asc ou coluna:desc. (Colunas aceitas: id, name)",
@@ -94,7 +103,7 @@ const rolesRouter: FastifyPluginAsync = async (fastify) => {
     method: "GET",
     url: "/:id",
     schema: {
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       tags: ["Roles"],
       description:
         "Pegue uma Role com base no id passado via Parâmetro. \n Retornará erro se não for encontrado a role",
@@ -125,7 +134,7 @@ const rolesRouter: FastifyPluginAsync = async (fastify) => {
     method: "PUT",
     url: "/:id",
     schema: {
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       tags: ["Roles"],
       description:
         "Atualize uma nova role, mesmo que já exista com o mesmo nome, ele não irá retornar um erro.",
@@ -163,10 +172,9 @@ const rolesRouter: FastifyPluginAsync = async (fastify) => {
     method: "DELETE",
     url: "/:id",
     schema: {
-      security: [{ APIKey: [] }],
+      security: [{ JWTToken: [] }],
       tags: ["Roles"],
-      description:
-        "Delete uma role, por não ser critico, não tem soft delete.",
+      description: "Delete uma role, por não ser critico, não tem soft delete.",
       summary: "Delete uma role",
       params: {
         type: "object",

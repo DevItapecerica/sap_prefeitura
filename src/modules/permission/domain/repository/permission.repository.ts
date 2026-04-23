@@ -11,8 +11,10 @@ export interface PermissionRepository {
     createBulkPermissions: (data: CreatePermissionsDto[]) => Promise<Permissions[]>;
 
     updatePermissions: (id: number, data: UpdatePermissionsDto) => Promise<Permissions>;
+    updatePermissionsByRoleAndSetor: (roleId: number, serviceId: number, data: UpdatePermissionsDto) => Promise<Permissions>;
 
     deleteOnePermissions: (id: number) => Promise<boolean>;
     getPermissionByRoleId: (roleId: number) => Promise<Permissions[]>
+    getTrueReadPermissionByRoleId: (roleId: number | string) => Promise<Permissions[]>
     getByServiceId: (serviceId: number) => Promise<Permissions[]>
 }
