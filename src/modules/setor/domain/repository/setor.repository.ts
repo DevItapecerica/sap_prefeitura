@@ -1,5 +1,5 @@
-import { QueryParams } from "../../core/shared/types/genericTypes.js";
-import { Setor } from "./setor.entity.js";
+import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { Setor } from "../entity/Setor.js";
 
 export interface SetorRepository {
     findOneSetor(id: number): Promise<Setor | null>;

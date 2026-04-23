@@ -1,9 +1,10 @@
 import { FastifyPluginAsync } from "fastify";
-import setoresSchema from "./schema/setoresSchema.js";
-import AuthMiddleware from "../auth/auth.middleware.js";
-import SetorController from "./setor.controller.js";
+import setoresSchema from "../../schema/setoresSchema.js";
+import AuthMiddleware from "../../../auth/auth.middleware.js";
+import SetorController from "../controller/setor.controller.js";
 
 const setorRouter: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   
   fastify.route({
     method: "GET",

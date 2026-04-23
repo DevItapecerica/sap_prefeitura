@@ -1,0 +1,48 @@
+import db from "../index.js";
+import { serviceVisibilityRepository } from "../../../../modules/services/domain/repository/services.repository.js";
+import { ServiceVisibility } from "../../../../modules/services/domain/entity/ServiceVisibility.js";
+
+export class SequelizeServiceVisibilityRepository implements serviceVisibilityRepository {
+  private model = db.ServiceVisibilities;
+
+  async findOneServiceVisibility(
+    service_id: number,
+  ): Promise<ServiceVisibility[] | null> {
+    const data = await this.model.findAll({
+      where: { service_id: service_id },
+    });
+
+    const visibility = data.map((item: any) => this.toEntity(item));
+
+    console.log(visibility);
+    console.log(data);
+
+    return visibility;
+  }
+
+  async findVisibilityByServiceAndSetor(setor_id: number, service_id: number) {
+    const data = await this.model.findOne({
+      where: { setor_id: setor_id, service_id: service_id },
+    });
+
+    return this.toEntity(data);
+  }
+
+  async ServiceVisibilityCreate(
+    setor_id: number,
+    service_id: number,
+  ): Promise<ServiceVisibility> {
+    const visibility = this.model.create({ setor_id, service_id });
+    return this.toEntity(visibility);
+  }
+
+  // 🔥 mapper (ESSENCIAL)
+  private toEntity(data: ServiceVisibility): ServiceVisibility {
+    return new ServiceVisibility(
+      data.setor_id,
+      data.service_id,
+      data.visibility,
+      data.id,
+    );
+  }
+}

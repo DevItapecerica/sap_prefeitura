@@ -1,47 +1,50 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { SequelizeServicesRepository } from "../../../../infra/database/sequelize/repositories/sequelize.services.repository.js";
-import ServicesService from "../../application/use-case/services.service.js";
-import { CreateServicesDto, UpdateServicesDto } from "../../application/dto/services.dto.js";
+import {
+  CreateServicesDto,
+  UpdateServicesDto,
+} from "../../application/dto/services.dto.js";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import serviceFactory from "../../factories/setor.factory.js";
+import { request } from "http";
 
 export default class ServicesController {
-  private static service = new ServicesService(
-    new SequelizeServicesRepository(),
-  );
-
   static getService = async (
     request: FastifyRequest<{ Querystring: QueryParams }>,
     reply: FastifyReply,
   ) => {
+    const service = serviceFactory(request.log);
     const query = {
       page: request.query.page,
       limit: request.query.limit,
       search: request.query.search,
-      order: request.query.order
+      order: request.query.order,
     };
 
-    const response = await this.service.getAll(query);
+    const response = await service.getAll(query);
 
     return reply
       .status(200)
-      .send({ services: response.services, count: response.count, ok: true });
+      .send({message: 'serviços recuperados com sucesso', services: response.services, count: response.count, ok: true });
   };
 
   static getOneService = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
+    const service = serviceFactory(request.log);
     const id = parseInt(request.params.id);
-    const servicesResponse = await this.service.getOne(id);
-    return reply.status(200).send({ service: servicesResponse, ok: true });
+    const response = await service.getOne(id);
+
+    return reply.status(200).send({message: "serviços recuperados com sucesso", ...response, ok: true });
   };
 
   static createService = async (
     request: FastifyRequest<{ Body: { service: CreateServicesDto } }>,
     reply: FastifyReply,
   ) => {
-    const service = await this.service.create(request.body.service);
-    return reply.status(201).send({ service, ok: true });
+    const service = serviceFactory(request.log);
+    const response = await service.create(request.body.service);
+    return reply.status(201).send({ service: response, ok: true });
   };
 
   static updateService = async (
@@ -51,8 +54,9 @@ export default class ServicesController {
     }>,
     reply: FastifyReply,
   ) => {
+    const service = serviceFactory(request.log);
     const id = parseInt(request.params.id);
-    await this.service.update(id, request.body.service);
+    await service.update(id, request.body.service);
     reply.status(204).send();
   };
 
@@ -60,6 +64,7 @@ export default class ServicesController {
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
+    const service = serviceFactory(request.log);
     const id = parseInt(request.params.id);
 
     if (id <= 3) {
@@ -71,7 +76,7 @@ export default class ServicesController {
       };
     }
 
-    const deletedCount = await this.service.deleteOne(id);
+    const deletedCount = await service.deleteOne(id);
 
     if (!deletedCount) {
       throw {

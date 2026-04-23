@@ -1,6 +1,6 @@
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
-import { Setor } from "../../../../modules/setor/setor.entity.js";
-import { SetorRepository } from "../../../../modules/setor/setor.repository.js";
+import { Setor } from "../../../../modules/setor/domain/entity/Setor.js";
+import { SetorRepository } from "../../../../modules/setor/domain/repository/setor.repository.js";
 import db from "../index.js";
 
 export class SequelizeSetorRepository implements SetorRepository {

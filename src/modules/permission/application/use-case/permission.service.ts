@@ -2,6 +2,7 @@ import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import { PermissionRepository } from "../../domain/repository/permission.repository.js";
 import { CreatePermissionsDto, UpdatePermissionsDto } from "../dto/permissions.dto.js";
 import AppError from "../../../../core/appError.js";
+import { Permissions } from "../../domain/entity/Permission.js";
 
 export default class PermissionService {
   constructor(private repo: PermissionRepository, private logger: any){}
@@ -56,4 +57,13 @@ export default class PermissionService {
     return updated;
   };
 
+  getByServiceId = async (service_id: number): Promise<Permissions[]> => {
+    const data = await this.repo.getByServiceId(service_id);
+    return data;
+  };
+
+  getPermissionByRole = async (role_id: number) => {
+    const data = await this.repo.getPermissionByRoleId(role_id);
+    return data;
+  };
 }

@@ -11,8 +11,7 @@ export interface ServicesRepository {
     deleteOneServices: (id: number) => Promise<boolean>;
 }
 export interface serviceVisibilityRepository {
-    findOneServiceVisibility(id: number): Promise<ServiceVisibility | null>;
-    updateServiceVisibility(id: number, setor: any): Promise<ServiceVisibility | null>;
-    deleteServiceVisibility(id: number): Promise<Boolean>;
-    createServiceVisibility(data: ServiceVisibility): Promise<ServiceVisibility>;
+    findOneServiceVisibility(service_id: number): Promise<ServiceVisibility[] | null>;
+    ServiceVisibilityCreate(setor_id: number, service_id: number): Promise<ServiceVisibility>
+    findVisibilityByServiceAndSetor(setor_id: number, service_id: number): Promise<ServiceVisibility | null>
 }

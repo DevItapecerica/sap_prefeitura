@@ -1,10 +1,14 @@
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 import UserController from "../controller/user.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
+import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 const userRouter: FastifyPluginAsync = async (fastify, options) => {
-  // fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  // fastify.addHook("preHandler", (request: FastifyRequest) => {const verifyAuthorization = authorizationFactory(request.log);
+  //   verifyAuthorization.authorize(Number(request.user.id), 1, request.method);
+  //  });
 
   const userResponse = {
     type: "object",

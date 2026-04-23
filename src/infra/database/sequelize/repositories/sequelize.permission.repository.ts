@@ -97,6 +97,23 @@ export class SequelizePermissionRepository implements PermissionRepository {
     return destroied > 0;
   };
 
+  getPermissionByRoleId = async (roleId: number): Promise<Permissions[]> => {
+    const permissions = await this.model.findAll({
+      where: {
+        role_id: roleId,
+      },
+    });
+    return permissions.map((p : Permissions) => this.toEntity(p));
+  }
+
+  getByServiceId = async (serviceId: number): Promise<Permissions[]> => {
+    const permissions = await this.model.findAll({
+      where: {
+        service_id: serviceId,
+      },
+    });
+    return permissions.map((p : Permissions) => this.toEntity(p));
+  }
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: Permissions): Permissions {
     return new Permissions(

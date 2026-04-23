@@ -1,6 +1,6 @@
 import { UserDB } from "../../../../infra/database/sequelize/models/user.model.js";
 
-export type userParams = Pick<UserDB, "id">;
+export type userParams = number
 
 export type userRequired = Pick<
   UserDB, "name" | "email" | "ramal" | "setor_id" | "role_id"

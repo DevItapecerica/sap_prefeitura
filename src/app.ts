@@ -6,6 +6,7 @@ import setorModule from "./modules/setor/index.js";
 import ServiceModule from "./modules/services/index.js";
 import RolesModule from "./modules/roles/index.js";
 import PermissionModule from "./modules/permission/index.js";
+import { registerAccessControlEvents } from "./modules/acess-controll/events/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(userModule);
@@ -25,6 +26,9 @@ const App: FastifyPluginAsync = async (fastify) => {
 
   await fastify.register(authModule);
   fastify.log.info("Auth Module Registrado");
+
+  fastify.register(registerAccessControlEvents)
+  fastify.log.info("Access Control Events Registrado");
 };
 
 export default App;

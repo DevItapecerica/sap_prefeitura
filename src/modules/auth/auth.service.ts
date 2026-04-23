@@ -38,7 +38,7 @@ export default class authService {
 
     return {
       user: {
-        id: user.id,
+        id: user.id || 0,
         name: user.name,
         role_id: user.role_id,
         setor_id: user.setor_id,

@@ -4,7 +4,7 @@ import RolesController from "../controller/roles.controller.js";
 import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 
 const rolesRouter: FastifyPluginAsync = async (fastify) => {
-  // fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
 
   const roleResponse = {
     type: "object",

@@ -4,15 +4,45 @@ import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 
 const serviceRouter: FastifyPluginAsync = async (fastify) => {
-  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+    fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
 
   const serviceProperties = {
+    type: "object",
     properties: {
       id: { type: "integer", example: 1 },
       name: { type: "string", example: "Serviço 1" },
       description: { type: "string", example: "Descrição do serviço 1" },
       tag: { type: "string", example: "tag1" },
       url: { type: "string", example: "/admin" },
+    },
+  };
+
+  const visibilityProperties = {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        id: { type: "integer" },
+        setor_id: { type: "integer" },
+        service_id: { type: "integer" },
+        visibility: { type: "boolean" },
+      },
+    },
+  };
+
+  const permissionsProperties = {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        id: { type: "integer" },
+        service_id: { type: "integer" },
+        role_id: { type: "integer" },
+        read: { type: "boolean" },
+        write: { type: "boolean" },
+        edit: { type: "boolean" },
+        del: { type: "boolean" },
+      },
     },
   };
 
@@ -29,14 +59,10 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
           description: "Verificação bem sucedido",
           type: "object",
           properties: {
+            message: { type: "string", example: "Serviço encontrado" },
             services: {
               type: "array",
-              example: {
-                id: 1,
-                name: "Serviço 1",
-                description: "Descrição do serviço 1",
-                url: "/admin",
-              },
+              items: serviceProperties,
             },
             count: { type: "number", example: 1 },
             ok: { type: "boolean", example: true },
@@ -53,6 +79,13 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
     url: "/:id",
     schema: {
       description: "Retorna o serviço pelo ID",
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: { type: "number" },
+        },
+      },
       type: "object",
       tags: ["Services"],
       security: [{ APIKey: [] }],
@@ -60,7 +93,13 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
         200: {
           description: "Verificação bem sucedido",
           type: "object",
-          ...serviceProperties,
+          properties: {
+            message: { type: "string", example: "Serviço encontrado" },
+            services: serviceProperties,
+            visibility: visibilityProperties,
+            permissions: permissionsProperties,
+            ok: { type: "boolean", example: true },
+          },
         },
 
         ...errorResponseSchema,

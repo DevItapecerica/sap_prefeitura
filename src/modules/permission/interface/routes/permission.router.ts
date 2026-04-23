@@ -4,6 +4,7 @@ import AuthMiddleware from "../../../auth/auth.middleware.js";
 import PermissionController from "../controller/permission.controller.js";
 
 const permissionRouter: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
 
   const PermissionSchema = {
     type: "object",
