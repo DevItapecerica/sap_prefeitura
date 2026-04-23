@@ -86,12 +86,6 @@ export default class ServicesService {
   // PERMISSIONS
   await Promise.all(
     permissions.map(async (p) => {
-
-      console.log(p, id)
-      console.log(p, id)
-      console.log(p, id)
-      console.log(p, id)
-      console.log(p, id)
       if (!p.id || !(p.service_id == id)) {
         throw new AppError("Permission not found", 404, "PERMISSION_NOT_FOUND");
       }
