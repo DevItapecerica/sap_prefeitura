@@ -7,6 +7,8 @@ import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import { User } from "../../domain/entity/User.js";
 import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
+import bcrypt from "bcryptjs";
+import comparePass from "../../../../core/shared/utils/comparePass.js";
 export default class UserService {
   constructor(
     private userRepository: UserRepository,
@@ -218,5 +220,33 @@ export default class UserService {
     this.logger.info("Buscando usuário por email");
     const user = await this.userRepository.getUserByEmail(email);
     return user;
+  };
+
+  alterPassword = async (id: userParams,old_password: string, new_password: string): Promise<boolean> => {
+    const user = await this.userRepository.getUserById(id);
+    if (!user) {
+      this.logger.info("Usuário nao encontrado");
+      throw new AppError(
+        "Usuário nao encontrado",
+        404,
+        "USER_NOT_FOUND",
+      );;
+    }
+
+    const validPassword = await comparePass(old_password, user.password || "NoPass");
+    if (!validPassword) {
+      this.logger.info("Senha antiga incorreta");
+      const error = new AppError(
+        "Senha antiga incorreta",
+        403,
+        "USER_PASSWORD_INCORRECT",
+      );
+      throw error;
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    const updatedUser = await this.userRepository.alterarUserSenha(id, hashedPassword);
+    return updatedUser;
   };
 }

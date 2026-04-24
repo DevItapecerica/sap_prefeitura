@@ -104,4 +104,12 @@ export default class UserController {
       ok: true,
     });
   };
+
+  static alterPassword = async (request: FastifyRequest<{Body:{old_password: string; new_password: string}}>, reply: FastifyReply) => {
+    const user = request.user
+    const service = UserServiceFactory(request.log);
+    const { new_password, old_password } = request.body;
+    const response = await service.alterPassword(Number(user.id), old_password, new_password);
+    reply.status(200).send({message: "Senha alterada com sucesso", ok: true});
+  };
 }
