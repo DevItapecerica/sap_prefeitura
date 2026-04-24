@@ -55,6 +55,14 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
     },
   };
 
+  const serviceWithPermissionsProperties = {
+    ...serviceProperties,
+    properties: {
+      ...serviceProperties.properties,
+      permissions: permissionsProperties,
+    },
+  };
+
   fastify.route({
     method: "GET",
     url: "/",
@@ -87,7 +95,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
     method: "GET",
     url: "/user",
     schema: {
-      description: "Retorna todos os serviços",
+      description: "Retorna todos os serviços do usuário com permissões",
       type: "object",
       tags: ["Services"],
       security: [{ JWTToken: [] }],
@@ -99,7 +107,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
             message: { type: "string", example: "Serviços encontrado" },
             services: {
               type: "array",
-              items: serviceProperties,
+              items: serviceWithPermissionsProperties,
             },
             ok: { type: "boolean", example: true },
           },

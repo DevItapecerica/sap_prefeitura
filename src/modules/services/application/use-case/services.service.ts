@@ -150,6 +150,11 @@ export default class ServicesService {
 
     const services = visibles.filter((v) => ServicePermissionId.has(v.id));
 
-    return services;
+    const servicesWithPermissions = services.map((s) => ({
+      ...s,
+      permissions: userPermissions.filter((p) => p.service_id == s.id),
+    }));
+
+    return servicesWithPermissions;
   };
 }
