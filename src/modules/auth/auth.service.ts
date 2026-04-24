@@ -25,7 +25,7 @@ export default class authService {
     }
 
     this.logger.info("Validando senha");
-    const validPassword = await comparePass(password, user.password);
+    const validPassword = await comparePass(password, user.password || "NoPass");
 
     if (!validPassword) {
       const error = new AppError(

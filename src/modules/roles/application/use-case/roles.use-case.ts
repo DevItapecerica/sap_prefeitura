@@ -1,14 +1,12 @@
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import { RolesRepository } from "../../domain/repository/roles.repository.js";
 import { CreateRoleDto, UpdateRoleDto } from "../dto/roles.dto.js";
-import PermissionService from "../../../permission/application/use-case/permission.service.js";
 import { Roles } from "../../domain/entity/Role.js";
-import { Json } from "sequelize/lib/utils";
+import { eventBus } from "../../../../core/event/index.js";
 
 export default class RolesService {
   constructor(
     private repo: RolesRepository,
-    private permissionService: PermissionService,
     private logger: any,
   ) {}
 
@@ -30,8 +28,7 @@ export default class RolesService {
   createRole = async (role: CreateRoleDto): Promise<Roles> => {
     const newRole = await this.repo.createRoles(role);
 
-    this.permissionService.createPermissionsAllServices(newRole.id);
-
+    eventBus.emit("ROLE_CREATED", newRole);
     this.logger.info("Role criada com sucesso: " + newRole.id);
     return newRole;
   };
