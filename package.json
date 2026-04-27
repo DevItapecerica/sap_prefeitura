@@ -5,18 +5,22 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "tsx --watch src/server.ts",
+    "build": "tsc -p .",
+    "check": "tsc --noEmit",
+    "start": "node dist/server.js",
+    "prestart": "npm install --production",
+    "migrate:generate": "npx ts-node src/utils/generateMigration.ts",
+    "migrate": "tsc -p . & npx sequelize-cli db:migrate ",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo ",
+    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all "
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/swagger": "^9.4.2",
     "@fastify/swagger-ui": "^5.2.2",
     "axios": "^1.8.2",
@@ -26,8 +30,19 @@
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "mariadb": "^3.4.5",
+    "nodemailer": "^8.0.1",
     "password-validator": "^5.3.0",
     "pino-pretty": "^13.1.1",
     "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.11.0",
+    "@types/nodemailer": "^6.4.23",
+    "nodemon": "^3.1.10",
+    "sequelize-cli": "^6.6.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }

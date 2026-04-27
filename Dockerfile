@@ -1,13 +1,33 @@
-FROM node:lts-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"]
-RUN npm install --production --silent && mv node_modules ../
+# Copia package.json primeiro (melhora cache)
+COPY package*.json ./
+
+# Instala TODAS dependências (incluindo dev)
+RUN npm install
+
+# Copia resto do projeto
 COPY . .
+
+# Compila TypeScript
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Copia apenas dependências de produção
+COPY package*.json ./
+
+RUN npm install --omit=dev
+
+# Copia build já compilado
+COPY --from=builder /app/dist ./dist
+
+# Expõe porta
 EXPOSE 3000
 
-RUN chown -R node /app
-
-USER node
+# Sobe aplicação
 CMD ["npm", "start"]

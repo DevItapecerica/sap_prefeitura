@@ -1,7 +1,7 @@
 services:
-  login:
+  api:
     image: node:18
-    container_name: app_prefeitura_login
+    container_name: sap_prefeitura
     build:
       context: ./
       dockerfile: ./Dockerfile
@@ -9,20 +9,23 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.03'
-          memory: 256M
+          cpus: '0.09'
+          memory: 512M
         reservations:
-          memory: 128M
+          memory: 256M
     environment:
       NODE_ENV: ${NODE_ENV}
       APPLICATION_PORT: ${APPLICATION_PORT}
       API_KEY: ${API_KEY}
       DATABASE_URL: ${DATABASE_URL}
 
-      USER_API_HOST: ${USER_API_HOST}
-      USER_API_KEY: ${USER_API_KEY}
-
       SECRET_KEY: ${SECRET_KEY}
+      FT_APP_API_HOST: ${FT_APP_API_HOST}
+      FT_APP_API_KEY: ${FT_APP_API_KEY}
+
+      MAIL_ADRESS: ${MAIL_ADRESS}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_HOST: ${MAIL_HOST}
     ports:
       - 3000
     networks:
