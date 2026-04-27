@@ -1,5 +1,5 @@
 services:
-  spa:
+  sap:
     image: node:18
     container_name: sap_prefeitura
     build:
@@ -9,18 +9,15 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.03'
-          memory: 256M
+          cpus: '0.09'
+          memory: 512M
         reservations:
-          memory: 128M
+          memory: 256M
     environment:
       NODE_ENV: ${NODE_ENV}
       APPLICATION_PORT: 3000
       API_KEY: ${API_KEY}
       DATABASE_URL: ${DATABASE_URL}
-
-      USER_API_HOST: ${USER_API_HOST}
-      USER_API_KEY: ${USER_API_KEY}
 
       SECRET_KEY: ${SECRET_KEY}
       FT_APP_API_HOST: ${FT_APP_API_HOST}
