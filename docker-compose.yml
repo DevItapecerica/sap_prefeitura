@@ -27,7 +27,7 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_HOST: ${MAIL_HOST}
     ports:
-      - 3000:${APPLICATION_PORT}
+      - ${APPLICATION_PORT}:3000
     networks:
       - dokploy-network
 networks:
