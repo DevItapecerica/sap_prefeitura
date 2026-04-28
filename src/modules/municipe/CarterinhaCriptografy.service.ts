@@ -1,5 +1,5 @@
-import CryptData from "../../../../core/shared/utils/CryptData.js";
-import Carterinha from "../entity/Carteirinha.js";
+import CryptData from "../../core/shared/utils/CryptData.js";
+import Carterinha from "../carterinhas/domain/entity/Carteirinha.js";
 
 export default class CarterinhaCriptografy {
   private criptografy: CryptData;
@@ -12,7 +12,6 @@ export default class CarterinhaCriptografy {
     let CarteirinhaData = this.carterinha.getSensitiveData();
 
     let data = new Carterinha(
-      CarteirinhaData.numero_carterinha,
       await this.criptografy.Encryption(CarteirinhaData.nome), //CarteirinhaData.nome,
       await this.criptografy.Encryption(CarteirinhaData.cpf), //CarteirinhaData.cpf,
       await this.criptografy.Encryption(CarteirinhaData.nascimento), //CarteirinhaData.nascimento,
@@ -32,6 +31,8 @@ export default class CarterinhaCriptografy {
       CarteirinhaData.servico,
 
       CarteirinhaData.uuid,
+      CarteirinhaData.numero_carterinha,
+
       CarteirinhaData.author,
 
       CarteirinhaData.createdAt,
@@ -46,7 +47,6 @@ export default class CarterinhaCriptografy {
     let CarteirinhaData = this.carterinha.getSensitiveData();
 
     let data = new Carterinha(
-      CarteirinhaData.numero_carterinha,
       await this.criptografy.Decryption(CarteirinhaData.nome), //CarteirinhaData.nome,
       await this.criptografy.Decryption(CarteirinhaData.cpf), //CarteirinhaData.cpf,
       await this.criptografy.Decryption(CarteirinhaData.nascimento), //CarteirinhaData.nascimento,
@@ -66,6 +66,8 @@ export default class CarterinhaCriptografy {
       CarteirinhaData.servico,
 
       CarteirinhaData.uuid,
+      CarteirinhaData.numero_carterinha,
+
       CarteirinhaData.author,
 
       CarteirinhaData.createdAt,

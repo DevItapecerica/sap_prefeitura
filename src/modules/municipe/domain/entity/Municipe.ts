@@ -1,11 +1,9 @@
-export default class Carterinha {
+export default class Municipe {
   constructor(
     private nome: string,
     private cpf: string,
     private nascimento: string,
     private telefone: string | null,
-    private emissao: string,
-    private validade: string | null,
     private rua: string,
     private bairro: string,
     private cidade: string,
@@ -13,12 +11,9 @@ export default class Carterinha {
     private cep: string,
     private numero: string,
     private complemento: string | null,
-    private setor: string,
-    private servico: string,
+    private author: string,
 
     private uuid?: string,
-    private numero_carterinha?: string,
-    private author?: string,
     private createdAt?: Date,
     private updatedAt?: Date,
     private deletedAt?: Date | null,
@@ -27,13 +22,10 @@ export default class Carterinha {
   getSensitiveData() {
     return {
       uuid: this.uuid,
-      numero_carterinha: this.numero_carterinha,
       nome: this.nome,
       cpf: this.cpf,
       nascimento: this.nascimento,
       telefone: this.telefone,
-      emissao: this.emissao,
-      validade: this.validade,
       rua: this.rua,
       bairro: this.bairro,
       cidade: this.cidade,
@@ -41,8 +33,6 @@ export default class Carterinha {
       cep: this.cep,
       numero: this.numero,
       complemento: this.complemento,
-      setor: this.setor,
-      servico: this.servico,
       author: this.author,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
