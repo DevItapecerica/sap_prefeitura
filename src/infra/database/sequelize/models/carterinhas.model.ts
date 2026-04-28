@@ -18,6 +18,7 @@ interface CarterinhaDB extends Model<
   nome: string;
   cpf: string;
   nascimento: string;
+  telefone: CreationOptional<string>;
   emissao: string;
   validade: CreationOptional<string>;
   rua: string;
@@ -65,6 +66,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       nascimento: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      telefone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
       },
 
       emissao: {

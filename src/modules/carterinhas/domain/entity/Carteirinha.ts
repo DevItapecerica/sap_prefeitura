@@ -1,10 +1,10 @@
 export default class Carterinha {
   constructor(
-    private uuid: string,
     private numero_carterinha: string,
     private nome: string,
     private cpf: string,
     private nascimento: string,
+    private telefone: string | null,
     private emissao: string,
     private validade: string | null,
     private rua: string,
@@ -17,6 +17,7 @@ export default class Carterinha {
     private setor: string,
     private servico: string,
 
+    private uuid?: string,
     private author?: string,
     private createdAt?: Date,
     private updatedAt?: Date,
@@ -49,6 +50,7 @@ export default class Carterinha {
       nome: this.nome,
       cpf: this.cpf,
       nascimento: this.nascimento,
+      telefone: this.telefone,
       emissao: this.emissao,
       validade: this.validade,
       rua: this.rua,
