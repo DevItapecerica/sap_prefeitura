@@ -14,7 +14,6 @@ interface MunicipeDB extends Model<
   InferCreationAttributes<MunicipeDB>
 > {
   uuid: CreationOptional<string>;
-  numero_carterinha: string;
   nome: string;
   cpf: string;
   nascimento: string;
@@ -26,6 +25,8 @@ interface MunicipeDB extends Model<
   cep: string;
   numero: string;
   complemento: CreationOptional<string>;
+  cpfHash: string;
+  nomeHash: string;
 
   author: string | number;
 
@@ -40,12 +41,8 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       uuid: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        allowNull: false,
-      },
-
-      numero_carterinha: {
-        type: DataTypes.STRING,
         allowNull: false,
       },
 
@@ -106,6 +103,16 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       },
 
       author: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      cpfHash: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      nomeHash: {
         type: DataTypes.STRING,
         allowNull: false,
       },

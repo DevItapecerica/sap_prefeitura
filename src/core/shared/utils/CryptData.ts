@@ -1,5 +1,6 @@
 import { SECRET_KEY } from "../../env.js";
 import {
+  createHash,
   createCipheriv,
   createDecipheriv,
   randomBytes,
@@ -34,11 +35,15 @@ export default class CryptData {
       Buffer.from(ivHex, "hex"),
     ) as DecipherGCM; // Cast para DecipherGCM
 
-    decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+    decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
 
     let decrypted = decipher.update(encryptedText, "hex", "utf8");
     decrypted += decipher.final("utf8");
 
     return decrypted;
+  };
+
+  staticHash = async (data: string) => {
+    return createHash("sha256").update(data).digest("hex");
   };
 }
