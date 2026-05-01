@@ -31,7 +31,7 @@ export default class municipeController {
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
-      municipe: response,
+      municipe: maskedResponse,
       count: response.count,
       ok: true,
     });

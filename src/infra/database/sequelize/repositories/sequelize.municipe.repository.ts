@@ -57,16 +57,19 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
   async getMunicipe(
     query: QueryParams,
   ): Promise<{ municipe: Municipe[]; count: number }> {
+    const cryptData = new CryptData();
+
     const { page, limit, search, order } = query;
     const queryOrder = order ? order.split(":") : ["uuid", "desc"];
+    const searchHash = search ? await cryptData.staticHash(String(search)) : null;
 
     const offset = limit ? Number(page) * Number(limit) : undefined;
 
     const where = search
       ? {
           [Op.or]: [
-            { name: { [Op.like]: `%${search}%` } },
-            { cpf: { [Op.like]: `%${search}%` } },
+            { nomeHash: { [Op.like]: `%${searchHash}%` } },
+            { cpfHash: { [Op.like]: `%${searchHash}%` } },
           ],
         }
       : {};
@@ -80,8 +83,6 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
     let municipe = await this.model.findAll(queryData);
 
-    const cryptData = new CryptData();
-
     const municipeEntities = await Promise.all(
       municipe.map(async (m: any) => {
         return this.toEntity({
@@ -94,7 +95,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
           cidade: await cryptData.Decryption(m.cidade),
           uf: await cryptData.Decryption(m.uf),
           cep: await cryptData.Decryption(m.cep),
-          numero: m.numero, // se não criptografar
+          numero: await cryptData.Decryption(m.numero), // se não criptografar
           complemento: m.complemento
             ? await cryptData.Decryption(m.complemento)
             : null,
@@ -161,7 +162,6 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
     if (!municipe) return null;
 
-
     const municipeEntities = this.toEntity({
       nome: await cryptData.Decryption(municipe.nome),
       cpf: await cryptData.Decryption(municipe.cpf),
@@ -197,14 +197,14 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
     const municipe = await this.model.findByPk(uuid);
 
-    if (!municipe) return null;    
+    if (!municipe) return null;
 
     const data: Record<string, any> = {};
-    const decriptData: Record<string, any>= {}
+    const decriptData: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(updated)) {
       if (value === null || !this.fieldsToEncrypt.includes(key)) {
-        decriptData[key] = value
+        decriptData[key] = value;
         data[key] = value;
       } else if (value !== undefined) {
         data[key] = await crypto.Encryption(String(value));
@@ -217,8 +217,6 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       if (key === "nome") {
         data.nomeHash = await crypto.staticHash(String(value));
       }
-
-
     }
 
     await this.model.update(data, { where: { uuid } });
