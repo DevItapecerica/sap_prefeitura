@@ -3,12 +3,12 @@ import { sendPass } from "../../../../core/shared/utils/sendPass.js";
 import { generateRandomPassword } from "../../../../core/shared/utils/generateRandomPassword.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import AppError from "../../../../core/appError.js";
-import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder.js";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import { User } from "../../domain/entity/User.js";
 import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
 import bcrypt from "bcryptjs";
 import comparePass from "../../../../core/shared/utils/comparePass.js";
+import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder.js";
 export default class UserService {
   constructor(
     private userRepository: UserRepository,

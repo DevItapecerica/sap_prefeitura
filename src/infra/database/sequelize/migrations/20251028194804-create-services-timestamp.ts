@@ -1,25 +1,25 @@
-"use strict";
+import { QueryInterface, DataTypes } from "sequelize";
 
-/** @type {import('sequelize-cli').Migration} */
+/** @type {import("sequelize-cli").Migration} */
 export default {
-  async up(queryInterface, Sequelize) {
+  up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.addColumn("services", "createdAt", {
-      type: Sequelize.DATE,
+      type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      defaultValue: DataTypes.NOW,
     });
     await queryInterface.addColumn("services", "updatedAt", {
-      type: Sequelize.DATE,
+      type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      defaultValue: DataTypes.NOW,
     });
     await queryInterface.addColumn("services", "deletedAt", {
-      type: Sequelize.DATE,
+      type: DataTypes.DATE,
       allowNull: true,
     });
   },
 
-  async down(queryInterface, Sequelize) {
+  down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.removeColumn("services", "createdAt");
     await queryInterface.removeColumn("services", "updatedAt");
     await queryInterface.removeColumn("services", "deletedAt");

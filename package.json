@@ -10,7 +10,7 @@
     "check": "tsc --noEmit",
     "start": "node dist/server.js",
     "prestart": "npm install --production",
-    "migrate:generate": "npx ts-node src/utils/generateMigration.ts",
+    "migrate:generate": "npx ts-node src/core/shared/utils/generateMigration.ts",
     "migrate": "tsc -p . & npx sequelize-cli db:migrate ",
     "migrate:undo": "npx sequelize-cli db:migrate:undo ",
     "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all "
@@ -25,6 +25,7 @@
     "@fastify/swagger-ui": "^5.2.2",
     "axios": "^1.8.2",
     "bcryptjs": "^3.0.2",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "jsonwebtoken": "^9.0.2",

@@ -1,27 +1,27 @@
-"use strict";
+import { QueryInterface, DataTypes } from "sequelize";
 
-/** @type {import('sequelize-cli').Migration} */
+/** @type {import("sequelize-cli").Migration} */
 export default {
-  async up(queryInterface, Sequelize) {
+  up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.createTable("setors", {
       id: {
-        type: Sequelize.DataTypes.INTEGER,
+        type: DataTypes.INTEGER,
         autoIncrement: true,
         allowNull: false,
         primaryKey: true,
       },
       name: {
-        type: Sequelize.DataTypes.STRING,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       description: {
-        type: Sequelize.DataTypes.STRING,
+        type: DataTypes.STRING,
         allowNull: true,
       },
     });
   },
 
-  async down(queryInterface, Sequelize) {
+  down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.dropTable("setors");
   },
 };
