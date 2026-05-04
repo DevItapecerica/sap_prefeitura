@@ -1,4 +1,4 @@
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { Setor } from "../entity/Setor.js";
 
 export interface SetorRepository {

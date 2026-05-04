@@ -1,4 +1,4 @@
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { CreateServicesDto, UpdateServicesDto } from "../../application/dto/services.dto.js";
 import { Services } from "../entity/Services.js";
 import { ServiceVisibility } from "../entity/ServiceVisibility.js";

@@ -1,6 +1,6 @@
 import Services from "../controller/services.controller.js";
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
-import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
+import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 

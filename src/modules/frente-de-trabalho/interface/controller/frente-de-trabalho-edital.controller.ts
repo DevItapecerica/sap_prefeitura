@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import FT_API from "../../api.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 export default class EditalController {
   static getEditais = async (request: FastifyRequest, reply: FastifyReply) => {
     const response = await FT_API.get("/ft/edital");

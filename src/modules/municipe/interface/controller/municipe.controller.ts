@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { SequelizeMunicipeRepository } from "../../../../infra/database/sequelize/repositories/sequelize.municipe.repository.js";
 import getMunicipeUseCase from "../../application/usecase/getMunicipe.use-case.js";
 import MunicipePresentation from "../presentation/municipe.masked.presentation.js";
@@ -8,6 +8,8 @@ import { MunicipeDto } from "../../application/dto/municipe.dto.js";
 import createMunicipeUseCase from "../../application/usecase/createMunicipe.use-case.js";
 import getMunicipeByIdUseCase from "../../application/usecase/getMunicipeById.use-case.js";
 import updateMunicipeUseCase from "../../application/usecase/updateMunicipe.use-case.js";
+import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
+import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 
 export default class municipeController {
   static async getMunicipe(
@@ -21,7 +23,11 @@ export default class municipeController {
       order: request.query.order,
     };
 
-    const useCase = new getMunicipeUseCase(new SequelizeMunicipeRepository());
+    const useCase = new getMunicipeUseCase(
+      new SequelizeMunicipeRepository(),
+      new AesCryptService(),
+      new Sha256CryptService(),
+    );
 
     const response = await useCase.execute(query);
 
@@ -31,7 +37,7 @@ export default class municipeController {
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
-      municipe: maskedResponse,
+      data: maskedResponse,
       count: response.count,
       ok: true,
     });
@@ -43,7 +49,11 @@ export default class municipeController {
   ) {
     const uuid = request.params.uuid;
 
-    const useCase = new getMunicipeByIdUseCase(new SequelizeMunicipeRepository());
+    const useCase = new getMunicipeByIdUseCase(
+      new SequelizeMunicipeRepository(),
+      new AesCryptService(),
+      new Sha256CryptService(),
+    );
 
     const response = await useCase.execute(uuid);
 
@@ -51,7 +61,7 @@ export default class municipeController {
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
-      municipe: maskedResponse,
+      data: maskedResponse,
       ok: true,
     });
   }
@@ -64,6 +74,8 @@ export default class municipeController {
     const municipe = request.body;
     const useCase = new createMunicipeUseCase(
       new SequelizeMunicipeRepository(),
+      new AesCryptService(),
+      new Sha256CryptService(),
     );
 
     const payload = {
@@ -86,22 +98,24 @@ export default class municipeController {
 
     return reply.status(201).send({
       message: "Municipe created sucessfully",
-      municipe: maskedResponse,
+      data: maskedResponse,
       ok: true,
     });
   }
 
-    static async updateMunicipe(
-    request: FastifyRequest<{ Body: MunicipeDto, Params: { uuid: string } }>,
+  static async updateMunicipe(
+    request: FastifyRequest<{ Body: MunicipeDto; Params: { uuid: string } }>,
     reply: FastifyReply,
   ) {
     const user = request.user;
     const municipe = request.body;
     const useCase = new updateMunicipeUseCase(
       new SequelizeMunicipeRepository(),
+      new AesCryptService(),
+      new Sha256CryptService(),
     );
 
-    const uuid = request.params.uuid
+    const uuid = request.params.uuid;
 
     const payload = {
       nome: municipe.nome,
@@ -123,7 +137,7 @@ export default class municipeController {
 
     return reply.status(201).send({
       message: "Municipe created sucessfully",
-      municipe: maskedResponse,
+      data: maskedResponse,
       ok: true,
     });
   }

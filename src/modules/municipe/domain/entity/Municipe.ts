@@ -14,8 +14,6 @@ export default class Municipe {
     public author: string | number,
 
     public uuid?: string,
-    public cpfHash?: string,
-    public cepHash?: string,
     public createdAt?: Date,
     public updatedAt?: Date,
     public deletedAt?: Date | null,

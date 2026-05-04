@@ -1,4 +1,4 @@
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { PermissionRepository } from "../../domain/repository/permission.repository.js";
 import { CreatePermissionsDto, UpdatePermissionsDto } from "../dto/permissions.dto.js";
 import AppError from "../../../../core/appError.js";

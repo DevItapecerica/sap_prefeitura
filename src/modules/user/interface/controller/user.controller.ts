@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { userParams, userRequired } from "../../application/dto/user.dto.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { UserServiceFactory } from "../../factories/user-service.factory.js";
 
 export default class UserController {
