@@ -26,7 +26,7 @@ interface MunicipeDB extends Model<
   numero: string;
   complemento: CreationOptional<string>;
   cpfHash: string;
-  nomeHash: string;
+  cepHash: string;
 
   author: string | number;
 
@@ -112,7 +112,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      nomeHash: {
+      cepHash: {
         type: DataTypes.STRING,
         allowNull: false,
       },

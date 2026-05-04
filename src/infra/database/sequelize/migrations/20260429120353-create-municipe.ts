@@ -62,7 +62,7 @@ export default {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        nomeHash: {
+        cepHash: {
           type: DataTypes.STRING,
           allowNull: false,
         },

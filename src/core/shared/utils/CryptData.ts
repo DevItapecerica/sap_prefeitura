@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { SECRET_KEY } from "../../env.js";
 import {
   createHash,
@@ -45,5 +46,14 @@ export default class CryptData {
 
   staticHash = async (data: string) => {
     return createHash("sha256").update(data).digest("hex");
+  };
+
+  staticCompareHash = async (data: string, hash: string) => {
+    return createHash("sha256").update(data).digest("hex") === hash;
+  };
+
+  hashPassword = async (password: string): Promise<string> => {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return hashedPassword;
   };
 }

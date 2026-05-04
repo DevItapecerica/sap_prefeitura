@@ -12,7 +12,6 @@ import {
 export class SequelizeMunicipeRepository implements MunicipeRepository {
   private model = db.MunicipeModel;
   private fieldsToEncrypt = [
-    "nome",
     "cpf",
     "nascimento",
     "telefone",
@@ -43,7 +42,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
     data.author = author;
     data.cpfHash = await crypto.staticHash(String(municipe.cpf));
-    data.nomeHash = await crypto.staticHash(String(municipe.nome));
+    data.cepHash = await crypto.staticHash(String(municipe.cep));
 
     const response = await this.model.create(data);
 
@@ -61,14 +60,17 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
     const { page, limit, search, order } = query;
     const queryOrder = order ? order.split(":") : ["uuid", "desc"];
-    const searchHash = search ? await cryptData.staticHash(String(search)) : null;
+    const searchHash = search
+      ? await cryptData.staticHash(String(search))
+      : null;
 
     const offset = limit ? Number(page) * Number(limit) : undefined;
 
     const where = search
       ? {
           [Op.or]: [
-            { nomeHash: { [Op.like]: `%${searchHash}%` } },
+            { nome: { [Op.like]: `%${search}%` } },
+            { cepHash: { [Op.like]: `%${searchHash}%` } },
             { cpfHash: { [Op.like]: `%${searchHash}%` } },
           ],
         }
@@ -86,7 +88,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
     const municipeEntities = await Promise.all(
       municipe.map(async (m: any) => {
         return this.toEntity({
-          nome: await cryptData.Decryption(m.nome),
+          nome: m.nome,
           cpf: await cryptData.Decryption(m.cpf),
           nascimento: await cryptData.Decryption(m.nascimento),
           telefone: m.telefone ? await cryptData.Decryption(m.telefone) : null,
@@ -103,7 +105,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
           author: m.author,
           uuid: m.uuid,
           cpfHash: m.cpfHash,
-          nomeHash: m.nomeHash,
+          cepHash: m.cepHash,
           createdAt: m.createdAt,
           updatedAt: m.updatedAt,
           deletedAt: m.deletedAt,
@@ -125,7 +127,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
     if (!municipe) return null;
 
     const municipeEntities = this.toEntity({
-      nome: await cryptData.Decryption(municipe.nome),
+      nome: municipe.nome,
       cpf: await cryptData.Decryption(municipe.cpf),
       nascimento: await cryptData.Decryption(municipe.nascimento),
       telefone: municipe.telefone
@@ -144,7 +146,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       author: municipe.author,
       uuid: municipe.uuid,
       cpfHash: municipe.cpfHash,
-      nomeHash: municipe.nomeHash,
+      cepHash: municipe.cepHash,
       createdAt: municipe.createdAt,
       updatedAt: municipe.updatedAt,
       deletedAt: municipe.deletedAt,
@@ -163,7 +165,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
     if (!municipe) return null;
 
     const municipeEntities = this.toEntity({
-      nome: await cryptData.Decryption(municipe.nome),
+      nome: municipe.nome,
       cpf: await cryptData.Decryption(municipe.cpf),
       nascimento: await cryptData.Decryption(municipe.nascimento),
       telefone: municipe.telefone
@@ -214,8 +216,8 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
         data.cpfHash = await crypto.staticHash(String(value));
       }
 
-      if (key === "nome") {
-        data.nomeHash = await crypto.staticHash(String(value));
+      if (key === "cep") {
+        data.cepHash = await crypto.staticHash(String(value));
       }
     }
 
@@ -231,7 +233,6 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: any): Municipe {
-    console.log(data);
     return new Municipe(
       data.nome,
       data.cpf,
@@ -248,7 +249,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
       data.uuid,
       data.cpfHash,
-      data.nomeHash,
+      data.cepHash,
       data.createdAt,
       data.updatedAt,
       data.deletedAt,
