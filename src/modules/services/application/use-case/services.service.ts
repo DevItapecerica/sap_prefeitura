@@ -1,5 +1,5 @@
 import AppError from "../../../../core/appError.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import {
   CreateServicesDto,
   permissionDto,

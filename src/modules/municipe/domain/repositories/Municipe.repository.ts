@@ -1,4 +1,4 @@
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js"
+import { QueryParams } from "../../../../core/types/genericTypes.js"
 import { MunicipeDto, updateMunicipeDto } from "../../application/dto/municipe.dto.js"
 import Municipe from "../entity/Municipe.js"
 

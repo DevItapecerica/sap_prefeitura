@@ -1,5 +1,5 @@
 import { userParams, userRequired, userResponse, userResponseAll } from "../../application/dto/user.dto.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { User } from "../entity/User.js";
 
 export default interface UserRepository {

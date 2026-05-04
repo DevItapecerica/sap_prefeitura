@@ -1,4 +1,4 @@
-import errorResponseSchema from "../../../core/shared/schema/errorSchema.js";
+import errorResponseSchema from "../../../core/schema/errorSchema.js";
 
 export default class setoresSchema {
   static getSetores = {

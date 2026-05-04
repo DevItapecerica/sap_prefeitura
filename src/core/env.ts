@@ -24,4 +24,6 @@ export const MAIL_ADRESS = must("MAIL_ADRESS");
 export const MAIL_PASSWORD = must("MAIL_PASSWORD");
 export const MAIL_HOST = must("MAIL_HOST");
 
+export const CORS_ORIGINS = must("CORS_ORIGINS");
+
 export const PORT = must("APPLICATION_PORT");

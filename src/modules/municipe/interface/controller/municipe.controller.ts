@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { SequelizeMunicipeRepository } from "../../../../infra/database/sequelize/repositories/sequelize.municipe.repository.js";
 import getMunicipeUseCase from "../../application/usecase/getMunicipe.use-case.js";
 import MunicipePresentation from "../presentation/municipe.masked.presentation.js";
@@ -31,7 +31,7 @@ export default class municipeController {
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
-      municipe: maskedResponse,
+      data:maskedResponse,
       count: response.count,
       ok: true,
     });
@@ -51,7 +51,7 @@ export default class municipeController {
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
-      municipe: maskedResponse,
+      data:maskedResponse,
       ok: true,
     });
   }
@@ -86,7 +86,7 @@ export default class municipeController {
 
     return reply.status(201).send({
       message: "Municipe created sucessfully",
-      municipe: maskedResponse,
+      data:maskedResponse,
       ok: true,
     });
   }
@@ -123,7 +123,7 @@ export default class municipeController {
 
     return reply.status(201).send({
       message: "Municipe created sucessfully",
-      municipe: maskedResponse,
+      data:maskedResponse,
       ok: true,
     });
   }

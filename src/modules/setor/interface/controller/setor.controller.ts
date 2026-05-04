@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CreateSetorDto, DeleteSetorDto, FindOneSetorDto, UpdateSetorDto } from "../../application/dto/setor.dto.js";
 import setorFactory from "../../factories/setor.factory.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 
 export default class SetorController {
   static getSetores = async (request: FastifyRequest<{ Querystring: QueryParams }>, reply: FastifyReply) => {

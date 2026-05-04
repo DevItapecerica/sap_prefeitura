@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { SECRET_KEY } from "../../env.js";
+import { SECRET_KEY } from "../env.js";
 import {
   createHash,
   createCipheriv,

@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import db from "../index.js";
 import { ServicesRepository } from "../../../../modules/services/domain/repository/services.repository.js";
 import { Services } from "../../../../modules/services/domain/entity/Services.js";

@@ -1,4 +1,4 @@
-import CryptData from "../../core/shared/utils/CryptData.js";
+import CryptData from "../../core/utils/CryptData.js";
 import Carterinha from "../carterinhas/domain/entity/Carteirinha.js";
 
 export default class CarterinhaCriptografy {

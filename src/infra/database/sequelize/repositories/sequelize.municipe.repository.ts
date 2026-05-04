@@ -1,9 +1,9 @@
 import db from "../index.js";
 import MunicipeRepository from "../../../../modules/municipe/domain/repositories/Municipe.repository.js";
 import Municipe from "../../../../modules/municipe/domain/entity/Municipe.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { Op } from "sequelize";
-import CryptData from "../../../../core/shared/utils/CryptData.js";
+import CryptData from "../../../../core/utils/CryptData.js";
 import {
   MunicipeDto,
   updateMunicipeDto,

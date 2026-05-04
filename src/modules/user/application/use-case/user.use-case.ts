@@ -1,14 +1,14 @@
 import { userParams, userRequired } from "../dto/user.dto.js";
-import { sendPass } from "../../../../core/shared/utils/sendPass.js";
-import { generateRandomPassword } from "../../../../core/shared/utils/generateRandomPassword.js";
+import { sendPass } from "../../../../core/utils/sendPass.js";
+import { generateRandomPassword } from "../../../../core/utils/generateRandomPassword.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import AppError from "../../../../core/appError.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { User } from "../../domain/entity/User.js";
 import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
 import bcrypt from "bcryptjs";
-import comparePass from "../../../../core/shared/utils/comparePass.js";
-import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder.js";
+import comparePass from "../../../../core/utils/comparePass.js";
+import ValidateQueryOrder from "../../../../core/utils/ValidateQueryOrder.js";
 export default class UserService {
   constructor(
     private userRepository: UserRepository,

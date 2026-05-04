@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import {
   userParams,
   userRequired,

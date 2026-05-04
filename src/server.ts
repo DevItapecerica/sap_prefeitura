@@ -2,15 +2,15 @@ import { PORT } from "./core/env.js";
 
 // fastify
 import Fastify from "fastify";
-import logConfig from "./core/logConfig.js";
+import logConfig from "./core/config/logConfig.js";
 
 // Cors
-import corsConfig from "./core/plugin/CorsConfig.js";
+import corsConfig from "./core/plugin/Cors.js";
 
 // Swagger
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
-import { swaggerConfig, swaggerUiConfig } from "./core/swaggerConfig.js";
+import { swaggerConfig, swaggerUiConfig } from "./core/config/swaggerConfig.js";
 
 // Hooks
 import LoggerResponse from "./core/hooks/LoggerResponse.js";
