@@ -3,8 +3,6 @@ import Municipe from "../../domain/entity/Municipe.js";
 export default class MunicipePresentation {
   static Masked(mData: Municipe) {
 
-    return mData
-
     return {
       uuid: mData.uuid,
       nome: mData.nome.split(" ")[0] + " ***",
