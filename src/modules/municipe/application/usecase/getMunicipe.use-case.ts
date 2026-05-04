@@ -1,15 +1,25 @@
+import { IAesCrypt } from "../../../../core/security/aes/AesCrypt.interface.js";
+import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.js";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
 import Municipe from "../../domain/entity/Municipe.js";
 import MunicipeRepository from "../../domain/repositories/Municipe.repository.js";
+import { MunicipeMapper } from "../mapper/municipe.mapper.js";
 
 export default class getMunicipeUseCase {
-    constructor(private municipeRepository: MunicipeRepository) {
+  constructor(
+    private municipeRepository: MunicipeRepository,
+    private aesCrypt: IAesCrypt,
+    private sha256Crypt: ISha256Crypt
+  ) {}
+  async execute(
+    query: QueryParams,
+  ): Promise<{ municipe: Municipe[]; count: number }> {
+    const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
 
-    }
-    async execute(query: QueryParams): Promise<{municipe: Municipe[], count: number}> {
+    let response = await this.municipeRepository.getMunicipe(query);
 
-        const municipe = await this.municipeRepository.getMunicipe(query);
+    response.municipe = await Promise.all(response.municipe.map((m) => municipeMapper.toDomain(m)));
 
-        return municipe;
-    }
+    return response;
+  }
 }

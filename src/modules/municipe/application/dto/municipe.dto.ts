@@ -23,4 +23,3 @@ export type updateMunicipeDto = {
   numero?: string;
   complemento?: string | null;
 };
-

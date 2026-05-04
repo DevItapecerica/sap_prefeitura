@@ -1,19 +1,18 @@
-import bcrypt from "bcryptjs";
-import { SECRET_KEY } from "../env.js";
+import { SECRET_KEY } from "../../env.js";
 import {
-  createHash,
   createCipheriv,
   createDecipheriv,
   randomBytes,
   CipherGCM,
   DecipherGCM,
 } from "crypto";
+import { IAesCrypt } from "./AesCrypt.interface.js";
 
-export default class CryptData {
+export default class AesCryptService implements IAesCrypt {
   private saltRounds = 10;
   private ALGORITHM = "aes-256-gcm";
 
-  Encryption = async (data: string) => {
+  encrypt = async (data: string) => {
     const iv = randomBytes(this.saltRounds);
     const cipher = createCipheriv(
       this.ALGORITHM,
@@ -28,7 +27,7 @@ export default class CryptData {
     return `${iv.toString("hex")}:${authTag}:${encrypted}`;
   };
 
-  Decryption = async (encryptedData: string) => {
+  decrypt = async (encryptedData: string) => {
     const [ivHex, authTagHex, encryptedText] = encryptedData.split(":");
     const decipher = createDecipheriv(
       this.ALGORITHM,
@@ -42,18 +41,5 @@ export default class CryptData {
     decrypted += decipher.final("utf8");
 
     return decrypted;
-  };
-
-  staticHash = async (data: string) => {
-    return createHash("sha256").update(data).digest("hex");
-  };
-
-  staticCompareHash = async (data: string, hash: string) => {
-    return createHash("sha256").update(data).digest("hex") === hash;
-  };
-
-  hashPassword = async (password: string): Promise<string> => {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    return hashedPassword;
   };
 }
