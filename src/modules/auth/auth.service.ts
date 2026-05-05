@@ -1,5 +1,5 @@
 import AppError from "../../core/appError.js";
-import comparePass from "../../core/shared/utils/comparePass.js";
+import comparePass from "../../core/utils/comparePass.js";
 import UserRepository from "../user/domain/repository/user.repository.js";
 import { AuthLoginResponse } from "./types.js";
 import JwtServices from "./utils/jwt.service.js";

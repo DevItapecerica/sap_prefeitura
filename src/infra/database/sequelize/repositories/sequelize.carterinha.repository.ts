@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import db from "../index.js";
 import CarterinhaRepository from "../../../../modules/carterinhas/domain/repositories/carterinha.repository.js";
 import Carterinha from "../../../../modules/carterinhas/domain/entity/Carteirinha.js";

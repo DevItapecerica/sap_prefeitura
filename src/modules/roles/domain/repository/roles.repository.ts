@@ -1,4 +1,4 @@
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { CreateRoleDto, UpdateRoleDto } from "../../application/dto/roles.dto.js";
 import { Roles } from "../entity/Role.js";
 

@@ -3,7 +3,7 @@
 
 import { FastifyPluginAsync } from "fastify";
 import authController from "./auth.controller.js";
-import errorResponseSchema from "../../core/shared/schema/errorSchema.js";
+import errorResponseSchema from "../../core/schema/errorSchema.js";
 
 const routes: FastifyPluginAsync = async (fastify) => {
   // Login route
