@@ -14,22 +14,11 @@ interface CarterinhaDB extends Model<
   InferCreationAttributes<CarterinhaDB>
 > {
   uuid: CreationOptional<string>;
-  numero_carterinha: string;
-  nome: string;
-  cpf: string;
-  nascimento: string;
-  telefone: CreationOptional<string>;
   emissao: string;
   validade: CreationOptional<string>;
-  rua: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  cep: string;
-  numero: string;
-  complemento: CreationOptional<string>;
+  municipe_uuid: string;
   setor: string;
-  servico: string;
+  atividade_uuid: string;
 
   author: string | number;
 
@@ -48,31 +37,6 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      numero_carterinha: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      nome: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      cpf: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      nascimento: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      telefone: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null,
-      },
-
       emissao: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -84,40 +48,9 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         defaultValue: null,
       },
 
-      rua: {
-        type: DataTypes.STRING,
+      municipe_uuid: {
+        type: DataTypes.UUID,
         allowNull: false,
-      },
-
-      bairro: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      cidade: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      uf: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      cep: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      numero: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      complemento: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null,
       },
 
       setor: {
@@ -125,9 +58,9 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      servico: {
+      atividade_uuid: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       author: {

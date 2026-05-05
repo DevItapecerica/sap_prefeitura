@@ -1,16 +1,23 @@
 import { Op } from "sequelize";
 import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
 import db from "../index.js";
-import AppError from "../../../../core/appError.js";
 import CarterinhaRepository from "../../../../modules/carterinhas/domain/repositories/carterinha.repository.js";
 import Carterinha from "../../../../modules/carterinhas/domain/entity/Carteirinha.js";
 
 export class SequelizeCarterinhaRepository implements CarterinhaRepository {
-  private model = db.PermissionsModel;
+  private model = db.CarteirinhaModel;
 
-  async getCarterinhas(): Promise<{ carterinhas: Carterinha[]; count: number }> {
+  async getCarterinhas(): Promise<{
+    carterinhas: Carterinha[];
+    count: number;
+  }> {
     const carterinhas = await this.model.findAll();
-    return { carterinhas: carterinhas.map((carterinha: Carterinha) => this.toEntity(carterinha)), count: carterinhas.length };
+    return {
+      carterinhas: carterinhas.map((carterinha: Carterinha) =>
+        this.toEntity(carterinha),
+      ),
+      count: carterinhas.length,
+    };
   }
 
   async postCarterinhas(carterinha: Carterinha): Promise<Carterinha> {
@@ -23,7 +30,10 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     return carterinha ? this.toEntity(carterinha) : null;
   }
 
-  async updateCarterinha(id: number, carterinha: Carterinha): Promise<Carterinha | null> {
+  async updateCarterinha(
+    id: number,
+    carterinha: Carterinha,
+  ): Promise<Carterinha | null> {
     const isCarterinha = await this.model.findByPk(id);
 
     if (!isCarterinha) return null;
@@ -42,21 +52,12 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: any): Carterinha {
     return new Carterinha(
-      data.nome,
-      data.cpf,
-      data.nascimento,
-      data.telefone,
       data.emissao,
       data.validade,
-      data.rua,
-      data.bairro,
-      data.cidade,
-      data.uf,
-      data.cep,
-      data.numero,
-      data.complemento,
-      data.setor,
-      data.servico,
+      data.setor_uuid,
+      data.atividade_uuid,
+      data.municipe_uuid,
+
       data.uuid,
       data.numero_carterinha,
       data.author,

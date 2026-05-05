@@ -1,9 +1,10 @@
 export default class Carterinha {
   constructor(
-    public emissao: string,
-    public validade: string | null,
-    public setor: string,
-    public servico: string,
+
+    public emissao: Date,
+    public validade: Date | null,
+    public setor_uuid: string,
+    public atividade_uuid: string | null,
     public municipe_uuid: string,
 
     public uuid?: string,
@@ -12,7 +13,10 @@ export default class Carterinha {
     public createdAt?: Date,
     public updatedAt?: Date,
     public deletedAt?: Date | null,
-  ) {}
+  ) {
+
+
+  }
 
 
 }
