@@ -21,7 +21,7 @@ export class CarterinhasController {
         const useCase = new CreateCarterinhaUseCase( new SequelizeMunicipeRepository(), new SequelizeSetorRepository(), new SequelizeCarterinhaRepository() ); 
 
         const payload = {
-            emissao: request.body.emissao,
+            emissao: new Date(request.body.emissao),
             municipe_uuid: request.body.municipe_uuid,
             setor_uuid: request.body.setor_uuid,
             atividade_uuid: request.body.atividade_uuid,

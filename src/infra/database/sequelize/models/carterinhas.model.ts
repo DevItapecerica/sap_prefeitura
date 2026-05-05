@@ -17,7 +17,7 @@ interface CarterinhaDB extends Model<
   emissao: string;
   validade: CreationOptional<string>;
   municipe_uuid: string;
-  setor: string;
+  setor_uuid: string;
   atividade_uuid: string;
 
   author: string | number;
@@ -33,17 +33,18 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       uuid: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
 
       emissao: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
         allowNull: false,
       },
 
       validade: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
         allowNull: true,
         defaultValue: null,
       },
@@ -53,7 +54,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      setor: {
+      setor_uuid: {
         type: DataTypes.STRING,
         allowNull: false,
       },

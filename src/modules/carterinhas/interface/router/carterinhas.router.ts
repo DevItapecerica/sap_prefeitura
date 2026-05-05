@@ -1,13 +1,14 @@
 import { FastifyPluginAsync } from "fastify";
-import { error } from "password-validator/typings/constants.js";
-import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
 import { CarterinhasController } from "../controller/carterinhas.controller.js";
+import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
 export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
   const publicCarterihaSchema = {
     type: "object",
     properties: {
       uuid: { type: "string", example: "uuid" },
+      emissao: { type: "string", format: "date" },
+      validade: { type: "string", format: "date" },
       setor_uuid: {
         anyOf: [{ type: "string" }, { type: "number" }],
         example: "uuid",
@@ -30,9 +31,11 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
     type: "object",
     required: ["emissao", "setor_uuid", "municipe_uuid"],
     properties: {
-      emissao: { type: "string", format: "date-time" },
+      emissao: { type: "string", format: "date" },
       setor_uuid: { anyOf: [{ type: "string" }, { type: "number" }] },
-      atividade_uuid: { anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }] },
+      atividade_uuid: {
+        anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+      },
       municipe_uuid: { anyOf: [{ type: "string" }, { type: "number" }] },
     },
   };
@@ -58,15 +61,18 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
       summary: "Get all carterinhas",
       response: {
         200: {
-          message: {
-            type: "string",
-            example: "Carterinhas geted successfully",
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Carterinhas geted successfully",
+            },
+            data: {
+              type: "array",
+              items: publicCarterihaSchema,
+            },
+            okay: { type: "boolean", example: true },
           },
-          data: {
-            type: "array",
-            items: publicCarterihaSchema,
-          },
-          okay: { type: "boolean", example: true },
         },
         ...errorResponseSchema,
       },

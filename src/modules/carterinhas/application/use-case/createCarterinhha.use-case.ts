@@ -31,7 +31,8 @@ export default class CreateCarterinhaUseCase {
       validade,
       data.setor_uuid,
       data.atividade_uuid || null,
-      data.municipe_uuid
+      data.municipe_uuid,
+      1
     );
 
     return await this.carterinhaRepository.postCarterinhas(newCarterinha);

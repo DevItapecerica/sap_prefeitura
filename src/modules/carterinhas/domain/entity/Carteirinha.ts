@@ -6,10 +6,10 @@ export default class Carterinha {
     public setor_uuid: string,
     public atividade_uuid: string | null,
     public municipe_uuid: string,
+    public author: string | number,
 
     public uuid?: string,
     public numero_carterinha?: string,
-    public author?: string,
     public createdAt?: Date,
     public updatedAt?: Date,
     public deletedAt?: Date | null,

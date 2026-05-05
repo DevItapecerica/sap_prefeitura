@@ -57,10 +57,10 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
       data.setor_uuid,
       data.atividade_uuid,
       data.municipe_uuid,
+      data.author,
 
       data.uuid,
       data.numero_carterinha,
-      data.author,
       data.createdAt,
       data.updatedAt,
       data.deletedAt,

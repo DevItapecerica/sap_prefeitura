@@ -11,12 +11,12 @@ export default {
           primaryKey: true,
         },
         emissao: {
-          type: DataTypes.STRING,
+          type: DataTypes.DATE,
           allowNull: false,
         },
 
         validade: {
-          type: DataTypes.STRING,
+          type: DataTypes.DATE,
           allowNull: true,
           defaultValue: null,
         },
@@ -26,7 +26,7 @@ export default {
           allowNull: false,
         },
 
-        setor: {
+        setor_uuid: {
           type: DataTypes.STRING,
           allowNull: false,
         },
