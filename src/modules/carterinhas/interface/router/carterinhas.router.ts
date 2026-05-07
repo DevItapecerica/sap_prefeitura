@@ -1,8 +1,20 @@
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { CarterinhasController } from "../controller/carterinhas.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
+import AuthMiddleware from "../../../auth/auth.middleware.js";
+import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  fastify.addHook("preHandler", async (request: FastifyRequest) => {
+    const verifyAuthorization = authorizationFactory(request.log);
+    await verifyAuthorization.authorize(
+      Number(request.user.id),
+      1,
+      request.method,
+    );
+  });
+
   const publicCarterihaSchema = {
     type: "object",
     properties: {
@@ -29,7 +41,7 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
 
   const requiredCarterihaSchema = {
     type: "object",
-    required: [ "setor_uuid", "municipe_uuid"],
+    required: ["setor_uuid", "municipe_uuid"],
     properties: {
       setor_uuid: { anyOf: [{ type: "string" }, { type: "number" }] },
       atividade_uuid: {
@@ -91,8 +103,7 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
           uuid: { type: "string" },
         },
       },
-      description:
-        "Pegue uma carterinha pelo uuid",
+      description: "Pegue uma carterinha pelo uuid",
       summary: "Get all carterinhas",
       response: {
         200: {
@@ -118,7 +129,8 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
     schema: {
       tags: ["Carterinhas"],
       security: [{ JWTToken: [] }],
-      description: "Crie uma nova carterinhas, o uuid será gerado automaticamente, assim como a validade (estipulada para dois anos), e a emissão (data atual)",
+      description:
+        "Crie uma nova carterinhas, o uuid será gerado automaticamente, assim como a validade (estipulada para dois anos), e a emissão (data atual)",
       summary: "Post new carterinha",
       body: requiredCarterihaSchema,
       response: {
