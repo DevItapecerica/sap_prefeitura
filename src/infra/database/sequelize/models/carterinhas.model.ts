@@ -14,22 +14,11 @@ interface CarterinhaDB extends Model<
   InferCreationAttributes<CarterinhaDB>
 > {
   uuid: CreationOptional<string>;
-  numero_carterinha: string;
-  nome: string;
-  cpf: string;
-  nascimento: string;
-  telefone: CreationOptional<string>;
   emissao: string;
   validade: CreationOptional<string>;
-  rua: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  cep: string;
-  numero: string;
-  complemento: CreationOptional<string>;
-  setor: string;
-  servico: string;
+  municipe_uuid: string;
+  setor_uuid: string;
+  atividade_uuid: string;
 
   author: string | number;
 
@@ -44,90 +33,35 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       uuid: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
 
-      numero_carterinha: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      nome: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      cpf: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      nascimento: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      telefone: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null,
-      },
-
       emissao: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
         allowNull: false,
       },
 
       validade: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
         allowNull: true,
         defaultValue: null,
       },
 
-      rua: {
+      municipe_uuid: {
+        type: DataTypes.UUID,
+        allowNull: false,
+      },
+
+      setor_uuid: {
         type: DataTypes.STRING,
         allowNull: false,
       },
 
-      bairro: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      cidade: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      uf: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      cep: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      numero: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      complemento: {
+      atividade_uuid: {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null,
-      },
-
-      setor: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
-      servico: {
-        type: DataTypes.STRING,
-        allowNull: false,
       },
 
       author: {

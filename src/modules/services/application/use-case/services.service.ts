@@ -3,7 +3,6 @@ import { QueryParams } from "../../../../core/types/genericTypes.js";
 import {
   CreateServicesDto,
   permissionDto,
-  ServicesDto,
   UpdateServicesDto,
   visibilityDto,
 } from "../dto/services.dto.js";

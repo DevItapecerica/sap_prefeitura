@@ -1,17 +1,18 @@
 export type CarterinhaDto = {
-  nome: string;
-  cpf: string;
-  nascimento: string;
-  telefone: string | null;
-  emissao: string;
-  validade: string | null;
-  rua: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  cep: string;
-  numero: string;
-  complemento: string | null;
-  setor: string;
-  servico: string;
+  uuid: string;
+  emissao: Date;
+  validade: Date;
+  setor_uuid: string | number;
+  atividade_uuid: string | null;
+  municipe_uuid: string | number;
+  author: string | number;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+};
+
+export type PostCarterinhaDto = {
+  setor_uuid: string;
+  atividade_uuid: string | null;
+  municipe_uuid: string;
 };
