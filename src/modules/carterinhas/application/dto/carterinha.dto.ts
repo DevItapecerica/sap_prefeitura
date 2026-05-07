@@ -12,7 +12,6 @@ export type CarterinhaDto = {
 };
 
 export type PostCarterinhaDto = {
-  emissao: Date;
   setor_uuid: string;
   atividade_uuid: string | null;
   municipe_uuid: string;

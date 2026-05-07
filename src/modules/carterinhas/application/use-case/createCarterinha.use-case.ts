@@ -23,11 +23,12 @@ export default class CreateCarterinhaUseCase {
       throw new AppError("Setor not found", 404, "SETOR_NOT_FOUND");
     }
 
+    const emissao = new Date(Date.now());
     const carterinhaPolicy = new CarterinhaPolicy();
-    const validade = carterinhaPolicy.calcularValidade(data.emissao);
+    const validade = carterinhaPolicy.calcularValidade(emissao);
 
     const newCarterinha = new Carterinha(
-      data.emissao,
+      emissao,
       validade,
       data.setor_uuid,
       data.atividade_uuid || null,

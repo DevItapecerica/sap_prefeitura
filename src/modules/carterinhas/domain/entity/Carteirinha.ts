@@ -9,7 +9,6 @@ export default class Carterinha {
     public author: string | number,
 
     public uuid?: string,
-    public numero_carterinha?: string,
     public createdAt?: Date,
     public updatedAt?: Date,
     public deletedAt?: Date | null,

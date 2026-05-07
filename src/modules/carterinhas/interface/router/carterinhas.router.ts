@@ -29,9 +29,8 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
 
   const requiredCarterihaSchema = {
     type: "object",
-    required: ["emissao", "setor_uuid", "municipe_uuid"],
+    required: [ "setor_uuid", "municipe_uuid"],
     properties: {
-      emissao: { type: "string", format: "date" },
       setor_uuid: { anyOf: [{ type: "string" }, { type: "number" }] },
       atividade_uuid: {
         anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
@@ -49,15 +48,15 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
       querystring: {
         type: "object",
         properties: {
-          numeroCarterinha: { type: "string" },
           setor: { type: "string" },
           servico: { type: "string" },
           limit: { type: "number" },
           page: { type: "number" },
+          order: { type: "string" },
         },
       },
       description:
-        "Pegue todas as carterinhas, os dados estarão mascarados e poderão ser consultados por id, nome, numero da carterinha ou cpf",
+        "Pegue todas as carterinhas, os dados estarão mascarados e poderão ser consultados por uuid, setor servico",
       summary: "Get all carterinhas",
       response: {
         200: {
@@ -81,12 +80,45 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.route({
+    method: "GET",
+    url: "/:uuid",
+    schema: {
+      tags: ["Carterinhas"],
+      security: [{ JWTToken: [] }],
+      params: {
+        type: "object",
+        properties: {
+          uuid: { type: "string" },
+        },
+      },
+      description:
+        "Pegue uma carterinha pelo uuid",
+      summary: "Get all carterinhas",
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Carterinha geted successfully",
+            },
+            data: publicCarterihaSchema,
+            okay: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: CarterinhasController.getOneCarterinha,
+  });
+
+  fastify.route({
     method: "POST",
     url: "/",
     schema: {
       tags: ["Carterinhas"],
       security: [{ JWTToken: [] }],
-      description: "Crie uma nova carterinhas",
+      description: "Crie uma nova carterinhas, o uuid será gerado automaticamente, assim como a validade (estipulada para dois anos), e a emissão (data atual)",
       summary: "Post new carterinha",
       body: requiredCarterihaSchema,
       response: {

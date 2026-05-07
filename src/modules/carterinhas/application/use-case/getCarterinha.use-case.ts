@@ -6,7 +6,7 @@ export default class GetCarterinhaUseCase {
   constructor(private carterinhaRepository: CarterinhaRepository) {}
 
   async execute(query: QueryCarterinhasDto): Promise<{carterinhas: Carterinha[], count: number}> {
-    const carterinhaCriptografedawait = this.carterinhaRepository.getCarterinhas(query);
+    const carterinhaCriptografedawait = await this.carterinhaRepository.getCarterinhas(query);
 
     return carterinhaCriptografedawait;
   }

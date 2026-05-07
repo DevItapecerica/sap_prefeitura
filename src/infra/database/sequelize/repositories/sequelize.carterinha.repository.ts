@@ -1,17 +1,36 @@
-import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import db from "../index.js";
 import CarterinhaRepository from "../../../../modules/carterinhas/domain/repositories/carterinha.repository.js";
 import Carterinha from "../../../../modules/carterinhas/domain/entity/Carteirinha.js";
+import { QueryCarterinhasDto } from "../../../../modules/carterinhas/application/dto/queryCarterinhas.dto.js";
+import { Op } from "sequelize";
 
 export class SequelizeCarterinhaRepository implements CarterinhaRepository {
   private model = db.CarteirinhaModel;
 
-  async getCarterinhas(): Promise<{
+  async getCarterinhas(query: QueryCarterinhasDto): Promise<{
     carterinhas: Carterinha[];
     count: number;
   }> {
-    const carterinhas = await this.model.findAll();
+    const { page, limit,  setor, servico, order } = query;
+    const queryOrder = order ? order.split(":") : ["uuid", "desc"];
+
+    const offset = limit ? Number(page) * Number(limit) : undefined;
+
+    const where = {
+      [Op.or]: [
+        { setor_uuid: { [Op.like]: `%${setor ? setor : ""}%` } },
+        { atividade_uuid: { [Op.like]: `%${servico ? servico: ""}%` } },
+      ],
+    };
+
+    const queryData = {
+      offset,
+      where,
+      limit: limit,
+      order: [[queryOrder[0], queryOrder[1]]],
+    };
+
+    const carterinhas = await this.model.findAll(queryData);
     return {
       carterinhas: carterinhas.map((carterinha: Carterinha) =>
         this.toEntity(carterinha),
@@ -25,7 +44,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     return this.toEntity(newCarterinha);
   }
 
-  async getCarterinhaById(id: number): Promise<Carterinha | null> {
+  async getCarterinhaById(id: number | string): Promise<Carterinha | null> {
     const carterinha = await this.model.findByPk(id);
     return carterinha ? this.toEntity(carterinha) : null;
   }
@@ -60,7 +79,6 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
       data.author,
 
       data.uuid,
-      data.numero_carterinha,
       data.createdAt,
       data.updatedAt,
       data.deletedAt,
