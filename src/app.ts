@@ -10,6 +10,7 @@ import { registerAccessControlEvents } from "./modules/acess-controll/events/ind
 import { frenteDeTrabalhoModule } from "./modules/frente-de-trabalho/index.js";
 import CarterinhasModule from "./modules/carterinhas/index.js";
 import MunicipeModule from "./modules/municipe/index.js";
+import { ftEditalModule } from "./modules/ft-edital/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(userModule);
@@ -27,8 +28,11 @@ const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(PermissionModule);
   fastify.log.info("Permission Module Registrado");
 
-  await fastify.register(frenteDeTrabalhoModule);
-  fastify.log.info("Frente de Trabalho Module Registrado");
+  // await fastify.register(frenteDeTrabalhoModule);
+  // fastify.log.info("Frente de Trabalho Module Registrado");
+
+    await fastify.register(ftEditalModule);
+  fastify.log.info("FTEdital Module Registrado");
 
   await fastify.register(MunicipeModule);
   fastify.log.info("Municipe Module Registrado");

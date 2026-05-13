@@ -2,25 +2,26 @@ import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import EditalController from "../controller/frente-de-trabalho-edital.controller.js";
+import FtEditalController from "../controller/ft-edital.controller.js";
 
-export const frenteDeTrabalhoEditalRouter: FastifyPluginAsync = async (
+export const ftEditalRouter: FastifyPluginAsync = async (
   fastify,
 ) => {
-  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      6,
-      request.method,
-    );
-  });
+  // fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  // fastify.addHook("preHandler", async (request: FastifyRequest) => {
+  //   const verifyAuthorization = authorizationFactory(request.log);
+  //   await verifyAuthorization.authorize(
+  //     Number(request.user.id),
+  //     6,
+  //     request.method,
+  //   );
+  // });
 
   fastify.route({
     method: "GET",
     url: "/",
     // schema: Schema.getEditalSchema,
-    handler: EditalController.getEditais,
+    handler: FtEditalController.getEdital,
   });
 
   fastify.route({
@@ -51,6 +52,7 @@ export const frenteDeTrabalhoEditalRouter: FastifyPluginAsync = async (
     handler: EditalController.deleteEdital,
   });
 
+  // add bolsista
   fastify.route({
     method: "POST",
     url: "/vincularbolsista/:id",
@@ -58,17 +60,17 @@ export const frenteDeTrabalhoEditalRouter: FastifyPluginAsync = async (
     handler: EditalController.vincularBolsista,
   });
 
+  // edital with bolsista
   fastify.route({
     method: "GET",
     url: "/:id/bolsista",
-    // schema: Schema.vincularBolsista,
     handler: EditalController.getEditalWithBolsista,
   });
 
-  fastify.route({
+  // relatory
+    fastify.route({
     method: "GET",
-    url: "/bolsista",
-    // schema: Schema.vincularBolsista,
-    handler: EditalController.getAllWithBolsista,
-  });
+    url: "/:id/relatory",
+    handler: EditalController.getEditalWithBolsista,
+  });  
 };

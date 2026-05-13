@@ -1,11 +1,14 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import FT_API from "../../api.js";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
-export default class EditalController {
-  static getEditais = async (request: FastifyRequest, reply: FastifyReply) => {
-    const response = await FT_API.get("/ft/edital");
-    const { data } = response;
-    reply.status(200).send({ ...data });
+import getEditalUseCase from "../../application/use-case/getEdital.use-case.js";
+import { SequelizeEditalRepository } from "../../../../infra/database/sequelize/repositories/sequelize.edital.repository.js";
+export default class FtEditalController {
+
+  static getEdital = async (request: FastifyRequest, reply: FastifyReply) => {
+    const useCase = new getEditalUseCase(new SequelizeEditalRepository());
+    const response = await useCase.execute();
+    reply.status(200).send({ message: "Editais retrivied", data: response, ok: true });
   };
 
   static getEditalById = async (
@@ -14,9 +17,8 @@ export default class EditalController {
   ) => {
     const { id } = request.params;
     const response = await FT_API.get(`/ft/edital/${id}`);
-    const { data } = response;
 
-    reply.status(200).send({ ...data });
+    reply.status(200).send({ message: "edital found", data: response, ok: true });
   };
 
   static postEdital = async (
@@ -29,9 +31,7 @@ export default class EditalController {
       edital,
     });
 
-    const { data } = response;
-
-    reply.status(200).send({ ...data });
+    reply.status(200).send({ message: "edital created", data: response, ok: true });
   };
 
   static updateEdital = async (
@@ -44,9 +44,8 @@ export default class EditalController {
     const response = await FT_API.put(`/ft/edital/${id}`, {
       edital,
     });
-    const { data } = response;
 
-    reply.status(200).send({ ...data });
+    reply.status(200).send({ message: "edital updated", data: response, ok: true });
   };
 
   static deleteEdital = async (
@@ -57,9 +56,7 @@ export default class EditalController {
 
     const response = await FT_API.delete(`/ft/edital/${id}`);
 
-    const { data } = response;
-
-    reply.status(200).send({ ...data });
+    reply.status(200).send({ message: "edital deleted", data: response, ok: true });
   };
 
   static vincularBolsista = async (
@@ -73,12 +70,12 @@ export default class EditalController {
     const { bolsista } = request.body;
     const { data_vinculo } = request.body;
 
-    const { data } = await FT_API.post(`/ft/edital/vincularbolsista/${id}`, {
+    const response = await FT_API.post(`/ft/edital/vincularbolsista/${id}`, {
       bolsista,
       data_vinculo,
     });
 
-    reply.status(200).send({ ...data });
+    reply.status(200).send({ message: "edital deleted", data: response, ok: true });
   };
 
   static getEditalWithBolsista = async (
@@ -89,21 +86,12 @@ export default class EditalController {
     reply: FastifyReply,
   ) => {
     const { id } = request.params;
-    const { page = 0, limit = 10, search = "" } = request.query;
+    const { page = 0, limit = 10, search = "", order = "creatAt:desc" } = request.query;
 
-    const { data } = await FT_API.get(
+    const response = await FT_API.get(
       `/ft/edital/${id}/bolsista?page=${page}&limit=${limit}&search=${search}`,
     );
 
-    reply.status(200).send(data);
-  };
-
-  static getAllWithBolsista = async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ) => {
-    const { data } = await FT_API.get(`/ft/edital/bolsista`);
-
-    reply.status(200).send({ ...data });
+    reply.status(200).send({ message: "edital deleted", data: response, ok: true });
   };
 }

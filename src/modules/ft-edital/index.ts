@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
-import { frenteDeTrabalhoEditalRouter } from "./interface/router/ft-edital.router.js";
+import { ftEditalRouter } from "./interface/router/ft-edital.router.js";
 
-export const frenteDeTrabalhoModule: FastifyPluginAsync = async (fastify) => {
-  fastify.register(frenteDeTrabalhoEditalRouter, { prefix: "/frente-de-trabalho/edital" });
+export const ftEditalModule: FastifyPluginAsync = async (fastify) => {
+  fastify.register(ftEditalRouter, { prefix: "/frente-de-trabalho/edital" });
 };
