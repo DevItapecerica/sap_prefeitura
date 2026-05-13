@@ -9,7 +9,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
     const verifyAuthorization = authorizationFactory(request.log);
     await verifyAuthorization.authorize(
       Number(request.user.id),
-      1,
+      11,
       request.method,
     );
   });

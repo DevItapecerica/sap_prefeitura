@@ -10,7 +10,7 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
     const verifyAuthorization = authorizationFactory(request.log);
     await verifyAuthorization.authorize(
       Number(request.user.id),
-      1,
+      12,
       request.method,
     );
   });

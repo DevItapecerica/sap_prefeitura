@@ -7,7 +7,7 @@ import { getAuth } from "../controller/frente-de-trabalho-auth.controller.js";
 export const frenteDeTrabalhoBolsistaRouter: FastifyPluginAsync = async (fastify) => {
       fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   fastify.addHook("preHandler", async (request: FastifyRequest) => {const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(Number(request.user.id), 6, request.method);
+    await verifyAuthorization.authorize(Number(request.user.id), 1, request.method);
    });
 
     fastify.route({
