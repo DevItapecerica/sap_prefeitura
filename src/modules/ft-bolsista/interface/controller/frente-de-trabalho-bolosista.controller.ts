@@ -4,6 +4,8 @@ import FT_API from "../../api.js";
 import GetBolsistaUseCase from "../../application/use-case/getBolsista.useCase.js";
 import { SequelizeBolsistaRepository } from "../../../../infra/database/sequelize/repositories/sequelize.bolsista.repository.js";
 import { BolsistaQueryDto } from "../../application/dto/bolsista-query.dto.js";
+import getOneBolsistaUseCase from "../../application/use-case/getOneBolsista.useCase.js";
+import { ok } from "assert";
 
 export class FtBolsistaController {
   static getBolsista = async (
@@ -17,7 +19,7 @@ export class FtBolsistaController {
 
     const response = await useCase.execute(query)
 
-    reply.status(200).send(response);
+    reply.status(200).send({message: "bolsistas retrivied", bolsistas: response.bolsistas, count: response.count, ok: true});
   };
 
   static getOneBolsistas = async (
@@ -25,10 +27,11 @@ export class FtBolsistaController {
     reply: FastifyReply,
   ) => {
     const { id } = request.params;
-    const { data } = await FT_API.get(`/ft/bolsista/${id}`);
-    const bolsistas = data;
+    const useCase = new getOneBolsistaUseCase(new SequelizeBolsistaRepository());
 
-    reply.status(200).send(bolsistas);
+    const response = await useCase.execute(id)
+
+    reply.status(200).send({message: "bolsista found", bolsistas: response, ok: true});
   };
 
   static createBolsistas = async (

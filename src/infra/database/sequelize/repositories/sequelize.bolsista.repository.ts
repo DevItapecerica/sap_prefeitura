@@ -33,9 +33,12 @@ export class SequelizeBolsistaRepository implements IBolsistaRepository {
     };
 
     const bolsista = await this.model.findAll(queryData);
+
+    const quantity = await this.model.count({ where });
+
     return {
       bolsistas: bolsista.map((b: any) => this.toEntity(b)),
-      count: bolsista.length,
+      count: quantity,
     };
   }
 

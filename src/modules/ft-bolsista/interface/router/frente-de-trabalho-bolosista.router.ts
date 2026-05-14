@@ -27,7 +27,8 @@ export const ftBolsistaRouter: FastifyPluginAsync = async (fastify) => {
     url: "/",
     schema: {
       tags: ["Bolsista"],
-      description: "Retorna todos os bolsistas com base na query. Valores aceitos: id -> Para passar o id solicitado, nome, local, cpf \n page -> Para passar o page, limit -> Para passar o limit, order -> Para passar o order",
+      description:
+        "Retorna todos os bolsistas com base na query. Valores aceitos: id -> Para passar o id solicitado, nome, local, cpf \n page -> Para passar o page, limit -> Para passar o limit, order -> Para passar o order",
       summary: "Retorna todos os bolsistas",
       querystring: {
         type: "object",
@@ -40,17 +41,50 @@ export const ftBolsistaRouter: FastifyPluginAsync = async (fastify) => {
           limit: { type: "number", default: 10 },
           order: { type: "string", default: "createdAt:desc" },
         },
-      }
+      },
+
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+
+            ok: { type: "boolean" },
+
+            bolsistas: {
+              type: "array",
+              items: responseBolsistaSchema,
+            },
+            count: { type: "number" },
+          },
+        },
+      },
     },
+
     handler: FtBolsistaController.getBolsista,
   });
 
-  // fastify.route({
-  //   method: "GET",
-  //   url: "/:id",
-  //   // schema: BolsistaSchema.getOneBolsistaSchema,
-  //   handler: FtBolsistaController.getOneBolsistas,
-  // });
+  fastify.route({
+    method: "GET",
+    url: "/:id",
+    schema: {
+      tags: ["Bolsista"],
+      description:
+        "Retorna um bolsista com base no id solicitado. Valores aceitos: id -> Para passar o id solicitado em parametros",
+      summary: "Retorna bolsista unico",
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            ok: { type: "boolean" },
+            bolsistas: responseBolsistaSchema,
+          },
+        },
+      },
+    },
+    handler: FtBolsistaController.getOneBolsistas,
+  });
 
   // fastify.route({
   //   method: "POST",
