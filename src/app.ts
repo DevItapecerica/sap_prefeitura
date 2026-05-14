@@ -7,10 +7,10 @@ import ServiceModule from "./modules/services/index.js";
 import RolesModule from "./modules/roles/index.js";
 import PermissionModule from "./modules/permission/index.js";
 import { registerAccessControlEvents } from "./modules/acess-controll/events/index.js";
-import { frenteDeTrabalhoModule } from "./modules/frente-de-trabalho/index.js";
 import CarterinhasModule from "./modules/carterinhas/index.js";
 import MunicipeModule from "./modules/municipe/index.js";
 import { ftEditalModule } from "./modules/ft-edital/index.js";
+import { ftBolsistaModule } from "./modules/ft-bolsista/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(userModule);
@@ -28,10 +28,10 @@ const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(PermissionModule);
   fastify.log.info("Permission Module Registrado");
 
-  // await fastify.register(frenteDeTrabalhoModule);
-  // fastify.log.info("Frente de Trabalho Module Registrado");
+  await fastify.register(ftEditalModule);
+  fastify.log.info("FTEdital Module Registrado");
 
-    await fastify.register(ftEditalModule);
+  await fastify.register(ftBolsistaModule);
   fastify.log.info("FTEdital Module Registrado");
 
   await fastify.register(MunicipeModule);
@@ -43,7 +43,7 @@ const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(authModule);
   fastify.log.info("Auth Module Registrado");
 
-  fastify.register(registerAccessControlEvents)
+  fastify.register(registerAccessControlEvents);
   fastify.log.info("Access Control Events Registrado");
 };
 

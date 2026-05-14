@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
-import { frenteDeTrabalhoRouter } from "./interface/router/frente-de-trabalho.router.js";
+import { ftBolsistaRouter } from "./interface/router/frente-de-trabalho-bolosista.router.js";
 
-export const frenteDeTrabalhoModule: FastifyPluginAsync = async (fastify) => {
-  fastify.register(frenteDeTrabalhoRouter, { prefix: "/frente-de-trabalho" });
+export const ftBolsistaModule: FastifyPluginAsync = async (fastify) => {
+  fastify.register(ftBolsistaRouter, { prefix: "/frente-de-trabalho/bolsista" });
 };

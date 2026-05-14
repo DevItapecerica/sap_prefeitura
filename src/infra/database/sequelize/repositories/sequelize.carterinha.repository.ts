@@ -17,7 +17,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     const offset = limit ? Number(page) * Number(limit) : undefined;
 
     const where = {
-      [Op.or]: [
+      [Op.and]: [
         { setor_uuid: { [Op.like]: `%${setor ? setor : ""}%` } },
         { atividade_uuid: { [Op.like]: `%${servico ? servico: ""}%` } },
       ],

@@ -1,30 +1,23 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import FT_API from "../../api.js";
+import GetBolsistaUseCase from "../../application/use-case/getBolsista.useCase.js";
+import { SequelizeBolsistaRepository } from "../../../../infra/database/sequelize/repositories/sequelize.bolsista.repository.js";
+import { BolsistaQueryDto } from "../../application/dto/bolsista-query.dto.js";
 
-export class BolsistaController {
-  static getBolsistas = async (
-    request: FastifyRequest<{ Querystring: QueryParams }>,
+export class FtBolsistaController {
+  static getBolsista = async (
+    request: FastifyRequest<{ Querystring: BolsistaQueryDto }>,
     reply: FastifyReply,
   ) => {
-    let user = request.user;
+    const useCase = new GetBolsistaUseCase(new SequelizeBolsistaRepository());
 
-    const { page = 0, limit = 10, search = "" } = request.query;
+    const query = request.query;
 
-    const [
-      { data },
-      {
-        data: { token },
-      },
-    ] = await Promise.all([
-      FT_API.get(
-        "/ft/bolsista?page=" + page + "&limit=" + limit + "&search=" + search,
-      ),
-      FT_API.get(`/ft/auth/${user}`),
-    ]);
 
-    reply.status(200).send({ ...data, uploadToken: token });
+    const response = await useCase.execute(query)
+
+    reply.status(200).send(response);
   };
 
   static getOneBolsistas = async (

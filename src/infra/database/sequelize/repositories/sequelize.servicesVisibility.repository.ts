@@ -14,9 +14,6 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
 
     const visibility = data.map((item: any) => this.toEntity(item));
 
-    console.log(visibility);
-    console.log(data);
-
     return visibility;
   }
 
