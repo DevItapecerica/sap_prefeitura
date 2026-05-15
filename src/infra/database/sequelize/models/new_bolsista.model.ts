@@ -13,42 +13,31 @@ interface BolsistaDB extends Model<
   InferAttributes<BolsistaDB>,
   InferCreationAttributes<BolsistaDB>
 > {
-  id: CreationOptional<string>;
-  nome: string;
-  cpf: string;
+  uuid: CreationOptional<string>;
+  municipe_uuid: string;
   local: string;
   status: string;
-  cep: string;
-  numero: string;
-  logradouro: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  telefone: string;
-  email: string;
   createdAt?: CreationOptional<Date>;
   updatedAt?: CreationOptional<Date>;
   // deletedAt?: CreationOptional<Date>;
 }
 
-
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
-  const Bolsistas = sequelize.define<BolsistaDB>(
+  const NewBolsistas = sequelize.define<BolsistaDB>(
     "BolsistaModel",
     {
-      id: {
+      uuid: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      nome: {
-        type: DataTypes.STRING, // VARCHAR (sem limite explícito, padrão do Sequelize)
+      municipe_uuid: {
+        type: DataTypes.UUID, // VARCHAR (sem limite explícito, padrão do Sequelize)
         allowNull: false,
-      },
-      cpf: {
-        type: DataTypes.STRING(11), // até 11 caracteres
-        allowNull: false,
-        unique: true,
+        references: {
+          model: "municipes", // Nome da tabela referenciada
+          key: "uuid", // Chave primária da tabela referenciada
+        },
       },
       local: {
         type: DataTypes.STRING, // VARCHAR
@@ -60,51 +49,13 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         defaultValue: "inativo", // valor padrão
         // defaultValue: "pendente", // valor padrão
       },
-      cep: {
-        type: DataTypes.STRING(8), // até 8 caracteres
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      numero: {
-        type: DataTypes.STRING, // VARCHAR
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      logradouro: {
-        type: DataTypes.STRING, // VARCHAR
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      bairro: {
-        type: DataTypes.STRING, // VARCHAR
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      cidade: {
-        type: DataTypes.STRING, // VARCHAR
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      uf: {
-        type: DataTypes.STRING(2), // até 2 caracteres
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      telefone: {
-        type: DataTypes.STRING(11), // até 11 caracteres
-        allowNull: true,
-      },
-      email: {
-        type: DataTypes.STRING, // VARCHAR
-        allowNull: true,
-      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
       },
       // deletedAt: {
       //   type: DataTypes.DATE,
@@ -114,8 +65,15 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       tableName: "bolsistas_ft", // Nome da tabela no banco
       timestamps: true,
-    }
+    },
   );
+
+  (NewBolsistas as any).associate = function (models: any) {
+    NewBolsistas.belongsTo(models.MunicipeModel, {
+      foreignKey: "municipe_uuid",
+      as: "municipe",
+    });
+  };
 
   // (Bolsistas as any).associate = function (models: any) {
   //   Bolsistas.belongsToMany(models.Edital, {
@@ -144,5 +102,5 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   //   });
   // };
 
-  return Bolsistas;
+  return NewBolsistas;
 };

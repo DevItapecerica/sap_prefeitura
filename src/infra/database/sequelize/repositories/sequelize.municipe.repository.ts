@@ -7,8 +7,6 @@ import {
   MunicipeDto,
   updateMunicipeDto,
 } from "../../../../modules/municipe/application/dto/municipe.dto.js";
-import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
-import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 
 export class SequelizeMunicipeRepository implements MunicipeRepository {
   private model = db.MunicipeModel;

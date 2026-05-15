@@ -1,7 +1,7 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { FtBolsistaController } from "../controller/frente-de-trabalho-bolosista.controller.js";
-// import AuthMiddleware from "../../../auth/auth.middleware.js";
-// import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import AuthMiddleware from "../../../auth/auth.middleware.js";
+import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 export const ftBolsistaRouter: FastifyPluginAsync = async (fastify) => {
   //     fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
@@ -12,13 +12,40 @@ export const ftBolsistaRouter: FastifyPluginAsync = async (fastify) => {
   const responseBolsistaSchema = {
     type: "object",
     properties: {
-      id: { type: "string", format: "uuid" },
-      name: { type: "string" },
-      cpf: { type: "string", maxLength: 11 },
+      uuid: { type: "string", format: "uuid" },
       local: { type: "string" },
       status: { type: "string", maxLength: 10 },
       createdAt: { type: "string", format: "date-time" },
       updatedAt: { type: "string", format: "date-time" },
+      municipe: {
+        type: "object",
+        properties: {
+          uuid: { type: "string", format: "uuid" },
+          nome: { type: "string" },
+          cpf: { type: "string", maxLength: 11 },
+          nascimento: { type: "string", format: "date-time" },
+          telefone: { type: "string" },
+          rua: { type: "string" },
+          bairro: { type: "string" },
+          cidade: { type: "string" },
+          uf: { type: "string" },
+          cep: { type: "string" },
+          numero: { type: "string" },
+          complemento: { type: "string" },
+          author: { type: "number" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      }
+    },
+  };
+
+  const postBolsistaSchema = {
+    type: "object",
+    properties: {
+      local: { type: "string" },
+      status: { type: "string", maxLength: 10 },
+      municipe: { type: "string", format: "uuid" },
     },
   };
 
@@ -28,12 +55,11 @@ export const ftBolsistaRouter: FastifyPluginAsync = async (fastify) => {
     schema: {
       tags: ["Bolsista"],
       description:
-        "Retorna todos os bolsistas com base na query. Valores aceitos: id -> Para passar o id solicitado, nome, local, cpf \n page -> Para passar o page, limit -> Para passar o limit, order -> Para passar o order",
+        "Retorna todos os bolsistas com base na query. Valores aceitos: nome, local, cpf \n page -> Para passar o page, limit -> Para passar o limit, order -> Para passar o order",
       summary: "Retorna todos os bolsistas",
       querystring: {
         type: "object",
         properties: {
-          id: { type: "string", format: "uuid" },
           name: { type: "string" },
           local: { type: "string" },
           cpf: { type: "string", maxLength: 11 },
@@ -86,12 +112,12 @@ export const ftBolsistaRouter: FastifyPluginAsync = async (fastify) => {
     handler: FtBolsistaController.getOneBolsistas,
   });
 
-  // fastify.route({
-  //   method: "POST",
-  //   url: "/",
-  //   // schema: BolsistaSchema.createBolsistaSchema,
-  //   handler: FtBolsistaController.createBolsistas,
-  // });
+  fastify.route({
+    method: "POST",
+    url: "/",
+    // schema: BolsistaSchema.createBolsistaSchema,
+    handler: FtBolsistaController.createBolsistas,
+  });
 
   // fastify.route({
   //   method: "PUT",

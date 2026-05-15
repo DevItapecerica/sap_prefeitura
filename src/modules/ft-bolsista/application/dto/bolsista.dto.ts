@@ -1,10 +1,7 @@
 export interface bolsistaDto {
-  nome: string;
-  cpf: string;
+  municipe_uuid: string;
   local: string;
   status: string;
 }
-
-
 
 export default bolsistaDto;

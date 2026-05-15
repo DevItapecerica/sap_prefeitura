@@ -3,7 +3,10 @@ import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.
 import Municipe from "../../domain/entity/Municipe.js";
 
 export class MunicipeMapper {
-    constructor (private aesCrypt: IAesCrypt, private sha256Crypt: ISha256Crypt){}
+  constructor(
+    private aesCrypt: IAesCrypt,
+    private sha256Crypt: ISha256Crypt,
+  ) {}
   private fieldsToEncrypt = [
     "cpf",
     "nascimento",
@@ -31,7 +34,9 @@ export class MunicipeMapper {
     return this.toEntity(data);
   }
 
-  async toPersistence(municipe: any): Promise<{municipe: Municipe, cpfHash: string, cepHash: string}> {
+  async toPersistence(
+    municipe: any,
+  ): Promise<{ municipe: Municipe; cpfHash: string; cepHash: string }> {
     const data: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(municipe)) {
@@ -45,7 +50,11 @@ export class MunicipeMapper {
     data.cpfHash = await this.sha256Crypt.encrypt(String(municipe.cpf));
     data.cepHash = await this.sha256Crypt.encrypt(String(municipe.cep));
 
-    return {municipe: this.toEntity(data), cpfHash: data.cpfHash, cepHash: data.cepHash};
+    return {
+      municipe: this.toEntity(data),
+      cpfHash: data.cpfHash,
+      cepHash: data.cepHash,
+    };
   }
 
   private toEntity(data: any): Municipe {

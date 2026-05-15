@@ -4,6 +4,7 @@ import db from "../index.js";
 import { Bolsista } from "../../../../modules/ft-bolsista/domain/entity/Bolsista.js";
 import { BolsistaQueryDto } from "../../../../modules/ft-bolsista/application/dto/bolsista-query.dto.js";
 import bolsistaDto from "../../../../modules/ft-bolsista/application/dto/bolsista.dto.js";
+import Municipe from "../../../../modules/municipe/domain/entity/Municipe.js";
 
 export class SequelizeBolsistaRepository implements IBolsistaRepository {
   private model = db.BolsistaModel;
@@ -18,11 +19,7 @@ export class SequelizeBolsistaRepository implements IBolsistaRepository {
     const offset = limit ? Number(page) * Number(limit) : undefined;
 
     const where = {
-      [Op.and]: [
-        { nome: { [Op.like]: `%${name ? name : ""}%` } },
-        { local: { [Op.like]: `%${local ? local : ""}%` } },
-        { cpf: { [Op.like]: `%${cpf ? cpf : ""}%` } },
-      ],
+      [Op.and]: [{ local: { [Op.like]: `%${local ? local : ""}%` } }],
     };
 
     const queryData = {
@@ -30,11 +27,33 @@ export class SequelizeBolsistaRepository implements IBolsistaRepository {
       where,
       limit: limit,
       order: [[queryOrder[0], queryOrder[1]]],
+      include: {
+        model: db.MunicipeModel,
+        as: "municipe",
+        where: {
+          [Op.or]: [
+            { nome: { [Op.like]: `%${name ? name : ""}%` } },
+            { cpfHash: { [Op.like]: `%${name ? name : ""}%` } },
+          ],
+        },
+      },
     };
 
     const bolsista = await this.model.findAll(queryData);
 
-    const quantity = await this.model.count({ where });
+    const quantity = await this.model.count({
+      where,
+      include: {
+        model: db.MunicipeModel,
+        as: "municipe",
+        where: {
+          [Op.or]: [
+            { nome: { [Op.like]: `%${name ? name : ""}%` } },
+            { cpfHash: { [Op.like]: `%${name ? name : ""}%` } },
+          ],
+        },
+      },
+    });
 
     return {
       bolsistas: bolsista.map((b: any) => this.toEntity(b)),
@@ -49,11 +68,19 @@ export class SequelizeBolsistaRepository implements IBolsistaRepository {
   }
 
   async findById(id: number | string): Promise<Bolsista | null> {
-    const bolsista = await this.model.findByPk(id);
+    const bolsista = await this.model.findByPk(id, {
+      include: {
+        model: db.MunicipeModel,
+        as: "municipe",
+      },
+    });
     return bolsista ? this.toEntity(bolsista) : null;
   }
 
-  async update(id: number | string, bolsista: bolsistaDto): Promise<Bolsista | null> {
+  async update(
+    id: number | string,
+    bolsista: bolsistaDto,
+  ): Promise<Bolsista | null> {
     const isBolsista = await this.model.findByPk(id);
 
     if (!isBolsista) return null;
@@ -70,15 +97,35 @@ export class SequelizeBolsistaRepository implements IBolsistaRepository {
   }
 
   private toEntity(data: any): Bolsista {
+    data.municipe = new Municipe(
+      data.municipe.nome,
+      data.municipe.cpf,
+      data.municipe.nascimento,
+      data.municipe.telefone,
+      data.municipe.rua,
+      data.municipe.bairro,
+      data.municipe.cidade,
+      data.municipe.uf,
+      data.municipe.cep,
+      data.municipe.numero,
+      data.municipe.complemento,
+      data.municipe.author,
+
+      data.municipe.uuid,
+      data.municipe.createdAt,
+      data.municipe.updatedAt,
+      data.municipe.deletedAt,
+    );
+
     return new Bolsista(
-      data.nome,
-      data.cpf,
+      data.municipe_uuid,
       data.local,
       data.status,
 
-      data.id,
+      data.uuid,
       data.createdAt,
       data.updatedAt,
+      data.municipe,
     );
   }
 }

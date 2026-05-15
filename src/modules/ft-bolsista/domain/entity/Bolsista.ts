@@ -1,12 +1,14 @@
+import Municipe from "../../../municipe/domain/entity/Municipe.js";
+
 export class Bolsista {
     constructor(
-        public name: string,
-        public cpf: string,
+        public municipe_uuid: string,
         public local: string,
         public status: string,
         
-        public id?: string,
+        public uuid?: string,
         public createdAt?: Date,
-        public updatedAt?: Date
+        public updatedAt?: Date,
+        public municipe?: Municipe, 
     ){}
 }

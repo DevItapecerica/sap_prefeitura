@@ -10,7 +10,7 @@
     "check": "tsc --noEmit",
     "start": "node dist/server.js",
     "prestart": "npm install --production",
-    "migrate:generate": "npx ts-node src/core/shared/utils/generateMigration.ts",
+    "migrate:generate": "npx ts-node src/core/utils/generateMigration.ts",
     "migrate": "tsc -p . & npx sequelize-cli db:migrate ",
     "migrate:undo": "npx sequelize-cli db:migrate:undo ",
     "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all "
