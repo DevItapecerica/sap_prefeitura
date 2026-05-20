@@ -41,8 +41,8 @@ export class SequelizeChamadoRepository implements ChamadoRepository {
 
     if (q.search) {
       where[Op.or] = [
-        { patrimonio: { [Op.like]: `%${q.search}%` } },
-        { descricao: { [Op.like]: `%${q.search}%` } },
+        { patrimonio: { [Op.like]: `%${q.search || ""}%` } },
+        { descricao: { [Op.like]: `%${q.search || ""}%` } },
       ];
     }
 
