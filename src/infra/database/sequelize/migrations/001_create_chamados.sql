@@ -1,0 +1,25 @@
+-- CreateTable chamados
+CREATE TABLE IF NOT EXISTS chamados (
+  id VARCHAR(36) PRIMARY KEY,
+  patrimonio VARCHAR(255) NOT NULL,
+  status ENUM('aberto', 'em_progresso', 'resolvido', 'fechado', 'cancelado') NOT NULL DEFAULT 'aberto',
+  tipo ENUM('manutencao', 'reparo', 'instalacao', 'suporte', 'outros') NOT NULL,
+  dataEntrada DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  setorId INT NOT NULL,
+  solicitanteId VARCHAR(36) NOT NULL,
+  descricao LONGTEXT NOT NULL,
+  prioridade ENUM('baixa', 'media', 'alta', 'critica') NOT NULL DEFAULT 'media',
+  responsavelId VARCHAR(36) NULL,
+  observacoes LONGTEXT NULL,
+  dataResolucao DATETIME NULL,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deletedAt DATETIME NULL,
+  INDEX idx_status (status),
+  INDEX idx_setorId (setorId),
+  INDEX idx_solicitanteId (solicitanteId),
+  INDEX idx_responsavelId (responsavelId),
+  INDEX idx_dataEntrada (dataEntrada),
+  INDEX idx_tipo (tipo),
+  INDEX idx_prioridade (prioridade)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -11,6 +11,11 @@ export class EventBus {
     this.handlers[event].push(handler);
   }
 
+  off(event: string, handler: EventHandler) {
+    const handlers = this.handlers[event] || [];
+    this.handlers[event] = handlers.filter((h) => h !== handler);
+  }
+
   async emit(event: string, payload: any) {
     const handlers = this.handlers[event] || [];
 
