@@ -120,4 +120,17 @@ export class ChamadoController {
       });
     }
   }
+
+  async getAverageTimeReport(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const report = await this.chamadoService.getAverageTimeReport(request.query as any);
+
+      return reply.status(200).send(report);
+    } catch (error: any) {
+      return reply.status(error.statusCode || 500).send({
+        message: error.message || "Erro ao gerar relatório de tempo médio",
+        code: error.code || "INTERNAL_ERROR",
+      });
+    }
+  }
 }

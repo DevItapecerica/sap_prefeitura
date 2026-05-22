@@ -14,7 +14,7 @@ export interface ChamadoDBAttributes {
   tipo: string;
   dataEntrada: Date;
   setorId: number;
-  solicitanteId: string;
+  solicitanteId?: string | null;
   descricao: string;
   prioridade: string;
   responsavelId?: string | null;
@@ -35,7 +35,7 @@ export interface ChamadoDB extends Model<
   tipo: string;
   dataEntrada: Date;
   setorId: number;
-  solicitanteId: string;
+  solicitanteId?: string | null;
   descricao: string;
   prioridade: string;
   responsavelId?: string | null;
@@ -80,7 +80,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       },
       solicitanteId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
       },
       descricao: {
         type: DataTypes.TEXT,

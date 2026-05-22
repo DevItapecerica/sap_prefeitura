@@ -13,4 +13,5 @@ export type QueryParams = {
   page?: number;
   limit?: number;
   order?: string;
+  setorId?: number;
 };

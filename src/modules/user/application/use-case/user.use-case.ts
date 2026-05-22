@@ -162,7 +162,7 @@ export default class UserService {
   getAllByQuery = async (
     query: QueryParams,
   ): Promise<{ user: User[]; count: number }> => {
-    const { search, page = 1, limit = 10, order = "createdAt:desc" } = query;
+    const { search, page = 1, limit = 10, order = "createdAt:desc", setorId } = query;
 
     if (page < 1) {
       this.logger.info("Pagina invalida");
@@ -187,6 +187,7 @@ export default class UserService {
       page: Number(page) - 1,
       limit,
       order,
+      setorId,
     };
 
     this.logger.info("Buscando usuários");

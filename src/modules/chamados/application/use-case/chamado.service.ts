@@ -24,17 +24,23 @@ export class ChamadoService {
       throw new AppError("Setor não encontrado", 404, "SETOR_NOT_FOUND");
     }
 
-    const solicitanteId = typeof chamado.solicitanteId === "string"
-      ? Number(chamado.solicitanteId)
-      : chamado.solicitanteId;
+    const hasSolicitante = chamado.solicitanteId !== undefined && chamado.solicitanteId !== null && chamado.solicitanteId !== "";
+    let solicitanteId: number | null = null;
 
-    if (!solicitanteId || Number.isNaN(Number(solicitanteId))) {
-      throw new AppError("Solicitante inválido", 400, "SOLICITANTE_INVALIDO");
-    }
+    if (hasSolicitante) {
+      const rawSolicitanteId = chamado.solicitanteId as string | number;
+      solicitanteId = typeof rawSolicitanteId === "string"
+        ? Number(rawSolicitanteId)
+        : rawSolicitanteId;
 
-    const solicitante = await this.userRepository.getUserById(solicitanteId);
-    if (!solicitante) {
-      throw new AppError("Solicitante não encontrado", 404, "SOLICITANTE_NOT_FOUND");
+      if (!solicitanteId || Number.isNaN(Number(solicitanteId))) {
+        throw new AppError("Solicitante inválido", 400, "SOLICITANTE_INVALIDO");
+      }
+
+      const solicitante = await this.userRepository.getUserById(solicitanteId);
+      if (!solicitante) {
+        throw new AppError("Solicitante não encontrado", 404, "SOLICITANTE_NOT_FOUND");
+      }
     }
 
     if (chamado.responsavelId) {
@@ -59,7 +65,7 @@ export class ChamadoService {
       chamado.tipo,
       new Date(),
       chamado.setorId,
-      chamado.solicitanteId,
+      hasSolicitante ? (chamado.solicitanteId as number | string) : null,
       chamado.descricao,
       chamado.prioridade,
       chamado.responsavelId || null,
@@ -102,6 +108,18 @@ export class ChamadoService {
       throw new AppError("Chamado não encontrado", 404, "CHAMADO_NOT_FOUND");
     }
 
+    if ([
+      ChamadoStatus.RESOLVIDO,
+      ChamadoStatus.FECHADO,
+      ChamadoStatus.CANCELADO,
+    ].includes(existingChamado.status)) {
+      throw new AppError(
+        "Chamado finalizado não pode ser alterado",
+        400,
+        "CHAMADO_FINALIZADO",
+      );
+    }
+
     if (chamado.responsavelId) {
       const responsavelId = typeof chamado.responsavelId === "string"
         ? Number(chamado.responsavelId)
@@ -113,7 +131,12 @@ export class ChamadoService {
       }
     }
 
-    if (chamado.status === ChamadoStatus.RESOLVIDO && !chamado.dataResolucao) {
+    // Registra dataResolucao quando o chamado é finalizado (RESOLVIDO, FECHADO ou CANCELADO)
+    if ([
+      ChamadoStatus.RESOLVIDO,
+      ChamadoStatus.FECHADO,
+      ChamadoStatus.CANCELADO,
+    ].includes(chamado.status as ChamadoStatus) && !chamado.dataResolucao) {
       chamado.dataResolucao = new Date();
     }
 
@@ -161,6 +184,18 @@ export class ChamadoService {
       throw new AppError("Chamado não encontrado", 404, "CHAMADO_NOT_FOUND");
     }
 
+    if ([
+      ChamadoStatus.RESOLVIDO,
+      ChamadoStatus.FECHADO,
+      ChamadoStatus.CANCELADO,
+    ].includes(chamado.status)) {
+      throw new AppError(
+        "Chamado finalizado não pode ser atribuído",
+        400,
+        "CHAMADO_FINALIZADO",
+      );
+    }
+
     const responsavel = await this.userRepository.getUserById(responsavelId);
     if (!responsavel) {
       throw new AppError("Responsável não encontrado", 404, "RESPONSAVEL_NOT_FOUND");
@@ -178,5 +213,138 @@ export class ChamadoService {
     await eventBus.emit("CHAMADO_ASSIGNED", updated);
 
     return updated;
+  }
+
+  /**
+   * Gera relatório com tempo médio de resolução de chamados
+   * Agrupa por período (mensal, semestral, anual)
+   */
+  async getAverageTimeReport(query?: QueryParams): Promise<any> {
+    this.logger.info("Gerando relatório de tempo médio de resolução");
+
+    const q: any = query || {};
+    const period = q.period || "mensal"; // mensal, semestral, anual
+    const year = q.year || new Date().getFullYear();
+    const setorId = q.setorId ? Number(q.setorId) : undefined;
+    const tipo = q.tipo;
+
+    // Busca todos os chamados do banco (sem filtro de status para pegar os finalizados)
+    const chamados = await this.repo.findAllChamado({});
+
+    // Filtra chamados com dataResolucao e status finalizados
+    let finalizados = chamados.filter(
+      (c) =>
+        c.dataResolucao &&
+        new Date(c.dataResolucao).getFullYear() === Number(year) &&
+        [ChamadoStatus.RESOLVIDO, ChamadoStatus.FECHADO, ChamadoStatus.CANCELADO].includes(
+          c.status as ChamadoStatus
+        ),
+    );
+
+    // Aplica filtro por setorId se fornecido
+    if (setorId) {
+      finalizados = finalizados.filter((c) => c.setorId === setorId);
+    }
+
+    // Aplica filtro por tipo se fornecido
+    if (tipo) {
+      finalizados = finalizados.filter((c) => c.tipo === tipo);
+    }
+
+    if (finalizados.length === 0) {
+      return {
+        period,
+        year,
+        setorId,
+        tipo,
+        dados: [],
+        totalChamados: 0,
+        tempoMedioHoras: 0,
+        tempoMedioDias: 0,
+      };
+    }
+
+    // Agrupa por período
+    const grouped: Record<string, any[]> = {};
+
+    finalizados.forEach((chamado) => {
+      const dataResolucao = new Date(chamado.dataResolucao as Date);
+      let groupKey: string;
+
+      if (period === "mensal") {
+        const mes = String(dataResolucao.getMonth() + 1).padStart(2, "0");
+        groupKey = `${year}-${mes}`;
+      } else if (period === "semestral") {
+        const semestre = dataResolucao.getMonth() < 6 ? 1 : 2;
+        groupKey = `${year}-S${semestre}`;
+      } else {
+        // anual
+        groupKey = String(year);
+      }
+
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = [];
+      }
+      grouped[groupKey].push(chamado);
+    });
+
+    // Calcula tempo médio por período
+    const dados = Object.entries(grouped).map(([periodo, chamadosPeriodo]) => {
+      const temposHoras = chamadosPeriodo
+        .map((c) => {
+          const dataEntrada = new Date(c.dataEntrada);
+          const dataResolucao = new Date(c.dataResolucao as Date);
+          const diffMs = dataResolucao.getTime() - dataEntrada.getTime();
+          const diffHoras = diffMs / (1000 * 60 * 60);
+          return diffHoras;
+        })
+        .filter((h) => h >= 0); // Remove valores negativos
+
+      const tempoMedioHoras =
+        temposHoras.length > 0
+          ? temposHoras.reduce((a, b) => a + b, 0) / temposHoras.length
+          : 0;
+      const tempoMedioDias = tempoMedioHoras / 24;
+
+      return {
+        periodo,
+        totalChamados: chamadosPeriodo.length,
+        tempoMedioHoras: Number(tempoMedioHoras.toFixed(2)),
+        tempoMedioDias: Number(tempoMedioDias.toFixed(2)),
+        tempoMinimoHoras: temposHoras.length > 0 ? Number(Math.min(...temposHoras).toFixed(2)) : 0,
+        tempoMaximoHoras: temposHoras.length > 0 ? Number(Math.max(...temposHoras).toFixed(2)) : 0,
+      };
+    });
+
+    // Calcula tempo médio total
+    const totalChamados = finalizados.length;
+    const allTemposHoras = finalizados
+      .map((c) => {
+        const dataEntrada = new Date(c.dataEntrada);
+        const dataResolucao = new Date(c.dataResolucao as Date);
+        const diffMs = dataResolucao.getTime() - dataEntrada.getTime();
+        const diffHoras = diffMs / (1000 * 60 * 60);
+        return diffHoras;
+      })
+      .filter((h) => h >= 0);
+
+    const tempoMedioHorasTotal =
+      allTemposHoras.length > 0
+        ? allTemposHoras.reduce((a, b) => a + b, 0) / allTemposHoras.length
+        : 0;
+    const tempoMedioDiasTotal = tempoMedioHorasTotal / 24;
+
+    return {
+      period,
+      year,
+      setorId: setorId || "Todos",
+      tipo: tipo || "Todos",
+      dados: dados.sort((a, b) => a.periodo.localeCompare(b.periodo)),
+      totalChamados,
+      tempoMedioHoras: Number(tempoMedioHorasTotal.toFixed(2)),
+      tempoMedioDias: Number(tempoMedioDiasTotal.toFixed(2)),
+      tempoMinimoHoras: allTemposHoras.length > 0 ? Number(Math.min(...allTemposHoras).toFixed(2)) : 0,
+      tempoMaximoHoras: allTemposHoras.length > 0 ? Number(Math.max(...allTemposHoras).toFixed(2)) : 0,
+    };
   }
 }

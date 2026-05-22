@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS chamados (
   tipo ENUM('manutencao', 'reparo', 'instalacao', 'suporte', 'outros') NOT NULL,
   dataEntrada DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   setorId INT NOT NULL,
-  solicitanteId VARCHAR(36) NOT NULL,
+  solicitanteId VARCHAR(36) NULL,
   descricao LONGTEXT NOT NULL,
   prioridade ENUM('baixa', 'media', 'alta', 'critica') NOT NULL DEFAULT 'media',
   responsavelId VARCHAR(36) NULL,

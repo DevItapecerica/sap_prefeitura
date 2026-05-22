@@ -39,7 +39,7 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
       // ],
       schema: {
         description:
-          "Cria um novo chamado vinculado a solicitante, setor e responsável",
+          "Cria um novo chamado vinculado a setor e solicitante opcional",
         tags: ["Chamados"],
         body: {
           type: "object",
@@ -47,7 +47,6 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
             "patrimonio",
             "tipo",
             "setorId",
-            "solicitanteId",
             "descricao",
             "prioridade",
           ],
@@ -68,10 +67,10 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               description: "ID do setor (vinculado ao módulo de setores)",
             },
             solicitanteId: {
-              type: "integer",
+              type: ["integer", "null"],
               minimum: 1,
               description:
-                "ID do usuário solicitante (vinculado ao módulo de usuários)",
+                "ID do usuário solicitante (vinculado ao módulo de usuários). Opcional.",
             },
             descricao: {
               type: "string",
@@ -104,7 +103,7 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               tipo: { type: "string" },
               dataEntrada: { type: "string", format: "date-time" },
               setorId: { type: "integer" },
-              solicitanteId: { type: "integer" },
+              solicitanteId: { type: ["integer", "null"] },
               descricao: { type: "string" },
               prioridade: { type: "string" },
               responsavelId: { type: ["integer", "null"] },
@@ -231,6 +230,70 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // GET - Stream SSE de eventos de chamados
+  fastify.get(
+    "/chamados/stream",
+    {
+      schema: {
+        description: "Abre uma conexão SSE para acompanhar eventos de chamados em tempo real",
+        tags: ["Chamados"],
+        querystring: {
+          type: "object",
+          properties: {
+            token: {
+              type: "string",
+              description: "JWT de autenticação (utilizado apenas para conexões SSE)",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Conexão SSE aberta com sucesso",
+            type: "string",
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const raw = reply.raw;
+      raw.setHeader("Content-Type", "text/event-stream");
+      raw.setHeader("Cache-Control", "no-cache, no-transform");
+      raw.setHeader("Connection", "keep-alive");
+      raw.write("retry: 10000\n\n");
+
+      const sendEvent = (eventName: string, data: any) => {
+        if (raw.writableEnded) return;
+        raw.write(`event: ${eventName}\n`);
+        raw.write(`data: ${JSON.stringify(data)}\n\n`);
+        if ("flush" in raw && typeof (raw as any).flush === "function") {
+          (raw as any).flush();
+        }
+      };
+
+      const onCreated = (payload: any) => sendEvent("CHAMADO_CREATED", payload);
+      const onUpdated = (payload: any) => sendEvent("CHAMADO_UPDATED", payload);
+      const onDeleted = (payload: any) => sendEvent("CHAMADO_DELETED", payload);
+      const onAssigned = (payload: any) => sendEvent("CHAMADO_ASSIGNED", payload);
+
+      eventBus.on("CHAMADO_CREATED", onCreated);
+      eventBus.on("CHAMADO_UPDATED", onUpdated);
+      eventBus.on("CHAMADO_DELETED", onDeleted);
+      eventBus.on("CHAMADO_ASSIGNED", onAssigned);
+
+      const cleanup = () => {
+        eventBus.off("CHAMADO_CREATED", onCreated);
+        eventBus.off("CHAMADO_UPDATED", onUpdated);
+        eventBus.off("CHAMADO_DELETED", onDeleted);
+        eventBus.off("CHAMADO_ASSIGNED", onAssigned);
+      };
+
+      request.raw.on("close", cleanup);
+      raw.on("close", cleanup);
+
+      return reply;
+    },
+  );
+
   // GET - Relatório de chamados por setor/período
   fastify.get(
     "/chamados/reports",
@@ -343,6 +406,77 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       return chamadoController.getReport(request, reply);
+    },
+  );
+
+  // GET - Relatório de tempo médio de resolução
+  fastify.get(
+    "/chamados/reports/average-time",
+    {
+      schema: {
+        description:
+          "Gera relatório de tempo médio de resolução dos chamados agrupado por período",
+        tags: ["Chamados", "Relatórios"],
+        querystring: {
+          type: "object",
+          properties: {
+            period: {
+              type: "string",
+              enum: ["mensal", "semestral", "anual"],
+              description: "Período de agrupamento (default: mensal)",
+            },
+            year: {
+              type: "integer",
+              minimum: 2020,
+              description: "Ano do relatório (default: ano atual)",
+            },
+            setorId: {
+              type: "integer",
+              minimum: 1,
+              description: "ID do setor para filtrar (opcional)",
+            },
+            tipo: {
+              type: "string",
+              enum: ["manutencao", "reparo", "instalacao", "suporte", "outros"],
+              description: "Filtrar por tipo de chamado (opcional)",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Relatório de tempo médio gerado com sucesso",
+            type: "object",
+            properties: {
+              period: { type: "string" },
+              year: { type: "integer" },
+              setorId: { type: ["integer", "string"] },
+              tipo: { type: "string" },
+              dados: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    periodo: { type: "string" },
+                    totalChamados: { type: "integer" },
+                    tempoMedioHoras: { type: "number" },
+                    tempoMedioDias: { type: "number" },
+                    tempoMinimoHoras: { type: "number" },
+                    tempoMaximoHoras: { type: "number" },
+                  },
+                },
+              },
+              totalChamados: { type: "integer" },
+              tempoMedioHoras: { type: "number" },
+              tempoMedioDias: { type: "number" },
+              tempoMinimoHoras: { type: "number" },
+              tempoMaximoHoras: { type: "number" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      return chamadoController.getAverageTimeReport(request, reply);
     },
   );
 

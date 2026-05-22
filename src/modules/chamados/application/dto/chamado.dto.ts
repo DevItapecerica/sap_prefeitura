@@ -4,7 +4,7 @@ export interface CreateChamadoDto {
   patrimonio: string;
   tipo: ChamadoTipo;
   setorId: number;
-  solicitanteId: number | string;
+  solicitanteId?: number | string | null;
   descricao: string;
   prioridade: ChamadoPrioridade;
   responsavelId?: number | string | null;

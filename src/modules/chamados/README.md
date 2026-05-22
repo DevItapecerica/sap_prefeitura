@@ -31,12 +31,12 @@ src/modules/chamados/
 | `tipo` | Enum | Sim | `manutencao`, `reparo`, `instalacao`, `suporte`, `outros` |
 | `dataEntrada` | DateTime | Sim | Data/hora de criação (default: agora) |
 | `setorId` | Int | Sim | ID do setor solicitante |
-| `solicitanteId` | UUID | Sim | ID do usuário que solicitou |
+| `solicitanteId` | UUID | Não | ID do usuário que solicitou (opcional) |
 | `descricao` | Text | Sim | Descrição detalhada do chamado |
 | `prioridade` | Enum | Sim | `baixa`, `media`, `alta`, `critica` (default: media) |
 | `responsavelId` | UUID | Não | ID do usuário responsável pela resolução |
 | `observacoes` | Text | Não | Observações adicionais |
-| `dataResolucao` | DateTime | Não | Data/hora de resolução |
+| `dataResolucao` | DateTime | Não | Data/hora de finalização (registrada ao mudar para RESOLVIDO, FECHADO ou CANCELADO) |
 | `createdAt` | DateTime | Auto | Data de criação |
 | `updatedAt` | DateTime | Auto | Data de última atualização |
 | `deletedAt` | DateTime | Não | Data de exclusão lógica |
@@ -121,6 +121,50 @@ Atribuir responsável ao chamado (muda status para `em_progresso`).
 ```
 
 **Response:** `200 OK`
+
+---
+
+### GET `/api/v2/chamados/reports/average-time`
+Gera relatório de tempo médio de resolução dos chamados, agrupado por período.
+
+**Query Params (opcionais):**
+- `period`: Período de agrupamento (`mensal`, `semestral`, `anual`) - default: mensal
+- `year`: Ano do relatório - default: ano atual
+- `setorId`: Filtrar por setor
+- `tipo`: Filtrar por tipo de chamado
+
+**Response:** `200 OK`
+```json
+{
+  "period": "mensal",
+  "year": 2026,
+  "setorId": "Todos",
+  "tipo": "Todos",
+  "dados": [
+    {
+      "periodo": "2026-01",
+      "totalChamados": 15,
+      "tempoMedioHoras": 24.5,
+      "tempoMedioDias": 1.02,
+      "tempoMinimoHoras": 2.0,
+      "tempoMaximoHoras": 72.0
+    },
+    {
+      "periodo": "2026-02",
+      "totalChamados": 12,
+      "tempoMedioHoras": 18.3,
+      "tempoMedioDias": 0.76,
+      "tempoMinimoHoras": 1.5,
+      "tempoMaximoHoras": 48.0
+    }
+  ],
+  "totalChamados": 27,
+  "tempoMedioHoras": 21.4,
+  "tempoMedioDias": 0.89,
+  "tempoMinimoHoras": 1.5,
+  "tempoMaximoHoras": 72.0
+}
+```
 
 ---
 

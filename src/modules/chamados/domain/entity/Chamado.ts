@@ -29,7 +29,7 @@ export class Chamado {
     public tipo: ChamadoTipo,
     public dataEntrada: Date,
     public setorId: number,
-    public solicitanteId: number | string,
+    public solicitanteId: number | string | null,
     public descricao: string,
     public prioridade: ChamadoPrioridade,
     public responsavelId?: number | string | null,

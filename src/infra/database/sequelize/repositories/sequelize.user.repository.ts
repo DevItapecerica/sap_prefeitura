@@ -36,12 +36,12 @@ export class SequelizeUserRepository implements UserRepository {
   getAllUser = async (
     query: QueryParams,
   ): Promise<{ user: User[]; count: number }> => {
-    const { page, limit, search, order } = query;
+    const { page, limit, search, order, setorId } = query;
     const queryOrder = order ? order.split(":") : ["id", "desc"];
 
     const offset = limit ? Number(page) * Number(limit) : undefined;
 
-    const where = search
+    const searchWhere = search
       ? {
           [Op.or]: [
             { name: { [Op.like]: `%${search}%` } },
@@ -49,6 +49,9 @@ export class SequelizeUserRepository implements UserRepository {
           ],
         }
       : {};
+
+    const setorWhere = setorId ? { setor_id: setorId } : {};
+    const where = { ...searchWhere, ...setorWhere };
 
     const user = await this.model.findAll({
       offset,
