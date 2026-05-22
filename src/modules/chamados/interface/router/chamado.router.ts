@@ -6,7 +6,7 @@ import { authorizationFactory } from "../../../acess-controll/factory/makeAuthor
 import { eventBus } from "../../../../core/event/index.js";
 
 // TODO: ajustar o ID do serviço conforme cadastro em `services` no banco
-const CHAMADOS_SERVICE_ID = 1;
+const CHAMADOS_SERVICE_ID = 21;
 
 export async function chamadosRoutes(fastify: FastifyInstance) {
   const chamadoService = chamadoFactory(fastify.log);
@@ -17,7 +17,7 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
     const verifyAuthorization = authorizationFactory(request.log);
     await verifyAuthorization.authorize(
       Number(request.user.id),
-      21,
+      CHAMADOS_SERVICE_ID,
       request.method,
     );
   });
