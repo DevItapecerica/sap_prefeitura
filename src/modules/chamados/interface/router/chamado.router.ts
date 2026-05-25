@@ -5,7 +5,7 @@ import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 import { eventBus } from "../../../../core/event/index.js";
 
-const CHAMADOS_SERVICE_ID = 21;
+const CHAMADOS_SERVICE_ID = 8;
 
 export async function chamadosRoutes(fastify: FastifyInstance) {
   const chamadoService = chamadoFactory(fastify.log);

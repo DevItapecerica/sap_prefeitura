@@ -41,6 +41,19 @@ export default {
       ];
 
       for (const role of roles) {
+        const roleExists = await queryInterface.rawSelect(
+          "roles",
+          {
+            where: { id: role.role_id },
+            transaction,
+          },
+          "id",
+        );
+
+        if (!roleExists) {
+          continue;
+        }
+
         const permissionExists = await queryInterface.rawSelect(
           "permissions",
           {
