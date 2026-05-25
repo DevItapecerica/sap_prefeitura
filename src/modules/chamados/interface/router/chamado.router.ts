@@ -5,7 +5,6 @@ import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 import { eventBus } from "../../../../core/event/index.js";
 
-// TODO: ajustar o ID do serviço conforme cadastro em `services` no banco
 const CHAMADOS_SERVICE_ID = 21;
 
 export async function chamadosRoutes(fastify: FastifyInstance) {
@@ -67,7 +66,8 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               description: "ID do setor (vinculado ao módulo de setores)",
             },
             solicitanteId: {
-              type: ["integer", "null"],
+              type: "integer",
+              nullable: true,
               minimum: 1,
               description:
                 "ID do usuário solicitante (vinculado ao módulo de usuários). Opcional.",
@@ -83,11 +83,13 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               description: "Nível de prioridade",
             },
             responsavelId: {
-              type: ["integer", "null"],
+              type: "integer",
+              nullable: true,
               description: "ID opcional do responsável inicial",
             },
             observacoes: {
-              type: ["string", "null"],
+              type: "string",
+              nullable: true,
               description: "Observações adicionais",
             },
           },
@@ -103,11 +105,11 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               tipo: { type: "string" },
               dataEntrada: { type: "string", format: "date-time" },
               setorId: { type: "integer" },
-              solicitanteId: { type: ["integer", "null"] },
+              solicitanteId: { type: "integer", nullable: true },
               descricao: { type: "string" },
               prioridade: { type: "string" },
-              responsavelId: { type: ["integer", "null"] },
-              observacoes: { type: ["string", "null"] },
+              responsavelId: { type: "integer", nullable: true },
+              observacoes: { type: "string", nullable: true },
             },
           },
           400: {
@@ -209,14 +211,15 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
                 status: { type: "string" },
                 tipo: { type: "string" },
                 dataEntrada: { type: "string", format: "date-time" },
-                setorId: { type: "string" },
-                solicitanteId: { type: "string" },
+                setorId: { type: "integer" },
+                solicitanteId: { type: "integer", nullable: true },
                 descricao: { type: "string" },
                 prioridade: { type: "string" },
-                responsavelId: { type: ["string", "null"] },
-                observacoes: { type: ["string", "null"] },
+                responsavelId: { type: "integer", nullable: true },
+                observacoes: { type: "string", nullable: true },
                 dataResolucao: {
-                  type: ["string", "null"],
+                  type: "string",
+                  nullable: true,
                   format: "date-time",
                 },
               },
@@ -449,7 +452,9 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
             properties: {
               period: { type: "string" },
               year: { type: "integer" },
-              setorId: { type: ["integer", "string"] },
+              setorId: {
+                oneOf: [{ type: "integer" }, { type: "string" }],
+              },
               tipo: { type: "string" },
               dados: {
                 type: "array",
@@ -523,9 +528,13 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               solicitanteId: { type: "integer" },
               descricao: { type: "string" },
               prioridade: { type: "string" },
-              responsavelId: { type: ["integer", "null"] },
-              observacoes: { type: ["string", "null"] },
-              dataResolucao: { type: ["string", "null"], format: "date-time" },
+              responsavelId: { type: "integer", nullable: true },
+              observacoes: { type: "string", nullable: true },
+              dataResolucao: {
+                type: "string",
+                nullable: true,
+                format: "date-time",
+              },
               createdAt: { type: "string", format: "date-time" },
               updatedAt: { type: "string", format: "date-time" },
             },
@@ -579,17 +588,20 @@ export async function chamadosRoutes(fastify: FastifyInstance) {
               description: "Novo status do chamado",
             },
             responsavelId: {
-              type: ["integer", "null"],
+              type: "integer",
+              nullable: true,
               minimum: 1,
               description:
                 "ID do responsável (vinculado ao módulo de usuários)",
             },
             observacoes: {
-              type: ["string", "null"],
+              type: "string",
+              nullable: true,
               description: "Observações adicionais",
             },
             dataResolucao: {
-              type: ["string", "null"],
+              type: "string",
+              nullable: true,
               format: "date-time",
               description:
                 "Data de resolução (auto-preenchida se status=resolvido)",

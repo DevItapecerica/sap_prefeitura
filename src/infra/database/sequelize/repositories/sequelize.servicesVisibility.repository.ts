@@ -12,12 +12,7 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
       where: { service_id: service_id },
     });
 
-    const visibility = data.map((item: any) => this.toEntity(item));
-
-    console.log(visibility);
-    console.log(data);
-
-    return visibility;
+    return data.map((item: any) => this.toEntity(item));
   }
 
   async findVisibilityByServiceAndSetor(setor_id: number, service_id: number) {
@@ -25,14 +20,14 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
       where: { setor_id: setor_id, service_id: service_id },
     });
 
-    return this.toEntity(data);
+    return data ? this.toEntity(data) : null;
   }
 
   async ServiceVisibilityCreate(
     setor_id: number,
     service_id: number,
   ): Promise<ServiceVisibility> {
-    const visibility = this.model.create({ setor_id, service_id });
+    const visibility = await this.model.create({ setor_id, service_id });
     return this.toEntity(visibility);
   }
 
@@ -46,11 +41,11 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
     service_id: number,
     visibility: boolean,
   ): Promise<ServiceVisibility[]> {
-    const data = await this.model.update(
+    await this.model.update(
       { visibility: visibility },
       { where: { setor_id: setor_id, service_id: service_id } },
     );
-    return data.map((item: any) => this.toEntity(item));
+    return this.findVisibilityBySetor(setor_id);
   }
 
   // 🔥 mapper (ESSENCIAL)

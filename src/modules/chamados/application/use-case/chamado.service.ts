@@ -24,14 +24,12 @@ export class ChamadoService {
       throw new AppError("Setor não encontrado", 404, "SETOR_NOT_FOUND");
     }
 
-    const hasSolicitante = chamado.solicitanteId !== undefined && chamado.solicitanteId !== null && chamado.solicitanteId !== "";
+    const hasSolicitante = chamado.solicitanteId !== undefined && chamado.solicitanteId !== null;
     let solicitanteId: number | null = null;
+    let responsavelId: number | null = null;
 
     if (hasSolicitante) {
-      const rawSolicitanteId = chamado.solicitanteId as string | number;
-      solicitanteId = typeof rawSolicitanteId === "string"
-        ? Number(rawSolicitanteId)
-        : rawSolicitanteId;
+      solicitanteId = chamado.solicitanteId as number;
 
       if (!solicitanteId || Number.isNaN(Number(solicitanteId))) {
         throw new AppError("Solicitante inválido", 400, "SOLICITANTE_INVALIDO");
@@ -44,9 +42,7 @@ export class ChamadoService {
     }
 
     if (chamado.responsavelId) {
-      const responsavelId = typeof chamado.responsavelId === "string"
-        ? Number(chamado.responsavelId)
-        : chamado.responsavelId;
+      responsavelId = chamado.responsavelId;
 
       if (!responsavelId || Number.isNaN(Number(responsavelId))) {
         throw new AppError("Responsável inválido", 400, "RESPONSAVEL_INVALIDO");
@@ -65,10 +61,10 @@ export class ChamadoService {
       chamado.tipo,
       new Date(),
       chamado.setorId,
-      hasSolicitante ? (chamado.solicitanteId as number | string) : null,
+      solicitanteId,
       chamado.descricao,
       chamado.prioridade,
-      chamado.responsavelId || null,
+      responsavelId,
       chamado.observacoes || null,
       null,
     );
@@ -121,9 +117,11 @@ export class ChamadoService {
     }
 
     if (chamado.responsavelId) {
-      const responsavelId = typeof chamado.responsavelId === "string"
-        ? Number(chamado.responsavelId)
-        : chamado.responsavelId;
+      const responsavelId = chamado.responsavelId;
+
+      if (!responsavelId || Number.isNaN(Number(responsavelId))) {
+        throw new AppError("Responsavel invalido", 400, "RESPONSAVEL_INVALIDO");
+      }
 
       const responsavel = await this.userRepository.getUserById(responsavelId);
       if (!responsavel) {
@@ -202,7 +200,7 @@ export class ChamadoService {
     }
 
     const updated = await this.repo.updateChamado(chamadoId, {
-      responsavelId: String(responsavelId),
+      responsavelId,
       status: ChamadoStatus.EM_PROGRESSO,
     });
 
@@ -228,8 +226,17 @@ export class ChamadoService {
     const setorId = q.setorId ? Number(q.setorId) : undefined;
     const tipo = q.tipo;
 
-    // Busca todos os chamados do banco (sem filtro de status para pegar os finalizados)
-    const chamados = await this.repo.findAllChamado({});
+    const chamados = await this.repo.findAllChamado({
+      status: [
+        ChamadoStatus.RESOLVIDO,
+        ChamadoStatus.FECHADO,
+        ChamadoStatus.CANCELADO,
+      ],
+      dateFrom: `${year}-01-01T00:00:00.000Z`,
+      dateTo: `${year}-12-31T23:59:59.999Z`,
+      setorId,
+      tipo,
+    } as QueryParams);
 
     // Filtra chamados com dataResolucao e status finalizados
     let finalizados = chamados.filter(

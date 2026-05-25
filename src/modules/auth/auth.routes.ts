@@ -4,6 +4,7 @@
 import { FastifyPluginAsync } from "fastify";
 import authController from "./auth.controller.js";
 import errorResponseSchema from "../../core/schema/errorSchema.js";
+import AuthMiddleware from "./auth.middleware.js";
 
 const routes: FastifyPluginAsync = async (fastify) => {
   // Login route
@@ -49,6 +50,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/auth",
+    preHandler: AuthMiddleware.verifyJWT,
     schema: {
       description: "Verificação de usuário",
       tags: ["Auth"],

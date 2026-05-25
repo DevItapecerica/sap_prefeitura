@@ -47,7 +47,7 @@ export default {
             allowNull: false,
           },
           solicitanteId: {
-            type: DataTypes.STRING(36),
+            type: DataTypes.INTEGER,
             allowNull: true,
             defaultValue: null,
           },
@@ -61,7 +61,7 @@ export default {
             defaultValue: "media",
           },
           responsavelId: {
-            type: DataTypes.STRING(36),
+            type: DataTypes.INTEGER,
             allowNull: true,
             defaultValue: null,
           },
@@ -78,12 +78,14 @@ export default {
           createdAt: {
             type: DataTypes.DATE,
             allowNull: false,
-            defaultValue: DataTypes.NOW,
+            defaultValue: queryInterface.sequelize.literal("CURRENT_TIMESTAMP"),
           },
           updatedAt: {
             type: DataTypes.DATE,
             allowNull: false,
-            defaultValue: DataTypes.NOW,
+            defaultValue: queryInterface.sequelize.literal(
+              "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            ),
           },
           deletedAt: {
             type: DataTypes.DATE,

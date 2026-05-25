@@ -13,7 +13,6 @@ export class CarterinhasController {
         const useCase = new GetCarterinhaUseCase( new SequelizeCarterinhaRepository() ); 
         
         const response = await useCase.execute(request.query);
-        console.log(response)
         return reply.status(200).send({message: "Retrivied sucessfully", data: response.carterinhas || [], count: response.count, ok: true});
     }
 

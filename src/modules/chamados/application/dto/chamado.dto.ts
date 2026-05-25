@@ -4,16 +4,16 @@ export interface CreateChamadoDto {
   patrimonio: string;
   tipo: ChamadoTipo;
   setorId: number;
-  solicitanteId?: number | string | null;
+  solicitanteId?: number | null;
   descricao: string;
   prioridade: ChamadoPrioridade;
-  responsavelId?: number | string | null;
+  responsavelId?: number | null;
   observacoes?: string | null;
 }
 
 export interface UpdateChamadoDto {
   status?: ChamadoStatus;
-  responsavelId?: number | string | null;
+  responsavelId?: number | null;
   observacoes?: string | null;
   dataResolucao?: Date | null;
   prioridade?: ChamadoPrioridade;
@@ -22,8 +22,8 @@ export interface UpdateChamadoDto {
 export interface ListChamadoDto {
   status?: ChamadoStatus;
   setorId?: number;
-  solicitanteId?: string;
-  responsavelId?: string;
+  solicitanteId?: number;
+  responsavelId?: number;
   tipo?: ChamadoTipo;
   prioridade?: ChamadoPrioridade;
 }

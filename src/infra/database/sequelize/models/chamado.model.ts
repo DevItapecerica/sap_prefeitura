@@ -14,10 +14,10 @@ export interface ChamadoDBAttributes {
   tipo: string;
   dataEntrada: Date;
   setorId: number;
-  solicitanteId?: string | null;
+  solicitanteId?: number | null;
   descricao: string;
   prioridade: string;
-  responsavelId?: string | null;
+  responsavelId?: number | null;
   observacoes?: string | null;
   dataResolucao?: Date | null;
   createdAt?: Date;
@@ -35,10 +35,10 @@ export interface ChamadoDB extends Model<
   tipo: string;
   dataEntrada: Date;
   setorId: number;
-  solicitanteId?: string | null;
+  solicitanteId?: number | null;
   descricao: string;
   prioridade: string;
-  responsavelId?: string | null;
+  responsavelId?: number | null;
   observacoes?: string | null;
   dataResolucao?: Date | null;
   createdAt?: Date;
@@ -79,11 +79,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
       solicitanteId: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         allowNull: true,
       },
       descricao: {
-        type: DataTypes.TEXT,
+        type: DataTypes.TEXT("long"),
         allowNull: false,
       },
       prioridade: {
@@ -92,11 +92,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
       responsavelId: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         allowNull: true,
       },
       observacoes: {
-        type: DataTypes.TEXT,
+        type: DataTypes.TEXT("long"),
         allowNull: true,
       },
       dataResolucao: {

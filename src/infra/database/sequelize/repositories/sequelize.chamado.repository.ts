@@ -26,7 +26,7 @@ export class SequelizeChamadoRepository implements ChamadoRepository {
 
     const q: any = query || {};
 
-    if (q.status) where.status = q.status;
+    if (q.status) where.status = Array.isArray(q.status) ? { [Op.in]: q.status } : q.status;
     if (q.setorId) where.setorId = Number(q.setorId);
     if (q.solicitanteId) where.solicitanteId = Number(q.solicitanteId);
     if (q.responsavelId) where.responsavelId = Number(q.responsavelId);
@@ -67,7 +67,7 @@ export class SequelizeChamadoRepository implements ChamadoRepository {
       tipo: chamado.tipo,
       dataEntrada: chamado.dataEntrada,
       setorId: chamado.setorId,
-      solicitanteId: chamado.solicitanteId,
+      solicitanteId: chamado.solicitanteId || null,
       descricao: chamado.descricao,
       prioridade: chamado.prioridade,
       responsavelId: chamado.responsavelId || null,

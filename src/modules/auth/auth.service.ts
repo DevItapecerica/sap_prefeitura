@@ -68,6 +68,7 @@ export default class authService {
       throw error;
     }
 
+    user.password = undefined;
     return user;
   }
 }

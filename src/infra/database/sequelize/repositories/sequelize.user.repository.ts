@@ -87,6 +87,10 @@ export class SequelizeUserRepository implements UserRepository {
       attributes: { exclude: ["password"] },
     });
 
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     await user.update(payload);
 
     return this.toEntity(user);
@@ -112,7 +116,6 @@ export class SequelizeUserRepository implements UserRepository {
     email: string,
     excludeId?: userParams,
   ): Promise<User | null> => {
-    console.log(this.model);
     const where = excludeId ? { email, id: { [Op.ne]: excludeId } } : { email };
     const user = await this.model.findOne({ where });
 

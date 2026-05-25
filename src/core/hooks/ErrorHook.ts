@@ -4,6 +4,7 @@ import AppError from "../appError.js";
 
 const ErrorHook: FastifyPluginAsync = async (fastify) => {
   fastify.setErrorHandler((error, request, reply) => {
+    console.log(error)
     request.log.error({
       err: error,
       route: request.url,
@@ -20,10 +21,13 @@ const ErrorHook: FastifyPluginAsync = async (fastify) => {
     }
 
     if (error instanceof Error) {
-      return reply.status(400).send({
-        statusCode: 400,
-        message: error.message,
-        code: "BAD_REQUEST",
+      const statusCode = "statusCode" in error ? Number(error.statusCode) : 500;
+      const isClientError = statusCode >= 400 && statusCode < 500;
+
+      return reply.status(isClientError ? statusCode : 500).send({
+        statusCode: isClientError ? statusCode : 500,
+        message: isClientError ? error.message : "Erro interno",
+        code: isClientError ? "BAD_REQUEST" : "INTERNAL_ERROR",
         ok: false,
       });
     }
