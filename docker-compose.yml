@@ -14,19 +14,21 @@ services:
           memory: 256M
     environment:
       NODE_ENV: ${NODE_ENV}
-      APPLICATION_PORT: 3000
-      API_KEY: ${API_KEY}
       DATABASE_URL: ${DATABASE_URL}
-
       SECRET_KEY: ${SECRET_KEY}
+
       FT_APP_API_HOST: ${FT_APP_API_HOST}
       FT_APP_API_KEY: ${FT_APP_API_KEY}
 
       MAIL_ADRESS: ${MAIL_ADRESS}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_HOST: ${MAIL_HOST}
+      
+      CORS_ORIGINS: ${CORS_ORIGINS}
+
+      APPLICATION_PORT: 3000
     ports:
-      - ${APPLICATION_PORT}:3000
+      - ${APPLICATION_PORT}:3001
     networks:
       dokploy-network:
         aliases:
