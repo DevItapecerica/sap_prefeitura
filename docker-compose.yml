@@ -28,7 +28,9 @@ services:
     ports:
       - ${APPLICATION_PORT}:3000
     networks:
-      - dokploy-network
+      dokploy-network:
+        aliases:
+          - sap_prefeitura
 networks:
   dokploy-network:
     external: true
