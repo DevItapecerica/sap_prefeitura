@@ -1,14 +1,13 @@
-"use strict";
+import { QueryInterface } from "sequelize";
 
-/** @type {import('sequelize-cli').Migration} */
 export default {
-  async up(queryInterface, Sequelize) {
+  up: async (queryInterface: QueryInterface): Promise<void> => {
     const existing = await queryInterface.rawSelect(
       "setors",
       {
         where: { id: 1 },
       },
-      ["id"]
+      "id",
     );
 
     if (!existing) {
@@ -22,7 +21,7 @@ export default {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.bulkDelete("setors", { id: 1 });
   },
 };
