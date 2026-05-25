@@ -54,13 +54,13 @@ fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
 
 // inicialização
-const start = () => {
+const start = async () => {
   try {
-    fastify.listen({ port, host: "0.0.0.0" });
+    await fastify.listen({ port, host: "0.0.0.0" });
   } catch (error) {
     console.error("❌ Erro ao iniciar o servidor:", error);
     process.exit(1);
   }
 };
 
-start();
+await start();

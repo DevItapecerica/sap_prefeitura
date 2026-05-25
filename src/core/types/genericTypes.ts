@@ -13,4 +13,12 @@ export type QueryParams = {
   page?: number;
   limit?: number;
   order?: string;
+  setorId?: number;
+  status?: string | string[];
+  solicitanteId?: number;
+  responsavelId?: number;
+  tipo?: string;
+  prioridade?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };

@@ -73,7 +73,8 @@ export default class UserController {
       page: request.query.page,
       limit: request.query.limit,
       search: request.query.search,
-      order: request.query.order
+      order: request.query.order,
+      setorId: request.query.setorId,
     };
 
     const response = await service.getAllByQuery(query);

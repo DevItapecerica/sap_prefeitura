@@ -79,7 +79,7 @@ export class AuthorizationUseCase {
           throw new AppError(
             "You don't have the right to read this service",
             403,
-            "SERVICE_NOT_FOUND",
+            "NOT_PERMITTED",
           );
         }
         break;
@@ -89,7 +89,7 @@ export class AuthorizationUseCase {
           throw new AppError(
             "You don't have the right to create this service",
             403,
-            "SERVICE_NOT_FOUND",
+            "NOT_PERMITTED",
           );
         }
         break;
@@ -99,7 +99,7 @@ export class AuthorizationUseCase {
           throw new AppError(
             "You don't have the right to edit this service",
             403,
-            "SERVICE_NOT_FOUND",
+            "NOT_PERMITTED",
           );
         }
         break;
@@ -109,7 +109,7 @@ export class AuthorizationUseCase {
           throw new AppError(
             "You don't have the right to delete this service",
             403,
-            "SERVICE_NOT_FOUND",
+            "NOT_PERMITTED",
           );
         }
         break;

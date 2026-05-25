@@ -50,7 +50,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
       tags: ["Users"],
       security: [{ JWTToken: [] }],
       description:
-        "Pegue todos os usuários com base em seus parâmetros passados via queryString. \n Parâmetros: limit, page, search e order. \n Order segue o seguinte formato: coluna:asc ou coluna:desc. (Colunas aceitas: id, name, email, ramal, createdAt)",
+        "Pegue todos os usuários com base em seus parâmetros passados via queryString. \n Parâmetros: limit, page, search, setorId e order. \n Order segue o seguinte formato: coluna:asc ou coluna:desc. (Colunas aceitas: id, name, email, ramal, createdAt)",
       summary: "Pegue todos os usuários",
       querystring: {
         type: "object",
@@ -59,6 +59,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
           page: { type: "integer", default: 1 },
           search: { type: "string" },
           order: { type: "string", default: "createdAt:desc" },
+          setorId: { type: "integer", minimum: 1, description: "Filtrar por ID do setor" },
         },
       },
       response: {

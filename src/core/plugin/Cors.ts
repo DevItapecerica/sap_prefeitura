@@ -4,11 +4,12 @@ import fp from "fastify-plugin"; // Importe o fastify-plugin
 import { CORS_ORIGINS } from "../env.js";
 
 const CorsConfig: FastifyPluginAsync = async (fastify, opts)  => {
+  const allowedOrigins = CORS_ORIGINS.split(",").map((origin) => origin.trim());
 
   fastify.register(Cors, {
     ...opts,
-    origin: CORS_ORIGINS,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "x-user-id",

@@ -24,7 +24,7 @@ export default class authController {
 
   static async authUser(request: FastifyRequest<{Headers: {authorization: string}}>, reply: FastifyReply) {
     const service = new authService(new SequelizeUserRepository(), new JwtServices(request.log), request.log);
-    const token = request.headers.authorization?.replace("Bearer ", "");
+    const token = request.headers.authorization.replace("Bearer ", "");
 
     const response = await service.authUser(token);
 

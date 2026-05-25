@@ -1,0 +1,29 @@
+import { ChamadoStatus, ChamadoTipo, ChamadoPrioridade } from "../../domain/entity/Chamado.js";
+
+export interface CreateChamadoDto {
+  patrimonio: string;
+  tipo: ChamadoTipo;
+  setorId: number;
+  solicitanteId?: number | null;
+  descricao: string;
+  prioridade: ChamadoPrioridade;
+  responsavelId?: number | null;
+  observacoes?: string | null;
+}
+
+export interface UpdateChamadoDto {
+  status?: ChamadoStatus;
+  responsavelId?: number | null;
+  observacoes?: string | null;
+  dataResolucao?: Date | null;
+  prioridade?: ChamadoPrioridade;
+}
+
+export interface ListChamadoDto {
+  status?: ChamadoStatus;
+  setorId?: number;
+  solicitanteId?: number;
+  responsavelId?: number;
+  tipo?: ChamadoTipo;
+  prioridade?: ChamadoPrioridade;
+}
