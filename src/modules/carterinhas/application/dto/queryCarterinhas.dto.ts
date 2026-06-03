@@ -2,6 +2,6 @@ export type QueryCarterinhasDto = {
     limit?: number;
     page?: number;
     order?: string;
-    setor?: string;
+    origem?: string;
     servico?: string;
 };

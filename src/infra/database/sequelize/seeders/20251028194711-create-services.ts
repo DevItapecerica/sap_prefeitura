@@ -17,7 +17,7 @@ export default {
       {
         id: 1,
         name: "User",
-        description: "Documentacao da aplicacao",
+        description: "Gerenciamento de usuários",
         url: "/services/1/admin",
         tag: "admin",
         createdAt: new Date(),

@@ -17,8 +17,9 @@ export class SequelizeRolesRepository implements RolesRepository {
     const { page = "0", limit, search = null, order } = query;
 
     const queryOrder = order ? order.split(":") : ["id", "desc"];
+    const queryLimit = limit ? Number(limit) : undefined;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? Number(page) * queryLimit : undefined;
 
     const where = search
       ? {
@@ -29,7 +30,7 @@ export class SequelizeRolesRepository implements RolesRepository {
     const roles = await this.model.findAndCountAll({
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     });
 

@@ -11,14 +11,16 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     carterinhas: Carterinha[];
     count: number;
   }> {
-    const { page, limit,  setor, servico, order } = query;
+    const { page, limit,  origem, servico, order } = query;
     const queryOrder = order ? order.split(":") : ["uuid", "desc"];
+    const queryLimit = limit ? Number(limit) : undefined;
+    const queryPage = page ? Number(page) : 0;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? queryPage * queryLimit : undefined;
 
     const where = {
       [Op.or]: [
-        { setor_uuid: { [Op.like]: `%${setor ? setor : ""}%` } },
+        { origem: { [Op.like]: `%${origem ? origem : ""}%` } },
         { atividade_uuid: { [Op.like]: `%${servico ? servico: ""}%` } },
       ],
     };
@@ -26,7 +28,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     const queryData = {
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     };
 
@@ -73,7 +75,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     return new Carterinha(
       data.emissao,
       data.validade,
-      data.setor_uuid,
+      data.origem,
       data.atividade_uuid,
       data.municipe_uuid,
       data.author,

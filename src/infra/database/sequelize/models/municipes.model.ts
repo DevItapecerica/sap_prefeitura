@@ -128,5 +128,16 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     },
   );
 
+  (Carterinhas as any).associate = (models: any) => {
+    Carterinhas.hasOne(models.AtletaModel, {
+      foreignKey: "municipe_uuid",
+      as: "atleta",
+    });
+    Carterinhas.hasMany(models.CarteirinhaModel, {
+      foreignKey: "municipe_uuid",
+      as: "carterinhas",
+    });
+  };
+
   return Carterinhas;
 };

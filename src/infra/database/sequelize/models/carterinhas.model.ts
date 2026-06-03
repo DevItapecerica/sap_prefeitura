@@ -17,7 +17,7 @@ interface CarterinhaDB extends Model<
   emissao: string;
   validade: CreationOptional<string>;
   municipe_uuid: string;
-  setor_uuid: string;
+  origem: string;
   atividade_uuid: string;
 
   author: string | number;
@@ -54,7 +54,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      setor_uuid: {
+      origem: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -79,6 +79,13 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       paranoid: true, // Habilita soft delete
     },
   );
+
+  (Carterinhas as any).associate = (models: any) => {
+    Carterinhas.belongsTo(models.MunicipeModel, {
+      foreignKey: "municipe_uuid",
+      as: "municipe",
+    });
+  };
 
   return Carterinhas;
 };

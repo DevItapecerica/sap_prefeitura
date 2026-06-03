@@ -26,7 +26,7 @@ export default {
           allowNull: false,
         },
 
-        setor_uuid: {
+        origem: {
           type: DataTypes.STRING,
           allowNull: false,
         },

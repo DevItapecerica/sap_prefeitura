@@ -3,13 +3,15 @@ import municipeController from "../controller/municipe.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
+const MUNICIPE_SERVICE_ID = 9;
+
 const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   fastify.addHook("preHandler", async (request: FastifyRequest) => {
     const verifyAuthorization = authorizationFactory(request.log);
     await verifyAuthorization.authorize(
       Number(request.user.id),
-      1,
+      MUNICIPE_SERVICE_ID,
       request.method,
     );
   });
