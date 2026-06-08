@@ -3,6 +3,7 @@ import { PORT } from "./core/env.js";
 // fastify
 import Fastify from "fastify";
 import logConfig from "./core/config/logConfig.js";
+import fastifyCookie from "@fastify/cookie";
 
 // Cors
 import corsConfig from "./core/plugin/Cors.js";
@@ -29,6 +30,9 @@ const port: number = Number(PORT);
 fastify.log.info("Registrando plugins");
 await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
+
+await fastify.register(fastifyCookie);
+fastify.log.info("Cookie Registrado");
 
 await fastify.register(fastifySwagger, swaggerConfig(port));
 fastify.log.info("Swagger Registrado");

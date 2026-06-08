@@ -16,7 +16,7 @@ const CorsConfig: FastifyPluginAsync = async (fastify, opts)  => {
       "x-real-ip",
       "Authorization",
     ],
-    credentials: false,
+    credentials: true,
   });
 };
 

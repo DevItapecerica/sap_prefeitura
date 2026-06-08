@@ -33,6 +33,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
           properties: {
             message: { type: "string", example: "Login bem sucedido" },
             token: { type: "string", example: "token" },
+            ok: { type: "boolean", example: true },
             user: { type: "object", properties: {
               id: { type: "number", example: 1 },
               name: { type: "string", example: "admin" },
@@ -66,13 +67,56 @@ const routes: FastifyPluginAsync = async (fastify) => {
               setor_id: { type: "string", example: "admin" },
               role_id: { type: "string", example: "admin" },
             } },
+            ok: { type: "boolean", example: true },
           },
         },
         ...errorResponseSchema,
       },
     },
     handler: authController.authUser,
-  })
+  });
+
+  fastify.route({
+    method: "POST",
+    url: "/refresh",
+    schema: {
+      description: "Renova a sessão usando refresh token HttpOnly",
+      tags: ["Auth"],
+      response: {
+        200: {
+          description: "Sessão renovada",
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Sessão renovada" },
+            token: { type: "string", example: "token" },
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: authController.refresh,
+  });
+
+  fastify.route({
+    method: "POST",
+    url: "/logout",
+    schema: {
+      description: "Revoga a sessão atual",
+      tags: ["Auth"],
+      response: {
+        200: {
+          description: "Logout realizado",
+          type: "object",
+          properties: {
+            ok: { type: "boolean", example: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: authController.logout,
+  });
 };
 
 export default routes;
