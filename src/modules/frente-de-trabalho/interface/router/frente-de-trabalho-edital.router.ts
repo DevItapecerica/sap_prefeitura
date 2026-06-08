@@ -11,7 +11,7 @@ export const frenteDeTrabalhoEditalRouter: FastifyPluginAsync = async (
     const verifyAuthorization = authorizationFactory(request.log);
     await verifyAuthorization.authorize(
       Number(request.user.id),
-      1,
+      6,
       request.method,
     );
   });
