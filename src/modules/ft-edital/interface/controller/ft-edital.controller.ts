@@ -1,97 +1,125 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import FT_API from "../../api.js";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
-import getEditalUseCase from "../../application/use-case/getEdital.use-case.js";
-import { SequelizeEditalRepository } from "../../../../infra/database/sequelize/repositories/sequelize.edital.repository.js";
-export default class FtEditalController {
+import {
+  FtEditalBolsistaQueryDto,
+  FtEditalDto,
+  FtVincularBolsistaDto,
+} from "../../application/dto/ft-edital.dto.js";
+import { makeFtEditalService } from "../../factories/makeFtEditalService.js";
 
-  static getEdital = async (request: FastifyRequest, reply: FastifyReply) => {
-    const useCase = new getEditalUseCase(new SequelizeEditalRepository());
-    const response = await useCase.execute();
-    reply.status(200).send({ message: "Editais retrivied", data: response, ok: true });
+const service = makeFtEditalService();
+
+export class FtEditalController {
+  static getEdital = async (_request: FastifyRequest, reply: FastifyReply) => {
+    const edital = await service.allEdital();
+
+    return reply
+      .status(200)
+      .send({ message: "Edital selecionados com sucesso", edital });
   };
 
   static getEditalById = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
-    const { id } = request.params;
-    const response = await FT_API.get(`/ft/edital/${id}`);
+    const edital = await service.editalById(request.params.id);
 
-    reply.status(200).send({ message: "edital found", data: response, ok: true });
+    return reply
+      .status(200)
+      .send({ message: "Edital selecionados com sucesso", edital });
   };
 
   static postEdital = async (
-    request: FastifyRequest<{ Body: { edital: any } }>,
+    request: FastifyRequest<{ Body: { edital: FtEditalDto } }>,
     reply: FastifyReply,
   ) => {
     const { edital } = request.body;
+    const newEdital = await service.createEdital(edital);
 
-    const response = await FT_API.post(`/ft/edital`, {
-      edital,
-    });
-
-    reply.status(200).send({ message: "edital created", data: response, ok: true });
+    return reply
+      .status(201)
+      .send({ message: "Edital criado com sucesso", newEdital });
   };
 
   static updateEdital = async (
-    request: FastifyRequest<{ Params: { id: string }; Body: { edital: any } }>,
+    request: FastifyRequest<{
+      Params: { id: string };
+      Body: { edital: FtEditalDto };
+    }>,
     reply: FastifyReply,
   ) => {
-    const { id } = request.params;
     const { edital } = request.body;
+    const newEdital = await service.updateEdital(request.params.id, edital);
 
-    const response = await FT_API.put(`/ft/edital/${id}`, {
-      edital,
-    });
-
-    reply.status(200).send({ message: "edital updated", data: response, ok: true });
+    return reply
+      .status(200)
+      .send({ message: "Edital criado com sucesso", edital: newEdital });
   };
 
   static deleteEdital = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
-    const { id } = request.params;
+    await service.deleteEdital(request.params.id);
 
-    const response = await FT_API.delete(`/ft/edital/${id}`);
-
-    reply.status(200).send({ message: "edital deleted", data: response, ok: true });
+    return reply.status(201).send({ message: "Edital deletado com sucesso" });
   };
 
   static vincularBolsista = async (
     request: FastifyRequest<{
       Params: { id: string };
-      Body: { bolsista: any; data_vinculo: any };
+      Body: FtVincularBolsistaDto;
     }>,
     reply: FastifyReply,
   ) => {
-    const { id } = request.params;
-    const { bolsista } = request.body;
-    const { data_vinculo } = request.body;
+    const { bolsista, data_vinculo } = request.body;
 
-    const response = await FT_API.post(`/ft/edital/vincularbolsista/${id}`, {
+    await service.vincularBolsista(
+      request.params.id,
       bolsista,
       data_vinculo,
-    });
+    );
 
-    reply.status(200).send({ message: "edital deleted", data: response, ok: true });
+    return reply.status(201).send({ message: "Bolsista vinculado com sucesso" });
+  };
+
+  static getAllEditalWithBolsista = async (
+    _request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
+    const bolsista_edital = await service.getAllWithBolsista();
+
+    return reply
+      .status(200)
+      .send({ message: "Todos os editais com bolsistas", bolsista_edital });
   };
 
   static getEditalWithBolsista = async (
     request: FastifyRequest<{
       Params: { id: string };
-      Querystring: QueryParams;
+      Querystring: FtEditalBolsistaQueryDto;
     }>,
     reply: FastifyReply,
   ) => {
-    const { id } = request.params;
-    const { page = 0, limit = 10, search = "", order = "creatAt:desc" } = request.query;
-
-    const response = await FT_API.get(
-      `/ft/edital/${id}/bolsista?page=${page}&limit=${limit}&search=${search}`,
+    const { bolsistas, count } = await service.getWithBolsista(
+      request.params.id,
+      request.query,
     );
 
-    reply.status(200).send({ message: "edital deleted", data: response, ok: true });
+    return reply
+      .status(200)
+      .send({ message: "Edital com bolsistas", bolsistas, count });
+  };
+
+  static getRelatory = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const relatory = await service.getRelatory(request.params.id);
+
+    return reply
+      .status(200)
+      .header("Content-Type", relatory.type)
+      .header("Content-Disposition", `attachment; filename="${relatory.fileName}"`)
+      .send(relatory.csv);
   };
 }

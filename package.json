@@ -13,7 +13,10 @@
     "migrate:generate": "npx ts-node src/core/utils/generateMigration.ts",
     "migrate": "tsc -p . & npx sequelize-cli db:migrate ",
     "migrate:undo": "npx sequelize-cli db:migrate:undo ",
-    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all "
+    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all ",
+    "seed": "node scripts/seed.cjs",
+    "seed:undo": "node scripts/seed.cjs undo",
+    "seed:undo:all": "node scripts/seed.cjs undo:all"
   },
   "keywords": [],
   "author": "",
