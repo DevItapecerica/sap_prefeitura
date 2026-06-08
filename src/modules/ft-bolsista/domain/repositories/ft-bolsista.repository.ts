@@ -8,6 +8,10 @@ export interface FtBolsistaRepository {
   findByCpf(cpf: string): Promise<any | null>;
   create(data: any): Promise<any>;
   createPaymentInfo(data: any): Promise<any>;
+  createWithPaymentInfo(
+    bolsistaData: any,
+    paymentInfoData: any,
+  ): Promise<{ bolsista: any; paymentInfo: any }>;
   findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
   countActiveByPagador(pagadorId: string): Promise<number>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;

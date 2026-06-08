@@ -31,6 +31,24 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     return db.PaymentInfo.create(data);
   }
 
+  async createWithPaymentInfo(bolsistaData: any, paymentInfoData: any) {
+    return db.sequelize.transaction(async (transaction: any) => {
+      const bolsista = await db.Bolsistas.create(bolsistaData, {
+        transaction,
+      });
+
+      const paymentInfo = await db.PaymentInfo.create(
+        {
+          ...paymentInfoData,
+          bolsista_id: bolsista.get("id"),
+        },
+        { transaction },
+      );
+
+      return { bolsista, paymentInfo };
+    });
+  }
+
   findAndCount(query: FtBolsistaQueryDto = {}) {
     const { page = "0", limit = "10", search = "" } = query;
     const offset = Number(page) * Number(limit);

@@ -17,7 +17,6 @@ export default {
       cpf: {
         type: DataTypes.STRING(11),
         allowNull: false,
-        unique: true,
       },
       local: {
         type: DataTypes.STRING,

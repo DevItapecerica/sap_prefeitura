@@ -58,18 +58,16 @@ export class FtBolsistaService {
     }
 
     if (id) {
-      return this.updateBolsista(data, id);
+      return await this.updateBolsista(data, id);
     }
 
-    return this.createBolsista(data);
+    return await this.createBolsista(data);
   }
 
   async createBolsista(data: FtBolsistaDto) {
     const paymentInfo = data?.payment_info;
 
-    if (!paymentInfo) {
-      throw ftError(400, "Dados bancarios sao obrigatorios");
-    }
+    this.validatePaymentInfo(paymentInfo);
 
     verifyPagador(paymentInfo.pagador_id);
 
@@ -78,28 +76,29 @@ export class FtBolsistaService {
       throw ftError(403, "Bolsista already exists");
     }
 
-    const newBolsista = await this.repository.create({
-      nome: data.nome,
-      cpf: data.cpf,
-      telefone: data.telefone,
-      local: data.local,
-      cep: data.cep,
-      numero: data.numero,
-      logradouro: data.logradouro,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      uf: data.uf,
-    });
-
-    const newPaymentInfo = await this.repository.createPaymentInfo({
-      bolsista_id: newBolsista.get("id"),
-      bco: paymentInfo.bco,
-      ag: paymentInfo.ag,
-      dig_ag: paymentInfo.dig_ag,
-      conta: paymentInfo.conta,
-      dig_conta: paymentInfo.dig_conta,
-      pagador_id: paymentInfo.pagador_id,
-    });
+    const { bolsista: newBolsista, paymentInfo: newPaymentInfo } =
+      await this.repository.createWithPaymentInfo(
+        {
+          nome: data.nome,
+          cpf: data.cpf,
+          telefone: data.telefone,
+          local: data.local,
+          cep: data.cep,
+          numero: data.numero,
+          logradouro: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.cidade,
+          uf: data.uf,
+        },
+        {
+          bco: paymentInfo.bco,
+          ag: paymentInfo.ag,
+          dig_ag: paymentInfo.dig_ag,
+          conta: paymentInfo.conta,
+          dig_conta: paymentInfo.dig_conta,
+          pagador_id: paymentInfo.pagador_id,
+        },
+      );
 
     return {
       ...newBolsista.toJSON(),
@@ -113,9 +112,7 @@ export class FtBolsistaService {
     const { bolsista } = await this.getBolsistaById(id);
     const paymentInfo = data?.payment_info;
 
-    if (!paymentInfo) {
-      throw ftError(400, "Dados bancarios sao obrigatorios");
-    }
+    this.validatePaymentInfo(paymentInfo);
 
     const selectedPagador = verifyPagador(paymentInfo.pagador_id);
 
@@ -158,6 +155,32 @@ export class FtBolsistaService {
     return bolsista;
   }
 
+  private validatePaymentInfo(paymentInfo: any) {
+    if (!paymentInfo) {
+      throw ftError(400, "Dados bancarios sao obrigatorios");
+    }
+
+    const requiredFields = [
+      ["pagador_id", "Pagador"],
+      ["bco", "Banco"],
+      ["ag", "Agencia"],
+      ["dig_ag", "Digito da agencia"],
+      ["conta", "Conta"],
+      ["dig_conta", "Digito da conta"],
+    ];
+
+    const missingFields = requiredFields
+      .filter(([field]) => !String(paymentInfo[field] ?? "").trim())
+      .map(([, label]) => label);
+
+    if (missingFields.length > 0) {
+      throw ftError(
+        400,
+        `Dados bancarios incompletos: ${missingFields.join(", ")}`,
+      );
+    }
+  }
+
   async deleteBolsista(id: string) {
     const { bolsista } = await this.getBolsistaById(id);
     await bolsista.destroy();
@@ -173,6 +196,8 @@ export class FtBolsistaService {
 
     return this.repository.findToExpire(warningDate);
   }
+
+  // bolsista edital
 
   async prorrogate(bolsistas: FtBolsistaProrrogacaoDto[] = []) {
     for (const item of bolsistas) {
@@ -239,6 +264,7 @@ export class FtBolsistaService {
     await vinculo.destroy();
   }
 
+  // faltas
   async createFalta(bolsistaId: string, data: FtBolsistaFaltaDto) {
     const { edital_id, data_falta, observacao = null } = data;
 
@@ -279,10 +305,7 @@ export class FtBolsistaService {
     };
   }
 
-  async listFaltas(
-    bolsistaId: string,
-    query: FtBolsistaFaltaQueryDto = {},
-  ) {
+  async listFaltas(bolsistaId: string, query: FtBolsistaFaltaQueryDto = {}) {
     const bolsista = await this.repository.findById(bolsistaId);
 
     if (!bolsista) {

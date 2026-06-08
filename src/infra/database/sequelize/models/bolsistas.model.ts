@@ -16,7 +16,6 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       cpf: {
         type: dataTypes.STRING(11),
         allowNull: false,
-        unique: true,
       },
       local: {
         type: dataTypes.STRING,
