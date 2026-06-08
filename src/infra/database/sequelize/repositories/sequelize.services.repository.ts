@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import db from "../index.js";
 import { ServicesRepository } from "../../../../modules/services/domain/repository/services.repository.js";
 import { Services } from "../../../../modules/services/domain/entity/Services.js";
@@ -15,8 +15,9 @@ export class SequelizeServicesRepository implements ServicesRepository {
     const { page = "0", limit, search = null, order = "id:desc" } = query;
     
     const queryOrder = order ? order.split(":") : ["id", "desc"];
+    const queryLimit = limit ? Number(limit) : undefined;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? Number(page) * queryLimit : undefined;
 
     const where = search
       ? {
@@ -29,7 +30,7 @@ export class SequelizeServicesRepository implements ServicesRepository {
     const services = await this.model.findAll({
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     });
 

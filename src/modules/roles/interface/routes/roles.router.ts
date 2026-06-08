@@ -1,7 +1,7 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import RolesController from "../controller/roles.controller.js";
-import errorResponseSchema from "../../../../core/shared/schema/errorSchema.js";
+import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
 const rolesRouter: FastifyPluginAsync = async (fastify) => {

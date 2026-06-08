@@ -5,7 +5,7 @@ import {
   UpdateServicesDto,
   visibilityDto,
 } from "../../application/dto/services.dto.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import serviceFactory from "../../factories/setor.factory.js";
 
 export default class ServicesController {

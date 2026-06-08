@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 
 import { Sequelize, DataTypes } from "sequelize";
 import { DATABASE_URL } from "../../../core/env.js";
-import { DbObject } from "../../../core/shared/types/DbTypes.js";
+import { DbObject } from "../../../core/types/DbTypes.js";
 
 const __filename: string = fileURLToPath(import.meta.url);
 const __dirname: string = path.dirname(__filename);

@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import db from "../index.js";
 import { PermissionRepository } from "../../../../modules/permission/domain/repository/permission.repository.js";
 import { Permissions } from "../../../../modules/permission/domain/entity/Permission.js";
@@ -16,8 +16,10 @@ export class SequelizePermissionRepository implements PermissionRepository {
     query: QueryParams,
   ): Promise<{ permissions: Permissions[]; count: number }> => {
     const { limit, page, search, order } = query;
+    const queryLimit = limit ? Number(limit) : undefined;
+    const queryPage = page ? Number(page) : 0;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? queryPage * queryLimit : undefined;
 
     const queryOrder = order ? order.split(":") : ["id", "desc"];
 
@@ -31,7 +33,7 @@ export class SequelizePermissionRepository implements PermissionRepository {
     const payload = {
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     };
 

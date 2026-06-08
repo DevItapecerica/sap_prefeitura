@@ -1,14 +1,15 @@
 import { userParams, userRequired } from "../dto/user.dto.js";
-import { sendPass } from "../../../../core/shared/utils/sendPass.js";
-import { generateRandomPassword } from "../../../../core/shared/utils/generateRandomPassword.js";
+import { sendPass } from "../../../../core/utils/sendPass.js";
+import { generateRandomPassword } from "../../../../core/utils/generateRandomPassword.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import AppError from "../../../../core/appError.js";
-import ValidateQueryOrder from "../../../../core/shared/utils/ValidateQueryOrder.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { User } from "../../domain/entity/User.js";
 import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
 import bcrypt from "bcryptjs";
-import comparePass from "../../../../core/shared/utils/comparePass.js";
+import comparePass from "../../../../core/utils/comparePass.js";
+import ValidateQueryOrder from "../../../../core/utils/ValidateQueryOrder.js";
+import PasswordValidator from "password-validator";
 export default class UserService {
   constructor(
     private userRepository: UserRepository,
@@ -17,6 +18,12 @@ export default class UserService {
   ) {}
 
   private valuesOrder = ["id", "name", "email", "createdAt"];
+  private passwordSchema = new PasswordValidator()
+    .is().min(8)
+    .has().uppercase()
+    .has().lowercase()
+    .has().digits()
+    .has().not().spaces();
 
   cadastrar = async (data: userRequired): Promise<User> => {
     const user = new User(
@@ -43,7 +50,7 @@ export default class UserService {
     }
 
     this.logger.info("Validando email");
-    if (!user.IsValidEmail) {
+    if (!user.IsValidEmail()) {
       this.logger.info("Email invalido");
       const error = new AppError("Email invalido", 403, "USER_EMAIL_INVALID");
       throw error;
@@ -99,7 +106,7 @@ export default class UserService {
     }
 
     this.logger.info("Validando email");
-    if (!user.IsValidEmail) {
+    if (!user.IsValidEmail()) {
       this.logger.info("Email invalido");
       const error = new AppError("Email invalido", 403, "USER_EMAIL_INVALID");
       throw error;
@@ -162,7 +169,7 @@ export default class UserService {
   getAllByQuery = async (
     query: QueryParams,
   ): Promise<{ user: User[]; count: number }> => {
-    const { search, page = 1, limit = 10, order = "createdAt:desc" } = query;
+    const { search, page = 1, limit = 10, order = "createdAt:desc", setorId } = query;
 
     if (page < 1) {
       this.logger.info("Pagina invalida");
@@ -187,6 +194,7 @@ export default class UserService {
       page: Number(page) - 1,
       limit,
       order,
+      setorId,
     };
 
     this.logger.info("Buscando usuários");
@@ -242,6 +250,22 @@ export default class UserService {
         "USER_PASSWORD_INCORRECT",
       );
       throw error;
+    }
+
+    if (!this.passwordSchema.validate(new_password)) {
+      throw new AppError(
+        "Senha nova nao atende aos criterios minimos",
+        400,
+        "USER_PASSWORD_WEAK",
+      );
+    }
+
+    if (await comparePass(new_password, user.password || "NoPass")) {
+      throw new AppError(
+        "Senha nova deve ser diferente da senha atual",
+        400,
+        "USER_PASSWORD_REUSED",
+      );
     }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);

@@ -8,6 +8,10 @@ import RolesModule from "./modules/roles/index.js";
 import PermissionModule from "./modules/permission/index.js";
 import { registerAccessControlEvents } from "./modules/acess-controll/events/index.js";
 import { frenteDeTrabalhoModule } from "./modules/frente-de-trabalho/index.js";
+import CarterinhasModule from "./modules/carterinhas/index.js";
+import MunicipeModule from "./modules/municipe/index.js";
+import chamadosModule from "./modules/chamados/index.js";
+import EsporteModule from "./modules/esporte/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(userModule);
@@ -27,6 +31,18 @@ const App: FastifyPluginAsync = async (fastify) => {
 
   await fastify.register(frenteDeTrabalhoModule);
   fastify.log.info("Frente de Trabalho Module Registrado");
+
+  await fastify.register(MunicipeModule);
+  fastify.log.info("Municipe Module Registrado");
+
+  await fastify.register(CarterinhasModule);
+  fastify.log.info("Carteirinhas Module Registrado");
+
+  await fastify.register(chamadosModule);
+  fastify.log.info("Chamados Module Registrado");
+
+  await fastify.register(EsporteModule);
+  fastify.log.info("Esporte Module Registrado");
 
   await fastify.register(authModule);
   fastify.log.info("Auth Module Registrado");

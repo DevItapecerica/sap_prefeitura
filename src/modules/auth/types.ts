@@ -6,6 +6,7 @@ export interface AuthLoginResponse {
     setor_id: number;
   };
   token: string;
+  refreshToken: string;
 }
 
 export type JwtUserPayload = {
@@ -14,3 +15,8 @@ export type JwtUserPayload = {
   role_id: number
   setor_id: number
 }
+
+export type RefreshSessionResponse = {
+  token: string;
+  refreshToken: string;
+};

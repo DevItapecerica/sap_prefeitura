@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { userParams, userRequired } from "../../application/dto/user.dto.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { UserServiceFactory } from "../../factories/user-service.factory.js";
 
 export default class UserController {
@@ -73,7 +73,8 @@ export default class UserController {
       page: request.query.page,
       limit: request.query.limit,
       search: request.query.search,
-      order: request.query.order
+      order: request.query.order,
+      setorId: request.query.setorId,
     };
 
     const response = await service.getAllByQuery(query);

@@ -2,15 +2,16 @@ import { PORT } from "./core/env.js";
 
 // fastify
 import Fastify from "fastify";
-import logConfig from "./core/logConfig.js";
+import logConfig from "./core/config/logConfig.js";
+import fastifyCookie from "@fastify/cookie";
 
 // Cors
-import corsConfig from "./core/plugin/CorsConfig.js";
+import corsConfig from "./core/plugin/Cors.js";
 
 // Swagger
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
-import { swaggerConfig, swaggerUiConfig } from "./core/swaggerConfig.js";
+import { swaggerConfig, swaggerUiConfig } from "./core/config/swaggerConfig.js";
 
 // Hooks
 import LoggerResponse from "./core/hooks/LoggerResponse.js";
@@ -29,6 +30,9 @@ const port: number = Number(PORT);
 fastify.log.info("Registrando plugins");
 await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
+
+await fastify.register(fastifyCookie);
+fastify.log.info("Cookie Registrado");
 
 await fastify.register(fastifySwagger, swaggerConfig(port));
 fastify.log.info("Swagger Registrado");
@@ -54,13 +58,13 @@ fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
 
 // inicialização
-const start = () => {
+const start = async () => {
   try {
-    fastify.listen({ port, host: "0.0.0.0" });
+    await fastify.listen({ port, host: "0.0.0.0" });
   } catch (error) {
     console.error("❌ Erro ao iniciar o servidor:", error);
     process.exit(1);
   }
 };
 
-start();
+await start();

@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CreateRoleDto, UpdateRoleDto } from "../../application/dto/roles.dto.js";
 import { makeRoles } from "../../factories/makeRoles.js";
-import { QueryParams } from "../../../../core/shared/types/genericTypes.js";
+import { QueryParams } from "../../../../core/types/genericTypes.js";
 import AppError from "../../../../core/appError.js";
 
 
