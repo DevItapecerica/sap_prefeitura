@@ -32,6 +32,8 @@ export class FtEditalService {
   }
 
   async createEdital(data: FtEditalDto) {
+    this.validateEditalPayload(data);
+
     return this.repository.create({
       name: data.name,
       data_publicacao: data.data_publicacao,
@@ -42,23 +44,59 @@ export class FtEditalService {
   }
 
   async updateEdital(id: string, data: FtEditalDto) {
+    this.validateEditalPayload(data);
+
     const edital = await this.repository.findById(id);
 
     if (!edital) {
       throw ftError(404, "Edital not found");
     }
 
-    edital.set({
+    return this.repository.update(edital, {
       name: data.name,
       data_publicacao: data.data_publicacao,
       data_vencimento: data.data_vencimento,
       dia_pagamento: data.dia_pagamento,
       valor_bolsa: data.valor_bolsa,
     });
+  }
 
-    await edital.save();
+  private validateEditalPayload(data: FtEditalDto) {
+    if (!data) {
+      throw ftError(400, "Edital e obrigatorio");
+    }
 
-    return edital;
+    const requiredFields = [
+      ["name", "Nome"],
+      ["data_publicacao", "Data de publicacao"],
+      ["data_vencimento", "Data de vencimento"],
+      ["dia_pagamento", "Dia de pagamento"],
+      ["valor_bolsa", "Valor da bolsa"],
+    ];
+
+    const missingFields = requiredFields
+      .filter(([field]) => !String((data as any)[field] ?? "").trim())
+      .map(([, label]) => label);
+
+    if (missingFields.length > 0) {
+      throw ftError(400, `Dados do edital incompletos: ${missingFields.join(", ")}`);
+    }
+
+    if (
+      Number.isNaN(Date.parse(String(data.data_publicacao))) ||
+      Number.isNaN(Date.parse(String(data.data_vencimento)))
+    ) {
+      throw ftError(400, "Datas do edital invalidas");
+    }
+
+    const diaPagamento = Number(data.dia_pagamento);
+    if (!Number.isInteger(diaPagamento) || diaPagamento < 1 || diaPagamento > 31) {
+      throw ftError(400, "Dia de pagamento deve estar entre 1 e 31");
+    }
+
+    if (Number(data.valor_bolsa) <= 0) {
+      throw ftError(400, "Valor da bolsa deve ser maior que zero");
+    }
   }
 
   async deleteEdital(id: string) {
@@ -68,10 +106,22 @@ export class FtEditalService {
       throw ftError(404, "Edital not found");
     }
 
-    await edital.destroy();
+    await this.repository.destroy(edital);
   }
 
   async vincularBolsista(id: string, bolsistas: string[] = [], dataVinculo: any) {
+    if (!id) {
+      throw ftError(400, "Edital e obrigatorio");
+    }
+
+    if (!Array.isArray(bolsistas) || bolsistas.length === 0) {
+      throw ftError(400, "Lista de bolsistas e obrigatoria");
+    }
+
+    if (dataVinculo && Number.isNaN(Date.parse(String(dataVinculo)))) {
+      throw ftError(400, "Data de vinculo invalida");
+    }
+
     const edital = await this.repository.findById(id);
 
     if (!edital) {
@@ -82,7 +132,13 @@ export class FtEditalService {
       throw ftError(400, "Edital inativo");
     }
 
+    const vinculos = [];
+
     for (const bolsistaId of bolsistas) {
+      if (!bolsistaId) {
+        throw ftError(400, "Bolsista e obrigatorio");
+      }
+
       const bolsista = await this.repository.findBolsistaById(bolsistaId);
 
       if (!bolsista) {
@@ -113,13 +169,10 @@ export class FtEditalService {
       );
       verifyQuantityPagador(pagadorTarget.max_bolsista, quantity);
 
-      await (edital as any).addBolsista(bolsista, {
-        through: { data_vinculo: dataVinculo },
-      });
-
-      bolsista.set("status", "ativo");
-      await bolsista.save();
+      vinculos.push({ bolsista, data_vinculo: dataVinculo });
     }
+
+    await this.repository.vincularBolsistas(edital, vinculos);
   }
 
   async getAllWithBolsista() {

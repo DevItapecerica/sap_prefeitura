@@ -16,6 +16,16 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     return db.Edital.create(data);
   }
 
+  async update(edital: any, data: any) {
+    edital.set(data);
+    await edital.save();
+    return edital;
+  }
+
+  async destroy(edital: any) {
+    await edital.destroy();
+  }
+
   findBolsistaById(id: string) {
     return db.Bolsistas.findByPk(id, {
       include: [{ model: db.PaymentInfo, as: "payment_info" }],
@@ -155,6 +165,23 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         },
       ],
       distinct: true,
+    });
+  }
+
+  async vincularBolsistas(
+    edital: any,
+    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
+  ) {
+    await db.sequelize.transaction(async (transaction: any) => {
+      for (const item of bolsistas) {
+        await edital.addBolsista(item.bolsista, {
+          through: { data_vinculo: item.data_vinculo },
+          transaction,
+        });
+
+        item.bolsista.set("status", "ativo");
+        await item.bolsista.save({ transaction });
+      }
     });
   }
 }

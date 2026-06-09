@@ -53,6 +53,8 @@ export class FtBolsistaService {
   }
 
   async saveBolsista(data: FtBolsistaDto, id?: string) {
+    this.validateBolsistaPayload(data);
+
     if (!isValidCpf(data?.cpf)) {
       throw ftError(400, "CPF invalido");
     }
@@ -108,7 +110,7 @@ export class FtBolsistaService {
     };
   }
 
-  async updateBolsista(data: any, id: string) {
+  async updateBolsista(data: FtBolsistaDto, id: string) {
     const { bolsista } = await this.getBolsistaById(id);
     const paymentInfo = data?.payment_info;
 
@@ -126,33 +128,65 @@ export class FtBolsistaService {
       verifyQuantityPagador(selectedPagador.max_bolsista, quantity);
     }
 
-    bolsista.set({
-      nome: data.nome,
-      cpf: data.cpf,
-      telefone: data.telefone,
-      local: data.local,
-      cep: data.cep,
-      numero: data.numero,
-      logradouro: data.logradouro,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      uf: data.uf,
-    });
-
     const currentPaymentInfo = bolsista.get("payment_info");
-    currentPaymentInfo.set({
-      bco: paymentInfo.bco,
-      ag: paymentInfo.ag,
-      dig_ag: paymentInfo.dig_ag,
-      conta: paymentInfo.conta,
-      dig_conta: paymentInfo.dig_conta,
-      pagador_id: paymentInfo.pagador_id,
-    });
 
-    await bolsista.save();
-    await currentPaymentInfo.save();
+    if (!currentPaymentInfo) {
+      throw ftError(400, "Dados bancarios nao encontrados para o bolsista");
+    }
 
-    return bolsista;
+    return this.repository.updateWithPaymentInfo(
+      bolsista,
+      {
+        nome: data.nome,
+        cpf: data.cpf,
+        telefone: data.telefone,
+        local: data.local,
+        cep: data.cep,
+        numero: data.numero,
+        logradouro: data.logradouro,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        uf: data.uf,
+      },
+      currentPaymentInfo,
+      {
+        bco: paymentInfo.bco,
+        ag: paymentInfo.ag,
+        dig_ag: paymentInfo.dig_ag,
+        conta: paymentInfo.conta,
+        dig_conta: paymentInfo.dig_conta,
+        pagador_id: paymentInfo.pagador_id,
+      },
+    );
+  }
+
+  private validateBolsistaPayload(data: FtBolsistaDto) {
+    if (!data) {
+      throw ftError(400, "Bolsista e obrigatorio");
+    }
+
+    const requiredFields = [
+      ["nome", "Nome"],
+      ["cpf", "CPF"],
+      ["local", "Local"],
+      ["cep", "CEP"],
+      ["numero", "Numero"],
+      ["logradouro", "Logradouro"],
+      ["bairro", "Bairro"],
+      ["cidade", "Cidade"],
+      ["uf", "UF"],
+    ];
+
+    const missingFields = requiredFields
+      .filter(([field]) => !String((data as any)[field] ?? "").trim())
+      .map(([, label]) => label);
+
+    if (missingFields.length > 0) {
+      throw ftError(
+        400,
+        `Dados do bolsista incompletos: ${missingFields.join(", ")}`,
+      );
+    }
   }
 
   private validatePaymentInfo(paymentInfo: any) {
@@ -183,7 +217,7 @@ export class FtBolsistaService {
 
   async deleteBolsista(id: string) {
     const { bolsista } = await this.getBolsistaById(id);
-    await bolsista.destroy();
+    await this.repository.destroyBolsista(bolsista);
 
     return {
       message: "Bolsista deletado com sucesso",
@@ -200,7 +234,17 @@ export class FtBolsistaService {
   // bolsista edital
 
   async prorrogate(bolsistas: FtBolsistaProrrogacaoDto[] = []) {
+    if (!Array.isArray(bolsistas) || bolsistas.length === 0) {
+      throw ftError(400, "Lista de bolsistas e obrigatoria");
+    }
+
+    const vinculos = [];
+
     for (const item of bolsistas) {
+      if (!item?.bolsista_id || !item?.edital_id) {
+        throw ftError(400, "Bolsista e edital sao obrigatorios");
+      }
+
       const { bolsista } = await this.getBolsistaById(item.bolsista_id);
 
       if (!bolsista || bolsista.get("status") !== "ativo") {
@@ -217,16 +261,10 @@ export class FtBolsistaService {
         throw ftError(404, "Vinculo not found");
       }
 
-      const expireAt = new Date(vinculo.get("expire_at") as string);
-      expireAt.setFullYear(expireAt.getFullYear() + 1);
-
-      vinculo.set({
-        expire_at: expireAt,
-        prorrogated: true,
-      });
-
-      await vinculo.save();
+      vinculos.push(vinculo);
     }
+
+    await this.repository.prorrogateVinculos(vinculos);
 
     return {
       message: "Vinculos prorrogados com sucesso",
@@ -244,6 +282,10 @@ export class FtBolsistaService {
   }
 
   async cancelBolsistaEdital(bolsistaId: string, editalId: string) {
+    if (!bolsistaId || !editalId) {
+      throw ftError(400, "Bolsista e edital sao obrigatorios");
+    }
+
     const bolsista = await this.repository.findById(bolsistaId);
     const edital = await this.repository.findEditalById(editalId);
     const vinculo = await this.repository.findVinculo(bolsistaId, editalId);
@@ -256,17 +298,16 @@ export class FtBolsistaService {
       throw ftError(400, "Edital inativo");
     }
 
-    bolsista.set("status", "inativo");
-    vinculo.set("status", "cancelado");
-
-    await bolsista.save();
-    await vinculo.save();
-    await vinculo.destroy();
+    await this.repository.cancelVinculo(bolsista, vinculo);
   }
 
   // faltas
   async createFalta(bolsistaId: string, data: FtBolsistaFaltaDto) {
     const { edital_id, data_falta, observacao = null } = data;
+
+    if (!bolsistaId) {
+      throw ftError(400, "Bolsista e obrigatorio");
+    }
 
     if (!edital_id) {
       throw ftError(400, "Edital e obrigatorio");
@@ -274,6 +315,10 @@ export class FtBolsistaService {
 
     if (!data_falta) {
       throw ftError(400, "Data da falta e obrigatoria");
+    }
+
+    if (Number.isNaN(Date.parse(String(data_falta)))) {
+      throw ftError(400, "Data da falta invalida");
     }
 
     const bolsista = await this.repository.findById(bolsistaId);
@@ -332,7 +377,7 @@ export class FtBolsistaService {
       throw ftError(404, "Falta not found");
     }
 
-    await falta.destroy();
+    await this.repository.destroyFalta(falta);
 
     return {
       message: "Falta deletada com sucesso",

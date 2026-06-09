@@ -12,6 +12,12 @@ export interface FtBolsistaRepository {
     bolsistaData: any,
     paymentInfoData: any,
   ): Promise<{ bolsista: any; paymentInfo: any }>;
+  updateWithPaymentInfo(
+    bolsista: any,
+    bolsistaData: any,
+    paymentInfo: any,
+    paymentInfoData: any,
+  ): Promise<any>;
   findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
   countActiveByPagador(pagadorId: string): Promise<number>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
@@ -22,8 +28,12 @@ export interface FtBolsistaRepository {
     editalId: string,
     status?: string,
   ): Promise<any | null>;
+  destroyBolsista(bolsista: any): Promise<void>;
+  cancelVinculo(bolsista: any, vinculo: any): Promise<void>;
+  prorrogateVinculos(vinculos: any[]): Promise<void>;
   createFalta(data: any): Promise<any>;
   findFaltaById(id: string): Promise<any | null>;
+  destroyFalta(falta: any): Promise<void>;
   findAndCountFaltasByBolsista(
     bolsistaId: string,
     query?: FtBolsistaFaltaQueryDto,

@@ -49,6 +49,23 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  async updateWithPaymentInfo(
+    bolsista: any,
+    bolsistaData: any,
+    paymentInfo: any,
+    paymentInfoData: any,
+  ) {
+    return db.sequelize.transaction(async (transaction: any) => {
+      bolsista.set(bolsistaData);
+      paymentInfo.set(paymentInfoData);
+
+      await bolsista.save({ transaction });
+      await paymentInfo.save({ transaction });
+
+      return bolsista;
+    });
+  }
+
   findAndCount(query: FtBolsistaQueryDto = {}) {
     const { page = "0", limit = "10", search = "" } = query;
     const offset = Number(page) * Number(limit);
@@ -140,12 +157,47 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  async destroyBolsista(bolsista: any) {
+    await bolsista.destroy();
+  }
+
+  async cancelVinculo(bolsista: any, vinculo: any) {
+    await db.sequelize.transaction(async (transaction: any) => {
+      bolsista.set("status", "inativo");
+      vinculo.set("status", "cancelado");
+
+      await bolsista.save({ transaction });
+      await vinculo.save({ transaction });
+      await vinculo.destroy({ transaction });
+    });
+  }
+
+  async prorrogateVinculos(vinculos: any[]) {
+    await db.sequelize.transaction(async (transaction: any) => {
+      for (const vinculo of vinculos) {
+        const expireAt = new Date(vinculo.get("expire_at") as string);
+        expireAt.setFullYear(expireAt.getFullYear() + 1);
+
+        vinculo.set({
+          expire_at: expireAt,
+          prorrogated: true,
+        });
+
+        await vinculo.save({ transaction });
+      }
+    });
+  }
+
   createFalta(data: any) {
     return db.BolsistaFalta.create(data);
   }
 
   findFaltaById(id: string) {
     return db.BolsistaFalta.findByPk(id);
+  }
+
+  async destroyFalta(falta: any) {
+    await falta.destroy();
   }
 
   findAndCountFaltasByBolsista(
