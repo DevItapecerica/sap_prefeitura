@@ -21,6 +21,7 @@ import ErrorHook from "./core/hooks/ErrorHook.js";
 import App from "./app.js";
 import rateLimit from "./core/plugin/rateLimit.js";
 import notFoundHook from "./core/hooks/notFoundHook.js";
+import { startFtScheduler } from "./modules/ft-edital/scheduler/ft-scheduler.js";
 
 const fastify = Fastify(logConfig);
 
@@ -56,6 +57,7 @@ fastify.log.info("NotFound Registrado");
 //Inicialização de APP
 fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
+startFtScheduler(fastify.log);
 
 // inicialização
 const start = async () => {

@@ -89,6 +89,15 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           as: "payment_info",
           attributes: { exclude: ["bolsista_id"] },
         },
+        {
+          model: db.Edital,
+          as: "edital",
+          attributes: ["id", "name"],
+          through: {
+            attributes: ["status", "data_vinculo", "expire_at"],
+          },
+          required: false,
+        },
       ],
       distinct: true,
     });
