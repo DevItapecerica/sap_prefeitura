@@ -1,0 +1,18 @@
+export interface FtEditalDto {
+  name: string;
+  data_publicacao: string | Date;
+  data_vencimento: string | Date;
+  dia_pagamento: number;
+  valor_bolsa: number | string;
+}
+
+export interface FtEditalBolsistaQueryDto {
+  page?: string | number;
+  limit?: string | number;
+  search?: string;
+}
+
+export interface FtVincularBolsistaDto {
+  bolsista: string[];
+  data_vinculo?: string | Date;
+}

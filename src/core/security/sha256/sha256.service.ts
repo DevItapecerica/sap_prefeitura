@@ -1,6 +1,5 @@
 import {
   createHash,
-
 } from "crypto";
 import { ISha256Crypt } from "./sha256.interface.js";
 

@@ -17,9 +17,6 @@ export const DATABASE_URL = must("DATABASE_URL");
 
 export const SECRET_KEY = must("SECRET_KEY");
 
-export const FT_APP_API_HOST = must("FT_APP_API_HOST");
-export const FT_APP_API_KEY = must("FT_APP_API_KEY");
-
 export const MAIL_ADRESS = must("MAIL_ADRESS");
 export const MAIL_PASSWORD = must("MAIL_PASSWORD");
 export const MAIL_HOST = must("MAIL_HOST");

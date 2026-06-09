@@ -2,12 +2,12 @@ import AppError from "../../../../core/appError.js";
 import { IAesCrypt } from "../../../../core/security/aes/AesCrypt.interface.js";
 import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.js";
 import Municipe from "../../domain/entity/Municipe.js";
-import MunicipeRepository from "../../domain/repositories/Municipe.repository.js";
+import IMunicipeRepository from "../../domain/repositories/Municipe.repository.js";
 import { MunicipeMapper } from "../mapper/municipe.mapper.js";
 
 export default class getMunicipeByIdUseCase {
   constructor(
-    private municipeRepository: MunicipeRepository,
+    private municipeRepository: IMunicipeRepository,
     private aesCrypt: IAesCrypt,
     private sha256Crypt: ISha256Crypt,
   ) {}

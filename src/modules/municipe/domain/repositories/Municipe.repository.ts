@@ -2,7 +2,7 @@ import { QueryParams } from "../../../../core/types/genericTypes.js"
 import { updateMunicipeDto } from "../../application/dto/municipe.dto.js"
 import Municipe from "../entity/Municipe.js"
 
-export default interface MunicipeRepository {
+export default interface IMunicipeRepository {
 
     getMunicipe: (query: QueryParams) => Promise<{municipe: Municipe[], count: number}>
     createMunicipe: (municipe: Municipe, cpfHash: string, cepHash: string) => Promise<Municipe>
