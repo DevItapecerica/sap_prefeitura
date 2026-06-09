@@ -14,7 +14,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
       request.method,
     );
   });
-
+  
   const serviceProperties = {
     type: "object",
     properties: {

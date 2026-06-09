@@ -1,11 +1,15 @@
 import jwt from "jsonwebtoken";
+import { SignOptions } from "jsonwebtoken";
 import { SECRET_KEY } from "../../../core/env.js";
 import { JwtUserPayload } from "../types.js";
 
 export default class JwtServices {
   constructor(private logger: any) {}
 
-  async sign(payload: JwtUserPayload): Promise<string> {
+  async sign(
+    payload: JwtUserPayload,
+    expiresIn: SignOptions["expiresIn"] = "15m",
+  ): Promise<string> {
     this.logger.info("Assinando token");
     const token = jwt.sign(
       {
@@ -13,7 +17,7 @@ export default class JwtServices {
       },
       SECRET_KEY,
       {
-        expiresIn: "5h",
+        expiresIn,
       },
     );
 

@@ -16,8 +16,10 @@ export class SequelizePermissionRepository implements PermissionRepository {
     query: QueryParams,
   ): Promise<{ permissions: Permissions[]; count: number }> => {
     const { limit, page, search, order } = query;
+    const queryLimit = limit ? Number(limit) : undefined;
+    const queryPage = page ? Number(page) : 0;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? queryPage * queryLimit : undefined;
 
     const queryOrder = order ? order.split(":") : ["id", "desc"];
 
@@ -31,7 +33,7 @@ export class SequelizePermissionRepository implements PermissionRepository {
     const payload = {
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     };
 

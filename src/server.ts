@@ -3,6 +3,7 @@ import { PORT } from "./core/env.js";
 // fastify
 import Fastify from "fastify";
 import logConfig from "./core/config/logConfig.js";
+import fastifyCookie from "@fastify/cookie";
 
 // Cors
 import corsConfig from "./core/plugin/Cors.js";
@@ -30,6 +31,9 @@ fastify.log.info("Registrando plugins");
 await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
 
+await fastify.register(fastifyCookie);
+fastify.log.info("Cookie Registrado");
+
 await fastify.register(fastifySwagger, swaggerConfig(port));
 fastify.log.info("Swagger Registrado");
 
@@ -54,13 +58,13 @@ fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
 
 // inicialização
-const start = () => {
+const start = async () => {
   try {
-    fastify.listen({ port, host: "0.0.0.0" });
+    await fastify.listen({ port, host: "0.0.0.0" });
   } catch (error) {
     console.error("❌ Erro ao iniciar o servidor:", error);
     process.exit(1);
   }
 };
 
-start();
+await start();

@@ -4,13 +4,15 @@ import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
 
+const CARTERINHA_SERVICE_ID = 10;
+
 export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   fastify.addHook("preHandler", async (request: FastifyRequest) => {
     const verifyAuthorization = authorizationFactory(request.log);
     await verifyAuthorization.authorize(
       Number(request.user.id),
-      12,
+      CARTERINHA_SERVICE_ID,
       request.method,
     );
   });
@@ -21,10 +23,7 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
       uuid: { type: "string", example: "uuid" },
       emissao: { type: "string", format: "date" },
       validade: { type: "string", format: "date" },
-      setor_uuid: {
-        anyOf: [{ type: "string" }, { type: "number" }],
-        example: "uuid",
-      },
+      origem: { type: "string", example: "esporte" },
       atividade_uuid: {
         anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
         example: "uuid",
@@ -41,9 +40,9 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
 
   const requiredCarterihaSchema = {
     type: "object",
-    required: ["setor_uuid", "municipe_uuid"],
+    required: ["origem", "municipe_uuid"],
     properties: {
-      setor_uuid: { anyOf: [{ type: "string" }, { type: "number" }] },
+      origem: { type: "string" },
       atividade_uuid: {
         anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
       },
@@ -60,7 +59,7 @@ export const CarterinhasRouter: FastifyPluginAsync = async (fastify) => {
       querystring: {
         type: "object",
         properties: {
-          setor: { type: "string" },
+          origem: { type: "string" },
           servico: { type: "string" },
           limit: { type: "number" },
           page: { type: "number" },

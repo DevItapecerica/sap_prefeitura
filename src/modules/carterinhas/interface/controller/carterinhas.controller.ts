@@ -4,7 +4,6 @@ import { QueryCarterinhasDto } from "../../application/dto/queryCarterinhas.dto.
 import { SequelizeCarterinhaRepository } from "../../../../infra/database/sequelize/repositories/sequelize.carterinha.repository.js";
 import CreateCarterinhaUseCase from "../../application/use-case/createCarterinha.use-case.js";
 import { SequelizeMunicipeRepository } from "../../../../infra/database/sequelize/repositories/sequelize.municipe.repository.js";
-import { SequelizeSetorRepository } from "../../../../infra/database/sequelize/repositories/sequelize.setor.repository.js";
 import { PostCarterinhaDto } from "../../application/dto/carterinha.dto.js";
 import GetOneCarterinhaUseCase from "../../application/use-case/getOneCarterinha.use-case.js";
 
@@ -13,7 +12,6 @@ export class CarterinhasController {
         const useCase = new GetCarterinhaUseCase( new SequelizeCarterinhaRepository() ); 
         
         const response = await useCase.execute(request.query);
-        console.log(response)
         return reply.status(200).send({message: "Retrivied sucessfully", data: response.carterinhas || [], count: response.count, ok: true});
     }
 
@@ -27,15 +25,15 @@ export class CarterinhasController {
     }
 
     static postCarterinha = async (request: FastifyRequest<{Body: PostCarterinhaDto}>, reply: FastifyReply) => {
-        const useCase = new CreateCarterinhaUseCase( new SequelizeMunicipeRepository(), new SequelizeSetorRepository(), new SequelizeCarterinhaRepository() ); 
+        const useCase = new CreateCarterinhaUseCase( new SequelizeMunicipeRepository(), new SequelizeCarterinhaRepository() ); 
 
         const payload = {
             municipe_uuid: request.body.municipe_uuid,
-            setor_uuid: request.body.setor_uuid,
+            origem: request.body.origem,
             atividade_uuid: request.body.atividade_uuid,
         }
 
-        const response = await useCase.execute(payload);
+        const response = await useCase.execute(payload, request.user.id);
         
         return reply.status(201).send({message: "Created sucessfully", data: response, ok: true});
 

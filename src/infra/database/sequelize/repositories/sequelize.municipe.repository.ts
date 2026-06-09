@@ -32,8 +32,10 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
   ): Promise<{ municipe: Municipe[]; count: number }> {
     const { page, limit, search, order } = query;
     const queryOrder = order ? order.split(":") : ["uuid", "desc"];
+    const queryLimit = limit ? Number(limit) : undefined;
+    const queryPage = page ? Number(page) : 0;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? queryPage * queryLimit : undefined;
 
     const where = search
       ? {
@@ -48,7 +50,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
     const queryData = {
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     };
 

@@ -177,6 +177,26 @@ Gerenciamento de autenticação e login.
 - **Headers**: Authorization: Bearer <token>
 - **Resposta**: Dados do usuário autenticado
 
+**POST /auth/refresh**
+- **Descricao**: Renova o access token usando o refresh token em cookie HttpOnly
+- **Cookie**: `refresh_token`
+- **Resposta**: Novo access token e `{ "ok": true }`
+
+**POST /auth/logout**
+- **Descricao**: Revoga a sessao atual e limpa o cookie de refresh
+- **Cookie**: `refresh_token`
+- **Resposta**: `{ "ok": true }`
+
+### Sessao e Refresh Token
+
+- O access token JWT expira em 15 minutos e deve ser enviado em `Authorization: Bearer <token>`.
+- O refresh token expira em 30 minutos, fica em cookie HttpOnly e nao deve ser lido pelo JavaScript.
+- O cookie `refresh_token` usa `sameSite: "lax"`, `path: "/api"` e `secure: true` apenas em `NODE_ENV=production`.
+- O frontend precisa usar `withCredentials: true` para enviar o cookie em `/refresh` e `/logout`.
+- O CORS da API deve manter `credentials: true` e `CORS_ORIGINS` deve listar as origens permitidas do frontend.
+- A politica atual e sessao unica: um novo login revoga sessoes anteriores do mesmo usuario.
+- Execute `npm run migrate` antes de subir a versao com refresh token, pois a tabela `user_sessions` e obrigatoria.
+
 #### 2. Users (`/user`)
 Gerenciamento de usuários.
 

@@ -4,7 +4,9 @@ import JwtServices from "./utils/jwt.service.js";
 
 export default class AuthMiddleware {
   static verifyJWT = async (request: FastifyRequest, reply: FastifyReply) => {
-    const token = request.headers.authorization?.replace("Bearer ", "");
+    const headerToken = request.headers.authorization?.replace("Bearer ", "");
+    const queryToken = (request.query as any)?.token;
+    const token = headerToken || queryToken;
 
     if (!token) {
       throw new AppError("Token não enviado", 401);

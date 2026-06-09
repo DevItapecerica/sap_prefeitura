@@ -36,12 +36,14 @@ export class SequelizeUserRepository implements UserRepository {
   getAllUser = async (
     query: QueryParams,
   ): Promise<{ user: User[]; count: number }> => {
-    const { page, limit, search, order } = query;
+    const { page, limit, search, order, setorId } = query;
     const queryOrder = order ? order.split(":") : ["id", "desc"];
+    const queryLimit = limit ? Number(limit) : undefined;
+    const queryPage = page ? Number(page) : 0;
 
-    const offset = limit ? Number(page) * Number(limit) : undefined;
+    const offset = queryLimit ? queryPage * queryLimit : undefined;
 
-    const where = search
+    const searchWhere = search
       ? {
           [Op.or]: [
             { name: { [Op.like]: `%${search}%` } },
@@ -50,10 +52,13 @@ export class SequelizeUserRepository implements UserRepository {
         }
       : {};
 
+    const setorWhere = setorId ? { setor_id: setorId } : {};
+    const where = { ...searchWhere, ...setorWhere };
+
     const user = await this.model.findAll({
       offset,
       where,
-      limit: limit,
+      limit: queryLimit,
       order: [[queryOrder[0], queryOrder[1]]],
     });
 
@@ -84,6 +89,10 @@ export class SequelizeUserRepository implements UserRepository {
       attributes: { exclude: ["password"] },
     });
 
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     await user.update(payload);
 
     return this.toEntity(user);
@@ -109,7 +118,6 @@ export class SequelizeUserRepository implements UserRepository {
     email: string,
     excludeId?: userParams,
   ): Promise<User | null> => {
-    console.log(this.model);
     const where = excludeId ? { email, id: { [Op.ne]: excludeId } } : { email };
     const user = await this.model.findOne({ where });
 

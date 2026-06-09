@@ -1,9 +1,15 @@
-"use strict";
+import { Op, QueryInterface } from "sequelize";
 
-/** @type {import('sequelize-cli').Migration} */
+type SeedRecord = Record<string, unknown> & { id: number };
+
+type SeedPayload = {
+  table: string;
+  data: SeedRecord[];
+};
+
 export default {
-  async up(queryInterface, Sequelize) {
-    const payload = [
+  up: async (queryInterface: QueryInterface): Promise<void> => {
+    const payload: SeedPayload[] = [
       {
         table: "roles",
         data: [
@@ -352,6 +358,54 @@ export default {
             updatedAt: "2025-10-02 13:05:59",
             deletedAt: null,
           },
+          {
+            id: 29,
+            role_id: 1,
+            service_id: 8,
+            read: 1,
+            write: 1,
+            edit: 1,
+            del: 1,
+            createdAt: "2026-05-22 00:00:00",
+            updatedAt: "2026-05-22 00:00:00",
+            deletedAt: null,
+          },
+          {
+            id: 30,
+            role_id: 2,
+            service_id: 8,
+            read: 1,
+            write: 1,
+            edit: 1,
+            del: 0,
+            createdAt: "2026-05-22 00:00:00",
+            updatedAt: "2026-05-22 00:00:00",
+            deletedAt: null,
+          },
+          {
+            id: 31,
+            role_id: 3,
+            service_id: 8,
+            read: 1,
+            write: 1,
+            edit: 1,
+            del: 0,
+            createdAt: "2026-05-22 00:00:00",
+            updatedAt: "2026-05-22 00:00:00",
+            deletedAt: null,
+          },
+          {
+            id: 32,
+            role_id: 4,
+            service_id: 8,
+            read: 1,
+            write: 1,
+            edit: 0,
+            del: 0,
+            createdAt: "2026-05-22 00:00:00",
+            updatedAt: "2026-05-22 00:00:00",
+            deletedAt: null,
+          },
         ],
       },
       {
@@ -363,23 +417,32 @@ export default {
           { id: 4, setor_id: 1, service_id: 3, visibility: 1 },
           { id: 6, setor_id: 1, service_id: 6, visibility: 1 },
           { id: 13, setor_id: 1, service_id: 7, visibility: 1 },
+          { id: 15, setor_id: 1, service_id: 8, visibility: 1 },
           { id: 11, setor_id: 2, service_id: 4, visibility: 0 },
           { id: 10, setor_id: 2, service_id: 6, visibility: 1 },
           { id: 9, setor_id: 2, service_id: 3, visibility: 0 },
           { id: 8, setor_id: 2, service_id: 2, visibility: 0 },
           { id: 7, setor_id: 2, service_id: 1, visibility: 0 },
           { id: 14, setor_id: 2, service_id: 7, visibility: 0 },
+          { id: 16, setor_id: 2, service_id: 8, visibility: 1 },
         ],
       },
     ];
 
-    const validateTableData = async (data, table) => {
-      const unique = [];
+    const validateTableData = async (
+      data: SeedRecord[],
+      table: string,
+    ): Promise<SeedRecord[]> => {
+      const unique: SeedRecord[] = [];
 
       for (const item of data) {
-        const isUnique = await queryInterface.rawSelect(table, {
-          where: { id: item.id },
-        }, 'id');
+        const isUnique = await queryInterface.rawSelect(
+          table,
+          {
+            where: { id: item.id },
+          },
+          "id",
+        );
 
         if (!isUnique) {
           unique.push(item);
@@ -389,10 +452,13 @@ export default {
       return unique;
     };
 
-    const insertTable = async (table, data) => {
+    const insertTable = async (
+      table: string,
+      data: SeedRecord[],
+    ): Promise<void> => {
       const unique = await validateTableData(data, table);
       if (unique.length === 0) return;
-      return await queryInterface.bulkInsert(table, unique);
+      await queryInterface.bulkInsert(table, unique);
     };
 
     for (const item of payload) {
@@ -400,27 +466,23 @@ export default {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  down: async (queryInterface: QueryInterface): Promise<void> => {
     const reversedPayload = [
-        { table: "service_visibilities", data: payload[2].data },
-        { table: "permissions", data: payload[1].data },
-        { table: "roles", data: payload[0].data },
+        { table: "service_visibilities", data: [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16] },
+        { table: "permissions", data: Array.from({ length: 32 }, (_, index) => index + 1) },
+        { table: "roles", data: [1, 2, 3, 4] },
     ];
 
     for (const item of reversedPayload) {
         const table = item.table;
-        const idsToDelete = item.data.map(d => d.id);
+        const idsToDelete = item.data;
         
         if (idsToDelete.length > 0) {
-            console.log(`[Revert] Removendo registros da tabela: ${table}`);
-            
             await queryInterface.bulkDelete(table, {
                 id: {
-                    [Sequelize.Op.in]: idsToDelete
+                    [Op.in]: idsToDelete
                 }
             }, {});
-        } else {
-            console.log(`[Revert] Nenhuma ID para remover da tabela: ${table}`);
         }
     }
   },

@@ -3,7 +3,7 @@ export default class Carterinha {
 
     public emissao: Date,
     public validade: Date | null,
-    public setor_uuid: string,
+    public origem: string,
     public atividade_uuid: string | null,
     public municipe_uuid: string,
     public author: string | number,

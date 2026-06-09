@@ -2,6 +2,7 @@ import { SECRET_KEY } from "../../env.js";
 import {
   createCipheriv,
   createDecipheriv,
+  createHash,
   randomBytes,
   CipherGCM,
   DecipherGCM,
@@ -9,14 +10,18 @@ import {
 import { IAesCrypt } from "./AesCrypt.interface.js";
 
 export default class AesCryptService implements IAesCrypt {
-  private saltRounds = 10;
   private ALGORITHM = "aes-256-gcm";
 
+  private getKey() {
+    const key = Buffer.from(SECRET_KEY);
+    return key.length === 32 ? key : createHash("sha256").update(SECRET_KEY).digest();
+  }
+
   encrypt = async (data: string) => {
-    const iv = randomBytes(this.saltRounds);
+    const iv = randomBytes(12);
     const cipher = createCipheriv(
       this.ALGORITHM,
-      Buffer.from(SECRET_KEY),
+      this.getKey(),
       iv,
     ) as CipherGCM;
 
@@ -31,7 +36,7 @@ export default class AesCryptService implements IAesCrypt {
     const [ivHex, authTagHex, encryptedText] = encryptedData.split(":");
     const decipher = createDecipheriv(
       this.ALGORITHM,
-      Buffer.from(SECRET_KEY),
+      this.getKey(),
       Buffer.from(ivHex, "hex"),
     ) as DecipherGCM; // Cast para DecipherGCM
 

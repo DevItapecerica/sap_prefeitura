@@ -1,13 +1,23 @@
-"use strict";
+import { QueryInterface } from "sequelize";
 
-/** @type {import('sequelize-cli').Migration} */
+type ServiceSeed = {
+  id: number;
+  name: string;
+  description: string;
+  url: string;
+  tag: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+};
+
 export default {
-  async up(queryInterface, Sequelize) {
-    const registros = [
+  up: async (queryInterface: QueryInterface): Promise<void> => {
+    const registros: ServiceSeed[] = [
       {
         id: 1,
         name: "User",
-        description: "Documentação da aplicação",
+        description: "Gerenciamento de usuários",
         url: "/services/1/admin",
         tag: "admin",
         createdAt: new Date(),
@@ -24,8 +34,8 @@ export default {
       },
       {
         id: 3,
-        name: "Serviços",
-        description: "Gerenciamento de serviços",
+        name: "Servicos",
+        description: "Gerenciamento de servicos",
         url: "/services/3/admin?tab=2",
         tag: "admin",
         createdAt: new Date(),
@@ -34,7 +44,7 @@ export default {
       {
         id: 4,
         name: "Roles",
-        description: "Gerenciamento de permissões",
+        description: "Gerenciamento de permissoes",
         url: "/services/4/admin?tab=3",
         tag: "admin",
         createdAt: new Date(),
@@ -43,7 +53,7 @@ export default {
       {
         id: 5,
         name: "DemandasTi",
-        description: "Gerenciamento de permissões",
+        description: "Gerenciamento de permissoes",
         url: "/services/4/admin?tab=3",
         tag: "admin",
         createdAt: new Date(),
@@ -62,9 +72,18 @@ export default {
       {
         id: 7,
         name: "IPTU - Certidao",
-        description: "Disponibilização de Certidão para Munícipe",
+        description: "Disponibilizacao de Certidao para Municipe",
         url: "/services/7/iptu/certidao",
         tag: "outros",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 8,
+        name: "Chamados",
+        description: "Gerenciamento de chamados",
+        url: "/services/8/chamados",
+        tag: "TI",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -76,7 +95,7 @@ export default {
         {
           where: { id: registro.id },
         },
-        ["id"]
+        "id",
       );
 
       if (!exists) {
@@ -91,9 +110,9 @@ export default {
     }
   },
 
-  async down(queryInterface) {
+  down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.bulkDelete("services", {
-      id: [1, 2, 3, 4, 6, 7],
+      id: [1, 2, 3, 4, 6, 7, 8],
     });
   },
 };
