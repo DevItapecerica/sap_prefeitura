@@ -5,3 +5,7 @@ export type QueryCarterinhasDto = {
     origem?: string;
     servico?: string;
 };
+
+export type QueryCarterinhasByMunicipeDto = QueryCarterinhasDto & {
+    municipe_uuid: string;
+};

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import CreateCarterinhaUseCase from "../use-case/createCarterinha.use-case.js";
 import GetCarterinhaUseCase from "../use-case/getCarterinha.use-case.js";
+import GetCarterinhasByMunicipeUseCase from "../use-case/getCarterinhasByMunicipe.use-case.js";
 import GetOneCarterinhaUseCase from "../use-case/getOneCarterinha.use-case.js";
 import Carterinha from "../../domain/entity/Carteirinha.js";
 import { CarterinhaPolicy } from "../../domain/service/carterinhaPolicy.js";
@@ -17,12 +18,25 @@ class FakeMunicipeRepository {
 }
 
 class FakeCarterinhaRepository {
+  queryByMunicipe: any = null;
   carterinhas: Carterinha[] = [
     new Carterinha(new Date("2026-01-01"), new Date("2028-01-01"), "esporte", null, "mun-1", 1, "cart-1"),
   ];
 
   async getCarterinhas() {
     return { carterinhas: this.carterinhas, count: this.carterinhas.length };
+  }
+
+  async getCarterinhasByMunicipe(query: any) {
+    this.queryByMunicipe = query;
+    const carterinhas = this.carterinhas.filter((carterinha) => {
+      if (carterinha.municipe_uuid !== query.municipe_uuid) return false;
+      if (query.origem && carterinha.origem !== query.origem) return false;
+      if (query.servico && carterinha.atividade_uuid !== query.servico) return false;
+      return true;
+    });
+
+    return { carterinhas, count: carterinhas.length };
   }
 
   async postCarterinhas(carterinha: Carterinha) {
@@ -79,4 +93,17 @@ test("GetCarterinhaUseCase lista e GetOneCarterinhaUseCase rejeita inexistente",
   assert.equal((await getAll.execute({} as any)).count, 1);
   assert.equal((await getOne.execute("cart-1")).uuid, "cart-1");
   await assert.rejects(() => getOne.execute("missing"), (error: AppError) => error.code === "CARTERINHA_NOT_FOUND");
+});
+
+test("GetCarterinhasByMunicipeUseCase lista por municipe e aceita origem opcional", async () => {
+  const repo = new FakeCarterinhaRepository();
+  repo.carterinhas.push(
+    new Carterinha(new Date("2026-02-01"), new Date("2028-02-01"), "biblioteca", null, "mun-1", 1, "cart-2"),
+    new Carterinha(new Date("2026-03-01"), new Date("2028-03-01"), "esporte", null, "mun-2", 1, "cart-3"),
+  );
+  const useCase = new GetCarterinhasByMunicipeUseCase(repo as any);
+
+  assert.equal((await useCase.execute({ municipe_uuid: "mun-1" })).count, 2);
+  assert.equal((await useCase.execute({ municipe_uuid: "mun-1", origem: "esporte" })).count, 1);
+  assert.equal(repo.queryByMunicipe.municipe_uuid, "mun-1");
 });

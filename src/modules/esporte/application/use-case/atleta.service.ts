@@ -2,6 +2,8 @@ import { AppError } from "../../../../core/appError.js";
 import Carterinha from "../../../carterinhas/domain/entity/Carteirinha.js";
 import CarterinhaRepository from "../../../carterinhas/domain/repositories/carterinha.repository.js";
 import { CarterinhaPolicy } from "../../../carterinhas/domain/service/carterinhaPolicy.js";
+import { QueryCarterinhasDto } from "../../../carterinhas/application/dto/queryCarterinhas.dto.js";
+import GetCarterinhasByMunicipeUseCase from "../../../carterinhas/application/use-case/getCarterinhasByMunicipe.use-case.js";
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
 import Atleta from "../../domain/entity/Atleta.js";
 import AtletaRepository from "../../domain/repository/atleta.repository.js";
@@ -34,6 +36,29 @@ export default class AtletaService {
 
   async findAllAtletas(query?: QueryAtletaDto): Promise<{ atletas: Atleta[]; count: number }> {
     return this.atletaRepository.findAllAtletas(query);
+  }
+
+  async findCarteirinhasEsporte(
+    query?: Omit<QueryCarterinhasDto, "origem">,
+  ): Promise<{ carterinhas: Carterinha[]; count: number }> {
+    return this.carterinhaRepository.getCarterinhas({
+      ...query,
+      origem: "esporte",
+    });
+  }
+
+  async findCarteirinhasByAtleta(
+    uuid: string,
+    query?: Omit<QueryCarterinhasDto, "origem">,
+  ): Promise<{ carterinhas: Carterinha[]; count: number }> {
+    const atleta = await this.findOneAtleta(uuid);
+    const useCase = new GetCarterinhasByMunicipeUseCase(this.carterinhaRepository);
+
+    return useCase.execute({
+      ...query,
+      municipe_uuid: atleta.municipe_uuid,
+      origem: "esporte",
+    });
   }
 
   async findOneAtleta(uuid: string): Promise<Atleta> {

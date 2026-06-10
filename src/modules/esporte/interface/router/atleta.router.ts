@@ -5,7 +5,7 @@ import atletaFactory from "../../factories/atleta.factory.js";
 import AtletaController from "../controller/atleta.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
-const ESPORTE_SERVICE_ID = 11;
+const ESPORTE_SERVICE_ID = 10;
 
 const atletaSchema = {
   type: "object",
@@ -18,6 +18,25 @@ const atletaSchema = {
     updatedAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
     deletedAt: { anyOf: [{ type: "string" }, { type: "null" }] },
     municipe: { type: "object", additionalProperties: true },
+  },
+};
+
+const carterinhaSchema = {
+  type: "object",
+  properties: {
+    uuid: { type: "string", example: "uuid" },
+    emissao: { type: "string", format: "date" },
+    validade: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
+    origem: { type: "string", example: "esporte" },
+    atividade_uuid: {
+      anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+      example: null,
+    },
+    municipe_uuid: { type: "string", example: "uuid" },
+    author: { type: "string", example: "1" },
+    createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
+    updatedAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
+    deletedAt: { anyOf: [{ type: "string" }, { type: "null" }] },
   },
 };
 
@@ -70,6 +89,37 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
 
   fastify.route({
     method: "GET",
+    url: "/carteirinhas",
+    schema: {
+      tags: ["Esporte"],
+      security: [{ JWTToken: [] }],
+      querystring: {
+        type: "object",
+        properties: {
+          servico: { type: "string" },
+          limit: { type: "number" },
+          page: { type: "number" },
+          order: { type: "string" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            data: { type: "array", items: carterinhaSchema },
+            count: { type: "number" },
+            ok: { type: "boolean" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: atletaController.findCarteirinhas,
+  });
+
+  fastify.route({
+    method: "GET",
     url: "/atletas/:uuid",
     schema: {
       tags: ["Esporte"],
@@ -92,6 +142,42 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
       },
     },
     handler: atletaController.findOne,
+  });
+
+  fastify.route({
+    method: "GET",
+    url: "/atletas/:uuid/carteirinhas",
+    schema: {
+      tags: ["Esporte"],
+      security: [{ JWTToken: [] }],
+      params: {
+        type: "object",
+        required: ["uuid"],
+        properties: { uuid: { type: "string" } },
+      },
+      querystring: {
+        type: "object",
+        properties: {
+          servico: { type: "string" },
+          limit: { type: "number" },
+          page: { type: "number" },
+          order: { type: "string" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            data: { type: "array", items: carterinhaSchema },
+            count: { type: "number" },
+            ok: { type: "boolean" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: atletaController.findCarteirinhasByAtleta,
   });
 
   fastify.route({

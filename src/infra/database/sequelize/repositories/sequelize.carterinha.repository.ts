@@ -1,7 +1,7 @@
 import db from "../index.js";
 import CarterinhaRepository from "../../../../modules/carterinhas/domain/repositories/carterinha.repository.js";
 import Carterinha from "../../../../modules/carterinhas/domain/entity/Carteirinha.js";
-import { QueryCarterinhasDto } from "../../../../modules/carterinhas/application/dto/queryCarterinhas.dto.js";
+import { QueryCarterinhasByMunicipeDto, QueryCarterinhasDto } from "../../../../modules/carterinhas/application/dto/queryCarterinhas.dto.js";
 import { Op } from "sequelize";
 
 export class SequelizeCarterinhaRepository implements CarterinhaRepository {
@@ -38,6 +38,46 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
         this.toEntity(carterinha),
       ),
       count: carterinhas.length,
+    };
+  }
+
+  async getCarterinhasByMunicipe(query: QueryCarterinhasByMunicipeDto): Promise<{
+    carterinhas: Carterinha[];
+    count: number;
+  }> {
+    const { page, limit, municipe_uuid, origem, servico, order } = query;
+    const queryOrder = order ? order.split(":") : ["uuid", "desc"];
+    const queryLimit = limit ? Number(limit) : undefined;
+    const queryPage = page ? Number(page) : 0;
+    const offset = queryLimit ? queryPage * queryLimit : undefined;
+
+    const where: any = {
+      municipe_uuid,
+    };
+
+    if (origem) {
+      where.origem = origem;
+    }
+
+    if (servico) {
+      where.atividade_uuid = servico;
+    }
+
+    const queryData = {
+      offset,
+      where,
+      limit: queryLimit,
+      order: [[queryOrder[0], queryOrder[1]]],
+    };
+
+    const carterinhas = await this.model.findAll(queryData);
+    const count = await this.model.count({ where });
+
+    return {
+      carterinhas: carterinhas.map((carterinha: Carterinha) =>
+        this.toEntity(carterinha),
+      ),
+      count,
     };
   }
 

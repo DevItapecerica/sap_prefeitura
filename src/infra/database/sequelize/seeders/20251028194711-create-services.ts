@@ -54,7 +54,7 @@ export default {
         id: 5,
         name: "DemandasTi",
         description: "Gerenciamento de permissoes",
-        url: "/services/4/admin?tab=3",
+        url: "/services/5/admin?tab=3",
         tag: "admin",
         createdAt: new Date(),
         updatedAt: new Date(),
