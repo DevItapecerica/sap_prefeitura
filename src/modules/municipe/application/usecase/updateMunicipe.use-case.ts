@@ -1,9 +1,8 @@
-import { cp } from "fs";
 import AppError from "../../../../core/appError.js";
 import { IAesCrypt } from "../../../../core/security/aes/AesCrypt.interface.js";
 import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.js";
 import Municipe from "../../domain/entity/Municipe.js";
-import { MunicipeDto } from "../dto/municipe.dto.js";
+import { updateMunicipeDto } from "../dto/municipe.dto.js";
 import { MunicipeMapper } from "../mapper/municipe.mapper.js";
 import IMunicipeRepository from "../../domain/repositories/Municipe.repository.js";
 
@@ -16,16 +15,25 @@ export default class updateMunicipeUseCase {
 
   async execute(
     uuid: string,
-    municipe: MunicipeDto,
+    municipe: updateMunicipeDto,
     author: string | number,
   ): Promise<Municipe> {
-    const hashCpf = await this.sha256Crypt.encrypt(municipe.cpf);
+    const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
+    const current = await this.municipeRepository.getMunicipeById(uuid);
 
-    const alreadyExists = municipe.cpf
+    if (!current)
+      throw new AppError("Municipe not found", 404, "MUNICIPE_NOT_FOUND");
+
+    const currentDomain = await municipeMapper.toDomain(current);
+    const hashCpf = municipe.cpf
+      ? await this.sha256Crypt.encrypt(municipe.cpf)
+      : undefined;
+
+    const alreadyExists = hashCpf
       ? await this.municipeRepository.getMunicipeByCpf(hashCpf)
-      : false;
+      : null;
 
-    if (alreadyExists) {
+    if (alreadyExists && alreadyExists.uuid !== uuid) {
       throw new AppError(
         "Municipe already exists",
         409,
@@ -33,29 +41,28 @@ export default class updateMunicipeUseCase {
       );
     }
 
-    const updated = new Municipe(
-      municipe.nome,
-      municipe.cpf,
-      municipe.nascimento,
-      municipe.telefone,
-      municipe.rua,
-      municipe.bairro,
-      municipe.cidade,
-      municipe.uf,
-      municipe.cep,
-      municipe.numero,
-      municipe.complemento,
+    const merged = new Municipe(
+      currentDomain.nome,
+      municipe.cpf ?? currentDomain.cpf,
+      municipe.nascimento ?? currentDomain.nascimento,
+      municipe.telefone ?? currentDomain.telefone,
+      municipe.rua ?? currentDomain.rua,
+      municipe.bairro ?? currentDomain.bairro,
+      municipe.cidade ?? currentDomain.cidade,
+      municipe.uf ?? currentDomain.uf,
+      municipe.cep ?? currentDomain.cep,
+      municipe.numero ?? currentDomain.numero,
+      municipe.complemento ?? currentDomain.complemento,
       author,
     );
 
-    const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
-    const updatedToPersistence = await municipeMapper.toPersistence(updated);
+    const updatedToPersistence = await municipeMapper.toPersistence(merged);
 
     const response = await this.municipeRepository.updateMunicipe(
       uuid,
       updatedToPersistence.municipe,
-      updatedToPersistence.cpfHash,
-      updatedToPersistence.cepHash,
+      municipe.cpf ? updatedToPersistence.cpfHash : undefined,
+      municipe.cep ? updatedToPersistence.cepHash : undefined,
     );
 
     if (!response)

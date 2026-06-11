@@ -9,6 +9,7 @@ export type UpdateAtletaDto = {
 
 export type QueryAtletaDto = {
   search?: string;
+  searchHash?: string;
   ativo?: boolean | string;
   municipe_uuid?: string;
   page?: number;

@@ -7,26 +7,57 @@ import GetCarterinhasByMunicipeUseCase from "../../../carterinhas/application/us
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
 import Atleta from "../../domain/entity/Atleta.js";
 import AtletaRepository from "../../domain/repository/atleta.repository.js";
-import { CreateAtletaDto, QueryAtletaDto, UpdateAtletaDto } from "../dto/atleta.dto.js";
+import {
+  CreateAtletaDto,
+  QueryAtletaDto,
+  UpdateAtletaDto,
+} from "../dto/atleta.dto.js";
+import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.js";
+import { IAesCrypt } from "../../../../core/security/aes/AesCrypt.interface.js";
+import { MunicipeMapper } from "../../../municipe/application/mapper/municipe.mapper.js";
 
 export default class AtletaService {
   constructor(
     private atletaRepository: AtletaRepository,
     private municipeRepository: MunicipeRepository,
     private carterinhaRepository: CarterinhaRepository,
+    private sha256Crypt?: ISha256Crypt,
+    private aesCrypt?: IAesCrypt,
   ) {}
 
-  async createAtleta(data: CreateAtletaDto, author: string | number): Promise<Atleta> {
-    const municipe = await this.municipeRepository.getMunicipeById(data.municipe_uuid);
+  private async decryptIncludedMunicipe(atleta: Atleta): Promise<Atleta> {
+    if (!atleta.municipe || !this.aesCrypt || !this.sha256Crypt) {
+      return atleta;
+    }
+
+    const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
+    atleta.municipe = await municipeMapper.toDomain(atleta.municipe);
+
+    return atleta;
+  }
+
+  async createAtleta(
+    data: CreateAtletaDto,
+    author: string | number,
+  ): Promise<Atleta> {
+    const municipe = await this.municipeRepository.getMunicipeById(
+      data.municipe_uuid,
+    );
 
     if (!municipe) {
       throw new AppError("Municipe not found", 404, "MUNICIPE_NOT_FOUND");
     }
 
-    const existingActive = await this.atletaRepository.findActiveByMunicipe(data.municipe_uuid);
+    const existingActive = await this.atletaRepository.findActiveByMunicipe(
+      data.municipe_uuid,
+    );
 
     if (existingActive) {
-      throw new AppError("Municipe already has an active athlete link", 409, "ATLETA_ALREADY_EXISTS");
+      throw new AppError(
+        "Municipe already has an active athlete link",
+        409,
+        "ATLETA_ALREADY_EXISTS",
+      );
     }
 
     const atleta = new Atleta(data.municipe_uuid, data.ativo ?? true, author);
@@ -34,8 +65,26 @@ export default class AtletaService {
     return this.atletaRepository.createAtleta(atleta);
   }
 
-  async findAllAtletas(query?: QueryAtletaDto): Promise<{ atletas: Atleta[]; count: number }> {
-    return this.atletaRepository.findAllAtletas(query);
+  async findAllAtletas(
+    query?: QueryAtletaDto,
+  ): Promise<{ atletas: Atleta[]; count: number }> {
+    const searchDigits = String(query?.search || "").replace(/\D/g, "");
+    const searchHash =
+      this.sha256Crypt &&
+      (searchDigits.length === 8 || searchDigits.length === 11)
+        ? await this.sha256Crypt.encrypt(searchDigits)
+        : undefined;
+
+    const response = await this.atletaRepository.findAllAtletas({
+      ...query,
+      searchHash,
+    });
+
+    response.atletas = await Promise.all(
+      response.atletas.map((atleta) => this.decryptIncludedMunicipe(atleta)),
+    );
+
+    return response;
   }
 
   async findCarteirinhasEsporte(
@@ -52,7 +101,9 @@ export default class AtletaService {
     query?: Omit<QueryCarterinhasDto, "origem">,
   ): Promise<{ carterinhas: Carterinha[]; count: number }> {
     const atleta = await this.findOneAtleta(uuid);
-    const useCase = new GetCarterinhasByMunicipeUseCase(this.carterinhaRepository);
+    const useCase = new GetCarterinhasByMunicipeUseCase(
+      this.carterinhaRepository,
+    );
 
     return useCase.execute({
       ...query,
@@ -68,7 +119,7 @@ export default class AtletaService {
       throw new AppError("Atleta not found", 404, "ATLETA_NOT_FOUND");
     }
 
-    return atleta;
+    return this.decryptIncludedMunicipe(atleta);
   }
 
   async updateAtleta(uuid: string, data: UpdateAtletaDto): Promise<Atleta> {
@@ -78,7 +129,7 @@ export default class AtletaService {
       throw new AppError("Atleta not found", 404, "ATLETA_NOT_FOUND");
     }
 
-    return atleta;
+    return this.decryptIncludedMunicipe(atleta);
   }
 
   async deleteAtleta(uuid: string): Promise<boolean> {
@@ -91,9 +142,14 @@ export default class AtletaService {
     return deleted;
   }
 
-  async createCarteirinha(uuid: string, author: string | number): Promise<Carterinha> {
+  async createCarteirinha(
+    uuid: string,
+    author: string | number,
+  ): Promise<Carterinha> {
     const atleta = await this.findOneAtleta(uuid);
-    const municipe = await this.municipeRepository.getMunicipeById(atleta.municipe_uuid);
+    const municipe = await this.municipeRepository.getMunicipeById(
+      atleta.municipe_uuid,
+    );
 
     if (!municipe) {
       throw new AppError("Municipe not found", 404, "MUNICIPE_NOT_FOUND");

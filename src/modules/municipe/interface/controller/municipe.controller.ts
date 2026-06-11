@@ -4,7 +4,7 @@ import { SequelizeMunicipeRepository } from "../../../../infra/database/sequeliz
 import getMunicipeUseCase from "../../application/usecase/getMunicipe.use-case.js";
 import MunicipePresentation from "../presentation/municipe.masked.presentation.js";
 import Municipe from "../../domain/entity/Municipe.js";
-import { MunicipeDto } from "../../application/dto/municipe.dto.js";
+import { MunicipeDto, updateMunicipeDto } from "../../application/dto/municipe.dto.js";
 import createMunicipeUseCase from "../../application/usecase/createMunicipe.use-case.js";
 import getMunicipeByIdUseCase from "../../application/usecase/getMunicipeById.use-case.js";
 import updateMunicipeUseCase from "../../application/usecase/updateMunicipe.use-case.js";
@@ -104,7 +104,7 @@ export default class municipeController {
   }
 
   static async updateMunicipe(
-    request: FastifyRequest<{ Body: MunicipeDto; Params: { uuid: string } }>,
+    request: FastifyRequest<{ Body: updateMunicipeDto; Params: { uuid: string } }>,
     reply: FastifyReply,
   ) {
     const user = request.user;
@@ -117,19 +117,20 @@ export default class municipeController {
 
     const uuid = request.params.uuid;
 
-    const payload = {
-      nome: municipe.nome,
-      cpf: municipe.cpf,
-      nascimento: municipe.nascimento,
-      telefone: municipe.telefone,
-      rua: municipe.rua,
-      bairro: municipe.bairro,
-      cidade: municipe.cidade,
-      uf: municipe.uf,
-      cep: municipe.cep,
-      numero: municipe.numero,
-      complemento: municipe.complemento,
-    };
+    const payload = Object.fromEntries(
+      Object.entries({
+        cpf: municipe.cpf,
+        nascimento: municipe.nascimento,
+        telefone: municipe.telefone,
+        rua: municipe.rua,
+        bairro: municipe.bairro,
+        cidade: municipe.cidade,
+        uf: municipe.uf,
+        cep: municipe.cep,
+        numero: municipe.numero,
+        complemento: municipe.complemento,
+      }).filter(([, value]) => value !== undefined),
+    ) as updateMunicipeDto;
 
     const response = await useCase.execute(uuid, payload, user.id);
 

@@ -15,8 +15,16 @@ export default class getMunicipeUseCase {
     query: QueryParams,
   ): Promise<{ municipe: Municipe[]; count: number }> {
     const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
+    const searchDigits = String(query.search || "").replace(/\D/g, "");
+    const searchHash =
+      searchDigits.length === 8 || searchDigits.length === 11
+        ? await this.sha256Crypt.encrypt(searchDigits)
+        : undefined;
 
-    let response = await this.municipeRepository.getMunicipe(query);
+    let response = await this.municipeRepository.getMunicipe({
+      ...query,
+      searchHash,
+    });
 
     response.municipe = await Promise.all(response.municipe.map((m) => municipeMapper.toDomain(m)));
 

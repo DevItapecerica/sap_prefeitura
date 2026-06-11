@@ -21,4 +21,5 @@ export type QueryParams = {
   prioridade?: string;
   dateFrom?: string;
   dateTo?: string;
+  searchHash?: string;
 };

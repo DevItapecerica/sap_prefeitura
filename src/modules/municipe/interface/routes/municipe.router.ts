@@ -20,13 +20,13 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
     type: "object",
     additionalProperties: false,
     properties: {
-      uuid: { type: "number" },
+      uuid: { type: "string" },
       nome: { type: "string" },
       cpf: { type: "string" },
-      nascimento: { type: "string" },
+      nascimento: { type: "number", nullable: true },
       cidade: { type: "string" },
       uf: { type: "string" },
-      author: { type: "number" },
+      author: { type: "string" },
       createdAt: { type: "string" },
       updatedAt: { type: "string" },
     },
@@ -96,9 +96,13 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
       summary: "Get all municipes",
       response: {
         200: {
-          message: { type: "string", example: "OK" },
-          ok: { type: "boolean", example: true },
-          municipe: municipeSchema,
+          type: "object",
+          properties: {
+            message: { type: "string", example: "OK" },
+            data: { type: "array", items: municipeSchema },
+            count: { type: "number" },
+            ok: { type: "boolean", example: true },
+          },
         },
       },
     },
@@ -122,9 +126,12 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
       summary: "Get one municipes",
       response: {
         200: {
-          message: { type: "string", example: "OK" },
-          ok: { type: "boolean", example: true },
-          data: { type: "array", items: municipeSchema },
+          type: "object",
+          properties: {
+            message: { type: "string", example: "OK" },
+            data: municipeSchema,
+            ok: { type: "boolean", example: true },
+          },
         },
       },
     },
@@ -143,9 +150,12 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
       body: municipeRequiredSchema,
       response: {
         201: {
-          message: { type: "string", example: "OK" },
-          ok: { type: "boolean", example: true },
-          data: municipeSchema,
+          type: "object",
+          properties: {
+            message: { type: "string", example: "OK" },
+            data: municipeSchema,
+            ok: { type: "boolean", example: true },
+          },
         },
       },
     },
@@ -171,9 +181,12 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
       body: municipeUpdateSchema,
       response: {
         201: {
-          message: { type: "string", example: "OK" },
-          ok: { type: "boolean", example: true },
-          data: municipeSchema,
+          type: "object",
+          properties: {
+            message: { type: "string", example: "OK" },
+            data: municipeSchema,
+            ok: { type: "boolean", example: true },
+          },
         },
       },
     },

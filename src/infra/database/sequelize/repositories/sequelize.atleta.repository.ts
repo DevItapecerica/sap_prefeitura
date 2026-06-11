@@ -28,8 +28,9 @@ export class SequelizeAtletaRepository implements AtletaRepository {
     if (q.search) {
       municipeWhere[Op.or] = [
         { nome: { [Op.like]: `%${q.search}%` } },
-        { cpfHash: { [Op.like]: `%${q.search}%` } },
-        { cepHash: { [Op.like]: `%${q.search}%` } },
+        ...(q.searchHash
+          ? [{ cpfHash: q.searchHash }, { cepHash: q.searchHash }]
+          : []),
       ];
     }
 
@@ -40,7 +41,7 @@ export class SequelizeAtletaRepository implements AtletaRepository {
       model: this.municipeModel,
       as: "municipe",
       required: Boolean(q.search),
-      where: Object.keys(municipeWhere).length ? municipeWhere : undefined,
+      where: {...municipeWhere},
     }];
 
     const atletas = await this.model.findAll({

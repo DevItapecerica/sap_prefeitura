@@ -9,6 +9,7 @@ import AppError from "../../../../core/appError.js";
 class FakeAtletaRepository {
   atletas = new Map<string, Atleta>();
   activeByMunicipe: Atleta | null = null;
+  lastQuery: any = null;
 
   async createAtleta(atleta: Atleta) {
     atleta.uuid = "atl-1";
@@ -16,7 +17,8 @@ class FakeAtletaRepository {
     return atleta;
   }
 
-  async findAllAtletas() {
+  async findAllAtletas(query?: any) {
+    this.lastQuery = query;
     return { atletas: [...this.atletas.values()], count: this.atletas.size };
   }
 
@@ -77,11 +79,17 @@ function makeService() {
   const atletaRepo = new FakeAtletaRepository();
   const municipeRepo = new FakeMunicipeRepository();
   const carterinhaRepo = new FakeCarterinhaRepository();
+  const sha = {
+    encrypt: async (value: string) => `hash:${value}`,
+  };
+  const aes = {
+    decrypt: async (value: string) => value.replace(/^enc:/, ""),
+  };
   return {
     atletaRepo,
     municipeRepo,
     carterinhaRepo,
-    service: new AtletaService(atletaRepo as any, municipeRepo as any, carterinhaRepo as any),
+    service: new AtletaService(atletaRepo as any, municipeRepo as any, carterinhaRepo as any, sha as any, aes as any),
   };
 }
 
@@ -109,6 +117,55 @@ test("AtletaService busca, atualiza, remove e cria carterinha", async () => {
   assert.equal((await service.createCarteirinha("atl-1", 9)).origem, "esporte");
   assert.equal(await service.deleteAtleta("atl-1"), true);
   await assert.rejects(() => service.findOneAtleta("atl-1"), (error: AppError) => error.code === "ATLETA_NOT_FOUND");
+});
+
+test("AtletaService envia hash para busca por CPF ou CEP", async () => {
+  const { service, atletaRepo } = makeService();
+
+  await service.findAllAtletas({ search: "123.456.789-00" });
+  assert.equal(atletaRepo.lastQuery.searchHash, "hash:12345678900");
+
+  await service.findAllAtletas({ search: "06850-000" });
+  assert.equal(atletaRepo.lastQuery.searchHash, "hash:06850000");
+
+  await service.findAllAtletas({ search: "Maria" });
+  assert.equal(atletaRepo.lastQuery.searchHash, undefined);
+});
+
+test("AtletaService descriptografa municipe incluido antes da apresentacao", async () => {
+  const { service, atletaRepo } = makeService();
+  const atleta = new Atleta(
+    "mun-1",
+    true,
+    1,
+    "atl-1",
+    new Date("2026-01-01"),
+    new Date("2026-01-02"),
+    null,
+    new Municipe(
+      "Maria Silva",
+      "enc:12345678900",
+      "enc:2000-01-01",
+      "enc:11999999999",
+      "enc:Rua A",
+      "enc:Centro",
+      "enc:Cidade",
+      "enc:SP",
+      "enc:06850000",
+      "enc:10",
+      null,
+      1,
+      "mun-1",
+    ),
+  );
+
+  atletaRepo.atletas.set("atl-1", atleta);
+
+  const response = await service.findAllAtletas();
+
+  assert.equal(response.atletas[0].municipe?.cpf, "12345678900");
+  assert.equal(response.atletas[0].municipe?.nascimento, "2000-01-01");
+  assert.equal(response.atletas[0].municipe?.cidade, "Cidade");
 });
 
 test("AtletaService lista somente carteirinhas de esporte", async () => {

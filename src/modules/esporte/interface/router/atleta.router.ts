@@ -7,6 +7,22 @@ import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
 const ESPORTE_SERVICE_ID = 10;
 
+const municipeMaskedSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    uuid: { type: "string", example: "uuid" },
+    nome: { type: "string", example: "Maria ***" },
+    cpf: { type: "string", example: "********900" },
+    nascimento: { type: "number", nullable: true, example: 2000 },
+    cidade: { type: "string", example: "Itapecerica da Serra" },
+    uf: { type: "string", example: "SP" },
+    createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
+    updatedAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
+    author: { type: "string", example: "1" },
+  },
+};
+
 const atletaSchema = {
   type: "object",
   properties: {
@@ -17,7 +33,7 @@ const atletaSchema = {
     createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
     updatedAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
     deletedAt: { anyOf: [{ type: "string" }, { type: "null" }] },
-    municipe: { type: "object", additionalProperties: true },
+    municipe: { ...municipeMaskedSchema, nullable: true },
   },
 };
 
