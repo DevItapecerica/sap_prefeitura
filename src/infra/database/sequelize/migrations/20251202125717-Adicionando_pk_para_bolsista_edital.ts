@@ -1,10 +1,12 @@
-import { DataTypes, QueryInterface, literal } from "sequelize";
+import { QueryInterface, literal } from "sequelize";
+
+const UUID_BIN_TYPE = "CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
 
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.addColumn("bolsistas_edital", "id", {
-      type: DataTypes.CHAR(36),
+      type: UUID_BIN_TYPE,
       allowNull: false,
       defaultValue: literal("UUID()"),
     });

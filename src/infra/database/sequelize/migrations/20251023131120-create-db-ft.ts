@@ -1,11 +1,13 @@
 import { DataTypes, QueryInterface, literal } from "sequelize";
 
+const UUID_BIN_TYPE = "CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
+
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.createTable("bolsistas", {
       id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         defaultValue: literal("UUID()"),
         primaryKey: true,
         allowNull: false,
@@ -71,15 +73,11 @@ export default {
         allowNull: false,
         defaultValue: literal("CURRENT_TIMESTAMP"),
       },
-      deletedAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
     });
 
     await queryInterface.createTable("edital", {
       id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         defaultValue: literal("UUID()"),
         primaryKey: true,
         allowNull: false,
@@ -126,13 +124,13 @@ export default {
 
     await queryInterface.createTable("bolsista_image", {
       id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         defaultValue: literal("UUID()"),
         primaryKey: true,
         allowNull: false,
       },
       bolsista_id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         allowNull: false,
         references: {
           model: "bolsistas",
@@ -171,13 +169,13 @@ export default {
 
     await queryInterface.createTable("payment_info", {
       id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         defaultValue: literal("UUID()"),
         primaryKey: true,
         allowNull: false,
       },
       bolsista_id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         allowNull: false,
         references: {
           model: "bolsistas",
@@ -229,7 +227,7 @@ export default {
 
     await queryInterface.createTable("bolsistas_edital", {
       bolsista_id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         allowNull: false,
         primaryKey: true,
         references: {
@@ -240,7 +238,7 @@ export default {
         onUpdate: "CASCADE",
       },
       edital_id: {
-        type: DataTypes.CHAR(36),
+        type: UUID_BIN_TYPE,
         allowNull: false,
         primaryKey: true,
         references: {
