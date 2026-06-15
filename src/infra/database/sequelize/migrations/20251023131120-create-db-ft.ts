@@ -73,10 +73,6 @@ export default {
         allowNull: false,
         defaultValue: literal("CURRENT_TIMESTAMP"),
       },
-      deletedAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
     });
 
     await queryInterface.createTable("edital", {
