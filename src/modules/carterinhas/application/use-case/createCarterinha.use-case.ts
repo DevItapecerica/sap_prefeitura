@@ -8,7 +8,7 @@ import CarterinhaRepository from "../../domain/repositories/carterinha.repositor
 export default class CreateCarterinhaUseCase {
   constructor(private municipeRepository: MunicipeRepository, private carterinhaRepository: CarterinhaRepository) {}
 
-  async execute(data: PostCarterinhaDto, author: string | number = 1): Promise<Carterinha> {
+  async execute(data: PostCarterinhaDto, author: string | number): Promise<Carterinha> {
     const municipeExists = await this.municipeRepository.getMunicipeById(
       data.municipe_uuid
     )
@@ -25,7 +25,7 @@ export default class CreateCarterinhaUseCase {
       emissao,
       validade,
       data.origem,
-      data.atividade_uuid || null,
+      data.atividade || null,
       data.municipe_uuid,
       author
     );

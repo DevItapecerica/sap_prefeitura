@@ -24,3 +24,5 @@ export const MAIL_HOST = must("MAIL_HOST");
 export const CORS_ORIGINS = must("CORS_ORIGINS");
 
 export const PORT = must("APPLICATION_PORT");
+
+export const PDF_API_URL = must("PDF_API_URL");

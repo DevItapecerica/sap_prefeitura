@@ -44,7 +44,7 @@ const carterinhaSchema = {
     emissao: { type: "string", format: "date" },
     validade: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
     origem: { type: "string", example: "esporte" },
-    atividade_uuid: {
+    atividade: {
       anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
       example: null,
     },

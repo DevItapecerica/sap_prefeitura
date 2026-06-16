@@ -21,7 +21,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     const where = {
       [Op.or]: [
         { origem: { [Op.like]: `%${origem ? origem : ""}%` } },
-        { atividade_uuid: { [Op.like]: `%${servico ? servico: ""}%` } },
+        { atividade: { [Op.like]: `%${servico ? servico: ""}%` } },
       ],
     };
 
@@ -60,7 +60,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
     }
 
     if (servico) {
-      where.atividade_uuid = servico;
+      where.atividade = servico;
     }
 
     const queryData = {
@@ -116,7 +116,7 @@ export class SequelizeCarterinhaRepository implements CarterinhaRepository {
       data.emissao,
       data.validade,
       data.origem,
-      data.atividade_uuid,
+      data.atividade,
       data.municipe_uuid,
       data.author,
 

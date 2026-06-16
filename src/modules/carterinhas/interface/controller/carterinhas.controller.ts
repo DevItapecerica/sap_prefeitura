@@ -30,7 +30,7 @@ export class CarterinhasController {
         const payload = {
             municipe_uuid: request.body.municipe_uuid,
             origem: request.body.origem,
-            atividade_uuid: request.body.atividade_uuid,
+            atividade: request.body.atividade || null,
         }
 
         const response = await useCase.execute(payload, request.user.id);

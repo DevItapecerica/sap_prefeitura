@@ -3,7 +3,7 @@ export type CarterinhaDto = {
   emissao: Date;
   validade: Date;
   origem: string;
-  atividade_uuid: string | null;
+  atividade: string | null;
   municipe_uuid: string | number;
   author: string | number;
   createdAt: Date;
@@ -13,6 +13,6 @@ export type CarterinhaDto = {
 
 export type PostCarterinhaDto = {
   origem: string;
-  atividade_uuid: string | null;
+  atividade: string | null;
   municipe_uuid: string;
 };

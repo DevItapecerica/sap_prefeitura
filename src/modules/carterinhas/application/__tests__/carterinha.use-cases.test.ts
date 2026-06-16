@@ -32,7 +32,7 @@ class FakeCarterinhaRepository {
     const carterinhas = this.carterinhas.filter((carterinha) => {
       if (carterinha.municipe_uuid !== query.municipe_uuid) return false;
       if (query.origem && carterinha.origem !== query.origem) return false;
-      if (query.servico && carterinha.atividade_uuid !== query.servico) return false;
+      if (query.servico && carterinha.atividade !== query.servico) return false;
       return true;
     });
 
@@ -67,7 +67,7 @@ test("CreateCarterinhaUseCase cria carterinha para municipe existente", async ()
   const carterinhaRepo = new FakeCarterinhaRepository();
   const useCase = new CreateCarterinhaUseCase(municipeRepo as any, carterinhaRepo as any);
 
-  const carterinha = await useCase.execute({ origem: "esporte", atividade_uuid: null, municipe_uuid: "mun-1" }, 7);
+  const carterinha = await useCase.execute({ origem: "esporte", atividade: null, municipe_uuid: "mun-1" }, 7);
 
   assert.equal(carterinha.uuid, "cart-new");
   assert.equal(carterinha.author, 7);
@@ -80,7 +80,7 @@ test("CreateCarterinhaUseCase rejeita municipe inexistente", async () => {
   const useCase = new CreateCarterinhaUseCase(municipeRepo as any, new FakeCarterinhaRepository() as any);
 
   await assert.rejects(
-    () => useCase.execute({ origem: "esporte", atividade_uuid: null, municipe_uuid: "missing" }),
+    () => useCase.execute({ origem: "esporte", atividade: null, municipe_uuid: "missing" }),
     (error: AppError) => error.code === "MUNICIPE_NOT_FOUND",
   );
 });
