@@ -7,6 +7,10 @@ export type UpdateAtletaDto = {
   ativo?: boolean;
 };
 
+export type AddModalidadeAtletaDto = {
+  modalidade_uuid: string;
+};
+
 export type QueryAtletaDto = {
   search?: string;
   searchHash?: string;

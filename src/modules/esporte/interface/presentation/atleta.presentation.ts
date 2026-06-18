@@ -16,6 +16,7 @@ export default class AtletaPresentation {
       municipe: atleta.municipe
         ? MunicipePresentation.Masked(atleta.municipe)
         : null,
+      modalidades: atleta.modalidades || [],
     };
   }
 

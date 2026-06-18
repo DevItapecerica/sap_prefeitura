@@ -59,6 +59,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       foreignKey: "municipe_uuid",
       as: "municipe",
     });
+    AtletaModel.belongsToMany(models.ModalidadeModel, {
+      through: models.AtletaModalidadeModel,
+      foreignKey: "atleta_uuid",
+      otherKey: "modalidade_uuid",
+      as: "modalidades",
+    });
   };
 
   return AtletaModel;

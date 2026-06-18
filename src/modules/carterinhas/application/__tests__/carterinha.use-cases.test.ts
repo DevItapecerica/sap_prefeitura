@@ -54,6 +54,22 @@ class FakeCarterinhaRepository {
   }
 }
 
+class FakeCreateCarterinhaPdfUseCase {
+  payload: any = null;
+
+  async execute(payload: any) {
+    this.payload = payload;
+  }
+}
+
+const fakeAes = {
+  decrypt: async (value: string) => value.replace(/^enc:/, ""),
+};
+
+const fakeSha = {
+  encrypt: async (value: string) => `hash:${value}`,
+};
+
 test("CarterinhaPolicy calcula validade de dois anos", () => {
   const policy = new CarterinhaPolicy();
   const validade = policy.calcularValidade(new Date("2026-06-09T00:00:00.000Z"));
@@ -64,14 +80,40 @@ test("CarterinhaPolicy calcula validade de dois anos", () => {
 
 test("CreateCarterinhaUseCase cria carterinha para municipe existente", async () => {
   const municipeRepo = new FakeMunicipeRepository();
+  municipeRepo.municipe = new Municipe(
+    "Maria",
+    "enc:12345678900",
+    "enc:2000-01-01",
+    "enc:11999999999",
+    "enc:Rua",
+    "enc:Bairro",
+    "enc:Cidade",
+    "enc:SP",
+    "enc:06850000",
+    "enc:1",
+    null,
+    1,
+    "mun-1",
+  );
   const carterinhaRepo = new FakeCarterinhaRepository();
-  const useCase = new CreateCarterinhaUseCase(municipeRepo as any, carterinhaRepo as any);
+  const pdfUseCase = new FakeCreateCarterinhaPdfUseCase();
+  const useCase = new CreateCarterinhaUseCase(
+    municipeRepo as any,
+    carterinhaRepo as any,
+    pdfUseCase as any,
+    fakeAes as any,
+    fakeSha as any,
+  );
 
-  const carterinha = await useCase.execute({ origem: "esporte", atividade: null, municipe_uuid: "mun-1" }, 7);
+  const carterinha = await useCase.execute({ origem: "esporte", atividade: "Futebol", municipe_uuid: "mun-1" }, 7);
 
   assert.equal(carterinha.uuid, "cart-new");
   assert.equal(carterinha.author, 7);
   assert.equal(carterinha.origem, "esporte");
+  assert.equal(pdfUseCase.payload.modelType, "esporte");
+  assert.equal(pdfUseCase.payload.entityData.identidade, "12345678900");
+  assert.equal(pdfUseCase.payload.entityData.endereco, "Rua");
+  assert.equal(pdfUseCase.payload.entityData.modalidade, "Futebol");
 });
 
 test("CreateCarterinhaUseCase rejeita municipe inexistente", async () => {
@@ -80,7 +122,7 @@ test("CreateCarterinhaUseCase rejeita municipe inexistente", async () => {
   const useCase = new CreateCarterinhaUseCase(municipeRepo as any, new FakeCarterinhaRepository() as any);
 
   await assert.rejects(
-    () => useCase.execute({ origem: "esporte", atividade: null, municipe_uuid: "missing" }),
+    () => useCase.execute({ origem: "esporte", atividade: null, municipe_uuid: "missing" }, 7),
     (error: AppError) => error.code === "MUNICIPE_NOT_FOUND",
   );
 });

@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import AtletaService from "../../application/use-case/atleta.service.js";
 import {
+  AddModalidadeAtletaDto,
   CreateAtletaDto,
   QueryAtletaDto,
   UpdateAtletaDto,
@@ -120,6 +121,27 @@ export default class AtletaController {
       .status(200)
       .send({
         message: "Updated successfully",
+        data: AtletaPresentation.Masked(response),
+        ok: true,
+      });
+  };
+
+  addModalidade = async (
+    request: FastifyRequest<{
+      Params: { uuid: string };
+      Body: AddModalidadeAtletaDto;
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const response = await this.atletaService.addModalidadeToAtleta(
+      request.params.uuid,
+      request.body,
+    );
+
+    return reply
+      .status(201)
+      .send({
+        message: "Modalidade linked successfully",
         data: AtletaPresentation.Masked(response),
         ok: true,
       });

@@ -6,6 +6,10 @@ import CreateCarterinhaUseCase from "../../application/use-case/createCarterinha
 import { SequelizeMunicipeRepository } from "../../../../infra/database/sequelize/repositories/sequelize.municipe.repository.js";
 import { PostCarterinhaDto } from "../../application/dto/carterinha.dto.js";
 import GetOneCarterinhaUseCase from "../../application/use-case/getOneCarterinha.use-case.js";
+import CreateCarterinhaPdfUseCase from "../../application/use-case/createCarterinhaPdf.use-case.js";
+import { PDF_API_URL } from "../../../../core/env.js";
+import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
+import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 
 export class CarterinhasController {
     static getCarterinhas = async (request: FastifyRequest<{Querystring: QueryCarterinhasDto}>, reply: FastifyReply) => {
@@ -25,7 +29,13 @@ export class CarterinhasController {
     }
 
     static postCarterinha = async (request: FastifyRequest<{Body: PostCarterinhaDto}>, reply: FastifyReply) => {
-        const useCase = new CreateCarterinhaUseCase( new SequelizeMunicipeRepository(), new SequelizeCarterinhaRepository() ); 
+        const useCase = new CreateCarterinhaUseCase(
+            new SequelizeMunicipeRepository(),
+            new SequelizeCarterinhaRepository(),
+            new CreateCarterinhaPdfUseCase(PDF_API_URL),
+            new AesCryptService(),
+            new Sha256CryptService(),
+        ); 
 
         const payload = {
             municipe_uuid: request.body.municipe_uuid,

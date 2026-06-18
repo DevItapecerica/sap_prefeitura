@@ -7,20 +7,21 @@ import {
   DataTypes,
 } from "sequelize";
 
-interface ModalidadeDB extends Model<
-  InferAttributes<ModalidadeDB>,
-  InferCreationAttributes<ModalidadeDB>
+interface AtletaModalidadeDB extends Model<
+  InferAttributes<AtletaModalidadeDB>,
+  InferCreationAttributes<AtletaModalidadeDB>
 > {
   uuid: CreationOptional<string>;
-  nome: string;
+  atleta_uuid: string;
+  modalidade_uuid: string;
   createdAt?: CreationOptional<Date>;
   updatedAt?: CreationOptional<Date>;
   deletedAt?: CreationOptional<Date>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
-  const ModalidadeModel = sequelize.define<ModalidadeDB>(
-    "ModalidadeModel",
+  const AtletaModalidadeModel = sequelize.define<AtletaModalidadeDB>(
+    "AtletaModalidadeModel",
     {
       uuid: {
         type: DataTypes.UUID,
@@ -28,30 +29,24 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         primaryKey: true,
         allowNull: false,
       },
-      nome: {
-        type: DataTypes.STRING,
+      atleta_uuid: {
+        type: DataTypes.UUID,
         allowNull: false,
-        unique: true,
+      },
+      modalidade_uuid: {
+        type: DataTypes.UUID,
+        allowNull: false,
       },
       createdAt: { type: dataTypes.DATE, allowNull: false },
       updatedAt: { type: dataTypes.DATE, allowNull: false },
       deletedAt: { type: dataTypes.DATE, allowNull: true },
     },
     {
-      tableName: "esporte_modalidades",
+      tableName: "esporte_atleta_modalidades",
       timestamps: true,
       paranoid: true,
     },
   );
 
-  (ModalidadeModel as any).associate = (models: any) => {
-    ModalidadeModel.belongsToMany(models.AtletaModel, {
-      through: models.AtletaModalidadeModel,
-      foreignKey: "modalidade_uuid",
-      otherKey: "atleta_uuid",
-      as: "atletas",
-    });
-  };
-
-  return ModalidadeModel;
+  return AtletaModalidadeModel;
 };

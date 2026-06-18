@@ -34,6 +34,19 @@ const atletaSchema = {
     updatedAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
     deletedAt: { anyOf: [{ type: "string" }, { type: "null" }] },
     municipe: { ...municipeMaskedSchema, nullable: true },
+    modalidades: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          uuid: { type: "string", example: "uuid" },
+          nome: { type: "string", example: "Futebol" },
+          createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
+          updatedAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
+          deletedAt: { anyOf: [{ type: "string" }, { type: "null" }] },
+        },
+      },
+    },
   },
 };
 
@@ -284,6 +297,40 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
       },
     },
     handler: atletaController.delete,
+  });
+
+  fastify.route({
+    method: "POST",
+    url: "/atletas/:uuid/modalidades",
+    schema: {
+      tags: ["Esporte"],
+      security: [{ JWTToken: [] }],
+      params: {
+        type: "object",
+        required: ["uuid"],
+        properties: { uuid: { type: "string" } },
+      },
+      body: {
+        type: "object",
+        required: ["modalidade_uuid"],
+        additionalProperties: false,
+        properties: {
+          modalidade_uuid: { type: "string" },
+        },
+      },
+      response: {
+        201: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            data: atletaSchema,
+            ok: { type: "boolean" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: atletaController.addModalidade,
   });
 
   fastify.route({

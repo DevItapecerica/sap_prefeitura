@@ -6,6 +6,10 @@ export default interface AtletaRepository {
   findAllAtletas: (query?: QueryAtletaDto) => Promise<{ atletas: Atleta[]; count: number }>;
   findOneAtleta: (uuid: string) => Promise<Atleta | null>;
   findActiveByMunicipe: (municipe_uuid: string) => Promise<Atleta | null>;
+  addModalidadeToAtleta: (
+    atleta_uuid: string,
+    modalidade_uuid: string,
+  ) => Promise<{ restored: boolean } | null>;
   updateAtleta: (uuid: string, data: UpdateAtletaDto) => Promise<Atleta | null>;
   deleteAtleta: (uuid: string) => Promise<boolean>;
 }
