@@ -5,6 +5,8 @@ export default class CarterinhaEsporte {
     public municipe_uuid: string,
     public modalidade: string,
     public author: string | number,
+    public observacao?: string | null,
+    public validade_exame?: Date | null,
     public uuid?: string,
     public createdAt?: Date,
     public updatedAt?: Date,

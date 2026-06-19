@@ -46,6 +46,18 @@ export class FakeAtletaRepository {
     return { restored: false };
   }
 
+  async removeModalidadeFromAtleta(atleta_uuid: string, modalidade_uuid: string) {
+    const atleta = this.atletas.get(atleta_uuid);
+    if (!atleta?.modalidades) return false;
+
+    const initialLength = atleta.modalidades.length;
+    atleta.modalidades = atleta.modalidades.filter(
+      (modalidade) => modalidade.uuid !== modalidade_uuid,
+    );
+
+    return atleta.modalidades.length < initialLength;
+  }
+
   async updateAtleta(uuid: string, data: any) {
     const atleta = this.atletas.get(uuid);
     if (!atleta) return null;
@@ -91,6 +103,8 @@ export class FakeCarterinhaRepository {
       "mun-1",
       "Futebol",
       1,
+      null,
+      null,
       "cart-1",
     ),
   ];
@@ -137,6 +151,8 @@ export class FakeCreateCarterinhaEsporteUseCase {
       payload.municipe_uuid,
       payload.modalidade,
       author,
+      payload.observacao || null,
+      payload.validade_exame ? new Date(payload.validade_exame) : null,
       "cart-1",
     );
   }

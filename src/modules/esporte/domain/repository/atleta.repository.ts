@@ -10,6 +10,10 @@ export default interface AtletaRepository {
     atleta_uuid: string,
     modalidade_uuid: string,
   ) => Promise<{ restored: boolean } | null>;
+  removeModalidadeFromAtleta: (
+    atleta_uuid: string,
+    modalidade_uuid: string,
+  ) => Promise<boolean>;
   updateAtleta: (uuid: string, data: UpdateAtletaDto) => Promise<Atleta | null>;
   deleteAtleta: (uuid: string) => Promise<boolean>;
 }

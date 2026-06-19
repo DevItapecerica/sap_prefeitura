@@ -18,6 +18,8 @@ interface CarterinhaEsporteDB
   municipe_uuid: string;
   modalidade: string;
   author: string | number;
+  observacao: CreationOptional<string | null>;
+  validade_exame: CreationOptional<Date | null>;
   createdAt?: CreationOptional<Date>;
   updatedAt?: CreationOptional<Date>;
   deletedAt?: CreationOptional<Date | null>;
@@ -53,6 +55,16 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       author: {
         type: dataTypes.STRING,
         allowNull: false,
+      },
+      observacao: {
+        type: dataTypes.TEXT,
+        allowNull: true,
+        defaultValue: null,
+      },
+      validade_exame: {
+        type: dataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
       },
       createdAt: { type: dataTypes.DATE, allowNull: false },
       updatedAt: { type: dataTypes.DATE, allowNull: false },

@@ -57,6 +57,8 @@ const carterinhaSchema = {
     emissao: { type: "string", format: "date" },
     validade: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
     modalidade: { type: "string", example: "Futebol" },
+    observacao: { anyOf: [{ type: "string" }, { type: "null" }] },
+    validade_exame: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
     municipe_uuid: { type: "string", example: "uuid" },
     author: { type: "string", example: "1" },
     createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
@@ -359,6 +361,38 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.route({
+    method: "DELETE",
+    url: "/atletas/:uuid/modalidades/:modalidade_uuid",
+    schema: {
+      tags: ["Esporte"],
+      security: [{ JWTToken: [] }],
+      params: {
+        type: "object",
+        required: ["uuid", "modalidade_uuid"],
+        properties: {
+          uuid: { type: "string" },
+          modalidade_uuid: { type: "string" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            data: {
+              type: "object",
+              properties: { deleted: { type: "boolean" } },
+            },
+            ok: { type: "boolean" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: atletaController.removeModalidade,
+  });
+
+  fastify.route({
     method: "POST",
     url: "/atletas/:uuid/carteirinha",
     schema: {
@@ -368,6 +402,16 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         type: "object",
         required: ["uuid"],
         properties: { uuid: { type: "string" } },
+      },
+      body: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          observacao: { anyOf: [{ type: "string" }, { type: "null" }] },
+          validade_exame: {
+            anyOf: [{ type: "string", format: "date" }, { type: "null" }],
+          },
+        },
       },
       response: {
         201: {

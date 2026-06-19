@@ -11,6 +11,11 @@ export type AddModalidadeAtletaDto = {
   modalidade_uuid: string;
 };
 
+export type CreateCarteirinhaAtletaDto = {
+  observacao?: string | null;
+  validade_exame?: string | null;
+};
+
 export type QueryAtletaDto = {
   search?: string;
   searchHash?: string;

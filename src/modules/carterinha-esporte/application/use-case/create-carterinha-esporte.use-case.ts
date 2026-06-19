@@ -5,6 +5,8 @@ import { CarterinhaEsportePolicy } from "../../domain/service/carterinhaEsporteP
 type CreateCarterinhaEsporteInput = {
   municipe_uuid: string;
   modalidade: string;
+  observacao?: string | null;
+  validade_exame?: string | Date | null;
 };
 
 export default class CreateCarterinhaEsporteUseCase {
@@ -25,6 +27,8 @@ export default class CreateCarterinhaEsporteUseCase {
       data.municipe_uuid,
       data.modalidade,
       author,
+      data.observacao || null,
+      data.validade_exame ? new Date(data.validade_exame) : null,
     );
 
     return this.carterinhaRepository.create(carterinha);

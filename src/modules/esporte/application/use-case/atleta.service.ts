@@ -11,6 +11,7 @@ import AtletaRepository from "../../domain/repository/atleta.repository.js";
 import ModalidadeRepository from "../../domain/repository/modalidade.repository.js";
 import {
   AddModalidadeAtletaDto,
+  CreateCarteirinhaAtletaDto,
   CreateAtletaDto,
   QueryAtletaDto,
   UpdateAtletaDto,
@@ -164,6 +165,32 @@ export default class AtletaService {
     return this.findOneAtleta(uuid);
   }
 
+  async removeModalidadeFromAtleta(
+    uuid: string,
+    modalidade_uuid: string,
+  ): Promise<boolean> {
+    const atleta = await this.atletaRepository.findOneAtleta(uuid);
+
+    if (!atleta) {
+      throw new AppError("Atleta not found", 404, "ATLETA_NOT_FOUND");
+    }
+
+    const deleted = await this.atletaRepository.removeModalidadeFromAtleta(
+      uuid,
+      modalidade_uuid,
+    );
+
+    if (!deleted) {
+      throw new AppError(
+        "Atleta modalidade not found",
+        404,
+        "ATLETA_MODALIDADE_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
+
   async updateAtleta(uuid: string, data: UpdateAtletaDto): Promise<Atleta> {
     const atleta = await this.atletaRepository.updateAtleta(uuid, data);
 
@@ -187,6 +214,7 @@ export default class AtletaService {
   async createCarteirinha(
     uuid: string,
     author: string | number,
+    data: CreateCarteirinhaAtletaDto = {},
   ): Promise<CarterinhaEsporte> {
     const atleta = await this.findOneAtleta(uuid);
     const modalidade = (atleta.modalidades || [])
@@ -203,7 +231,12 @@ export default class AtletaService {
     }
 
     return this.createCarterinhaEsporteUseCase.execute(
-      { municipe_uuid: atleta.municipe_uuid, modalidade },
+      {
+        municipe_uuid: atleta.municipe_uuid,
+        modalidade,
+        observacao: data.observacao || null,
+        validade_exame: data.validade_exame || null,
+      },
       author,
     );
   }

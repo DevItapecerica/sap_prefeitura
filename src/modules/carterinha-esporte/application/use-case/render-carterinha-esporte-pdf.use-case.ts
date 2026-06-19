@@ -76,9 +76,9 @@ export default class RenderCarterinhaEsportePdfUseCase {
             numero: municipe.numero,
             bairro: municipe.bairro,
             cep: municipe.cep,
-            obs: "sem observacoes",
-            exame: carterinha.validade
-              ? this.formatDate(carterinha.validade)
+            obs: carterinha.observacao || "sem observacoes",
+            exame: carterinha.validade_exame
+              ? this.formatDate(carterinha.validade_exame)
               : "",
           },
         },

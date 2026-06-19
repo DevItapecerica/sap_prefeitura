@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import AtletaService from "../../application/use-case/atleta.service.js";
 import {
   AddModalidadeAtletaDto,
+  CreateCarteirinhaAtletaDto,
   CreateAtletaDto,
   QueryAtletaDto,
   UpdateAtletaDto,
@@ -147,6 +148,22 @@ export default class AtletaController {
       });
   };
 
+  removeModalidade = async (
+    request: FastifyRequest<{
+      Params: { uuid: string; modalidade_uuid: string };
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const deleted = await this.atletaService.removeModalidadeFromAtleta(
+      request.params.uuid,
+      request.params.modalidade_uuid,
+    );
+
+    return reply
+      .status(200)
+      .send({ message: "Modalidade unlinked successfully", data: { deleted }, ok: true });
+  };
+
   delete = async (
     request: FastifyRequest<{ Params: { uuid: string } }>,
     reply: FastifyReply,
@@ -159,12 +176,16 @@ export default class AtletaController {
   };
 
   createCarteirinha = async (
-    request: FastifyRequest<{ Params: { uuid: string } }>,
+    request: FastifyRequest<{
+      Params: { uuid: string };
+      Body: CreateCarteirinhaAtletaDto;
+    }>,
     reply: FastifyReply,
   ) => {
     const response = await this.atletaService.createCarteirinha(
       request.params.uuid,
       request.user.id,
+      request.body || {},
     );
 
     return reply

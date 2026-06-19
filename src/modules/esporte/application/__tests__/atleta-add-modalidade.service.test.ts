@@ -12,6 +12,17 @@ test("AtletaService vincula modalidade e rejeita duplicidade ou entidade inexist
   });
   assert.equal(atleta.modalidades?.[0].nome, "Futebol");
 
+  const response = await service.findAllAtletas({});
+  assert.equal(response.atletas[0].modalidades?.[0].nome, "Futebol");
+
+  assert.equal(await service.removeModalidadeFromAtleta("atl-1", "mod-1"), true);
+
+  await assert.rejects(
+    () => service.removeModalidadeFromAtleta("atl-1", "mod-1"),
+    (error: AppError) => error.code === "ATLETA_MODALIDADE_NOT_FOUND",
+  );
+
+  await service.addModalidadeToAtleta("atl-1", { modalidade_uuid: "mod-1" });
   await assert.rejects(
     () => service.addModalidadeToAtleta("atl-1", { modalidade_uuid: "mod-1" }),
     (error: AppError) => error.code === "ATLETA_MODALIDADE_ALREADY_EXISTS",

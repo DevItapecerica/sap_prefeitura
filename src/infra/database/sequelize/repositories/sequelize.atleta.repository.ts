@@ -40,12 +40,20 @@ export class SequelizeAtletaRepository implements AtletaRepository {
     const queryOrder = q.order ? q.order.split(":") : ["createdAt", "desc"];
     const limit = q.limit ? Number(q.limit) : undefined;
     const offset = q.limit ? Number(q.page || 0) * Number(q.limit) : undefined;
-    const include = [{
-      model: this.municipeModel,
-      as: "municipe",
-      required: Boolean(q.search),
-      where: {...municipeWhere},
-    }];
+    const include = [
+      {
+        model: this.municipeModel,
+        as: "municipe",
+        required: Boolean(q.search),
+        where: { ...municipeWhere },
+      },
+      {
+        model: this.modalidadeModel,
+        as: "modalidades",
+        through: { attributes: [] },
+        required: false,
+      },
+    ];
 
     const atletas = await this.model.findAll({
       where,
@@ -111,6 +119,16 @@ export class SequelizeAtletaRepository implements AtletaRepository {
 
     await this.atletaModalidadeModel.create({ atleta_uuid, modalidade_uuid });
     return { restored: false };
+  }
+
+  async removeModalidadeFromAtleta(
+    atleta_uuid: string,
+    modalidade_uuid: string,
+  ): Promise<boolean> {
+    const deleted = await this.atletaModalidadeModel.destroy({
+      where: { atleta_uuid, modalidade_uuid },
+    });
+    return deleted > 0;
   }
 
   async updateAtleta(uuid: string, data: UpdateAtletaDto): Promise<Atleta | null> {
