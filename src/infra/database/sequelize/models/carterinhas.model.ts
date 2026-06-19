@@ -18,7 +18,7 @@ interface CarterinhaDB extends Model<
   validade: CreationOptional<string>;
   municipe_uuid: string;
   origem: string;
-  atividade_uuid: string;
+  atividade: string | null;
 
   author: string | number;
 
@@ -59,7 +59,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      atividade_uuid: {
+      atividade: {
         type: DataTypes.STRING,
         allowNull: true,
       },

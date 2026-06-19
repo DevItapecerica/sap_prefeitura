@@ -6,7 +6,7 @@ export default interface IMunicipeRepository {
 
     getMunicipe: (query: QueryParams) => Promise<{municipe: Municipe[], count: number}>
     createMunicipe: (municipe: Municipe, cpfHash: string, cepHash: string) => Promise<Municipe>
-    updateMunicipe: (uuid: string, municipe: Municipe, cpfHash: string, cepHash: string) => Promise<Municipe | null>
+    updateMunicipe: (uuid: string, municipe: Partial<Municipe>, cpfHash?: string, cepHash?: string) => Promise<Municipe | null>
     deleteMunicipe: (uuid: string) => Promise<boolean>
     getMunicipeById: (uuid: string) => Promise<Municipe | null>
     getMunicipeByCpf: (cpf: string) => Promise<Municipe | null>

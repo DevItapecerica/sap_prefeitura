@@ -1,4 +1,24 @@
 services:
+  db:
+    image: mariadb:10.11
+    container_name: sap_prefeitura_db
+    environment:
+      MARIADB_USER: ${DATABASE_USER}
+      MARIADB_PASSWORD: ${DATABASE_KEY}
+      MARIADB_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DATABASE_NAME}
+    ports:
+      - 3306:3306
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u${DATABASE_USER} -p${DATABASE_KEY} || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
   sap:
     image: node:18
     container_name: sap_prefeitura
@@ -23,16 +43,14 @@ services:
       MAIL_ADRESS: ${MAIL_ADRESS}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_HOST: ${MAIL_HOST}
-      
+
       CORS_ORIGINS: ${CORS_ORIGINS}
 
       APPLICATION_PORT: 3000
     ports:
-      - ${APPLICATION_PORT}:3001
-    networks:
-      dokploy-network:
-        aliases:
-          - sap_prefeitura
-networks:
-  dokploy-network:
-    external: true
+      - ${APPLICATION_PORT}:3000
+    depends_on:
+      - db
+
+volumes:
+  db_data:

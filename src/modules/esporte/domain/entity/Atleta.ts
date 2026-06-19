@@ -1,4 +1,5 @@
 import Municipe from "../../../municipe/domain/entity/Municipe.js";
+import Modalidade from "./Modalidade.js";
 
 export default class Atleta {
   constructor(
@@ -10,5 +11,6 @@ export default class Atleta {
     public updatedAt?: Date,
     public deletedAt?: Date | null,
     public municipe?: Municipe | null,
+    public modalidades?: Modalidade[],
   ) {}
 }

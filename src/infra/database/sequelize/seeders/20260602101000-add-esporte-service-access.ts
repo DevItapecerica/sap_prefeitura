@@ -1,6 +1,6 @@
 import { QueryInterface } from "sequelize";
 
-const ESPORTE_SERVICE_ID = 11;
+const ESPORTE_SERVICE_ID = 10;
 const DEFAULT_ROLES = [
   { id: 1, name: "admin" },
   { id: 2, name: "tecnico" },
@@ -27,14 +27,27 @@ export default {
           [
             {
               id: ESPORTE_SERVICE_ID,
-              name: "Esporte",
-              description: "Gerenciamento de atletas e carteirinhas do esporte",
-              url: "/services/11/esporte",
+              name: "Atletas do Esporte",
+              description: "Gerenciamento de atletas do esporte",
+              url: "/services/10/esporte",
               tag: "outros",
               createdAt: new Date(),
               updatedAt: new Date(),
             },
           ],
+          { transaction },
+        );
+      } else {
+        await queryInterface.bulkUpdate(
+          "services",
+          {
+            name: "Atletas do Esporte",
+            description: "Gerenciamento de atletas do esporte",
+            url: "/services/10/esporte",
+            tag: "outros",
+            updatedAt: new Date(),
+          },
+          { id: ESPORTE_SERVICE_ID },
           { transaction },
         );
       }

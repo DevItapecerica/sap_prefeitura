@@ -4,10 +4,13 @@ import { QueryAtletaDto, UpdateAtletaDto } from "../../../../modules/esporte/app
 import AtletaRepository from "../../../../modules/esporte/domain/repository/atleta.repository.js";
 import Atleta from "../../../../modules/esporte/domain/entity/Atleta.js";
 import Municipe from "../../../../modules/municipe/domain/entity/Municipe.js";
+import Modalidade from "../../../../modules/esporte/domain/entity/Modalidade.js";
 
 export class SequelizeAtletaRepository implements AtletaRepository {
   private model = db.AtletaModel;
   private municipeModel = db.MunicipeModel;
+  private modalidadeModel = db.ModalidadeModel;
+  private atletaModalidadeModel = db.AtletaModalidadeModel;
 
   async createAtleta(atleta: Atleta): Promise<Atleta> {
     const created = await this.model.create(atleta);
@@ -28,20 +31,29 @@ export class SequelizeAtletaRepository implements AtletaRepository {
     if (q.search) {
       municipeWhere[Op.or] = [
         { nome: { [Op.like]: `%${q.search}%` } },
-        { cpfHash: { [Op.like]: `%${q.search}%` } },
-        { cepHash: { [Op.like]: `%${q.search}%` } },
+        ...(q.searchHash
+          ? [{ cpfHash: q.searchHash }, { cepHash: q.searchHash }]
+          : []),
       ];
     }
 
     const queryOrder = q.order ? q.order.split(":") : ["createdAt", "desc"];
     const limit = q.limit ? Number(q.limit) : undefined;
     const offset = q.limit ? Number(q.page || 0) * Number(q.limit) : undefined;
-    const include = [{
-      model: this.municipeModel,
-      as: "municipe",
-      required: Boolean(q.search),
-      where: Object.keys(municipeWhere).length ? municipeWhere : undefined,
-    }];
+    const include = [
+      {
+        model: this.municipeModel,
+        as: "municipe",
+        required: Boolean(q.search),
+        where: { ...municipeWhere },
+      },
+      {
+        model: this.modalidadeModel,
+        as: "modalidades",
+        through: { attributes: [] },
+        required: false,
+      },
+    ];
 
     const atletas = await this.model.findAll({
       where,
@@ -68,6 +80,11 @@ export class SequelizeAtletaRepository implements AtletaRepository {
       include: [{
         model: this.municipeModel,
         as: "municipe",
+      },
+      {
+        model: this.modalidadeModel,
+        as: "modalidades",
+        through: { attributes: [] },
       }],
     });
 
@@ -80,6 +97,38 @@ export class SequelizeAtletaRepository implements AtletaRepository {
     });
 
     return atleta ? this.toEntity(atleta) : null;
+  }
+
+  async addModalidadeToAtleta(
+    atleta_uuid: string,
+    modalidade_uuid: string,
+  ): Promise<{ restored: boolean } | null> {
+    const existing = await this.atletaModalidadeModel.findOne({
+      where: { atleta_uuid, modalidade_uuid },
+      paranoid: false,
+    });
+
+    if (existing) {
+      if (existing.deletedAt) {
+        await existing.restore();
+        return { restored: true };
+      }
+
+      return null;
+    }
+
+    await this.atletaModalidadeModel.create({ atleta_uuid, modalidade_uuid });
+    return { restored: false };
+  }
+
+  async removeModalidadeFromAtleta(
+    atleta_uuid: string,
+    modalidade_uuid: string,
+  ): Promise<boolean> {
+    const deleted = await this.atletaModalidadeModel.destroy({
+      where: { atleta_uuid, modalidade_uuid },
+    });
+    return deleted > 0;
   }
 
   async updateAtleta(uuid: string, data: UpdateAtletaDto): Promise<Atleta | null> {
@@ -119,6 +168,19 @@ export class SequelizeAtletaRepository implements AtletaRepository {
         )
       : null;
 
+    const modalidades = Array.isArray(data.modalidades)
+      ? data.modalidades.map(
+          (modalidade: any) =>
+            new Modalidade(
+              modalidade.nome,
+              modalidade.uuid,
+              modalidade.createdAt,
+              modalidade.updatedAt,
+              modalidade.deletedAt,
+            ),
+        )
+      : [];
+
     return new Atleta(
       data.municipe_uuid,
       data.ativo,
@@ -128,6 +190,7 @@ export class SequelizeAtletaRepository implements AtletaRepository {
       data.updatedAt,
       data.deletedAt,
       municipe,
+      modalidades,
     );
   }
 }

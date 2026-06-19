@@ -137,6 +137,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       foreignKey: "municipe_uuid",
       as: "carterinhas",
     });
+    Carterinhas.hasMany(models.CarteirinhaEsporteModel, {
+      foreignKey: "municipe_uuid",
+      as: "carterinhasEsporte",
+    });
   };
 
   return Carterinhas;
