@@ -4,7 +4,7 @@ import AppError from "../../../../core/appError.js";
 import { makeService } from "./atleta.service.helpers.js";
 
 test("AtletaService busca, atualiza, remove e cria carterinha", async () => {
-  const { service, pdfUseCase } = makeService();
+  const { service, createCarterinhaUseCase } = makeService();
   await service.createAtleta({ municipe_uuid: "mun-1", ativo: true }, 1);
 
   assert.equal((await service.findAllAtletas()).count, 1);
@@ -12,11 +12,9 @@ test("AtletaService busca, atualiza, remove e cria carterinha", async () => {
   assert.equal((await service.updateAtleta("atl-1", { ativo: false })).ativo, false);
   await service.addModalidadeToAtleta("atl-1", { modalidade_uuid: "mod-1" });
   const carterinha = await service.createCarteirinha("atl-1", 9);
-  assert.equal(carterinha.origem, "esporte");
-  assert.equal(carterinha.atividade, "Futebol");
-  assert.equal(pdfUseCase.payload.modelType, "esporte");
-  assert.equal(pdfUseCase.payload.entityData.identidade, "123");
-  assert.equal(pdfUseCase.payload.entityData.modalidade, "Futebol");
+  assert.equal(carterinha.modalidade, "Futebol");
+  assert.equal(createCarterinhaUseCase.payload.municipe_uuid, "mun-1");
+  assert.equal(createCarterinhaUseCase.payload.modalidade, "Futebol");
   assert.equal(await service.deleteAtleta("atl-1"), true);
   await assert.rejects(
     () => service.findOneAtleta("atl-1"),

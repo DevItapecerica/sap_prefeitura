@@ -1,10 +1,11 @@
 import { AppError } from "../../../../core/appError.js";
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
-import Carterinha from "../../../carterinhas/domain/entity/Carteirinha.js";
-import CarterinhaRepository from "../../../carterinhas/domain/repositories/carterinha.repository.js";
-import { QueryCarterinhasDto } from "../../../carterinhas/application/dto/queryCarterinhas.dto.js";
-import GetCarterinhasByMunicipeUseCase from "../../../carterinhas/application/use-case/getCarterinhasByMunicipe.use-case.js";
-import CreateCarterinhaUseCase from "../../../carterinhas/application/use-case/createCarterinha.use-case.js";
+import CarterinhaEsporte from "../../../carterinha-esporte/domain/entity/CarterinhaEsporte.js";
+import { QueryCarterinhaEsporteDto } from "../../../carterinha-esporte/application/dto/queryCarterinhaEsporte.dto.js";
+import CreateCarterinhaEsporteUseCase from "../../../carterinha-esporte/application/use-case/create-carterinha-esporte.use-case.js";
+import ListCarterinhasEsporteUseCase from "../../../carterinha-esporte/application/use-case/list-carterinhas-esporte.use-case.js";
+import ListCarterinhasEsporteByAtletaUseCase from "../../../carterinha-esporte/application/use-case/list-carterinhas-esporte-by-atleta.use-case.js";
+import RenderCarterinhaEsportePdfUseCase from "../../../carterinha-esporte/application/use-case/render-carterinha-esporte-pdf.use-case.js";
 import Atleta from "../../domain/entity/Atleta.js";
 import AtletaRepository from "../../domain/repository/atleta.repository.js";
 import ModalidadeRepository from "../../domain/repository/modalidade.repository.js";
@@ -23,8 +24,10 @@ export default class AtletaService {
     private atletaRepository: AtletaRepository,
     private modalidadeRepository: ModalidadeRepository,
     private municipeRepository: MunicipeRepository,
-    private carterinhaRepository: CarterinhaRepository,
-    private createCarterinhaUseCase: CreateCarterinhaUseCase,
+    private createCarterinhaEsporteUseCase: CreateCarterinhaEsporteUseCase,
+    private listCarterinhasEsporteUseCase: ListCarterinhasEsporteUseCase,
+    private listCarterinhasEsporteByAtletaUseCase: ListCarterinhasEsporteByAtletaUseCase,
+    private renderCarterinhaEsportePdfUseCase: RenderCarterinhaEsportePdfUseCase,
     private sha256Crypt?: ISha256Crypt,
     private aesCrypt?: IAesCrypt,
   ) {}
@@ -102,27 +105,20 @@ export default class AtletaService {
   }
 
   async findCarteirinhasEsporte(
-    query?: Omit<QueryCarterinhasDto, "origem">,
-  ): Promise<{ carterinhas: Carterinha[]; count: number }> {
-    return this.carterinhaRepository.getCarterinhas({
-      ...query,
-      origem: "esporte",
-    });
+    query?: QueryCarterinhaEsporteDto,
+  ): Promise<{ carterinhas: CarterinhaEsporte[]; count: number }> {
+    return this.listCarterinhasEsporteUseCase.execute(query || {});
   }
 
   async findCarteirinhasByAtleta(
     uuid: string,
-    query?: Omit<QueryCarterinhasDto, "origem">,
-  ): Promise<{ carterinhas: Carterinha[]; count: number }> {
+    query?: QueryCarterinhaEsporteDto,
+  ): Promise<{ carterinhas: CarterinhaEsporte[]; count: number }> {
     const atleta = await this.findOneAtleta(uuid);
-    const useCase = new GetCarterinhasByMunicipeUseCase(
-      this.carterinhaRepository,
-    );
 
-    return useCase.execute({
+    return this.listCarterinhasEsporteByAtletaUseCase.execute({
       ...query,
       municipe_uuid: atleta.municipe_uuid,
-      origem: "esporte",
     });
   }
 
@@ -191,14 +187,14 @@ export default class AtletaService {
   async createCarteirinha(
     uuid: string,
     author: string | number,
-  ): Promise<Carterinha> {
+  ): Promise<CarterinhaEsporte> {
     const atleta = await this.findOneAtleta(uuid);
-    const atividade = (atleta.modalidades || [])
+    const modalidade = (atleta.modalidades || [])
       .map((modalidade) => modalidade.nome)
       .filter(Boolean)
       .join(", ");
 
-    if (!atividade) {
+    if (!modalidade) {
       throw new AppError(
         "Atleta has no modalidade linked",
         400,
@@ -206,13 +202,13 @@ export default class AtletaService {
       );
     }
 
-    return this.createCarterinhaUseCase.execute(
-      {
-        municipe_uuid: atleta.municipe_uuid,
-        origem: "esporte",
-        atividade,
-      },
+    return this.createCarterinhaEsporteUseCase.execute(
+      { municipe_uuid: atleta.municipe_uuid, modalidade },
       author,
     );
+  }
+
+  async renderCarteirinhaPdf(uuid: string) {
+    return this.renderCarterinhaEsportePdfUseCase.execute(uuid);
   }
 }

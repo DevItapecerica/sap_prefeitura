@@ -6,7 +6,7 @@ import {
   QueryAtletaDto,
   UpdateAtletaDto,
 } from "../../application/dto/atleta.dto.js";
-import { QueryCarterinhasDto } from "../../../carterinhas/application/dto/queryCarterinhas.dto.js";
+import { QueryCarterinhaEsporteDto } from "../../../carterinha-esporte/application/dto/queryCarterinhaEsporte.dto.js";
 import AtletaPresentation from "../presentation/atleta.presentation.js";
 
 export default class AtletaController {
@@ -48,7 +48,7 @@ export default class AtletaController {
 
   findCarteirinhas = async (
     request: FastifyRequest<{
-      Querystring: Omit<QueryCarterinhasDto, "origem">;
+      Querystring: QueryCarterinhaEsporteDto;
     }>,
     reply: FastifyReply,
   ) => {
@@ -69,7 +69,7 @@ export default class AtletaController {
   findCarteirinhasByAtleta = async (
     request: FastifyRequest<{
       Params: { uuid: string };
-      Querystring: Omit<QueryCarterinhasDto, "origem">;
+      Querystring: QueryCarterinhaEsporteDto;
     }>,
     reply: FastifyReply,
   ) => {
@@ -174,5 +174,22 @@ export default class AtletaController {
         data: response,
         ok: true,
       });
+  };
+
+  getCarteirinhaPdf = async (
+    request: FastifyRequest<{ Params: { uuid: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const response = await this.atletaService.renderCarteirinhaPdf(
+      request.params.uuid,
+    );
+
+    reply.header("Content-Type", response.contentType);
+    reply.header("Content-Disposition", response.contentDisposition);
+    if (response.contentLength) {
+      reply.header("Content-Length", response.contentLength);
+    }
+
+    return reply.status(200).send(response.file);
   };
 }

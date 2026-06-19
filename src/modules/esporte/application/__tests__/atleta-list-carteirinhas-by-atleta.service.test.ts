@@ -8,13 +8,13 @@ test("AtletaService lista carteirinhas pelo municipe do atleta", async () => {
   await service.createAtleta({ municipe_uuid: "mun-1", ativo: true }, 1);
 
   const response = await service.findCarteirinhasByAtleta("atl-1", {
-    origem: "biblioteca",
+    modalidade: "Futebol",
     limit: 10,
   } as any);
 
   assert.equal(response.count, 1);
   assert.equal(carterinhaRepo.queryByMunicipe.municipe_uuid, "mun-1");
-  assert.equal(carterinhaRepo.queryByMunicipe.origem, "esporte");
+  assert.equal(carterinhaRepo.queryByMunicipe.modalidade, "Futebol");
   assert.equal(carterinhaRepo.queryByMunicipe.limit, 10);
   await assert.rejects(
     () => service.findCarteirinhasByAtleta("missing"),

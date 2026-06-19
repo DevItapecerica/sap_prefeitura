@@ -1,10 +1,8 @@
 import AtletaService from "../use-case/atleta.service.js";
 import Atleta from "../../domain/entity/Atleta.js";
 import Municipe from "../../../municipe/domain/entity/Municipe.js";
-import Carterinha from "../../../carterinhas/domain/entity/Carteirinha.js";
+import CarterinhaEsporte from "../../../carterinha-esporte/domain/entity/CarterinhaEsporte.js";
 import Modalidade from "../../domain/entity/Modalidade.js";
-import AppError from "../../../../core/appError.js";
-import CreateCarterinhaUseCase from "../../../carterinhas/application/use-case/createCarterinha.use-case.js";
 
 export class FakeAtletaRepository {
   atletas = new Map<string, Atleta>();
@@ -83,35 +81,38 @@ export class FakeMunicipeRepository {
 }
 
 export class FakeCarterinhaRepository {
-  created: Carterinha | null = null;
+  created: CarterinhaEsporte | null = null;
   query: any = null;
   queryByMunicipe: any = null;
-  carterinhas: Carterinha[] = [
-    new Carterinha(
+  carterinhas: CarterinhaEsporte[] = [
+    new CarterinhaEsporte(
       new Date("2026-01-01"),
       new Date("2028-01-01"),
-      "esporte",
-      null,
       "mun-1",
+      "Futebol",
       1,
       "cart-1",
     ),
   ];
 
-  async getCarterinhas(query: any) {
+  async list(query: any) {
     this.query = query;
     return { carterinhas: this.carterinhas, count: this.carterinhas.length };
   }
 
-  async getCarterinhasByMunicipe(query: any) {
+  async listByMunicipe(query: any) {
     this.queryByMunicipe = query;
     return { carterinhas: this.carterinhas, count: this.carterinhas.length };
   }
 
-  async postCarterinhas(carterinha: Carterinha) {
+  async create(carterinha: CarterinhaEsporte) {
     this.created = carterinha;
     carterinha.uuid = "cart-1";
     return carterinha;
+  }
+
+  async findById(id: string) {
+    return this.carterinhas.find((carterinha) => carterinha.uuid === id) ?? null;
   }
 }
 
@@ -123,20 +124,50 @@ export class FakeModalidadeRepository {
   }
 }
 
-export class FakeCreateCarterinhaPdfUseCase {
+export class FakeCreateCarterinhaEsporteUseCase {
   payload: any = null;
-  shouldFail = false;
+  author: string | number | null = null;
 
-  async execute(payload: any) {
-    if (this.shouldFail) {
-      throw new AppError(
-        "PDF service unavailable",
-        502,
-        "PDF_SERVICE_UNAVAILABLE",
-      );
-    }
-
+  async execute(payload: any, author: string | number) {
     this.payload = payload;
+    this.author = author;
+    return new CarterinhaEsporte(
+      new Date("2026-01-01"),
+      new Date("2028-01-01"),
+      payload.municipe_uuid,
+      payload.modalidade,
+      author,
+      "cart-1",
+    );
+  }
+}
+
+export class FakeListCarterinhasEsporteUseCase {
+  constructor(private repo: FakeCarterinhaRepository) {}
+
+  async execute(query: any) {
+    return this.repo.list(query);
+  }
+}
+
+export class FakeListCarterinhasEsporteByAtletaUseCase {
+  constructor(private repo: FakeCarterinhaRepository) {}
+
+  async execute(query: any) {
+    return this.repo.listByMunicipe(query);
+  }
+}
+
+export class FakeRenderCarterinhaEsportePdfUseCase {
+  uuid: string | null = null;
+
+  async execute(uuid: string) {
+    this.uuid = uuid;
+    return {
+      file: Buffer.from("%PDF-"),
+      contentType: "application/pdf",
+      contentDisposition: `inline; filename="${uuid}.pdf"`,
+    };
   }
 }
 
@@ -145,32 +176,34 @@ export function makeService() {
   const municipeRepo = new FakeMunicipeRepository();
   const carterinhaRepo = new FakeCarterinhaRepository();
   const modalidadeRepo = new FakeModalidadeRepository();
-  const pdfUseCase = new FakeCreateCarterinhaPdfUseCase();
+  const createCarterinhaUseCase = new FakeCreateCarterinhaEsporteUseCase();
+  const listCarterinhasUseCase = new FakeListCarterinhasEsporteUseCase(
+    carterinhaRepo,
+  );
+  const listCarterinhasByAtletaUseCase =
+    new FakeListCarterinhasEsporteByAtletaUseCase(carterinhaRepo);
+  const renderPdfUseCase = new FakeRenderCarterinhaEsportePdfUseCase();
   const sha = {
     encrypt: async (value: string) => `hash:${value}`,
   };
   const aes = {
     decrypt: async (value: string) => value.replace(/^enc:/, ""),
   };
-  const createCarterinhaUseCase = new CreateCarterinhaUseCase(
-    municipeRepo as any,
-    carterinhaRepo as any,
-    pdfUseCase as any,
-    aes as any,
-    sha as any,
-  );
   return {
     atletaRepo,
     municipeRepo,
     carterinhaRepo,
     modalidadeRepo,
-    pdfUseCase,
+    createCarterinhaUseCase,
+    renderPdfUseCase,
     service: new AtletaService(
       atletaRepo as any,
       modalidadeRepo as any,
       municipeRepo as any,
-      carterinhaRepo as any,
       createCarterinhaUseCase as any,
+      listCarterinhasUseCase as any,
+      listCarterinhasByAtletaUseCase as any,
+      renderPdfUseCase as any,
       sha as any,
       aes as any,
     ),

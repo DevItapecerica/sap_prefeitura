@@ -6,11 +6,11 @@ test("AtletaService lista somente carteirinhas de esporte", async () => {
   const { service, carterinhaRepo } = makeService();
 
   const response = await service.findCarteirinhasEsporte({
-    origem: "biblioteca",
+    modalidade: "Futebol",
     limit: 10,
   } as any);
 
   assert.equal(response.count, 1);
-  assert.equal(carterinhaRepo.query.origem, "esporte");
+  assert.equal(carterinhaRepo.query.modalidade, "Futebol");
   assert.equal(carterinhaRepo.query.limit, 10);
 });

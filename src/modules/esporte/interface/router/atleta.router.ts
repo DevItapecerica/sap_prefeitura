@@ -56,11 +56,7 @@ const carterinhaSchema = {
     uuid: { type: "string", example: "uuid" },
     emissao: { type: "string", format: "date" },
     validade: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
-    origem: { type: "string", example: "esporte" },
-    atividade: {
-      anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
-      example: null,
-    },
+    modalidade: { type: "string", example: "Futebol" },
     municipe_uuid: { type: "string", example: "uuid" },
     author: { type: "string", example: "1" },
     createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
@@ -125,7 +121,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
       querystring: {
         type: "object",
         properties: {
-          servico: { type: "string" },
+          modalidade: { type: "string" },
           limit: { type: "number" },
           page: { type: "number" },
           order: { type: "string" },
@@ -187,7 +183,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
       querystring: {
         type: "object",
         properties: {
-          servico: { type: "string" },
+          modalidade: { type: "string" },
           limit: { type: "number" },
           page: { type: "number" },
           order: { type: "string" },
@@ -207,6 +203,35 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
       },
     },
     handler: atletaController.findCarteirinhasByAtleta,
+  });
+
+  fastify.route({
+    method: "GET",
+    url: "/carteirinhas/:uuid/pdf",
+    schema: {
+      tags: ["Esporte"],
+      security: [{ JWTToken: [] }],
+      params: {
+        type: "object",
+        required: ["uuid"],
+        properties: { uuid: { type: "string" } },
+      },
+      response: {
+        200: {
+          description: "Arquivo PDF da carteirinha esporte",
+          content: {
+            "application/pdf": {
+              schema: {
+                type: "string",
+                format: "binary",
+              },
+            },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: atletaController.getCarteirinhaPdf,
   });
 
   fastify.route({
