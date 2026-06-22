@@ -1,17 +1,24 @@
-import { QueryInterface } from "sequelize";
+import { QueryInterface, QueryTypes } from "sequelize";
 
 const MUNICIPE_SERVICE_ID = 9;
-const DEFAULT_ROLES = [
-  { id: 1, name: "admin" },
-  { id: 2, name: "tecnico" },
-  { id: 3, name: "Gestor" },
-  { id: 4, name: "Usuario" },
-];
+
+type RoleRow = {
+  id: number;
+  name: string;
+};
+
+type SetorRow = {
+  id: number;
+};
+
+const isAdminRole = (role: RoleRow) =>
+  role.id === 1 || role.name.toLowerCase() === "admin";
 
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
+      const now = new Date();
       const serviceExists = await queryInterface.rawSelect(
         "services",
         {
@@ -31,53 +38,26 @@ export default {
               description: "Cadastro e consulta de municipes",
               url: "/services/9/municipes",
               tag: "outros",
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              createdAt: now,
+              updatedAt: now,
             },
           ],
           { transaction },
         );
       }
 
-      for (const role of DEFAULT_ROLES) {
-        const roleExists = await queryInterface.rawSelect(
-          "roles",
-          {
-            where: { id: role.id },
-            transaction,
-          },
-          "id",
-        );
-
-        if (!roleExists) {
-          await queryInterface.bulkInsert("roles", [role], { transaction });
-        }
-      }
-
-      const roles = [
-        { role_id: 1, read: 1, write: 1, edit: 1, del: 1 },
-        { role_id: 2, read: 1, write: 1, edit: 1, del: 0 },
-        { role_id: 3, read: 1, write: 1, edit: 1, del: 0 },
-        { role_id: 4, read: 1, write: 1, edit: 0, del: 0 },
-      ];
+      const roles = await queryInterface.sequelize.query<RoleRow>(
+        "SELECT id, name FROM roles ORDER BY id",
+        { type: QueryTypes.SELECT, transaction },
+      );
 
       for (const role of roles) {
-        const roleExists = await queryInterface.rawSelect(
-          "roles",
-          {
-            where: { id: role.role_id },
-            transaction,
-          },
-          "id",
-        );
-
-        if (!roleExists) continue;
-
+        const allowed = isAdminRole(role) ? 1 : 0;
         const permissionExists = await queryInterface.rawSelect(
           "permissions",
           {
             where: {
-              role_id: role.role_id,
+              role_id: role.id,
               service_id: MUNICIPE_SERVICE_ID,
             },
             transaction,
@@ -90,10 +70,14 @@ export default {
             "permissions",
             [
               {
-                ...role,
+                role_id: role.id,
                 service_id: MUNICIPE_SERVICE_ID,
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                read: allowed,
+                write: allowed,
+                edit: allowed,
+                del: allowed,
+                createdAt: now,
+                updatedAt: now,
                 deletedAt: null,
               },
             ],
@@ -102,12 +86,17 @@ export default {
         }
       }
 
-      for (const setor_id of [1, 2]) {
+      const setores = await queryInterface.sequelize.query<SetorRow>(
+        "SELECT id FROM setors ORDER BY id",
+        { type: QueryTypes.SELECT, transaction },
+      );
+
+      for (const setor of setores) {
         const visibilityExists = await queryInterface.rawSelect(
           "service_visibilities",
           {
             where: {
-              setor_id,
+              setor_id: setor.id,
               service_id: MUNICIPE_SERVICE_ID,
             },
             transaction,
@@ -120,9 +109,9 @@ export default {
             "service_visibilities",
             [
               {
-                setor_id,
+                setor_id: setor.id,
                 service_id: MUNICIPE_SERVICE_ID,
-                visibility: 1,
+                visibility: setor.id === 1 ? 1 : 0,
               },
             ],
             { transaction },
