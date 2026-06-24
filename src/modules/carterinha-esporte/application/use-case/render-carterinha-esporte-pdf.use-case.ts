@@ -80,6 +80,7 @@ export default class RenderCarterinhaEsportePdfUseCase {
             exame: carterinha.validade_exame
               ? this.formatDate(carterinha.validade_exame)
               : "",
+            foto: carterinha.foto || null,
           },
         },
         { responseType: "arraybuffer" },

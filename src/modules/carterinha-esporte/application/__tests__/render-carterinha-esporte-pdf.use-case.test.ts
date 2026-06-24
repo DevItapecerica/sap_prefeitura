@@ -7,6 +7,9 @@ import CarterinhaEsporteRepository from "../../domain/repositories/carterinha-es
 import RenderCarterinhaEsportePdfUseCase from "../use-case/render-carterinha-esporte-pdf.use-case.js";
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
 
+const FOTO_FIXTURE =
+  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w==";
+
 class FakeCarterinhaRepository implements CarterinhaEsporteRepository {
   carterinha = new CarterinhaEsporte(
     new Date("2026-06-19"),
@@ -16,6 +19,7 @@ class FakeCarterinhaRepository implements CarterinhaEsporteRepository {
     1,
     "Liberado para treino",
     new Date("2026-12-31"),
+    FOTO_FIXTURE,
     "cart-1",
   );
 
@@ -108,4 +112,5 @@ test("RenderCarterinhaEsportePdfUseCase envia observacao e validade do exame ao 
   assert.equal(capturedPayload.entityData.obs, "Liberado para treino");
   assert.equal(capturedPayload.entityData.exame, "2026-12-31");
   assert.equal(capturedPayload.entityData.modalidade, "Futebol");
+  assert.equal(capturedPayload.entityData.foto, FOTO_FIXTURE);
 });

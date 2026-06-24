@@ -405,11 +405,16 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
       },
       body: {
         type: "object",
+        required: ["foto"],
         additionalProperties: false,
         properties: {
           observacao: { anyOf: [{ type: "string" }, { type: "null" }] },
           validade_exame: {
             anyOf: [{ type: "string", format: "date" }, { type: "null" }],
+          },
+          foto: {
+            type: "string",
+            description: "Data URL base64 da foto da carteirinha",
           },
         },
       },
@@ -418,7 +423,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
           type: "object",
           properties: {
             message: { type: "string" },
-            data: { type: "object", additionalProperties: true },
+            data: carterinhaSchema,
             ok: { type: "boolean" },
           },
         },

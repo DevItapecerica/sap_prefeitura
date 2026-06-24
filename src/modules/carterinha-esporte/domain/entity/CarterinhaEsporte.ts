@@ -7,6 +7,7 @@ export default class CarterinhaEsporte {
     public author: string | number,
     public observacao?: string | null,
     public validade_exame?: Date | null,
+    public foto?: string | null,
     public uuid?: string,
     public createdAt?: Date,
     public updatedAt?: Date,

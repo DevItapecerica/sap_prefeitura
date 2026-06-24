@@ -105,6 +105,7 @@ export class FakeCarterinhaRepository {
       1,
       null,
       null,
+      null,
       "cart-1",
     ),
   ];
@@ -153,6 +154,7 @@ export class FakeCreateCarterinhaEsporteUseCase {
       author,
       payload.observacao || null,
       payload.validade_exame ? new Date(payload.validade_exame) : null,
+      payload.foto || null,
       "cart-1",
     );
   }

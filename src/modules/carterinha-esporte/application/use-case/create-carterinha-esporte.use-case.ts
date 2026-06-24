@@ -7,6 +7,7 @@ type CreateCarterinhaEsporteInput = {
   modalidade: string;
   observacao?: string | null;
   validade_exame?: string | Date | null;
+  foto?: string | null;
 };
 
 export default class CreateCarterinhaEsporteUseCase {
@@ -29,6 +30,7 @@ export default class CreateCarterinhaEsporteUseCase {
       author,
       data.observacao || null,
       data.validade_exame ? new Date(data.validade_exame) : null,
+      data.foto || null,
     );
 
     return this.carterinhaRepository.create(carterinha);

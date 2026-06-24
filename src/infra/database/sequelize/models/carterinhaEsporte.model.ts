@@ -20,6 +20,7 @@ interface CarterinhaEsporteDB
   author: string | number;
   observacao: CreationOptional<string | null>;
   validade_exame: CreationOptional<Date | null>;
+  foto: CreationOptional<string | null>;
   createdAt?: CreationOptional<Date>;
   updatedAt?: CreationOptional<Date>;
   deletedAt?: CreationOptional<Date | null>;
@@ -63,6 +64,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       },
       validade_exame: {
         type: dataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
+      foto: {
+        type: dataTypes.TEXT("long"),
         allowNull: true,
         defaultValue: null,
       },

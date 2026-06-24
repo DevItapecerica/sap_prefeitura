@@ -14,6 +14,7 @@ export type AddModalidadeAtletaDto = {
 export type CreateCarteirinhaAtletaDto = {
   observacao?: string | null;
   validade_exame?: string | null;
+  foto?: string | null;
 };
 
 export type QueryAtletaDto = {

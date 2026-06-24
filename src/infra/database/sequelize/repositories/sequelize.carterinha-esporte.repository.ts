@@ -87,6 +87,7 @@ export class SequelizeCarterinhaEsporteRepository
       data.author,
       data.observacao,
       data.validade_exame,
+      data.foto,
       data.uuid,
       data.createdAt,
       data.updatedAt,
