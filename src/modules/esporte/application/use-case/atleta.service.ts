@@ -20,10 +20,6 @@ import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.
 import { IAesCrypt } from "../../../../core/security/aes/AesCrypt.interface.js";
 import { MunicipeMapper } from "../../../municipe/application/mapper/municipe.mapper.js";
 
-const FOTO_DATA_URL_PATTERN =
-  /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
-const FOTO_MAX_BYTES = 1.5 * 1024 * 1024;
-
 export default class AtletaService {
   constructor(
     private atletaRepository: AtletaRepository,
@@ -46,39 +42,6 @@ export default class AtletaService {
     atleta.municipe = await municipeMapper.toDomain(atleta.municipe);
 
     return atleta;
-  }
-
-  private validateCarteirinhaFoto(foto?: string | null): string {
-    const normalizedFoto = String(foto || "").trim();
-
-    if (!normalizedFoto) {
-      throw new AppError(
-        "Foto is required",
-        400,
-        "CARTERINHA_FOTO_REQUIRED",
-      );
-    }
-
-    if (!FOTO_DATA_URL_PATTERN.test(normalizedFoto)) {
-      throw new AppError(
-        "Foto must be a valid jpeg, png or webp data URL",
-        400,
-        "CARTERINHA_FOTO_INVALID",
-      );
-    }
-
-    const base64 = normalizedFoto.split(",", 2)[1] || "";
-    const estimatedBytes = Math.ceil((base64.length * 3) / 4);
-
-    if (estimatedBytes > FOTO_MAX_BYTES) {
-      throw new AppError(
-        "Foto exceeds the maximum allowed size",
-        400,
-        "CARTERINHA_FOTO_TOO_LARGE",
-      );
-    }
-
-    return normalizedFoto;
   }
 
   async createAtleta(
@@ -273,7 +236,7 @@ export default class AtletaService {
         modalidade,
         observacao: data.observacao || null,
         validade_exame: data.validade_exame || null,
-        foto: this.validateCarteirinhaFoto(data.foto),
+        foto: data.foto || null,
       },
       author,
     );

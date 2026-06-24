@@ -4,7 +4,7 @@ import AppError from "../../../../core/appError.js";
 import { makeService } from "./atleta.service.helpers.js";
 
 const FOTO_FIXTURE =
-  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w==";
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 
 test("AtletaService busca, atualiza, remove e cria carterinha", async () => {
   const { service, createCarterinhaUseCase } = makeService();
@@ -54,7 +54,15 @@ test("AtletaService exige foto valida para emitir carterinha", async () => {
   await assert.rejects(
     () =>
       service.createCarteirinha("atl-1", 9, {
-        foto: `data:image/jpeg;base64,${"A".repeat(2.1 * 1024 * 1024)}`,
+        foto: FOTO_FIXTURE.replace("image/png", "image/jpeg"),
+      }),
+    (error: AppError) => error.code === "CARTERINHA_FOTO_INVALID",
+  );
+
+  await assert.rejects(
+    () =>
+      service.createCarteirinha("atl-1", 9, {
+        foto: `data:image/jpeg;base64,${"A".repeat(3 * 1024 * 1024)}`,
       }),
     (error: AppError) => error.code === "CARTERINHA_FOTO_TOO_LARGE",
   );

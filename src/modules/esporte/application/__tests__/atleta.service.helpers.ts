@@ -2,6 +2,7 @@ import AtletaService from "../use-case/atleta.service.js";
 import Atleta from "../../domain/entity/Atleta.js";
 import Municipe from "../../../municipe/domain/entity/Municipe.js";
 import CarterinhaEsporte from "../../../carterinha-esporte/domain/entity/CarterinhaEsporte.js";
+import { CarterinhaEsportePolicy } from "../../../carterinha-esporte/domain/service/carterinhaEsportePolicy.js";
 import Modalidade from "../../domain/entity/Modalidade.js";
 
 export class FakeAtletaRepository {
@@ -142,19 +143,23 @@ export class FakeModalidadeRepository {
 export class FakeCreateCarterinhaEsporteUseCase {
   payload: any = null;
   author: string | number | null = null;
+  policy = new CarterinhaEsportePolicy();
 
   async execute(payload: any, author: string | number) {
-    this.payload = payload;
+    this.payload = {
+      ...payload,
+      foto: this.policy.validateFoto(payload.foto),
+    };
     this.author = author;
     return new CarterinhaEsporte(
       new Date("2026-01-01"),
       new Date("2028-01-01"),
-      payload.municipe_uuid,
-      payload.modalidade,
+      this.payload.municipe_uuid,
+      this.payload.modalidade,
       author,
-      payload.observacao || null,
-      payload.validade_exame ? new Date(payload.validade_exame) : null,
-      payload.foto || null,
+      this.payload.observacao || null,
+      this.payload.validade_exame ? new Date(this.payload.validade_exame) : null,
+      this.payload.foto,
       "cart-1",
     );
   }

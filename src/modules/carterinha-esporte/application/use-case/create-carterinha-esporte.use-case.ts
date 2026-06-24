@@ -22,6 +22,7 @@ export default class CreateCarterinhaEsporteUseCase {
   ): Promise<CarterinhaEsporte> {
     const emissao = new Date();
     const validade = this.policy.calcularValidade(emissao);
+    const foto = this.policy.validateFoto(data.foto);
     const carterinha = new CarterinhaEsporte(
       emissao,
       validade,
@@ -30,7 +31,7 @@ export default class CreateCarterinhaEsporteUseCase {
       author,
       data.observacao || null,
       data.validade_exame ? new Date(data.validade_exame) : null,
-      data.foto || null,
+      foto,
     );
 
     return this.carterinhaRepository.create(carterinha);

@@ -8,7 +8,7 @@ import RenderCarterinhaEsportePdfUseCase from "../use-case/render-carterinha-esp
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
 
 const FOTO_FIXTURE =
-  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w==";
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 
 class FakeCarterinhaRepository implements CarterinhaEsporteRepository {
   carterinha = new CarterinhaEsporte(
