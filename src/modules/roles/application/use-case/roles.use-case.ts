@@ -28,7 +28,7 @@ export default class RolesService {
   createRole = async (role: CreateRoleDto): Promise<Roles> => {
     const newRole = await this.repo.createRoles(role);
 
-    eventBus.emit("ROLE_CREATED", newRole);
+    await eventBus.emit("ROLE_CREATED", newRole);
     this.logger.info("Role criada com sucesso: " + newRole.id);
     return newRole;
   };

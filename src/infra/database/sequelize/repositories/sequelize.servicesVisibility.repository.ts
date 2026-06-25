@@ -26,9 +26,10 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
   async ServiceVisibilityCreate(
     setor_id: number,
     service_id: number,
+    visibility = false,
   ): Promise<ServiceVisibility> {
-    const visibility = await this.model.create({ setor_id, service_id });
-    return this.toEntity(visibility);
+    const created = await this.model.create({ setor_id, service_id, visibility });
+    return this.toEntity(created);
   }
 
   async findVisibilityBySetor(setor_id: number): Promise<ServiceVisibility[]> {

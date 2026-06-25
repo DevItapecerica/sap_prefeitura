@@ -1,4 +1,5 @@
 import { QueryInterface } from "sequelize";
+import { ensureServiceAccessDefaultsForSeed } from "./helpers/service-access-defaults.js";
 
 type ServiceSeed = {
   id: number;
@@ -107,6 +108,8 @@ export default {
           },
         ]);
       }
+
+      await ensureServiceAccessDefaultsForSeed(queryInterface, registro.id);
     }
   },
 

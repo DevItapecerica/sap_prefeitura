@@ -1,15 +1,11 @@
 import { eventBus } from "../../../core/event/index.js";
-import ServicesService from "../../services/application/use-case/services.service.js";
+import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerSetorCreatedHandler = (
-  ServicesService: ServicesService,
+  serviceAccessDefaults: ServiceAccessDefaultsUseCase,
 ) => {
   eventBus.on("SETOR_CREATED", async (setor) => {
-    const data = await ServicesService.getAll({});
-
-    data.services.map(async (sv) => {
-      await ServicesService.ServiceVisibilityCreate(setor.id, sv.id);
-    });
+    await serviceAccessDefaults.ensureForSetor(setor);
   });
 };
 

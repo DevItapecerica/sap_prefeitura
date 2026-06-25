@@ -1,18 +1,7 @@
-import { QueryInterface, QueryTypes } from "sequelize";
+import { QueryInterface } from "sequelize";
+import { ensureServiceAccessDefaultsForSeed } from "./helpers/service-access-defaults.js";
 
 const MUNICIPE_SERVICE_ID = 9;
-
-type RoleRow = {
-  id: number;
-  name: string;
-};
-
-type SetorRow = {
-  id: number;
-};
-
-const isAdminRole = (role: RoleRow) =>
-  role.id === 1 || role.name.toLowerCase() === "admin";
 
 /** @type {import("sequelize-cli").Migration} */
 export default {
@@ -46,78 +35,11 @@ export default {
         );
       }
 
-      const roles = await queryInterface.sequelize.query<RoleRow>(
-        "SELECT id, name FROM roles ORDER BY id",
-        { type: QueryTypes.SELECT, transaction },
+      await ensureServiceAccessDefaultsForSeed(
+        queryInterface,
+        MUNICIPE_SERVICE_ID,
+        { transaction },
       );
-
-      for (const role of roles) {
-        const allowed = isAdminRole(role) ? 1 : 0;
-        const permissionExists = await queryInterface.rawSelect(
-          "permissions",
-          {
-            where: {
-              role_id: role.id,
-              service_id: MUNICIPE_SERVICE_ID,
-            },
-            transaction,
-          },
-          "id",
-        );
-
-        if (!permissionExists) {
-          await queryInterface.bulkInsert(
-            "permissions",
-            [
-              {
-                role_id: role.id,
-                service_id: MUNICIPE_SERVICE_ID,
-                read: allowed,
-                write: allowed,
-                edit: allowed,
-                del: allowed,
-                createdAt: now,
-                updatedAt: now,
-                deletedAt: null,
-              },
-            ],
-            { transaction },
-          );
-        }
-      }
-
-      const setores = await queryInterface.sequelize.query<SetorRow>(
-        "SELECT id FROM setors ORDER BY id",
-        { type: QueryTypes.SELECT, transaction },
-      );
-
-      for (const setor of setores) {
-        const visibilityExists = await queryInterface.rawSelect(
-          "service_visibilities",
-          {
-            where: {
-              setor_id: setor.id,
-              service_id: MUNICIPE_SERVICE_ID,
-            },
-            transaction,
-          },
-          "id",
-        );
-
-        if (!visibilityExists) {
-          await queryInterface.bulkInsert(
-            "service_visibilities",
-            [
-              {
-                setor_id: setor.id,
-                service_id: MUNICIPE_SERVICE_ID,
-                visibility: setor.id === 1 ? 1 : 0,
-              },
-            ],
-            { transaction },
-          );
-        }
-      }
     });
   },
 
