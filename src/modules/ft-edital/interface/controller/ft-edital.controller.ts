@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import {
   FtEditalBolsistaQueryDto,
   FtEditalDto,
+  FtEditalRelatoryQueryDto,
   FtVincularBolsistaDto,
 } from "../../application/dto/ft-edital.dto.js";
 import { makeFtEditalService } from "../../factories/makeFtEditalService.js";
@@ -111,10 +112,13 @@ export class FtEditalController {
   };
 
   static getRelatory = async (
-    request: FastifyRequest<{ Params: { id: string } }>,
+    request: FastifyRequest<{
+      Params: { id: string };
+      Querystring: FtEditalRelatoryQueryDto;
+    }>,
     reply: FastifyReply,
   ) => {
-    const relatory = await service.getRelatory(request.params.id);
+    const relatory = await service.getRelatory(request.params.id, request.query);
 
     return reply
       .status(200)

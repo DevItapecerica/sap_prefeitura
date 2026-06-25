@@ -221,6 +221,13 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
       security,
       summary: "Gerar relatório CSV do edital",
       params: uuidParam,
+      querystring: {
+        type: "object",
+        properties: {
+          data_inicio: { type: "string", format: "date" },
+          data_fim: { type: "string", format: "date" },
+        },
+      },
       response: {
         200: {
           type: "string",
