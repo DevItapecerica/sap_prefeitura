@@ -6,14 +6,6 @@ import { authorizationFactory } from "../../../acess-controll/factory/makeAuthor
 
 const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      3,
-      request.method,
-    );
-  });
   
   const serviceProperties = {
     type: "object",
