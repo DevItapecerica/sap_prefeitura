@@ -19,11 +19,6 @@ export interface FtEditalBolsistaQueryDto {
   search?: string;
 }
 
-export interface FtEditalRelatoryQueryDto {
-  data_inicio?: string;
-  data_fim?: string;
-}
-
 export interface FtVincularBolsistaDto {
   bolsista: string[];
   data_vinculo?: string | Date;

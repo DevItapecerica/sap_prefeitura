@@ -1,9 +1,7 @@
 import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
-
-export type FtRelatorioPeriodo = {
-  data_inicio: string;
-  data_fim: string;
-};
+import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
+import { FtRelatorioPeriodo } from "../../application/dto/ft-relatorio.dto.js";
+import { FtRelatorioBolsista } from "../entities/ft-relatorio.entity.js";
 
 export type FtRelatorioBolsistaRow = {
   bco?: string;
@@ -30,7 +28,7 @@ export type FtRelatorioLocal = {
 };
 
 export type FtRelatorioPagamento = {
-  edital: any;
+  edital: FtEdital;
   periodo: FtRelatorioPeriodo;
   dias_uteis: number;
   locais: FtRelatorioLocal[];
@@ -40,21 +38,20 @@ export type FtRelatorioPagamento = {
 
 export class FtRelatorioPagamentoService {
   execute(
-    bolsistas: any[],
-    edital: any,
+    bolsistas: FtRelatorioBolsista[],
+    edital: FtEdital,
     periodo: FtRelatorioPeriodo,
   ): FtRelatorioPagamento {
-    const editalData = this.toPlain(edital);
     const diasUteis = this.countBusinessDays(
       periodo.data_inicio,
       periodo.data_fim,
     );
-    const valorBruto = Number(editalData.valor_bolsa);
+    const valorBruto = Number(edital.valor_bolsa);
     const valorDiario = diasUteis > 0 ? valorBruto / diasUteis : 0;
     const grouped: Record<string, FtRelatorioBolsistaRow[]> = {};
 
-    for (const bolsistaModel of bolsistas) {
-      const bolsista = this.toPlain(bolsistaModel);
+    for (const relatorioBolsista of bolsistas) {
+      const { bolsista, faltas: bolsistaFaltas } = relatorioBolsista;
 
       if (bolsista.status !== "ativo") continue;
 
@@ -62,7 +59,7 @@ export class FtRelatorioPagamentoService {
         pagador.find((item) => item.id === bolsista.payment_info?.pagador_id)
           ?.name || "SEM LOCAL";
       const faltas = this.countFaltasUteisDistintas(
-        bolsista.faltas || [],
+        bolsistaFaltas,
         periodo,
       );
       const desconto = Math.min(valorBruto, faltas * valorDiario);
@@ -73,15 +70,15 @@ export class FtRelatorioPagamentoService {
       }
 
       grouped[local].push({
-        bco: bolsista.payment_info?.bco,
-        ag: bolsista.payment_info?.ag,
-        dig_ag: bolsista.payment_info?.dig_ag,
-        conta: bolsista.payment_info?.conta,
-        dig_conta: bolsista.payment_info?.dig_conta,
+        bco: bolsista.payment_info?.bco ?? undefined,
+        ag: bolsista.payment_info?.ag ?? undefined,
+        dig_ag: bolsista.payment_info?.dig_ag ?? undefined,
+        conta: bolsista.payment_info?.conta ?? undefined,
+        dig_conta: bolsista.payment_info?.dig_conta ?? undefined,
         nome: bolsista.nome,
         cpf: `${bolsista.cpf}`,
         local,
-        vencimento: this.toDateOnly(editalData.data_vencimento),
+        vencimento: this.toDateOnly(edital.data_vencimento),
         dias_uteis: diasUteis,
         faltas,
         valor_bruto: this.roundCurrency(valorBruto),
@@ -103,7 +100,7 @@ export class FtRelatorioPagamentoService {
     });
 
     return {
-      edital: editalData,
+      edital,
       periodo,
       dias_uteis: diasUteis,
       locais,
@@ -136,13 +133,12 @@ export class FtRelatorioPagamentoService {
   }
 
   private countFaltasUteisDistintas(
-    faltas: any[],
+    faltas: Array<{ data_falta: string | Date }>,
     periodo: FtRelatorioPeriodo,
   ): number {
     const uniqueDates = new Set<string>();
 
-    for (const faltaModel of faltas) {
-      const falta = this.toPlain(faltaModel);
+    for (const falta of faltas) {
       const dataFalta = this.toDateOnly(falta.data_falta);
 
       if (
@@ -168,12 +164,8 @@ export class FtRelatorioPagamentoService {
     return new Date(`${value}T00:00:00.000Z`);
   }
 
-  private toDateOnly(value: any): string {
+  private toDateOnly(value: string | Date): string {
     return new Date(value).toISOString().split("T")[0];
-  }
-
-  private toPlain(data: any) {
-    return data?.toJSON ? data.toJSON() : data;
   }
 
   private roundCurrency(value: number): number {

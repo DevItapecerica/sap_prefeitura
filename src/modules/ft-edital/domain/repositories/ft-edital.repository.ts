@@ -1,7 +1,6 @@
 import {
   FtEditalBolsistaQueryDto,
   FtEditalQueryDto,
-  FtEditalRelatoryQueryDto,
 } from "../../application/dto/ft-edital.dto.js";
 
 export interface FtEditalRepository {
@@ -24,7 +23,6 @@ export interface FtEditalRepository {
     query?: FtEditalBolsistaQueryDto,
     optionWhere?: any,
   ): Promise<number>;
-  findToRelatory(id: string, periodo: Required<FtEditalRelatoryQueryDto>): Promise<any[]>;
   vincularBolsistas(
     edital: any,
     bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,

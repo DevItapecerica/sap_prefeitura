@@ -12,6 +12,7 @@ import chamadosModule from "./modules/chamados/index.js";
 import EsporteModule from "./modules/esporte/index.js";
 import FtEditalModule from "./modules/ft-edital/index.js";
 import FtBolsistaModule from "./modules/ft-bolsista/index.js";
+import FtRelatorioModule from "./modules/ft-relatorio/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(userModule);
@@ -34,6 +35,9 @@ const App: FastifyPluginAsync = async (fastify) => {
 
   await fastify.register(FtBolsistaModule);
   fastify.log.info("FTBolsista Module Registrado");
+
+  await fastify.register(FtRelatorioModule);
+  fastify.log.info("FTRelatorio Module Registrado");
 
   await fastify.register(MunicipeModule);
   fastify.log.info("Municipe Module Registrado");

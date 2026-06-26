@@ -3,22 +3,17 @@ import {
   FtEditalBolsistaQueryDto,
   FtEditalDto,
   FtEditalQueryDto,
-  FtEditalRelatoryQueryDto,
 } from "../dto/ft-edital.dto.js";
 import {
   pagador,
   verifyQuantityPagador,
 } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtEditalRepository } from "../../domain/repositories/ft-edital.repository.js";
-import { FtRelatorioPagamentoService } from "../../domain/services/ft-relatorio-pagamento.service.js";
 import { FtEditalPolicyService } from "../../domain/services/ft-edital-policy.service.js";
-import { FtRelatorioCsvFormatter } from "../formatter/ft-relatorio-csv.formatter.js";
 
 export class FtEditalService {
   constructor(
     private readonly repository: FtEditalRepository,
-    private readonly relatorioPagamentoService = new FtRelatorioPagamentoService(),
-    private readonly relatorioCsvFormatter = new FtRelatorioCsvFormatter(),
     private readonly policy = new FtEditalPolicyService(),
   ) {}
 
@@ -160,29 +155,6 @@ export class FtEditalService {
     ]);
 
     return { bolsistas, count };
-  }
-
-  async getRelatory(id: string, query: FtEditalRelatoryQueryDto = {}) {
-    const edital = await this.repository.findById(id);
-
-    if (!edital) {
-      throw ftError(404, "Edital not found");
-    }
-
-    const periodo = this.policy.resolveRelatoryPeriod(query);
-    const bolsistas = await this.repository.findToRelatory(id, periodo);
-    const relatorio = this.relatorioPagamentoService.execute(
-      bolsistas,
-      edital,
-      periodo,
-    );
-    const csv = this.relatorioCsvFormatter.format(relatorio);
-
-    return {
-      fileName: "relatorio.csv",
-      csv,
-      type: "text/csv; charset=utf-8",
-    };
   }
 
 }

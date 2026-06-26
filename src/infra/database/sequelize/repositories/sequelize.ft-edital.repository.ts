@@ -176,41 +176,6 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     });
   }
 
-  findToRelatory(
-    id: string,
-    periodo: { data_inicio: string; data_fim: string },
-  ) {
-    return db.Bolsistas.findAll({
-      where: { status: "ativo" },
-      order: [["nome", "ASC"]],
-      include: [
-        {
-          model: db.PaymentInfo,
-          as: "payment_info",
-          attributes: { exclude: ["id", "createdAt", "updatedAt"] },
-        },
-        {
-          model: db.BolsistasEdital,
-          as: "bolsistas_edital",
-          where: { edital_id: id, status: "ativo" },
-        },
-        {
-          model: db.BolsistaFalta,
-          as: "faltas",
-          required: false,
-          where: {
-            edital_id: id,
-            data_falta: {
-              [Op.gte]: periodo.data_inicio,
-              [Op.lte]: periodo.data_fim,
-            },
-          },
-        },
-      ],
-      distinct: true,
-    });
-  }
-
   async vincularBolsistas(
     edital: any,
     bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,

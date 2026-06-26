@@ -43,7 +43,6 @@ class FakeFtEditalRepository implements FtEditalRepository {
   public updateCalled = false;
   public destroyCalled = false;
   public vincularBolsistasCalled = false;
-  public relatoryFaltas: any[] = [];
 
   private edital = new FakeModel({
     id: "edital-1",
@@ -131,25 +130,6 @@ class FakeFtEditalRepository implements FtEditalRepository {
 
   async countBolsistasByEdital() {
     return 1;
-  }
-
-  async findToRelatory(_id: string, periodo?: { data_inicio: string; data_fim: string }) {
-    return [
-      new FakeModel({
-        id: "bolsista-1",
-        nome: "Maria",
-        cpf: "52998224725",
-        status: "ativo",
-        payment_info: this.paymentInfo.toJSON(),
-        faltas: this.relatoryFaltas.filter((falta) => {
-          if (!periodo) return true;
-          return (
-            falta.data_falta >= periodo.data_inicio &&
-            falta.data_falta <= periodo.data_fim
-          );
-        }),
-      }),
-    ];
   }
 
   async vincularBolsistas(
@@ -320,40 +300,4 @@ describe("FtEditalService", () => {
     );
   });
 
-  it("gera relatorio csv agrupado por pagador", async () => {
-    const response = await service.getRelatory("edital-1", {
-      data_inicio: "2026-06-01",
-      data_fim: "2026-06-30",
-    });
-
-    assert.equal(response.fileName, "relatorio.csv");
-    assert.match(response.csv, /Local de pagamento: Secretaria de Esporte e Lazer/);
-    assert.match(response.csv, /Maria/);
-  });
-
-  it("desconta faltas proporcionais considerando somente dias uteis", async () => {
-    repository.relatoryFaltas = [
-      { data_falta: "2026-06-01" },
-      { data_falta: "2026-06-01" },
-      { data_falta: "2026-06-06" },
-      { data_falta: "2026-06-08" },
-    ];
-
-    const response = await service.getRelatory("edital-1", {
-      data_inicio: "2026-06-01",
-      data_fim: "2026-06-30",
-    });
-
-    assert.match(response.csv, /dias_uteis;faltas;valor_bruto;desconto;valor_liquido/);
-    assert.match(response.csv, /22;2;1000.00;90.91;909.09/);
-    assert.match(response.csv, /Total do valor geral:;909.09/);
-  });
-
-  it("rejeita periodo parcial no relatorio", async () => {
-    await assertAppError(
-      () => service.getRelatory("edital-1", { data_inicio: "2026-06-01" }),
-      400,
-      "data_inicio e data_fim",
-    );
-  });
 });
