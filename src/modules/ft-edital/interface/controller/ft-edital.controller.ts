@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import {
   FtEditalBolsistaQueryDto,
   FtEditalDto,
+  FtEditalQueryDto,
   FtEditalRelatoryQueryDto,
   FtVincularBolsistaDto,
 } from "../../application/dto/ft-edital.dto.js";
@@ -10,12 +11,15 @@ import { makeFtEditalService } from "../../factories/makeFtEditalService.js";
 const service = makeFtEditalService();
 
 export class FtEditalController {
-  static getEdital = async (_request: FastifyRequest, reply: FastifyReply) => {
-    const edital = await service.allEdital();
+  static getEdital = async (
+    request: FastifyRequest<{ Querystring: FtEditalQueryDto }>,
+    reply: FastifyReply,
+  ) => {
+    const { edital, count } = await service.allEdital(request.query);
 
     return reply
       .status(200)
-      .send({ message: "Edital selecionados com sucesso", edital });
+      .send({ message: "Edital selecionados com sucesso", edital, count });
   };
 
   static getEditalById = async (

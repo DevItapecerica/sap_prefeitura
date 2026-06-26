@@ -19,6 +19,14 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(200).send(data);
   };
 
+  static getBolsistasParaVinculo = async (
+    request: FastifyRequest<{ Querystring: FtBolsistaQueryDto }>,
+    reply: FastifyReply,
+  ) => {
+    const data = await service.getBolsistasParaVinculo(request.query);
+    return reply.status(200).send(data);
+  };
+
   static getOneBolsista = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,

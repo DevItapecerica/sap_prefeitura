@@ -1,10 +1,12 @@
 import {
   FtEditalBolsistaQueryDto,
+  FtEditalQueryDto,
   FtEditalRelatoryQueryDto,
 } from "../../application/dto/ft-edital.dto.js";
 
 export interface FtEditalRepository {
   findAll(): Promise<any[]>;
+  findAndCount(query?: FtEditalQueryDto): Promise<{ count: number; rows: any[] }>;
   findById(id: string): Promise<any | null>;
   create(data: any): Promise<any>;
   update(edital: any, data: any): Promise<any>;

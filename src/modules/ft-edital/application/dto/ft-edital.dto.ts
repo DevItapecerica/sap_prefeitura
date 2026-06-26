@@ -6,6 +6,13 @@ export interface FtEditalDto {
   valor_bolsa: number | string;
 }
 
+export interface FtEditalQueryDto {
+  page?: string | number;
+  limit?: string | number;
+  search?: string;
+  order?: string;
+}
+
 export interface FtEditalBolsistaQueryDto {
   page?: string | number;
   limit?: string | number;

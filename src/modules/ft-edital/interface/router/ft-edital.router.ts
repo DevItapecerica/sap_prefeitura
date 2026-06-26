@@ -92,12 +92,22 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
       tags: tag,
       security,
       summary: "Listar editais",
+      querystring: {
+        type: "object",
+        properties: {
+          page: { type: "string" },
+          limit: { type: "string" },
+          search: { type: "string" },
+          order: { type: "string" },
+        },
+      },
       response: {
         200: {
           type: "object",
           properties: {
             message: { type: "string" },
             edital: { type: "array", items: editalSchema },
+            count: { type: "number" },
           },
         },
         ...errorResponseSchema,

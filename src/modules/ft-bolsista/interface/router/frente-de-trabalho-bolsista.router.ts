@@ -175,6 +175,37 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
 
   fastify.route({
     method: "GET",
+    url: "/vinculo-candidates",
+    schema: {
+      tags: tag,
+      security,
+      summary: "Listar bolsistas elegiveis para vinculo",
+      querystring: {
+        type: "object",
+        properties: {
+          page: { type: "string" },
+          limit: { type: "string" },
+          search: { type: "string" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            ok: { type: "boolean" },
+            count: { type: "number" },
+            bolsistas: { type: "array", items: bolsistaSchema },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FrenteTrabalhoBolsistaController.getBolsistasParaVinculo,
+  });
+
+  fastify.route({
+    method: "GET",
     url: "/toexpire",
     schema: {
       tags: tag,

@@ -2,6 +2,7 @@ import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 import {
   FtEditalBolsistaQueryDto,
   FtEditalDto,
+  FtEditalQueryDto,
   FtEditalRelatoryQueryDto,
 } from "../dto/ft-edital.dto.js";
 import {
@@ -9,10 +10,8 @@ import {
   verifyQuantityPagador,
 } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtEditalRepository } from "../../domain/repositories/ft-edital.repository.js";
-import {
-  FtRelatorioPagamentoService,
-  FtRelatorioPeriodo,
-} from "../../domain/services/ft-relatorio-pagamento.service.js";
+import { FtRelatorioPagamentoService } from "../../domain/services/ft-relatorio-pagamento.service.js";
+import { FtEditalPolicyService } from "../../domain/services/ft-edital-policy.service.js";
 import { FtRelatorioCsvFormatter } from "../formatter/ft-relatorio-csv.formatter.js";
 
 export class FtEditalService {
@@ -20,10 +19,13 @@ export class FtEditalService {
     private readonly repository: FtEditalRepository,
     private readonly relatorioPagamentoService = new FtRelatorioPagamentoService(),
     private readonly relatorioCsvFormatter = new FtRelatorioCsvFormatter(),
+    private readonly policy = new FtEditalPolicyService(),
   ) {}
 
-  async allEdital() {
-    return this.repository.findAll();
+  async allEdital(query: FtEditalQueryDto = {}) {
+    const { count, rows } = await this.repository.findAndCount(query);
+
+    return { edital: rows, count };
   }
 
   async editalById(id: string) {
@@ -42,7 +44,7 @@ export class FtEditalService {
   }
 
   async createEdital(data: FtEditalDto) {
-    this.validateEditalPayload(data);
+    this.policy.validateEditalPayload(data);
 
     return this.repository.create({
       name: data.name,
@@ -54,7 +56,7 @@ export class FtEditalService {
   }
 
   async updateEdital(id: string, data: FtEditalDto) {
-    this.validateEditalPayload(data);
+    this.policy.validateEditalPayload(data);
 
     const edital = await this.repository.findById(id);
 
@@ -69,44 +71,6 @@ export class FtEditalService {
       dia_pagamento: data.dia_pagamento,
       valor_bolsa: data.valor_bolsa,
     });
-  }
-
-  private validateEditalPayload(data: FtEditalDto) {
-    if (!data) {
-      throw ftError(400, "Edital e obrigatorio");
-    }
-
-    const requiredFields = [
-      ["name", "Nome"],
-      ["data_publicacao", "Data de publicacao"],
-      ["data_vencimento", "Data de vencimento"],
-      ["dia_pagamento", "Dia de pagamento"],
-      ["valor_bolsa", "Valor da bolsa"],
-    ];
-
-    const missingFields = requiredFields
-      .filter(([field]) => !String((data as any)[field] ?? "").trim())
-      .map(([, label]) => label);
-
-    if (missingFields.length > 0) {
-      throw ftError(400, `Dados do edital incompletos: ${missingFields.join(", ")}`);
-    }
-
-    if (
-      Number.isNaN(Date.parse(String(data.data_publicacao))) ||
-      Number.isNaN(Date.parse(String(data.data_vencimento)))
-    ) {
-      throw ftError(400, "Datas do edital invalidas");
-    }
-
-    const diaPagamento = Number(data.dia_pagamento);
-    if (!Number.isInteger(diaPagamento) || diaPagamento < 1 || diaPagamento > 31) {
-      throw ftError(400, "Dia de pagamento deve estar entre 1 e 31");
-    }
-
-    if (Number(data.valor_bolsa) <= 0) {
-      throw ftError(400, "Valor da bolsa deve ser maior que zero");
-    }
   }
 
   async deleteEdital(id: string) {
@@ -205,7 +169,7 @@ export class FtEditalService {
       throw ftError(404, "Edital not found");
     }
 
-    const periodo = this.resolveRelatoryPeriod(query);
+    const periodo = this.policy.resolveRelatoryPeriod(query);
     const bolsistas = await this.repository.findToRelatory(id, periodo);
     const relatorio = this.relatorioPagamentoService.execute(
       bolsistas,
@@ -221,45 +185,4 @@ export class FtEditalService {
     };
   }
 
-  private resolveRelatoryPeriod(
-    query: FtEditalRelatoryQueryDto,
-  ): FtRelatorioPeriodo {
-    const hasInicio = Boolean(String(query.data_inicio || "").trim());
-    const hasFim = Boolean(String(query.data_fim || "").trim());
-
-    if (hasInicio !== hasFim) {
-      throw ftError(400, "data_inicio e data_fim devem ser informadas juntas");
-    }
-
-    if (!hasInicio && !hasFim) {
-      const now = new Date();
-      const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-      const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
-
-      return {
-        data_inicio: this.toDateOnly(firstDay),
-        data_fim: this.toDateOnly(lastDay),
-      };
-    }
-
-    if (
-      Number.isNaN(Date.parse(String(query.data_inicio))) ||
-      Number.isNaN(Date.parse(String(query.data_fim)))
-    ) {
-      throw ftError(400, "Periodo do relatorio invalido");
-    }
-
-    const dataInicio = this.toDateOnly(query.data_inicio);
-    const dataFim = this.toDateOnly(query.data_fim);
-
-    if (dataInicio > dataFim) {
-      throw ftError(400, "data_inicio deve ser menor ou igual a data_fim");
-    }
-
-    return { data_inicio: dataInicio, data_fim: dataFim };
-  }
-
-  private toDateOnly(value: any): string {
-    return new Date(value).toISOString().split("T")[0];
-  }
 }

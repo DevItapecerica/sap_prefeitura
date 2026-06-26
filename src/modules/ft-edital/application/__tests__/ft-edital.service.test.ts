@@ -76,6 +76,15 @@ class FakeFtEditalRepository implements FtEditalRepository {
     return [this.edital];
   }
 
+  async findAndCount(query: any = {}) {
+    const rows =
+      query.search && !String(this.edital.get("name")).includes(query.search)
+        ? []
+        : [this.edital];
+
+    return { count: rows.length, rows };
+  }
+
   async findById() {
     if (this.missingEdital) return null;
     this.edital.set("status", this.editalInativo ? "inativo" : "ativo");
@@ -187,6 +196,13 @@ describe("FtEditalService", () => {
     const response = await service.createEdital(validEditalPayload());
 
     assert.equal(response.get("name"), "Edital 1");
+  });
+
+  it("lista editais com busca e total", async () => {
+    const response = await service.allEdital({ search: "Edital" });
+
+    assert.equal(response.count, 1);
+    assert.equal(response.edital.length, 1);
   });
 
   it("atualiza edital valido", async () => {

@@ -44,6 +44,8 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public missingEdital = false;
   public missingVinculo = false;
   public inactiveBolsista = false;
+  public inactiveEdital = false;
+  public vinculoStatus = "ativo";
   public activeQuantityByPagador = 0;
   public createWithPaymentInfoCalled = false;
   public updateWithPaymentInfoCalled = false;
@@ -126,6 +128,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     return { count: 1, rows: [this.bolsista] };
   }
 
+  async findAndCountVinculoCandidates() {
+    return { count: 1, rows: [this.bolsista] };
+  }
+
   async countActiveByPagador() {
     return this.activeQuantityByPagador;
   }
@@ -139,10 +145,12 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   }
 
   async findEditalById() {
+    this.edital.set("status", this.inactiveEdital ? "inativo" : "ativo");
     return this.missingEdital ? null : this.edital;
   }
 
   async findVinculo() {
+    this.vinculo.set("status", this.vinculoStatus);
     return this.missingVinculo ? null : this.vinculo;
   }
 
@@ -357,6 +365,64 @@ describe("FtBolsistaService", () => {
     assert.equal(response.ok, true);
     assert.equal(repository.createFaltaPayload.bolsista_id, "bolsista-1");
   });
+
+  it("lista bolsistas elegiveis para vinculo", async () => {
+    const response = await service.getBolsistasParaVinculo({ search: "Maria" });
+
+    assert.equal(response.ok, true);
+    assert.equal(response.count, 1);
+    assert.equal(response.bolsistas.length, 1);
+  });
+
+  it("rejeita falta em edital inativo", async () => {
+    repository.inactiveEdital = true;
+
+    await assertAppError(
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
+      400,
+      "Edital inativo",
+    );
+
+    assert.equal(repository.createFaltaPayload, null);
+  });
+
+  it("rejeita falta sem vinculo entre bolsista e edital", async () => {
+    repository.missingVinculo = true;
+
+    await assertAppError(
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
+      404,
+      "Vinculo entre bolsista e edital nao encontrado",
+    );
+
+    assert.equal(repository.createFaltaPayload, null);
+  });
+
+  for (const status of ["inativo", "cancelado", "concluido", "expirado"]) {
+    it(`rejeita falta com vinculo ${status}`, async () => {
+      repository.vinculoStatus = status;
+
+      await assertAppError(
+        () =>
+          service.createFalta("bolsista-1", {
+            edital_id: "edital-1",
+            data_falta: "2026-06-09",
+          }),
+        400,
+        "Bolsista inativo neste edital",
+      );
+
+      assert.equal(repository.createFaltaPayload, null);
+    });
+  }
 
   it("rejeita falta com data invalida", async () => {
     await assertAppError(

@@ -19,6 +19,9 @@ export interface FtBolsistaRepository {
     paymentInfoData: any,
   ): Promise<any>;
   findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
+  findAndCountVinculoCandidates(
+    query?: FtBolsistaQueryDto,
+  ): Promise<{ count: number; rows: any[] }>;
   countActiveByPagador(pagadorId: string): Promise<number>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;

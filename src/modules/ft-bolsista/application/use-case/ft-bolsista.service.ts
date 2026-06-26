@@ -13,9 +13,13 @@ import {
   verifyQuantityPagador,
 } from "../utils/pagador.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
+import { FtBolsistaPolicyService } from "../../domain/services/ft-bolsista-policy.service.js";
 
 export class FtBolsistaService {
-  constructor(private readonly repository: FtBolsistaRepository) {}
+  constructor(
+    private readonly repository: FtBolsistaRepository,
+    private readonly policy = new FtBolsistaPolicyService(),
+  ) {}
 
   async getBolsistaById(id: string) {
     const bolsista = await this.repository.findById(id);
@@ -52,8 +56,22 @@ export class FtBolsistaService {
     };
   }
 
+  async getBolsistasParaVinculo(query: FtBolsistaQueryDto = {}) {
+    const { count, rows } = await this.repository.findAndCountVinculoCandidates(
+      query,
+    );
+
+    return {
+      code: 200,
+      bolsistas: rows,
+      count,
+      message: "Bolsistas para vinculo retrieved successfully",
+      ok: true,
+    };
+  }
+
   async saveBolsista(data: FtBolsistaDto, id?: string) {
-    this.validateBolsistaPayload(data);
+    this.policy.validateBolsistaPayload(data);
 
     if (!isValidCpf(data?.cpf)) {
       throw ftError(400, "CPF invalido");
@@ -69,7 +87,7 @@ export class FtBolsistaService {
   async createBolsista(data: FtBolsistaDto) {
     const paymentInfo = data?.payment_info;
 
-    this.validatePaymentInfo(paymentInfo);
+    this.policy.validatePaymentInfo(paymentInfo);
 
     verifyPagador(paymentInfo.pagador_id);
 
@@ -114,7 +132,7 @@ export class FtBolsistaService {
     const { bolsista } = await this.getBolsistaById(id);
     const paymentInfo = data?.payment_info;
 
-    this.validatePaymentInfo(paymentInfo);
+    this.policy.validatePaymentInfo(paymentInfo);
 
     const selectedPagador = verifyPagador(paymentInfo.pagador_id);
 
@@ -158,61 +176,6 @@ export class FtBolsistaService {
         pagador_id: paymentInfo.pagador_id,
       },
     );
-  }
-
-  private validateBolsistaPayload(data: FtBolsistaDto) {
-    if (!data) {
-      throw ftError(400, "Bolsista e obrigatorio");
-    }
-
-    const requiredFields = [
-      ["nome", "Nome"],
-      ["cpf", "CPF"],
-      ["local", "Local"],
-      ["cep", "CEP"],
-      ["numero", "Numero"],
-      ["logradouro", "Logradouro"],
-      ["bairro", "Bairro"],
-      ["cidade", "Cidade"],
-      ["uf", "UF"],
-    ];
-
-    const missingFields = requiredFields
-      .filter(([field]) => !String((data as any)[field] ?? "").trim())
-      .map(([, label]) => label);
-
-    if (missingFields.length > 0) {
-      throw ftError(
-        400,
-        `Dados do bolsista incompletos: ${missingFields.join(", ")}`,
-      );
-    }
-  }
-
-  private validatePaymentInfo(paymentInfo: any) {
-    if (!paymentInfo) {
-      throw ftError(400, "Dados bancarios sao obrigatorios");
-    }
-
-    const requiredFields = [
-      ["pagador_id", "Pagador"],
-      ["bco", "Banco"],
-      ["ag", "Agencia"],
-      ["dig_ag", "Digito da agencia"],
-      ["conta", "Conta"],
-      ["dig_conta", "Digito da conta"],
-    ];
-
-    const missingFields = requiredFields
-      .filter(([field]) => !String(paymentInfo[field] ?? "").trim())
-      .map(([, label]) => label);
-
-    if (missingFields.length > 0) {
-      throw ftError(
-        400,
-        `Dados bancarios incompletos: ${missingFields.join(", ")}`,
-      );
-    }
   }
 
   async deleteBolsista(id: string) {
@@ -335,6 +298,8 @@ export class FtBolsistaService {
     if (!vinculo) {
       throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
     }
+
+    this.policy.ensureCanCreateFalta(edital, vinculo);
 
     const falta = await this.repository.createFalta({
       bolsista_id: bolsistaId,

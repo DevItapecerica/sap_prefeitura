@@ -103,6 +103,37 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  findAndCountVinculoCandidates(query: FtBolsistaQueryDto = {}) {
+    const { page = "0", limit = "10", search = "" } = query;
+    const offset = Number(page) * Number(limit);
+    const where: any = {
+      status: { [Op.notIn]: ["ativo", "pendente"] },
+    };
+
+    if (search) {
+      where[Op.or] = [
+        { nome: { [Op.like]: `%${search}%` } },
+        { cpf: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    return db.Bolsistas.findAndCountAll({
+      where,
+      offset,
+      limit: Number(limit),
+      order: [["nome", "ASC"]],
+      include: [
+        {
+          model: db.PaymentInfo,
+          as: "payment_info",
+          required: true,
+          attributes: { exclude: ["bolsista_id"] },
+        },
+      ],
+      distinct: true,
+    });
+  }
+
   countActiveByPagador(pagadorId: string) {
     return db.Bolsistas.count({
       where: { status: "ativo" },
