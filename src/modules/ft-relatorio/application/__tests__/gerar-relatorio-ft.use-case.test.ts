@@ -68,6 +68,13 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
       ),
     ];
   }
+
+  async findBolsistasFaltasByEditalMes(
+    id: string,
+    periodo: FtRelatorioPeriodo,
+  ) {
+    return this.findBolsistasByEditalPeriodo(id, periodo);
+  }
 }
 
 const falta = (dataFalta: string) =>

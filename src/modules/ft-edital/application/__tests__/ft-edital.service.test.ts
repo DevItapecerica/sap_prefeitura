@@ -43,6 +43,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
   public updateCalled = false;
   public destroyCalled = false;
   public vincularBolsistasCalled = false;
+  public vinculoStatuses: string[] = [];
 
   private edital = new FakeModel({
     id: "edital-1",
@@ -130,6 +131,16 @@ class FakeFtEditalRepository implements FtEditalRepository {
 
   async countBolsistasByEdital() {
     return 1;
+  }
+
+  async findVinculosByBolsistaEdital() {
+    return this.vinculoStatuses.map(
+      (status, index) =>
+        new FakeModel({
+          id: `vinculo-${index}`,
+          status,
+        }),
+    );
   }
 
   async vincularBolsistas(
@@ -253,6 +264,28 @@ describe("FtEditalService", () => {
 
     assert.equal(repository.vincularBolsistasCalled, true);
   });
+
+  it("permite novo vinculo quando historico do par esta cancelado", async () => {
+    repository.vinculoStatuses = ["cancelado"];
+
+    await service.vincularBolsista("edital-1", ["bolsista-1"], "2026-06-09");
+
+    assert.equal(repository.vincularBolsistasCalled, true);
+  });
+
+  for (const status of ["ativo", "inativo", "concluido", "expirado"]) {
+    it(`rejeita novo vinculo quando historico do par esta ${status}`, async () => {
+      repository.vinculoStatuses = [status];
+
+      await assertAppError(
+        () => service.vincularBolsista("edital-1", ["bolsista-1"], "2026-06-09"),
+        403,
+        "Bolsista ja vinculado a este edital",
+      );
+
+      assert.equal(repository.vincularBolsistasCalled, false);
+    });
+  }
 
   it("rejeita edital inativo ao vincular", async () => {
     repository.editalInativo = true;

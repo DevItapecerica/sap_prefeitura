@@ -23,6 +23,10 @@ export interface FtEditalRepository {
     query?: FtEditalBolsistaQueryDto,
     optionWhere?: any,
   ): Promise<number>;
+  findVinculosByBolsistaEdital(
+    bolsistaId: string,
+    editalId: string,
+  ): Promise<any[]>;
   vincularBolsistas(
     edital: any,
     bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,

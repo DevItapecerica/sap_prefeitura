@@ -8,4 +8,8 @@ export interface FtRelatorioRepository {
     id: string,
     periodo: FtRelatorioPeriodo,
   ): Promise<FtRelatorioBolsista[]>;
+  findBolsistasFaltasByEditalMes(
+    id: string,
+    periodo: FtRelatorioPeriodo,
+  ): Promise<FtRelatorioBolsista[]>;
 }

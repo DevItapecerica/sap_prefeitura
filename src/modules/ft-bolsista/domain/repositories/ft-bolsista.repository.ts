@@ -31,6 +31,11 @@ export interface FtBolsistaRepository {
     editalId: string,
     status?: string,
   ): Promise<any | null>;
+  findFaltaByBolsistaEditalData(
+    bolsistaId: string,
+    editalId: string,
+    dataFalta: string | Date,
+  ): Promise<any | null>;
   destroyBolsista(bolsista: any): Promise<void>;
   cancelVinculo(bolsista: any, vinculo: any): Promise<void>;
   prorrogateVinculos(vinculos: any[]): Promise<void>;

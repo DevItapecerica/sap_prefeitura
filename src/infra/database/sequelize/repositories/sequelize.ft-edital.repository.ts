@@ -176,14 +176,27 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     });
   }
 
+  findVinculosByBolsistaEdital(bolsistaId: string, editalId: string) {
+    return db.BolsistasEdital.findAll({
+      where: {
+        bolsista_id: bolsistaId,
+        edital_id: editalId,
+      },
+      paranoid: false,
+    });
+  }
+
   async vincularBolsistas(
     edital: any,
     bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
   ) {
     await db.sequelize.transaction(async (transaction: any) => {
       for (const item of bolsistas) {
-        await edital.addBolsista(item.bolsista, {
-          through: { data_vinculo: item.data_vinculo },
+        await db.BolsistasEdital.create({
+          edital_id: edital.get("id"),
+          bolsista_id: item.bolsista.get("id"),
+          data_vinculo: item.data_vinculo,
+        }, {
           transaction,
         });
 

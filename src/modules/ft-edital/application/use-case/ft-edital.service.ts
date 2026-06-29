@@ -10,11 +10,13 @@ import {
 } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtEditalRepository } from "../../domain/repositories/ft-edital.repository.js";
 import { FtEditalPolicyService } from "../../domain/services/ft-edital-policy.service.js";
+import { FtVinculoPolicyService } from "../../domain/services/ft-vinculo-policy.service.js";
 
 export class FtEditalService {
   constructor(
     private readonly repository: FtEditalRepository,
     private readonly policy = new FtEditalPolicyService(),
+    private readonly vinculoPolicy = new FtVinculoPolicyService(),
   ) {}
 
   async allEdital(query: FtEditalQueryDto = {}) {
@@ -97,9 +99,7 @@ export class FtEditalService {
       throw ftError(404, "Edital not found");
     }
 
-    if (edital.get("status") === "inativo") {
-      throw ftError(400, "Edital inativo");
-    }
+    this.vinculoPolicy.ensureEditalAtivo(edital);
 
     const vinculos = [];
 
@@ -113,6 +113,10 @@ export class FtEditalService {
       if (!bolsista) {
         throw ftError(404, "Bolsista not found");
       }
+
+      const vinculosDoPar =
+        await this.repository.findVinculosByBolsistaEdital(bolsistaId, id);
+      this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar);
 
       if (
         bolsista.get("status") === "pendente" ||

@@ -16,6 +16,20 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
   }
 
   async findBolsistasByEditalPeriodo(id: string, periodo: FtRelatorioPeriodo) {
+    return this.findBolsistasComFaltasNoPeriodo(id, periodo);
+  }
+
+  async findBolsistasFaltasByEditalMes(
+    id: string,
+    periodo: FtRelatorioPeriodo,
+  ) {
+    return this.findBolsistasComFaltasNoPeriodo(id, periodo);
+  }
+
+  private async findBolsistasComFaltasNoPeriodo(
+    id: string,
+    periodo: FtRelatorioPeriodo,
+  ) {
     const bolsistas = await db.Bolsistas.findAll({
       where: { status: "ativo" },
       order: [["nome", "ASC"]],

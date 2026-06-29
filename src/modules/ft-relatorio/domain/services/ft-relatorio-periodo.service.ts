@@ -1,5 +1,6 @@
 import AppError from "../../../../core/appError.js";
 import {
+  FtRelatorioFaltasQueryDto,
   FtRelatorioPeriodo,
   FtRelatorioQueryDto,
 } from "../../application/dto/ft-relatorio.dto.js";
@@ -44,11 +45,37 @@ export class FtRelatorioPeriodoService {
     return { data_inicio: dataInicio, data_fim: dataFim };
   }
 
+  resolveMonth(query: FtRelatorioFaltasQueryDto = {}): FtRelatorioPeriodo {
+    const month = String(query.mes || "").trim();
+
+    if (!month) {
+      const now = new Date();
+      return this.monthToPeriod(now.getUTCFullYear(), now.getUTCMonth() + 1);
+    }
+
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+      throw ftError(400, "mes deve estar no formato YYYY-MM");
+    }
+
+    const [year, monthNumber] = month.split("-").map(Number);
+    return this.monthToPeriod(year, monthNumber);
+  }
+
   private toDateOnly(value: any): string {
     if (value instanceof Date) {
       return value.toISOString().slice(0, 10);
     }
 
     return String(value).slice(0, 10);
+  }
+
+  private monthToPeriod(year: number, month: number): FtRelatorioPeriodo {
+    const firstDay = new Date(Date.UTC(year, month - 1, 1));
+    const lastDay = new Date(Date.UTC(year, month, 0));
+
+    return {
+      data_inicio: this.toDateOnly(firstDay),
+      data_fim: this.toDateOnly(lastDay),
+    };
   }
 }

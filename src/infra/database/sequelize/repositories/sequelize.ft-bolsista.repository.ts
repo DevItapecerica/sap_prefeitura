@@ -197,6 +197,20 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  findFaltaByBolsistaEditalData(
+    bolsistaId: string,
+    editalId: string,
+    dataFalta: string | Date,
+  ) {
+    return db.BolsistaFalta.findOne({
+      where: {
+        bolsista_id: bolsistaId,
+        edital_id: editalId,
+        data_falta: dataFalta,
+      },
+    });
+  }
+
   async destroyBolsista(bolsista: any) {
     await bolsista.destroy();
   }
