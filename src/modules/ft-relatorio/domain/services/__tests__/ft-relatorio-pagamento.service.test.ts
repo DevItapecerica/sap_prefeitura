@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { pagador } from "../../../../ft-bolsista/application/utils/pagador.js";
 import { FtRelatorioPagamentoService } from "../ft-relatorio-pagamento.service.js";
-import { FtRelatorioBolsista } from "../../entities/ft-relatorio.entity.js";
+import {
+  FtRelatorioBolsista,
+  FtRelatorioVinculo,
+} from "../../entities/ft-relatorio.entity.js";
 import { FtEdital } from "../../../../ft-edital/domain/entity/FtEdital.js";
 import { FtBolsista } from "../../../../ft-bolsista/domain/entity/FtBolsista.js";
 import { FtPaymentInfo } from "../../../../ft-bolsista/domain/entity/FtPaymentInfo.js";
@@ -27,6 +30,7 @@ const bolsista = (
   nome: string,
   cpf: string,
   faltas: FtBolsistaFalta[],
+  vinculos: FtRelatorioVinculo[] = [],
 ) =>
   new FtRelatorioBolsista(
     new FtBolsista(
@@ -45,6 +49,7 @@ const bolsista = (
       id,
     ),
     faltas,
+    vinculos,
   );
 
 const falta = (dataFalta: string) =>
@@ -97,4 +102,85 @@ test("FtRelatorioPagamentoService limita valor liquido a zero", () => {
   assert.equal(row.faltas, 5);
   assert.equal(row.desconto, 100);
   assert.equal(row.valor_liquido, 0);
+});
+
+test("FtRelatorioPagamentoService calcula proporcional por inicio e fim operacional do vinculo", () => {
+  const service = new FtRelatorioPagamentoService();
+  const relatorio = service.execute(
+    [
+      bolsista(
+        "bolsista-3",
+        "Ana",
+        "11122233344",
+        [
+          falta("2026-06-10"),
+          falta("2026-06-20"),
+          falta("2026-06-22"),
+        ],
+        [
+          new FtRelatorioVinculo(
+            "cancelado",
+            "2026-06-08",
+            "2027-06-08",
+            "2026-06-19",
+          ),
+        ],
+      ),
+    ],
+    edital("1000.00"),
+    { data_inicio: "2026-06-01", data_fim: "2026-06-30" },
+  );
+
+  const row = relatorio.locais[0].rows[0];
+
+  assert.equal(relatorio.dias_uteis, 22);
+  assert.equal(row.dias_uteis, 10);
+  assert.equal(row.faltas, 1);
+  assert.equal(row.valor_bruto, 1000);
+  assert.equal(row.desconto, 590.91);
+  assert.equal(row.valor_liquido, 409.09);
+  assert.equal(relatorio.total_valor, 409.09);
+});
+
+test("FtRelatorioPagamentoService soma multiplas janelas de vinculo sem contar fim de semana", () => {
+  const service = new FtRelatorioPagamentoService();
+  const relatorio = service.execute(
+    [
+      bolsista(
+        "bolsista-4",
+        "Carlos",
+        "99988877766",
+        [
+          falta("2026-06-04"),
+          falta("2026-06-12"),
+          falta("2026-06-15"),
+        ],
+        [
+          new FtRelatorioVinculo(
+            "cancelado",
+            "2026-06-03",
+            "2027-06-03",
+            "2026-06-05",
+          ),
+          new FtRelatorioVinculo(
+            "expirado",
+            "2026-06-10",
+            "2026-06-12",
+            null,
+            null,
+            "2026-06-12",
+          ),
+        ],
+      ),
+    ],
+    edital("1000.00"),
+    { data_inicio: "2026-06-01", data_fim: "2026-06-30" },
+  );
+
+  const row = relatorio.locais[0].rows[0];
+
+  assert.equal(row.dias_uteis, 6);
+  assert.equal(row.faltas, 2);
+  assert.equal(row.desconto, 818.18);
+  assert.equal(row.valor_liquido, 181.82);
 });

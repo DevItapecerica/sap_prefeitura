@@ -1,7 +1,10 @@
 import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
 import { FtRelatorioPeriodo } from "../../application/dto/ft-relatorio.dto.js";
-import { FtRelatorioBolsista } from "../entities/ft-relatorio.entity.js";
+import {
+  FtRelatorioBolsista,
+  FtRelatorioVinculo,
+} from "../entities/ft-relatorio.entity.js";
 
 export type FtRelatorioBolsistaRow = {
   bco?: string;
@@ -53,16 +56,23 @@ export class FtRelatorioPagamentoService {
     for (const relatorioBolsista of bolsistas) {
       const { bolsista, faltas: bolsistaFaltas } = relatorioBolsista;
 
-      if (bolsista.status !== "ativo") continue;
-
       const local =
         pagador.find((item) => item.id === bolsista.payment_info?.pagador_id)
           ?.name || "SEM LOCAL";
+      const diasTrabalhados = this.countDiasUteisTrabalhados(
+        relatorioBolsista,
+        periodo,
+      );
       const faltas = this.countFaltasUteisDistintas(
+        relatorioBolsista,
         bolsistaFaltas,
         periodo,
       );
-      const desconto = Math.min(valorBruto, faltas * valorDiario);
+      const diasSemVinculo = Math.max(0, diasUteis - diasTrabalhados);
+      const desconto = Math.min(
+        valorBruto,
+        (diasSemVinculo + faltas) * valorDiario,
+      );
       const valorLiquido = Math.max(0, valorBruto - desconto);
 
       if (!grouped[local]) {
@@ -79,7 +89,7 @@ export class FtRelatorioPagamentoService {
         cpf: `${bolsista.cpf}`,
         local,
         vencimento: this.toDateOnly(edital.data_vencimento),
-        dias_uteis: diasUteis,
+        dias_uteis: diasTrabalhados,
         faltas,
         valor_bruto: this.roundCurrency(valorBruto),
         desconto: this.roundCurrency(desconto),
@@ -133,6 +143,7 @@ export class FtRelatorioPagamentoService {
   }
 
   private countFaltasUteisDistintas(
+    relatorioBolsista: FtRelatorioBolsista,
     faltas: Array<{ data_falta: string | Date }>,
     periodo: FtRelatorioPeriodo,
   ): number {
@@ -144,7 +155,8 @@ export class FtRelatorioPagamentoService {
       if (
         dataFalta < periodo.data_inicio ||
         dataFalta > periodo.data_fim ||
-        !this.isBusinessDay(this.parseDateOnly(dataFalta))
+        !this.isBusinessDay(this.parseDateOnly(dataFalta)) ||
+        !this.isDiaTrabalhado(relatorioBolsista, dataFalta)
       ) {
         continue;
       }
@@ -153,6 +165,65 @@ export class FtRelatorioPagamentoService {
     }
 
     return uniqueDates.size;
+  }
+
+  private countDiasUteisTrabalhados(
+    relatorioBolsista: FtRelatorioBolsista,
+    periodo: FtRelatorioPeriodo,
+  ): number {
+    const start = this.parseDateOnly(periodo.data_inicio);
+    const end = this.parseDateOnly(periodo.data_fim);
+    let total = 0;
+
+    for (
+      const current = new Date(start);
+      current.getTime() <= end.getTime();
+      current.setUTCDate(current.getUTCDate() + 1)
+    ) {
+      const data = current.toISOString().slice(0, 10);
+
+      if (
+        this.isBusinessDay(current) &&
+        this.isDiaTrabalhado(relatorioBolsista, data)
+      ) {
+        total += 1;
+      }
+    }
+
+    return total;
+  }
+
+  private isDiaTrabalhado(
+    relatorioBolsista: FtRelatorioBolsista,
+    data: string,
+  ): boolean {
+    if (!relatorioBolsista.vinculos.length) {
+      return true;
+    }
+
+    return relatorioBolsista.vinculos.some((vinculo) =>
+      this.isDentroDoVinculo(data, vinculo),
+    );
+  }
+
+  private isDentroDoVinculo(
+    data: string,
+    vinculo: FtRelatorioVinculo,
+  ): boolean {
+    const inicio = this.toDateOnly(vinculo.data_vinculo);
+    const fim = this.getFimOperacional(vinculo);
+
+    return data >= inicio && (!fim || data <= fim);
+  }
+
+  private getFimOperacional(vinculo: FtRelatorioVinculo): string | null {
+    const fim =
+      vinculo.canceled_at ||
+      vinculo.concluded_at ||
+      vinculo.expired_at ||
+      vinculo.expire_at;
+
+    return fim ? this.toDateOnly(fim) : null;
   }
 
   private isBusinessDay(date: Date): boolean {
@@ -165,7 +236,9 @@ export class FtRelatorioPagamentoService {
   }
 
   private toDateOnly(value: string | Date): string {
-    return new Date(value).toISOString().split("T")[0];
+    return value instanceof Date
+      ? value.toISOString().slice(0, 10)
+      : String(value).slice(0, 10);
   }
 
   private roundCurrency(value: number): number {

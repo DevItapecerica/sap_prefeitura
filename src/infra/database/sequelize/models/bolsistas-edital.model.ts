@@ -47,6 +47,18 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         type: dataTypes.DATE,
         allowNull: true,
       },
+      canceled_at: {
+        type: dataTypes.DATE,
+        allowNull: true,
+      },
+      concluded_at: {
+        type: dataTypes.DATE,
+        allowNull: true,
+      },
+      expired_at: {
+        type: dataTypes.DATE,
+        allowNull: true,
+      },
       prorrogated: {
         type: dataTypes.BOOLEAN,
         allowNull: false,

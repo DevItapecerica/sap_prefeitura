@@ -38,6 +38,7 @@ export class FtListaPresencaCsvFormatter {
       let totalFaltas = 0;
       const marcacoes = dias.map((dia) => {
         if (this.isWeekend(dia)) return "";
+        if (!this.isDiaTrabalhado(item, dia)) return "";
 
         if (faltas.has(dia)) {
           totalFaltas += 1;
@@ -62,6 +63,29 @@ export class FtListaPresencaCsvFormatter {
     return rows.map((row) => row.map((cell) => this.formatCell(cell)).join(";")).join("\n");
   }
 
+  private isDiaTrabalhado(item: FtRelatorioBolsista, dia: string): boolean {
+    if (!item.vinculos.length) {
+      return true;
+    }
+
+    return item.vinculos.some((vinculo) => {
+      const inicio = this.toDateOnly(vinculo.data_vinculo);
+      const fim = this.getFimOperacional(vinculo);
+
+      return dia >= inicio && (!fim || dia <= fim);
+    });
+  }
+
+  private getFimOperacional(vinculo: FtRelatorioBolsista["vinculos"][number]) {
+    const fim =
+      vinculo.canceled_at ||
+      vinculo.concluded_at ||
+      vinculo.expired_at ||
+      vinculo.expire_at;
+
+    return fim ? this.toDateOnly(fim) : null;
+  }
+
   private daysInPeriod(periodo: FtRelatorioPeriodo): string[] {
     const start = new Date(`${periodo.data_inicio}T00:00:00.000Z`);
     const end = new Date(`${periodo.data_fim}T00:00:00.000Z`);
@@ -84,7 +108,9 @@ export class FtListaPresencaCsvFormatter {
   }
 
   private toDateOnly(value: string | Date): string {
-    return String(value).slice(0, 10);
+    return value instanceof Date
+      ? value.toISOString().slice(0, 10)
+      : String(value).slice(0, 10);
   }
 
   private isWeekend(value: string): boolean {

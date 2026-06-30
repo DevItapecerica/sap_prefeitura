@@ -15,7 +15,17 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
           as: "bolsistas",
           through: {
             where: { status: "ativo" },
-            attributes: ["id", "bolsista_id", "edital_id", "status"],
+            attributes: [
+              "id",
+              "bolsista_id",
+              "edital_id",
+              "status",
+              "data_vinculo",
+              "expire_at",
+              "canceled_at",
+              "concluded_at",
+              "expired_at",
+            ],
           },
         },
       ],
@@ -47,7 +57,10 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
         const vinculo = bolsista.get("BolsistasEdital");
 
         if (vinculo) {
-          vinculo.set("status", "concluido");
+          vinculo.set({
+            status: "concluido",
+            concluded_at: new Date(),
+          });
           await vinculo.save({ transaction });
           vinculosUpdated += 1;
         }
@@ -74,7 +87,10 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
         await bolsista.save({ transaction });
       }
 
-      vinculo.set("status", "expirado");
+      vinculo.set({
+        status: "expirado",
+        expired_at: new Date(),
+      });
       await vinculo.save({ transaction });
 
       return {

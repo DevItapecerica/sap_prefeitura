@@ -9,6 +9,8 @@ const ftError = (statusCode: number, message: string) =>
   new AppError(message, statusCode, "FT_MS");
 
 export class FtRelatorioPeriodoService {
+  constructor(private readonly nowProvider = () => new Date()) {}
+
   resolve(query: FtRelatorioQueryDto = {}): FtRelatorioPeriodo {
     const hasInicio = Boolean(String(query.data_inicio || "").trim());
     const hasFim = Boolean(String(query.data_fim || "").trim());
@@ -18,7 +20,7 @@ export class FtRelatorioPeriodoService {
     }
 
     if (!hasInicio && !hasFim) {
-      const now = new Date();
+      const now = this.nowProvider();
       const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
       const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
 
@@ -58,7 +60,20 @@ export class FtRelatorioPeriodoService {
     }
 
     const [year, monthNumber] = month.split("-").map(Number);
+
+    if (this.isFutureMonth(year, monthNumber)) {
+      throw ftError(400, "Nao e permitido gerar relatorio para mes futuro");
+    }
+
     return this.monthToPeriod(year, monthNumber);
+  }
+
+  private isFutureMonth(year: number, month: number): boolean {
+    const now = this.nowProvider();
+    const currentYear = now.getUTCFullYear();
+    const currentMonth = now.getUTCMonth() + 1;
+
+    return year > currentYear || (year === currentYear && month > currentMonth);
   }
 
   private toDateOnly(value: any): string {

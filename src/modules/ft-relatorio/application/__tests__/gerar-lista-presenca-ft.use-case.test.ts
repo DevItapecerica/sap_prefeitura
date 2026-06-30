@@ -8,12 +8,16 @@ import { FtPaymentInfo } from "../../../ft-bolsista/domain/entity/FtPaymentInfo.
 import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
 import { FtRelatorioPeriodo } from "../dto/ft-relatorio.dto.js";
 import { GerarListaPresencaFtUseCase } from "../use-case/gerar-lista-presenca-ft.use-case.js";
-import { FtRelatorioBolsista } from "../../domain/entities/ft-relatorio.entity.js";
+import {
+  FtRelatorioBolsista,
+  FtRelatorioVinculo,
+} from "../../domain/entities/ft-relatorio.entity.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
 
 class FakeFtRelatorioRepository implements FtRelatorioRepository {
   public missingEdital = false;
   public faltasMaria: FtBolsistaFalta[] = [];
+  public vinculosMaria: FtRelatorioVinculo[] = [];
   public lastPeriodo?: FtRelatorioPeriodo;
 
   private edital = new FtEdital(
@@ -50,6 +54,7 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
             falta.data_falta >= periodo.data_inicio &&
             falta.data_falta <= periodo.data_fim,
         ),
+        this.vinculosMaria,
       ),
       this.relatorioBolsista("bolsista-2", "Joao", "12345678900", []),
     ];
@@ -60,6 +65,7 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
     nome: string,
     cpf: string,
     faltas: FtBolsistaFalta[],
+    vinculos: FtRelatorioVinculo[] = [],
   ) {
     return new FtRelatorioBolsista(
       new FtBolsista(
@@ -78,6 +84,7 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
         id,
       ),
       faltas,
+      vinculos,
     );
   }
 }
@@ -129,6 +136,38 @@ describe("GerarListaPresencaFtUseCase", () => {
     assert.match(response.csv, /P;;20;0/);
   });
 
+  it("deixa vazio fora da janela operacional dos vinculos", async () => {
+    repository.faltasMaria = [falta("2026-02-04"), falta("2026-02-12")];
+    repository.vinculosMaria = [
+      new FtRelatorioVinculo(
+        "cancelado",
+        "2026-02-03",
+        "2027-02-03",
+        "2026-02-05",
+      ),
+      new FtRelatorioVinculo(
+        "expirado",
+        "2026-02-10",
+        "2026-02-12",
+        null,
+        null,
+        "2026-02-12",
+      ),
+    ];
+
+    const response = await useCase.execute("edital-1", { mes: "2026-02" });
+    const mariaRow = response.csv
+      .split("\n")
+      .find((row) => row.startsWith("bolsista-1;Maria"));
+
+    assert.ok(mariaRow);
+    assert.match(
+      mariaRow,
+      /bolsista-1;Maria;52998224725;ativo;;;P;F;P;;;;;P;P;F/,
+    );
+    assert.match(mariaRow, /;4;2$/);
+  });
+
   it("usa mes atual quando query nao informa mes", async () => {
     await useCase.execute("edital-1");
 
@@ -151,6 +190,14 @@ describe("GerarListaPresencaFtUseCase", () => {
       () => useCase.execute("edital-1", { mes: "2026-00" }),
       400,
       "YYYY-MM",
+    );
+  });
+
+  it("rejeita mes futuro", async () => {
+    await assertAppError(
+      () => useCase.execute("edital-1", { mes: "2026-07" }),
+      400,
+      "mes futuro",
     );
   });
 

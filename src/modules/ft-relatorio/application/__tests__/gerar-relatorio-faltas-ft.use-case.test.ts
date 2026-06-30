@@ -162,6 +162,14 @@ describe("GerarRelatorioFaltasFtUseCase", () => {
     );
   });
 
+  it("rejeita mes futuro", async () => {
+    await assertAppError(
+      () => useCase.execute("edital-1", { mes: "2026-07" }),
+      400,
+      "mes futuro",
+    );
+  });
+
   it("rejeita edital inexistente", async () => {
     repository.missingEdital = true;
 
