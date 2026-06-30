@@ -183,6 +183,45 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  findHistoricoByBolsistaId(bolsistaId: string) {
+    return db.BolsistasEdital.findAll({
+      where: { bolsista_id: bolsistaId },
+      paranoid: false,
+      attributes: [
+        "id",
+        "bolsista_id",
+        "edital_id",
+        "status",
+        "data_vinculo",
+        "expire_at",
+        "canceled_at",
+        "concluded_at",
+        "expired_at",
+        "prorrogated",
+        "createdAt",
+        "updatedAt",
+        "deletedAt",
+      ],
+      include: [
+        {
+          model: db.Edital,
+          as: "edital",
+          attributes: [
+            "id",
+            "name",
+            "status",
+            "data_publicacao",
+            "data_vencimento",
+          ],
+        },
+      ],
+      order: [
+        ["data_vinculo", "DESC"],
+        ["createdAt", "DESC"],
+      ],
+    });
+  }
+
   findEditalById(editalId: string) {
     return db.Edital.findByPk(editalId);
   }

@@ -57,6 +57,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public destroyBolsistaCalled = false;
   public destroyFaltaCalled = false;
   public createFaltaPayload: any = null;
+  public historicoCalled = false;
 
   private paymentInfo = new FakeModel({
     id: "payment-1",
@@ -146,6 +147,41 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findByEditalId() {
     return [this.bolsista];
+  }
+
+  async findHistoricoByBolsistaId() {
+    this.historicoCalled = true;
+
+    return [
+      new FakeModel({
+        id: "vinculo-1",
+        status: "ativo",
+        data_vinculo: "2026-06-01",
+        expire_at: "2027-06-01",
+        canceled_at: null,
+        concluded_at: null,
+        expired_at: null,
+        prorrogated: false,
+        edital: {
+          id: "edital-1",
+          name: "Edital 1",
+        },
+      }),
+      new FakeModel({
+        id: "vinculo-2",
+        status: "cancelado",
+        data_vinculo: "2025-01-01",
+        expire_at: "2026-01-01",
+        canceled_at: "2025-06-01",
+        concluded_at: null,
+        expired_at: null,
+        prorrogated: true,
+        edital: {
+          id: "edital-2",
+          name: "Edital 2",
+        },
+      }),
+    ];
   }
 
   async findEditalById() {
@@ -444,6 +480,28 @@ describe("FtBolsistaService", () => {
     assert.equal(response.ok, true);
     assert.equal(response.count, 1);
     assert.equal(response.bolsistas.length, 1);
+  });
+
+  it("lista historico de vinculos do bolsista", async () => {
+    const response = await service.getHistoricoBolsista("bolsista-1");
+
+    assert.equal(response.ok, true);
+    assert.equal(repository.historicoCalled, true);
+    assert.equal(response.historico.length, 2);
+    assert.equal(response.historico[0].get("status"), "ativo");
+    assert.equal(response.historico[1].get("status"), "cancelado");
+  });
+
+  it("rejeita historico de bolsista inexistente", async () => {
+    repository.missingBolsista = true;
+
+    await assertAppError(
+      () => service.getHistoricoBolsista("bolsista-1"),
+      404,
+      "Bolsista not found",
+    );
+
+    assert.equal(repository.historicoCalled, false);
   });
 
   it("rejeita falta em edital inativo", async () => {

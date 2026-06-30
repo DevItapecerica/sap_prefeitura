@@ -255,6 +255,19 @@ export class FtBolsistaService {
     return bolsistas;
   }
 
+  async getHistoricoBolsista(id: string) {
+    const { bolsista } = await this.getBolsistaById(id);
+    const historico = await this.repository.findHistoricoByBolsistaId(
+      bolsista.get("id"),
+    );
+
+    return {
+      message: "Historico do bolsista retrieved successfully",
+      historico,
+      ok: true,
+    };
+  }
+
   async cancelBolsistaEdital(bolsistaId: string, editalId: string) {
     if (!bolsistaId || !editalId) {
       throw ftError(400, "Bolsista e edital sao obrigatorios");

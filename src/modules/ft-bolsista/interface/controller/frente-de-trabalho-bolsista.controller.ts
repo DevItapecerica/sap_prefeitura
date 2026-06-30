@@ -109,6 +109,15 @@ export class FrenteTrabalhoBolsistaController {
     });
   };
 
+  static getHistoricoBolsista = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const response = await service.getHistoricoBolsista(request.params.id);
+
+    return reply.status(200).send(response);
+  };
+
   static cancelBolsistaEdital = async (
     request: FastifyRequest<{ Params: { bolsista: string; edital: string } }>,
     reply: FastifyReply,
