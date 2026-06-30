@@ -46,6 +46,9 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public inactiveBolsista = false;
   public inactiveEdital = false;
   public vinculoStatus = "ativo";
+  public vinculoDataVinculo = "2026-06-01";
+  public vinculoExpireAt: string | null = "2026-06-30";
+  public existingFalta = false;
   public activeQuantityByPagador = 0;
   public createWithPaymentInfoCalled = false;
   public updateWithPaymentInfoCalled = false;
@@ -54,6 +57,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public destroyBolsistaCalled = false;
   public destroyFaltaCalled = false;
   public createFaltaPayload: any = null;
+  public historicoCalled = false;
 
   private paymentInfo = new FakeModel({
     id: "payment-1",
@@ -83,7 +87,8 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     bolsista_id: "bolsista-1",
     edital_id: "edital-1",
     status: "ativo",
-    expire_at: "2026-06-09",
+    data_vinculo: "2026-06-01",
+    expire_at: "2026-06-30",
   });
 
   async findById() {
@@ -144,6 +149,41 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     return [this.bolsista];
   }
 
+  async findHistoricoByBolsistaId() {
+    this.historicoCalled = true;
+
+    return [
+      new FakeModel({
+        id: "vinculo-1",
+        status: "ativo",
+        data_vinculo: "2026-06-01",
+        expire_at: "2027-06-01",
+        canceled_at: null,
+        concluded_at: null,
+        expired_at: null,
+        prorrogated: false,
+        edital: {
+          id: "edital-1",
+          name: "Edital 1",
+        },
+      }),
+      new FakeModel({
+        id: "vinculo-2",
+        status: "cancelado",
+        data_vinculo: "2025-01-01",
+        expire_at: "2026-01-01",
+        canceled_at: "2025-06-01",
+        concluded_at: null,
+        expired_at: null,
+        prorrogated: true,
+        edital: {
+          id: "edital-2",
+          name: "Edital 2",
+        },
+      }),
+    ];
+  }
+
   async findEditalById() {
     this.edital.set("status", this.inactiveEdital ? "inativo" : "ativo");
     return this.missingEdital ? null : this.edital;
@@ -151,6 +191,8 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findVinculo() {
     this.vinculo.set("status", this.vinculoStatus);
+    this.vinculo.set("data_vinculo", this.vinculoDataVinculo);
+    this.vinculo.set("expire_at", this.vinculoExpireAt);
     return this.missingVinculo ? null : this.vinculo;
   }
 
@@ -171,6 +213,17 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   async createFalta(data: any) {
     this.createFaltaPayload = data;
     return new FakeModel({ id: "falta-1", ...data });
+  }
+
+  async findFaltaByBolsistaEditalData() {
+    return this.existingFalta
+      ? new FakeModel({
+          id: "falta-existente",
+          bolsista_id: "bolsista-1",
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        })
+      : null;
   }
 
   async findFaltaById() {
@@ -315,6 +368,21 @@ describe("FtBolsistaService", () => {
     assert.equal(repository.prorrogateVinculosCalled, true);
   });
 
+  it("rejeita prorrogacao em edital inativo", async () => {
+    repository.inactiveEdital = true;
+
+    await assertAppError(
+      () =>
+        service.prorrogate([
+          { bolsista_id: "bolsista-1", edital_id: "edital-1" },
+        ]),
+      400,
+      "Edital inativo",
+    );
+
+    assert.equal(repository.prorrogateVinculosCalled, false);
+  });
+
   it("rejeita prorrogacao sem lista", async () => {
     await assertAppError(
       () => service.prorrogate([]),
@@ -355,6 +423,30 @@ describe("FtBolsistaService", () => {
     assert.equal(repository.cancelVinculoCalled, true);
   });
 
+  it("rejeita cancelamento em edital inativo", async () => {
+    repository.inactiveEdital = true;
+
+    await assertAppError(
+      () => service.cancelBolsistaEdital("bolsista-1", "edital-1"),
+      400,
+      "Edital inativo",
+    );
+
+    assert.equal(repository.cancelVinculoCalled, false);
+  });
+
+  it("rejeita cancelamento de vinculo inativo", async () => {
+    repository.vinculoStatus = "inativo";
+
+    await assertAppError(
+      () => service.cancelBolsistaEdital("bolsista-1", "edital-1"),
+      400,
+      "Bolsista inativo neste edital",
+    );
+
+    assert.equal(repository.cancelVinculoCalled, false);
+  });
+
   it("lanca falta valida", async () => {
     const response = await service.createFalta("bolsista-1", {
       edital_id: "edital-1",
@@ -366,12 +458,50 @@ describe("FtBolsistaService", () => {
     assert.equal(repository.createFaltaPayload.bolsista_id, "bolsista-1");
   });
 
+  it("rejeita falta duplicada", async () => {
+    repository.existingFalta = true;
+
+    await assertAppError(
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
+      400,
+      "Falta ja lancada para esta data",
+    );
+
+    assert.equal(repository.createFaltaPayload, null);
+  });
+
   it("lista bolsistas elegiveis para vinculo", async () => {
     const response = await service.getBolsistasParaVinculo({ search: "Maria" });
 
     assert.equal(response.ok, true);
     assert.equal(response.count, 1);
     assert.equal(response.bolsistas.length, 1);
+  });
+
+  it("lista historico de vinculos do bolsista", async () => {
+    const response = await service.getHistoricoBolsista("bolsista-1");
+
+    assert.equal(response.ok, true);
+    assert.equal(repository.historicoCalled, true);
+    assert.equal(response.historico.length, 2);
+    assert.equal(response.historico[0].get("status"), "ativo");
+    assert.equal(response.historico[1].get("status"), "cancelado");
+  });
+
+  it("rejeita historico de bolsista inexistente", async () => {
+    repository.missingBolsista = true;
+
+    await assertAppError(
+      () => service.getHistoricoBolsista("bolsista-1"),
+      404,
+      "Bolsista not found",
+    );
+
+    assert.equal(repository.historicoCalled, false);
   });
 
   it("rejeita falta em edital inativo", async () => {
@@ -434,6 +564,55 @@ describe("FtBolsistaService", () => {
       400,
       "Data da falta invalida",
     );
+  });
+
+  it("rejeita falta futura", async () => {
+    await assertAppError(
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2999-01-01",
+        }),
+      400,
+      "Data da falta nao pode ser futura",
+    );
+  });
+
+  it("rejeita falta antes do inicio do vinculo", async () => {
+    await assertAppError(
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-05-31",
+        }),
+      400,
+      "Data da falta fora do periodo do vinculo",
+    );
+  });
+
+  it("rejeita falta depois do fim do vinculo", async () => {
+    repository.vinculoExpireAt = "2026-06-08";
+
+    await assertAppError(
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
+      400,
+      "Data da falta fora do periodo do vinculo",
+    );
+  });
+
+  it("permite falta sem data final do vinculo", async () => {
+    repository.vinculoExpireAt = null;
+
+    const response = await service.createFalta("bolsista-1", {
+      edital_id: "edital-1",
+      data_falta: "2026-06-09",
+    });
+
+    assert.equal(response.ok, true);
   });
 
   it("lista e remove faltas", async () => {

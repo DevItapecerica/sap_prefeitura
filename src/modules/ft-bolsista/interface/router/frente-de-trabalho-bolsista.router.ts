@@ -295,6 +295,32 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
 
   fastify.route({
     method: "GET",
+    url: "/:id/historico",
+    schema: {
+      tags: tag,
+      security,
+      summary: "Listar historico de vinculos do bolsista",
+      params: uuidParam,
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            ok: { type: "boolean" },
+            historico: {
+              type: "array",
+              items: { type: "object", additionalProperties: true },
+            },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FrenteTrabalhoBolsistaController.getHistoricoBolsista,
+  });
+
+  fastify.route({
+    method: "GET",
     url: "/:id",
     schema: {
       tags: tag,

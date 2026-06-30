@@ -14,11 +14,15 @@ import {
 } from "../utils/pagador.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import { FtBolsistaPolicyService } from "../../domain/services/ft-bolsista-policy.service.js";
+import { FtFaltaPolicyService } from "../../domain/services/ft-falta-policy.service.js";
+import { FtVinculoPolicyService } from "../../../ft-edital/domain/services/ft-vinculo-policy.service.js";
 
 export class FtBolsistaService {
   constructor(
     private readonly repository: FtBolsistaRepository,
     private readonly policy = new FtBolsistaPolicyService(),
+    private readonly faltaPolicy = new FtFaltaPolicyService(),
+    private readonly vinculoPolicy = new FtVinculoPolicyService(),
   ) {}
 
   async getBolsistaById(id: string) {
@@ -214,6 +218,13 @@ export class FtBolsistaService {
         throw ftError(404, "Bolsista not found");
       }
 
+      const edital = await this.repository.findEditalById(item.edital_id);
+      if (!edital) {
+        throw ftError(404, "Edital not found");
+      }
+
+      this.vinculoPolicy.ensureEditalAtivo(edital);
+
       const vinculo = await this.repository.findVinculo(
         item.bolsista_id,
         item.edital_id,
@@ -244,6 +255,19 @@ export class FtBolsistaService {
     return bolsistas;
   }
 
+  async getHistoricoBolsista(id: string) {
+    const { bolsista } = await this.getBolsistaById(id);
+    const historico = await this.repository.findHistoricoByBolsistaId(
+      bolsista.get("id"),
+    );
+
+    return {
+      message: "Historico do bolsista retrieved successfully",
+      historico,
+      ok: true,
+    };
+  }
+
   async cancelBolsistaEdital(bolsistaId: string, editalId: string) {
     if (!bolsistaId || !editalId) {
       throw ftError(400, "Bolsista e edital sao obrigatorios");
@@ -251,15 +275,13 @@ export class FtBolsistaService {
 
     const bolsista = await this.repository.findById(bolsistaId);
     const edital = await this.repository.findEditalById(editalId);
-    const vinculo = await this.repository.findVinculo(bolsistaId, editalId);
+    const vinculo = await this.repository.findVinculo(bolsistaId, editalId, "ativo");
 
     if (!bolsista || !edital || !vinculo) {
       throw ftError(404, "Bolsista ou Edital nao encontrados");
     }
 
-    if (edital.get("status") === "inativo") {
-      throw ftError(400, "Edital inativo");
-    }
+    this.vinculoPolicy.ensureCanChangeVinculo(edital, vinculo);
 
     await this.repository.cancelVinculo(bolsista, vinculo);
   }
@@ -299,7 +321,19 @@ export class FtBolsistaService {
       throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
     }
 
-    this.policy.ensureCanCreateFalta(edital, vinculo);
+    const faltaExistente =
+      await this.repository.findFaltaByBolsistaEditalData(
+        bolsistaId,
+        edital_id,
+        data_falta,
+      );
+
+    this.faltaPolicy.ensureCanCreateFalta({
+      edital,
+      vinculo,
+      data_falta,
+      faltaExistente,
+    });
 
     const falta = await this.repository.createFalta({
       bolsista_id: bolsistaId,

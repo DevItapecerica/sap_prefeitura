@@ -183,6 +183,45 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  findHistoricoByBolsistaId(bolsistaId: string) {
+    return db.BolsistasEdital.findAll({
+      where: { bolsista_id: bolsistaId },
+      paranoid: false,
+      attributes: [
+        "id",
+        "bolsista_id",
+        "edital_id",
+        "status",
+        "data_vinculo",
+        "expire_at",
+        "canceled_at",
+        "concluded_at",
+        "expired_at",
+        "prorrogated",
+        "createdAt",
+        "updatedAt",
+        "deletedAt",
+      ],
+      include: [
+        {
+          model: db.Edital,
+          as: "edital",
+          attributes: [
+            "id",
+            "name",
+            "status",
+            "data_publicacao",
+            "data_vencimento",
+          ],
+        },
+      ],
+      order: [
+        ["data_vinculo", "DESC"],
+        ["createdAt", "DESC"],
+      ],
+    });
+  }
+
   findEditalById(editalId: string) {
     return db.Edital.findByPk(editalId);
   }
@@ -197,6 +236,20 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
   }
 
+  findFaltaByBolsistaEditalData(
+    bolsistaId: string,
+    editalId: string,
+    dataFalta: string | Date,
+  ) {
+    return db.BolsistaFalta.findOne({
+      where: {
+        bolsista_id: bolsistaId,
+        edital_id: editalId,
+        data_falta: dataFalta,
+      },
+    });
+  }
+
   async destroyBolsista(bolsista: any) {
     await bolsista.destroy();
   }
@@ -204,11 +257,13 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   async cancelVinculo(bolsista: any, vinculo: any) {
     await db.sequelize.transaction(async (transaction: any) => {
       bolsista.set("status", "inativo");
-      vinculo.set("status", "cancelado");
+      vinculo.set({
+        status: "cancelado",
+        canceled_at: new Date(),
+      });
 
       await bolsista.save({ transaction });
       await vinculo.save({ transaction });
-      await vinculo.destroy({ transaction });
     });
   }
 
