@@ -275,7 +275,7 @@ export class FtBolsistaService {
 
     const bolsista = await this.repository.findById(bolsistaId);
     const edital = await this.repository.findEditalById(editalId);
-    const vinculo = await this.repository.findVinculo(bolsistaId, editalId);
+    const vinculo = await this.repository.findVinculo(bolsistaId, editalId, "ativo");
 
     if (!bolsista || !edital || !vinculo) {
       throw ftError(404, "Bolsista ou Edital nao encontrados");
