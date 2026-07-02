@@ -9,7 +9,7 @@ services:
       MARIADB_DATABASE: ${DATABASE_NAME}
     volumes:
       - db_data:/var/lib/mysql
-    exports:
+    expose:
       - 3306
     healthcheck:
       test:
@@ -49,7 +49,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
 
       APPLICATION_PORT: 3000
-    exports:
+    expose:
       - 3000
     depends_on:
       - db
