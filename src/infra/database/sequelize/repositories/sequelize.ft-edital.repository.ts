@@ -176,38 +176,13 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     });
   }
 
-  findToRelatory(
-    id: string,
-    periodo: { data_inicio: string; data_fim: string },
-  ) {
-    return db.Bolsistas.findAll({
-      where: { status: "ativo" },
-      order: [["nome", "ASC"]],
-      include: [
-        {
-          model: db.PaymentInfo,
-          as: "payment_info",
-          attributes: { exclude: ["id", "createdAt", "updatedAt"] },
-        },
-        {
-          model: db.BolsistasEdital,
-          as: "bolsistas_edital",
-          where: { edital_id: id, status: "ativo" },
-        },
-        {
-          model: db.BolsistaFalta,
-          as: "faltas",
-          required: false,
-          where: {
-            edital_id: id,
-            data_falta: {
-              [Op.gte]: periodo.data_inicio,
-              [Op.lte]: periodo.data_fim,
-            },
-          },
-        },
-      ],
-      distinct: true,
+  findVinculosByBolsistaEdital(bolsistaId: string, editalId: string) {
+    return db.BolsistasEdital.findAll({
+      where: {
+        bolsista_id: bolsistaId,
+        edital_id: editalId,
+      },
+      paranoid: false,
     });
   }
 
@@ -217,8 +192,11 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
   ) {
     await db.sequelize.transaction(async (transaction: any) => {
       for (const item of bolsistas) {
-        await edital.addBolsista(item.bolsista, {
-          through: { data_vinculo: item.data_vinculo },
+        await db.BolsistasEdital.create({
+          edital_id: edital.get("id"),
+          bolsista_id: item.bolsista.get("id"),
+          data_vinculo: item.data_vinculo,
+        }, {
           transaction,
         });
 

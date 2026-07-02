@@ -3,12 +3,14 @@ import {
   FtEditalBolsistaQueryDto,
   FtEditalDto,
   FtEditalQueryDto,
-  FtEditalRelatoryQueryDto,
   FtVincularBolsistaDto,
 } from "../../application/dto/ft-edital.dto.js";
 import { makeFtEditalService } from "../../factories/makeFtEditalService.js";
+import { FtRelatorioQueryDto } from "../../../ft-relatorio/application/dto/ft-relatorio.dto.js";
+import { makeGerarRelatorioFtUseCase } from "../../../ft-relatorio/factories/makeGerarRelatorioFtUseCase.js";
 
 const service = makeFtEditalService();
+const gerarRelatorioFtUseCase = makeGerarRelatorioFtUseCase();
 
 export class FtEditalController {
   static getEdital = async (
@@ -118,11 +120,14 @@ export class FtEditalController {
   static getRelatory = async (
     request: FastifyRequest<{
       Params: { id: string };
-      Querystring: FtEditalRelatoryQueryDto;
+      Querystring: FtRelatorioQueryDto;
     }>,
     reply: FastifyReply,
   ) => {
-    const relatory = await service.getRelatory(request.params.id, request.query);
+    const relatory = await gerarRelatorioFtUseCase.execute(
+      request.params.id,
+      request.query,
+    );
 
     return reply
       .status(200)

@@ -25,11 +25,17 @@ export interface FtBolsistaRepository {
   countActiveByPagador(pagadorId: string): Promise<number>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;
+  findHistoricoByBolsistaId(bolsistaId: string): Promise<any[]>;
   findEditalById(editalId: string): Promise<any | null>;
   findVinculo(
     bolsistaId: string,
     editalId: string,
     status?: string,
+  ): Promise<any | null>;
+  findFaltaByBolsistaEditalData(
+    bolsistaId: string,
+    editalId: string,
+    dataFalta: string | Date,
   ): Promise<any | null>;
   destroyBolsista(bolsista: any): Promise<void>;
   cancelVinculo(bolsista: any, vinculo: any): Promise<void>;
