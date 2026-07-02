@@ -7,8 +7,8 @@ services:
       MARIADB_PASSWORD: ${DATABASE_KEY}
       MARIADB_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
       MARIADB_DATABASE: ${DATABASE_NAME}
-    ports:
-      - 3306:3306
+    exports:
+      - 3306
     healthcheck:
       test:
         [
@@ -21,11 +21,11 @@ services:
   
   sap:
     image: node:18
+    restart: "on-failure:3"
     container_name: sap_prefeitura
     build:
       context: ./
       dockerfile: ./Dockerfile
-    restart: always
     deploy:
       resources:
         limits:
@@ -44,16 +44,15 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_HOST: ${MAIL_HOST}
 
-
       CORS_ORIGINS: ${CORS_ORIGINS}
 
       APPLICATION_PORT: 3000
-    ports:
-      - ${APPLICATION_PORT}:3001
+    exports:
+      - 3000
+    depends_on:
+      - db
     networks:
-      dokploy-network:
-        aliases:
-          - sap_prefeitura
+      - dokploy-network
 networks:
   dokploy-network:
     external: true
