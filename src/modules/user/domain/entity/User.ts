@@ -2,8 +2,8 @@ export class User {
   constructor(
     public name: string,
     public email: string,
-    public ramal: string,
-    public setor_id: number,
+    public ramal: string | null,
+    public setor_id: number | null,
     public role_id: number,
 
     public id?: number,
