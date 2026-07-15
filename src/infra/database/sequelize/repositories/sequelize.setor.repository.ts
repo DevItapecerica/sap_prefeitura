@@ -34,7 +34,7 @@ export class SequelizeSetorRepository implements SetorRepository {
 
     if (!isSetor) return null;
 
-    isSetor.update(setor)
+    await isSetor.update(setor);
 
     return this.toEntity(isSetor);
   }

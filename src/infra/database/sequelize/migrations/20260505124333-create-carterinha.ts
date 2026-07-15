@@ -53,13 +53,13 @@ export default {
           type: DataTypes.DATE,
           allowNull: true,
         },
-      });
+      }, { transaction });
     });
   },
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.dropTable("carterinhas");
+      await queryInterface.dropTable("carterinhas", { transaction });
     });
   },
 };

@@ -36,7 +36,7 @@ interface MunicipeDB extends Model<
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
-  const Carterinhas = sequelize.define<MunicipeDB>(
+  const MunicipeModel = sequelize.define<MunicipeDB>(
     "MunicipeModel",
     {
       uuid: {
@@ -128,20 +128,20 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     },
   );
 
-  (Carterinhas as any).associate = (models: any) => {
-    Carterinhas.hasOne(models.AtletaModel, {
+  (MunicipeModel as any).associate = (models: any) => {
+    MunicipeModel.hasOne(models.AtletaModel, {
       foreignKey: "municipe_uuid",
       as: "atleta",
     });
-    Carterinhas.hasMany(models.CarteirinhaModel, {
+    MunicipeModel.hasMany(models.CarteirinhaModel, {
       foreignKey: "municipe_uuid",
       as: "carterinhas",
     });
-    Carterinhas.hasMany(models.CarteirinhaEsporteModel, {
+    MunicipeModel.hasMany(models.CarteirinhaEsporteModel, {
       foreignKey: "municipe_uuid",
       as: "carterinhasEsporte",
     });
   };
 
-  return Carterinhas;
+  return MunicipeModel;
 };

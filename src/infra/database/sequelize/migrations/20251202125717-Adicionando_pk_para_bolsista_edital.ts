@@ -1,15 +1,26 @@
 import { QueryInterface, literal } from "sequelize";
 
 const UUID_BIN_TYPE = "CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
+const TABLE_NAME = "bolsistas_edital";
+
+const hasColumn = async (
+  queryInterface: QueryInterface,
+  columnName: string,
+): Promise<boolean> => {
+  const table = await queryInterface.describeTable(TABLE_NAME);
+  return Boolean(table[columnName]);
+};
 
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
-    await queryInterface.addColumn("bolsistas_edital", "id", {
-      type: UUID_BIN_TYPE,
-      allowNull: false,
-      defaultValue: literal("UUID()"),
-    });
+    if (!(await hasColumn(queryInterface, "id"))) {
+      await queryInterface.addColumn(TABLE_NAME, "id", {
+        type: UUID_BIN_TYPE,
+        allowNull: false,
+        defaultValue: literal("UUID()"),
+      });
+    }
 
     await queryInterface.removeConstraint(
       "bolsistas_edital",
@@ -66,7 +77,9 @@ export default {
       "PK_bolsistas_edital_id",
     );
 
-    await queryInterface.removeColumn("bolsistas_edital", "id");
+    if (await hasColumn(queryInterface, "id")) {
+      await queryInterface.removeColumn(TABLE_NAME, "id");
+    }
 
     await queryInterface.addConstraint("bolsistas_edital", {
       fields: ["bolsista_id", "edital_id"],

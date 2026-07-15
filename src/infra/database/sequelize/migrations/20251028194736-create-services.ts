@@ -3,7 +3,8 @@ import { QueryInterface, DataTypes } from "sequelize";
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
-    await queryInterface.createTable("services", {
+    await queryInterface.sequelize.transaction(async (transaction) => {
+      await queryInterface.createTable("services", {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -27,10 +28,13 @@ export default {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      }, { transaction });
     });
   },
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
-    await queryInterface.dropTable("services");
+    await queryInterface.sequelize.transaction(async (transaction) => {
+      await queryInterface.dropTable("services", { transaction });
+    });
   },
 };

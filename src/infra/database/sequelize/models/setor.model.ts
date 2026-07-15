@@ -14,7 +14,7 @@ export interface SetorDB extends Model<
 > {
   id: CreationOptional<number>;
   name: string;
-  description: CreationOptional<string>;
+  description: CreationOptional<string | null>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
@@ -41,6 +41,17 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       timestamps: false,
     },
   );
+
+  (SetorDB as any).associate = (models: any) => {
+    SetorDB.hasMany(models.UserModel, {
+      foreignKey: "setor_id",
+      as: "users",
+    });
+    SetorDB.hasMany(models.ServiceVisibilities, {
+      foreignKey: "setor_id",
+      as: "visibilities",
+    });
+  };
 
   return SetorDB;
 };

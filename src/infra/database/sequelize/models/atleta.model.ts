@@ -33,6 +33,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       municipe_uuid: {
         type: DataTypes.UUID,
         allowNull: false,
+        references: {
+          model: "municipes",
+          key: "uuid",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
       ativo: {
         type: DataTypes.BOOLEAN,

@@ -48,6 +48,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       municipe_uuid: {
         type: dataTypes.UUID,
         allowNull: false,
+        references: {
+          model: "municipes",
+          key: "uuid",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
       modalidade: {
         type: dataTypes.STRING,

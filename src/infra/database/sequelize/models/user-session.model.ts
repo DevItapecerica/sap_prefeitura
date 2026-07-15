@@ -36,6 +36,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         field: "user_id",
+        references: {
+          model: "users",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       refreshTokenHash: {
         type: DataTypes.STRING(64),
@@ -70,6 +76,13 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       timestamps: true,
     },
   );
+
+  (UserSessionDB as any).associate = (models: any) => {
+    UserSessionDB.belongsTo(models.UserModel, {
+      foreignKey: "userId",
+      as: "user",
+    });
+  };
 
   return UserSessionDB;
 };

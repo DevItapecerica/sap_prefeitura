@@ -43,13 +43,13 @@ export default {
           allowNull: false,
           defaultValue: true,
         },
-      });
+      }, { transaction });
     });
   },
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.dropTable("users");
+      await queryInterface.dropTable("users", { transaction });
     });
   },
 };

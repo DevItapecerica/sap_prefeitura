@@ -78,13 +78,13 @@ export default {
           type: DataTypes.DATE,
           allowNull: true,
         },
-      });
+      }, { transaction });
     });
   },
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.dropTable("municipes");
+      await queryInterface.dropTable("municipes", { transaction });
     });
   },
 };

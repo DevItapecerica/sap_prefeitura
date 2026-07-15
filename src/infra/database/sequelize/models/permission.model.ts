@@ -23,7 +23,7 @@ interface PermissionsDB extends Model<
 
   createdAt?: CreationOptional<Date>;
   updatedAt?: CreationOptional<Date>;
-  deletedAt?: CreationOptional<Date>;
+  deletedAt?: CreationOptional<Date | null>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
@@ -51,6 +51,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       service_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+          model: "services",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
 
       // Permissões individuais
@@ -86,16 +92,15 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     },
   );
 
-  ( Permissions as any ).associate = (models: any) => {
+  (Permissions as any).associate = (models: any) => {
     Permissions.belongsTo(models.RolesModel, {
       foreignKey: "role_id",
       as: "role",
     });
-    
-    // Permissions.belongsTo(models.Services, {
-    //   foreignKey: "service_id",
-    //   as: "service",
-    // });
+    Permissions.belongsTo(models.ServiceModel, {
+      foreignKey: "service_id",
+      as: "service",
+    });
   };
   return Permissions;
 };

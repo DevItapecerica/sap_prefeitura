@@ -15,10 +15,10 @@ export interface UserDB extends Model<
    id: CreationOptional<number>;
    name: string;
    email: string;
-   ramal: string;
+   ramal: string | null;
    password: string;
 
-   setor_id: number;
+   setor_id: number | null;
    role_id: number;
    firstLogin: boolean;
 
@@ -59,10 +59,22 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,
+        references: {
+          model: "setors",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
       },
       role_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+          model: "roles",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
       firstLogin: {
         type: DataTypes.BOOLEAN,
@@ -81,6 +93,21 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       timestamps: true,
     },
   );
+
+  (UserDB as any).associate = (models: any) => {
+    UserDB.belongsTo(models.SetorModel, {
+      foreignKey: "setor_id",
+      as: "setor",
+    });
+    UserDB.belongsTo(models.RolesModel, {
+      foreignKey: "role_id",
+      as: "role",
+    });
+    UserDB.hasMany(models.UserSessionModel, {
+      foreignKey: "userId",
+      as: "sessions",
+    });
+  };
 
   return UserDB;
 };

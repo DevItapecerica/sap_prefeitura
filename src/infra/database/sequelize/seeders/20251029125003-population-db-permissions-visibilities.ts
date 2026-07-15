@@ -358,54 +358,6 @@ export default {
             updatedAt: "2025-10-02 13:05:59",
             deletedAt: null,
           },
-          {
-            id: 29,
-            role_id: 1,
-            service_id: 8,
-            read: 1,
-            write: 1,
-            edit: 1,
-            del: 1,
-            createdAt: "2026-05-22 00:00:00",
-            updatedAt: "2026-05-22 00:00:00",
-            deletedAt: null,
-          },
-          {
-            id: 30,
-            role_id: 2,
-            service_id: 8,
-            read: 1,
-            write: 1,
-            edit: 1,
-            del: 0,
-            createdAt: "2026-05-22 00:00:00",
-            updatedAt: "2026-05-22 00:00:00",
-            deletedAt: null,
-          },
-          {
-            id: 31,
-            role_id: 3,
-            service_id: 8,
-            read: 1,
-            write: 1,
-            edit: 1,
-            del: 0,
-            createdAt: "2026-05-22 00:00:00",
-            updatedAt: "2026-05-22 00:00:00",
-            deletedAt: null,
-          },
-          {
-            id: 32,
-            role_id: 4,
-            service_id: 8,
-            read: 1,
-            write: 1,
-            edit: 0,
-            del: 0,
-            createdAt: "2026-05-22 00:00:00",
-            updatedAt: "2026-05-22 00:00:00",
-            deletedAt: null,
-          },
         ],
       },
       {
@@ -418,7 +370,6 @@ export default {
           { id: 5, setor_id: 1, service_id: 5, visibility: 1 },
           { id: 6, setor_id: 1, service_id: 6, visibility: 1 },
           { id: 13, setor_id: 1, service_id: 7, visibility: 1 },
-          { id: 15, setor_id: 1, service_id: 8, visibility: 1 },
         ],
       },
     ];
@@ -462,8 +413,8 @@ export default {
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     const reversedPayload = [
-        { table: "service_visibilities", data: [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16] },
-        { table: "permissions", data: Array.from({ length: 32 }, (_, index) => index + 1) },
+        { table: "service_visibilities", data: [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 16] },
+        { table: "permissions", data: Array.from({ length: 28 }, (_, index) => index + 1) },
         { table: "roles", data: [1, 2, 3, 4] },
     ];
 

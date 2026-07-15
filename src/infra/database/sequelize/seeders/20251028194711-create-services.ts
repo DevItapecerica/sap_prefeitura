@@ -79,15 +79,6 @@ export default {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-      {
-        id: 8,
-        name: "Chamados",
-        description: "Gerenciamento de chamados",
-        url: "/services/8/chamados",
-        tag: "TI",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
     ];
 
     for (const registro of registros) {
@@ -115,7 +106,7 @@ export default {
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.bulkDelete("services", {
-      id: [1, 2, 3, 4, 6, 7, 8],
+      id: [1, 2, 3, 4, 6, 7],
     });
   },
 };
