@@ -6,7 +6,8 @@ declare module "fastify" {
       id: number | string;
       name: string;
       role_id: number | string;
-      setor_id: number | string;
+      setor_id: number | string | null;
     };
+    auditResponse?: unknown;
   }
 }
