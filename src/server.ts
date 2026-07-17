@@ -30,6 +30,7 @@ const port: number = Number(PORT);
 
 // Registrando Plugins
 fastify.log.info("Registrando plugins");
+
 await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
 

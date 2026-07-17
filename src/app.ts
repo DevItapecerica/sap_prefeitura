@@ -45,7 +45,6 @@ const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(MunicipeModule);
   fastify.log.info("Municipe Module Registrado");
 
-
   await fastify.register(EsporteModule);
   fastify.log.info("Esporte Module Registrado");
 
