@@ -1,10 +1,19 @@
 import { FastifyPluginAsync } from "fastify";
 import { AuditRoutes } from "./interface/audit.routes.js";
 import { startAuditWorker } from "./scheduler/audit.worker.js";
+import { makeAuditService } from "./factories/makeAuditService.js";
+import { registerUserAuditHandlers } from "./events/on-user-events.js";
 
 const AuditModule: FastifyPluginAsync = async (fastify) => {
+  const unregisterUserAuditHandlers = registerUserAuditHandlers(
+    makeAuditService(),
+    fastify.log,
+  );
   const worker = startAuditWorker(fastify.log);
-  fastify.addHook("onClose", async () => worker.stop());
+  fastify.addHook("onClose", async () => {
+    unregisterUserAuditHandlers();
+    worker.stop();
+  });
   await fastify.register(AuditRoutes, { prefix: "/audit" });
 };
 

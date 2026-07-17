@@ -109,8 +109,10 @@ test("UserService atualiza e remove usuario existente", async () => {
   const updated = await service.update({ name: "Novo", email: "novo@itapecerica.sp.gov.br", ramal: "2", setor_id: 2, role_id: 2 }, 1);
   const deleted = await service.delete(1);
 
-  assert.equal(updated.name, "Novo");
-  assert.equal(deleted, true);
+  assert.equal(updated.before.name, "User");
+  assert.equal(updated.after.name, "Novo");
+  assert.equal(deleted.before.name, "Novo");
+  assert.equal(deleted.after, null);
   await assert.rejects(() => service.delete(1), (error: AppError) => error.code === "USER_NOT_FOUND");
 });
 

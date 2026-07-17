@@ -80,7 +80,10 @@ export default class UserService {
     return newUser;
   };
 
-  update = async (data: userRequired, id: userParams): Promise<User> => {
+  update = async (
+    data: userRequired,
+    id: userParams,
+  ): Promise<{ before: User; after: User }> => {
     this.logger.info("Validando duplicidade de email");
     const user = new User(
       data.name,
@@ -142,7 +145,7 @@ export default class UserService {
     this.logger.info("Atualizando usuário");
     const updatedUser = await this.userRepository.updateUser(id, user);
 
-    return updatedUser;
+    return { before: userExists, after: updatedUser };
   };
 
   getOne = async (id: userParams): Promise<User> => {
@@ -204,7 +207,7 @@ export default class UserService {
     return response;
   };
 
-  delete = async (id: userParams): Promise<boolean> => {
+  delete = async (id: userParams): Promise<{ before: User; after: null }> => {
     const user = await this.userRepository.getUserById(id);
 
     if (!user) {
@@ -221,7 +224,7 @@ export default class UserService {
     await this.userRepository.deleteUser(id);
 
     this.logger.info("Usuário deletado com sucesso");
-    return true;
+    return { before: user, after: null };
   };
 
   getUserByEmail = async (email: string): Promise<User | null> => {

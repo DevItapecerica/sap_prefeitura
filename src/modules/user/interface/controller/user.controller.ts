@@ -2,6 +2,24 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { userParams, userRequired } from "../../application/dto/user.dto.js";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { UserServiceFactory } from "../../factories/user-service.factory.js";
+import { ApplicationEventContext } from "../../../../core/event/application-event.js";
+import { userEventPublisher } from "../../application/events/user.events.js";
+
+const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
+  correlationId: request.id,
+  actor: {
+    id: request.user.id,
+    name: request.user.name,
+    roleId: request.user.role_id,
+    setorId: request.user.setor_id,
+  },
+  origin: {
+    type: "HTTP",
+    ip: request.ip,
+    method: request.method,
+    route: request.routeOptions.url ?? request.url.split("?")[0],
+  },
+});
 
 export default class UserController {
   static cadastrar = async (
@@ -12,6 +30,11 @@ export default class UserController {
     const service = UserServiceFactory(request.log);
 
     const newUser = await service.cadastrar(user);
+
+    await userEventPublisher.publishCreated({
+      context: eventContext(request),
+      user: newUser,
+    });
 
     request.log.info(
       "Usuário criado com sucesso: " +
@@ -41,11 +64,17 @@ export default class UserController {
     const { id } = request.params;
     const { user } = request.body;
 
-    const updatedUser = await service.update(user, id);
+    const { before, after } = await service.update(user, id);
+
+    await userEventPublisher.publishUpdated({
+      context: eventContext(request),
+      before,
+      after,
+    });
 
     repply.status(200).send({
       message: "Usuário atualizado com sucesso",
-      user: updatedUser,
+      user: after,
       ok: true,
     });
   };
@@ -97,7 +126,12 @@ export default class UserController {
 
     const { id } = request.params;
 
-    await service.delete(id);
+    const { before } = await service.delete(id);
+
+    await userEventPublisher.publishDeleted({
+      context: eventContext(request),
+      before,
+    });
 
     repply.status(200).send({
       message: "Usuário deletado com sucesso",
@@ -110,7 +144,11 @@ export default class UserController {
     const user = request.user
     const service = UserServiceFactory(request.log);
     const { new_password, old_password } = request.body;
-    const response = await service.alterPassword(Number(user.id), old_password, new_password);
+    await service.alterPassword(Number(user.id), old_password, new_password);
+    await userEventPublisher.publishPasswordChanged({
+      context: eventContext(request),
+      userId: user.id,
+    });
     reply.status(200).send({message: "Senha alterada com sucesso", ok: true});
   };
 }

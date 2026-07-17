@@ -1,8 +1,14 @@
-import { FastifyPluginAsync, FastifyRequest } from "fastify";
+import { FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 import { AuditAction, AuditResult } from "../domain/entity/AuditEvent.js";
 import { sanitizeAuditValue } from "../application/utils/audit-sanitizer.js";
 import { makeAuditService } from "../factories/makeAuditService.js";
+import { consumeAuditRequestHandled } from "../events/audit-request-registry.js";
+import { RecordAuditDto } from "../application/dto/audit.dto.js";
+
+interface AuditRecorder {
+  record(input: RecordAuditDto): Promise<unknown>;
+}
 
 const parsePayload = (payload: unknown): unknown => {
   if (typeof payload !== "string") return payload;
@@ -48,14 +54,15 @@ const resultCount = (response: any): number | null => {
   return null;
 };
 
-const service = makeAuditService();
-
-const AuditHttpHook: FastifyPluginAsync = async (fastify) => {
+export const makeAuditHttpHook = (service: AuditRecorder) => fp(async (fastify) => {
   fastify.addHook("onSend", async (request, _reply, payload) => {
     request.auditResponse = sanitizeAuditValue(parsePayload(payload));
     return payload;
   });
   fastify.addHook("onResponse", async (request, reply) => {
+    if (reply.statusCode < 400 && consumeAuditRequestHandled(request.id)) {
+      return;
+    }
     const action = classify(request, reply.statusCode);
     const isAuthRoute =
       request.url.includes("/login") || request.url.includes("/logout");
@@ -116,6 +123,6 @@ const AuditHttpHook: FastifyPluginAsync = async (fastify) => {
       );
     }
   });
-};
+});
 
-export default fp(AuditHttpHook);
+export default makeAuditHttpHook(makeAuditService());
