@@ -22,6 +22,7 @@ import App from "./app.js";
 import rateLimit from "./core/plugin/rateLimit.js";
 import notFoundHook from "./core/hooks/notFoundHook.js";
 import { startFtScheduler } from "./modules/ft-edital/scheduler/ft-scheduler.js";
+import AuditHttpHook from "./modules/audit/interface/audit-http.hook.js";
 
 const fastify = Fastify(logConfig);
 
@@ -29,6 +30,7 @@ const port: number = Number(PORT);
 
 // Registrando Plugins
 fastify.log.info("Registrando plugins");
+
 await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
 
@@ -47,6 +49,9 @@ fastify.log.info("RateLimit Registrado");
 // Registrando hooks
 await fastify.register(LoggerResponse)
 fastify.log.info("Logger Registrado");
+
+await fastify.register(AuditHttpHook);
+fastify.log.info("Audit HTTP Hook Registrado");
 
 await fastify.register(ErrorHook);
 fastify.log.info("Error Registrado");

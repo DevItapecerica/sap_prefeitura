@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx --watch src/server.ts",
-    "build": "tsc -p .",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p .",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "test:unit": "node --import tsx --test \"src/**/*.test.ts\"",
@@ -14,12 +15,12 @@
     "start": "node dist/server.js",
     "prestart": "npm install --production",
     "migrate:generate": "npx ts-node src/core/utils/generateMigration.ts",
-    "migrate": "tsc -p . & npx sequelize-cli db:migrate ",
-    "migrate:undo": "npx sequelize-cli db:migrate:undo ",
-    "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all ",
-    "seed": "tsc -p . & npx sequelize-cli db:seed:all",
-    "seed:undo": "npx sequelize-cli db:seed:undo",
-    "seed:undo:all": "npx sequelize-cli db:seed:undo:all"
+    "migrate": "npm run build && npx sequelize-cli db:migrate",
+    "migrate:undo": "npm run build && npx sequelize-cli db:migrate:undo",
+    "migrate:undo:all": "npm run build && npx sequelize-cli db:migrate:undo:all",
+    "seed": "npm run build && npx sequelize-cli db:seed:all",
+    "seed:undo": "npm run build && npx sequelize-cli db:seed:undo",
+    "seed:undo:all": "npm run build && npx sequelize-cli db:seed:undo:all"
   },
   "keywords": [],
   "author": "",

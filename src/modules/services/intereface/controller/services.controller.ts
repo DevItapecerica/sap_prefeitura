@@ -53,6 +53,12 @@ export default class ServicesController {
     reply: FastifyReply,
   ) => {
     const user = request.user;
+    if (user.setor_id === null) {
+      return reply.status(403).send({
+        message: "Usuário sem setor associado",
+        ok: false,
+      });
+    }
     const service = serviceFactory(request.log);
     const response = await service.findVisiblesRoleServices(
       user.setor_id,

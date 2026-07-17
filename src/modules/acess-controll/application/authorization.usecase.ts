@@ -42,6 +42,14 @@ export class AuthorizationUseCase {
       throw new AppError("Service not found", 404, "SERVICE_NOT_FOUND");
     }
 
+    if (user.setor_id === null) {
+      throw new AppError(
+        "User has no associated setor",
+        403,
+        "USER_WITHOUT_SETOR",
+      );
+    }
+
     const visibility =
       await this.serviceVisibilityRepository.findVisibilityByServiceAndSetor(
         user.setor_id,

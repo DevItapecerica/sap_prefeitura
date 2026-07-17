@@ -51,7 +51,7 @@ export class FtRelatorioPeriodoService {
     const month = String(query.mes || "").trim();
 
     if (!month) {
-      const now = new Date();
+      const now = this.nowProvider();
       return this.monthToPeriod(now.getUTCFullYear(), now.getUTCMonth() + 1);
     }
 

@@ -17,11 +17,11 @@ export interface ServiceVisibilitiesDB
     id: CreationOptional<number>;
     setor_id: number;
     service_id: number;
-    visibility: boolean;
+    visibility: CreationOptional<boolean | null>;
   }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
-  const ServiceVisibilities = sequelize.define(
+  const ServiceVisibilities = sequelize.define<ServiceVisibilitiesDB>(
     "ServiceVisibilities",
     {
       id: {
@@ -33,10 +33,22 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       setor_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+          model: "setors",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
       service_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+          model: "services",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
       visibility: {
         type: DataTypes.BOOLEAN,
@@ -47,8 +59,19 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       timestamps: false,
       tableName: "service_visibilities",
-    }
+    },
   );
+
+  (ServiceVisibilities as any).associate = (models: any) => {
+    ServiceVisibilities.belongsTo(models.SetorModel, {
+      foreignKey: "setor_id",
+      as: "setor",
+    });
+    ServiceVisibilities.belongsTo(models.ServiceModel, {
+      foreignKey: "service_id",
+      as: "service",
+    });
+  };
 
   return ServiceVisibilities;
 };

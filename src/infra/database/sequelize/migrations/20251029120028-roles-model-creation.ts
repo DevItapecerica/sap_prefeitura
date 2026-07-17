@@ -3,6 +3,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
+    await queryInterface.sequelize.transaction(async (transaction) => {
     await queryInterface.createTable("roles", {
       id: {
         type: DataTypes.INTEGER,
@@ -14,7 +15,7 @@ export default {
         type: DataTypes.STRING,
         allowNull: false,
       },
-    });
+    }, { transaction });
 
     await queryInterface.createTable("permissions", {
       id: {
@@ -71,7 +72,7 @@ export default {
         type: DataTypes.DATE,
         allowNull: true,
       },
-    });
+    }, { transaction });
 
     await queryInterface.createTable("service_visibilities", {
       id: {
@@ -93,12 +94,15 @@ export default {
         allowNull: true,
         defaultValue: false,
       },
+    }, { transaction });
     });
   },
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
-    await queryInterface.dropTable("roles");
-    await queryInterface.dropTable("permissions");
-    await queryInterface.dropTable("service_visibilities");
+    await queryInterface.sequelize.transaction(async (transaction) => {
+      await queryInterface.dropTable("service_visibilities", { transaction });
+      await queryInterface.dropTable("permissions", { transaction });
+      await queryInterface.dropTable("roles", { transaction });
+    });
   },
 };

@@ -2,9 +2,13 @@ import { UserDB } from "../../../../infra/database/sequelize/models/user.model.j
 
 export type userParams = number
 
-export type userRequired = Pick<
-  UserDB, "name" | "email" | "ramal" | "setor_id" | "role_id"
->;
+export type userRequired = {
+  name: string;
+  email: string;
+  ramal: string;
+  setor_id: number;
+  role_id: number;
+};
 
 export type userResponse = UserDB;
 

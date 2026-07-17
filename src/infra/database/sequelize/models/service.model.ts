@@ -15,12 +15,12 @@ export interface ServiceDB extends Model<
 > {
   id: CreationOptional<number>;
   name: string;
-  description: string;
+  description: string | null;
   tag: string;
   url: string;
   createdAt: CreationOptional<Date>;
   updatedAt: CreationOptional<Date>;
-  deletedAt: CreationOptional<Date>;
+  deletedAt: CreationOptional<Date | null>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
@@ -69,6 +69,17 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       paranoid: true,
     },
   );
+
+  (ServiceDB as any).associate = (models: any) => {
+    ServiceDB.hasMany(models.PermissionsModel, {
+      foreignKey: "service_id",
+      as: "permissions",
+    });
+    ServiceDB.hasMany(models.ServiceVisibilities, {
+      foreignKey: "service_id",
+      as: "visibilities",
+    });
+  };
 
   return ServiceDB;
 };

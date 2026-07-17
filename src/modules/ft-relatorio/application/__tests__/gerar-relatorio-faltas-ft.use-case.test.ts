@@ -10,6 +10,9 @@ import { FtRelatorioPeriodo } from "../dto/ft-relatorio.dto.js";
 import { GerarRelatorioFaltasFtUseCase } from "../use-case/gerar-relatorio-faltas-ft.use-case.js";
 import { FtRelatorioBolsista } from "../../domain/entities/ft-relatorio.entity.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
+import { FtRelatorioPeriodoService } from "../../domain/services/ft-relatorio-periodo.service.js";
+
+const FIXED_NOW = new Date("2026-06-15T12:00:00.000Z");
 
 class FakeFtRelatorioRepository implements FtRelatorioRepository {
   public missingEdital = false;
@@ -118,7 +121,10 @@ describe("GerarRelatorioFaltasFtUseCase", () => {
 
   beforeEach(() => {
     repository = new FakeFtRelatorioRepository();
-    useCase = new GerarRelatorioFaltasFtUseCase(repository);
+    useCase = new GerarRelatorioFaltasFtUseCase(
+      repository,
+      new FtRelatorioPeriodoService(() => FIXED_NOW),
+    );
   });
 
   it("gera csv mensal com resumo e detalhes de faltas", async () => {
@@ -140,17 +146,9 @@ describe("GerarRelatorioFaltasFtUseCase", () => {
   it("usa mes atual quando query nao informa mes", async () => {
     await useCase.execute("edital-1");
 
-    const now = new Date();
-    const firstDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-      .toISOString()
-      .slice(0, 10);
-    const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0))
-      .toISOString()
-      .slice(0, 10);
-
     assert.deepEqual(repository.lastPeriodo, {
-      data_inicio: firstDay,
-      data_fim: lastDay,
+      data_inicio: "2026-06-01",
+      data_fim: "2026-06-30",
     });
   });
 

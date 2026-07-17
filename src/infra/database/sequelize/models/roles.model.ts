@@ -35,5 +35,16 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     }
   );
 
+  (Roles as any).associate = (models: any) => {
+    Roles.hasMany(models.UserModel, {
+      foreignKey: "role_id",
+      as: "users",
+    });
+    Roles.hasMany(models.PermissionsModel, {
+      foreignKey: "role_id",
+      as: "permissions",
+    });
+  };
+
   return Roles;
 };

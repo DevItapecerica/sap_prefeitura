@@ -13,6 +13,9 @@ import {
   FtRelatorioVinculo,
 } from "../../domain/entities/ft-relatorio.entity.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
+import { FtRelatorioPeriodoService } from "../../domain/services/ft-relatorio-periodo.service.js";
+
+const FIXED_NOW = new Date("2026-06-15T12:00:00.000Z");
 
 class FakeFtRelatorioRepository implements FtRelatorioRepository {
   public missingEdital = false;
@@ -112,7 +115,10 @@ describe("GerarListaPresencaFtUseCase", () => {
 
   beforeEach(() => {
     repository = new FakeFtRelatorioRepository();
-    useCase = new GerarListaPresencaFtUseCase(repository);
+    useCase = new GerarListaPresencaFtUseCase(
+      repository,
+      new FtRelatorioPeriodoService(() => FIXED_NOW),
+    );
   });
 
   it("gera csv mensal com fim de semana vazio, F nas faltas, P nas presencas e totais", async () => {
@@ -171,17 +177,9 @@ describe("GerarListaPresencaFtUseCase", () => {
   it("usa mes atual quando query nao informa mes", async () => {
     await useCase.execute("edital-1");
 
-    const now = new Date();
-    const firstDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-      .toISOString()
-      .slice(0, 10);
-    const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0))
-      .toISOString()
-      .slice(0, 10);
-
     assert.deepEqual(repository.lastPeriodo, {
-      data_inicio: firstDay,
-      data_fim: lastDay,
+      data_inicio: "2026-06-01",
+      data_fim: "2026-06-30",
     });
   });
 

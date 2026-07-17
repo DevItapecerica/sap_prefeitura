@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { Sequelize, DataTypes } from "sequelize";
 import { DATABASE_URL } from "../../../core/env.js";
 import { DbObject } from "../../../core/types/DbTypes.js";
+import { isSequelizeModelFile } from "./model-loader.js";
 
 const __filename: string = fileURLToPath(import.meta.url);
 const __dirname: string = path.dirname(__filename);
@@ -24,11 +25,7 @@ sequelize = new Sequelize(envVar, {
 const modelDir = path.join(__dirname, "./models");
 const modelFiles = fs
   .readdirSync(modelDir)
-  .filter(
-    (file) =>
-      (file.endsWith("model.js") || file.endsWith("model.ts")) &&
-      (!file.endsWith("model.test.js") || !file.endsWith("model.test.ts")),
-  );
+  .filter(isSequelizeModelFile);
 
 for (const file of modelFiles) {
   if (file === basename) {
