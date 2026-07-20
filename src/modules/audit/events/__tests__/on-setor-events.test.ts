@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { SetorCreatedEvent } from "../../../setor/application/events/setor-created.event.js";
-import { SetorDeletedEvent } from "../../../setor/application/events/setor-deleted.event.js";
-import { SetorEventHandler } from "../../../setor/application/events/setor-event-handler.js";
-import { SetorEventSubscriber } from "../../../setor/application/events/setor-event-subscriber.js";
-import { SetorUpdatedEvent } from "../../../setor/application/events/setor-updated.event.js";
+import { SetorEventHandler, SetorEventSubscriber } from "../../../setor/application/events/setor-event-bus.js";
+import { SetorCreatedEvent, SetorDeletedEvent, SetorUpdatedEvent } from "../../../setor/application/events/setor.events.js";
 import { Setor } from "../../../setor/domain/entity/Setor.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { consumeAuditRequestHandled } from "../audit-request-registry.js";

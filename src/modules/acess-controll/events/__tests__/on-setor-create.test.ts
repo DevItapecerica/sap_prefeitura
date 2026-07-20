@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { SetorCreatedEvent } from "../../../setor/application/events/setor-created.event.js";
-import { SetorEventHandler } from "../../../setor/application/events/setor-event-handler.js";
-import { SetorEventSubscriber } from "../../../setor/application/events/setor-event-subscriber.js";
+import { SetorEventHandler, SetorEventSubscriber } from "../../../setor/application/events/setor-event-bus.js";
+import { SetorCreatedEvent } from "../../../setor/application/events/setor.events.js";
 import { Setor } from "../../../setor/domain/entity/Setor.js";
 import { registerSetorCreatedHandler } from "../on-setor-create.js";
 
@@ -22,6 +21,7 @@ test("setor created handler creates access defaults and unsubscribes", async () 
   const unsubscribe = registerSetorCreatedHandler(
     events,
     { ensureForSetor: async (setor: Setor) => { received.push(setor); } } as any,
+    { error: () => undefined } as any,
   );
   const setor = new Setor(2, "TI", "Tecnologia");
 
@@ -33,4 +33,20 @@ test("setor created handler creates access defaults and unsubscribes", async () 
 
   unsubscribe();
   assert.equal(events.created, undefined);
+});
+
+test("setor created handler contains access default failures", async () => {
+  const events = new FakeSubscriber();
+  const errors: unknown[] = [];
+  registerSetorCreatedHandler(
+    events,
+    { ensureForSetor: async () => { throw new Error("offline"); } } as any,
+    { error: (input: unknown) => { errors.push(input); } } as any,
+  );
+
+  await assert.doesNotReject(async () => events.created!({
+    context: { correlationId: "request-2", origin: { type: "HTTP" } },
+    setor: new Setor(2, "TI", "Tecnologia"),
+  }));
+  assert.equal(errors.length, 1);
 });

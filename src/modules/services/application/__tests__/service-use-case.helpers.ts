@@ -3,6 +3,11 @@ import { Services } from "../../domain/entity/Services.js";
 import { ServiceVisibility } from "../../domain/entity/ServiceVisibility.js";
 import { ServiceQuery } from "../../domain/repository/service-query.js";
 import { ServiceWriteData } from "../../domain/repository/services.repository.js";
+import {
+  ServiceAggregate,
+  ServiceAggregateError,
+  ServiceAggregateUpdate,
+} from "../../domain/repository/service-aggregate.repository.js";
 
 const now = new Date("2026-01-01T00:00:00.000Z");
 
@@ -117,8 +122,81 @@ export class FakePermissionRepository {
   }
 }
 
-export const makeServiceFakes = () => ({
-  services: new FakeServicesRepository(),
-  visibility: new FakeVisibilityRepository(),
-  permissions: new FakePermissionRepository(),
-});
+export class FakeServiceAggregateRepository {
+  constructor(
+    private readonly services: FakeServicesRepository,
+    private readonly visibility: FakeVisibilityRepository,
+    private readonly permissions: FakePermissionRepository,
+  ) {}
+
+  async findById(id: number): Promise<ServiceAggregate | null> {
+    const service = await this.services.getOneServices(id);
+    if (!service) return null;
+    return {
+      services: service,
+      permissions: await this.permissions.getByServiceId(id),
+      visibility: await this.visibility.findOneServiceVisibility(id),
+    };
+  }
+
+  async update(id: number, input: ServiceAggregateUpdate) {
+    const before = await this.findById(id);
+    if (!before) throw new ServiceAggregateError("SERVICE_NOT_FOUND");
+
+    const permissionIds = new Set<number>();
+    for (const item of input.permissions ?? []) {
+      const stored = before.permissions.find((permission) => permission.id === item.id);
+      if (
+        permissionIds.has(item.id) ||
+        !stored ||
+        stored.service_id !== id ||
+        stored.role_id !== item.role_id ||
+        item.service_id !== id
+      ) throw new ServiceAggregateError("PERMISSION_NOT_FOUND");
+      permissionIds.add(item.id);
+    }
+    const visibilityIds = new Set<number>();
+    for (const item of input.visibility ?? []) {
+      const stored = before.visibility.find((visibility) => visibility.id === item.id);
+      if (
+        visibilityIds.has(item.id) ||
+        !stored ||
+        stored.service_id !== id ||
+        stored.setor_id !== item.setor_id ||
+        item.service_id !== id
+      ) throw new ServiceAggregateError("VISIBILITY_NOT_FOUND");
+      visibilityIds.add(item.id);
+    }
+
+    await this.services.updateServices(id, {
+      ...input.service,
+      tag: input.service.tag ?? before.services.tag,
+    });
+    for (const item of input.permissions ?? []) {
+      await this.permissions.updatePermissions(item.id, item);
+    }
+    for (const item of input.visibility ?? []) {
+      await this.visibility.updateServiceVisibility(item.id, item.visibility);
+    }
+    return { before, after: (await this.findById(id))! };
+  }
+
+  async delete(id: number) {
+    const before = await this.findById(id);
+    if (!before) throw new ServiceAggregateError("SERVICE_NOT_FOUND");
+    await this.services.deleteOneServices(id);
+    return { before, after: null } as const;
+  }
+}
+
+export const makeServiceFakes = () => {
+  const services = new FakeServicesRepository();
+  const visibility = new FakeVisibilityRepository();
+  const permissions = new FakePermissionRepository();
+  return {
+    services,
+    visibility,
+    permissions,
+    aggregate: new FakeServiceAggregateRepository(services, visibility, permissions),
+  };
+};

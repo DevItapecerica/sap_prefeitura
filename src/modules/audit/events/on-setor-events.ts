@@ -1,60 +1,34 @@
 import { FastifyBaseLogger } from "fastify";
-import { SetorCreatedEvent } from "../../setor/application/events/setor-created.event.js";
-import { SetorDeletedEvent } from "../../setor/application/events/setor-deleted.event.js";
-import { SetorEventSubscriber } from "../../setor/application/events/setor-event-subscriber.js";
-import { SetorUpdatedEvent } from "../../setor/application/events/setor-updated.event.js";
-import { RecordAuditDto } from "../application/dto/audit.dto.js";
-import { markAuditRequestHandled } from "./audit-request-registry.js";
+import { SetorEventSubscriber } from "../../setor/application/events/setor-event-bus.js";
+import {
+  SetorCreatedEvent,
+  SetorDeletedEvent,
+  SetorUpdatedEvent,
+} from "../../setor/application/events/setor.events.js";
+import {
+  AuditRecorder,
+  makeAuditBaseRecord,
+  recordAuditEvent,
+} from "./audit-event-recorder.js";
 
-interface AuditRecorder {
-  record(input: RecordAuditDto): Promise<unknown>;
-}
-
-type SetorAuditEvent =
-  | SetorCreatedEvent
-  | SetorUpdatedEvent
-  | SetorDeletedEvent;
-
-const baseRecord = (event: SetorAuditEvent): Omit<
-  RecordAuditDto,
-  "action" | "resourceId"
-> => ({
-  actor: {
-    userId: event.context.actor?.id ?? null,
-    name: event.context.actor?.name ?? null,
-    roleId: event.context.actor?.roleId ?? null,
-    setorId: event.context.actor?.setorId ?? null,
-  },
-  module: "setor",
-  resourceType: "setor",
-  result: "SUCCESS",
-  requestId: event.context.correlationId,
-  ip: event.context.origin?.ip ?? null,
-  method: event.context.origin?.method ?? null,
-  route: event.context.origin?.route ?? null,
-});
+type SetorAuditEvent = SetorCreatedEvent | SetorUpdatedEvent | SetorDeletedEvent;
 
 export const registerSetorAuditHandlers = (
   setorEvents: SetorEventSubscriber,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
-  const record = async (event: SetorAuditEvent, input: RecordAuditDto) => {
-    try {
-      await auditService.record(input);
-      markAuditRequestHandled(event.context.correlationId);
-    } catch (error) {
-      logger.error(
-        { err: error, requestId: event.context.correlationId },
-        "Unable to enqueue setor audit event",
-      );
-    }
-  };
+  const record = (
+    event: SetorAuditEvent,
+    data: Parameters<AuditRecorder["record"]>[0],
+  ) => recordAuditEvent(event, data, auditService, logger);
+  const base = (event: SetorAuditEvent) =>
+    makeAuditBaseRecord(event, "setor", "setor");
 
   const unsubscribe = [
     setorEvents.onCreated((event) =>
       record(event, {
-        ...baseRecord(event),
+        ...base(event),
         action: "CREATE",
         resourceId: String(event.setor.id),
         before: null,
@@ -63,7 +37,7 @@ export const registerSetorAuditHandlers = (
     ),
     setorEvents.onUpdated((event) =>
       record(event, {
-        ...baseRecord(event),
+        ...base(event),
         action: "UPDATE",
         resourceId: String(event.after.id),
         before: event.before,
@@ -72,7 +46,7 @@ export const registerSetorAuditHandlers = (
     ),
     setorEvents.onDeleted((event) =>
       record(event, {
-        ...baseRecord(event),
+        ...base(event),
         action: "DELETE",
         resourceId: String(event.before.id),
         before: event.before,
@@ -80,6 +54,5 @@ export const registerSetorAuditHandlers = (
       }),
     ),
   ];
-
   return () => unsubscribe.forEach((off) => off());
 };

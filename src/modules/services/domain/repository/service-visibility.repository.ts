@@ -12,8 +12,4 @@ export interface ServiceVisibilityRepository {
     serviceId: number,
   ): Promise<ServiceVisibility | null>;
   findVisibilityBySetor(setorId: number | string): Promise<ServiceVisibility[]>;
-  updateServiceVisibility(
-    id: number,
-    visibility: boolean,
-  ): Promise<ServiceVisibility | null>;
 }

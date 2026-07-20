@@ -1,11 +1,15 @@
 import { eventBus } from "../../core/event/index.js";
-import { ServiceCreatedEvent } from "../../modules/services/application/events/service-created.event.js";
-import { ServiceDeletedEvent } from "../../modules/services/application/events/service-deleted.event.js";
-import { ServiceEventHandler } from "../../modules/services/application/events/service-event-handler.js";
-import { SERVICE_EVENTS } from "../../modules/services/application/events/service-event-names.js";
-import { ServiceEventPublisher } from "../../modules/services/application/events/service-event-publisher.js";
-import { ServiceEventSubscriber } from "../../modules/services/application/events/service-event-subscriber.js";
-import { ServiceUpdatedEvent } from "../../modules/services/application/events/service-updated.event.js";
+import {
+  ServiceEventHandler,
+  ServiceEventPublisher,
+  ServiceEventSubscriber,
+} from "../../modules/services/application/events/service-event-bus.js";
+import {
+  SERVICE_EVENTS,
+  ServiceCreatedEvent,
+  ServiceDeletedEvent,
+  ServiceUpdatedEvent,
+} from "../../modules/services/application/events/service.events.js";
 
 export class EventBusServiceEventsAdapter
   implements ServiceEventPublisher, ServiceEventSubscriber

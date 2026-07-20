@@ -1,32 +1,18 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
 import { ChangeUserPasswordDto } from "../../application/dto/change-user-password.dto.js";
 import { CreateUserDto } from "../../application/dto/create-user.dto.js";
 import { ListUsersDto } from "../../application/dto/list-users.dto.js";
 import { UpdateUserDto } from "../../application/dto/update-user.dto.js";
-import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { makeChangeUserPasswordUseCase } from "../../factories/make-change-user-password-use-case.factory.js";
-import { makeCreateUserUseCase } from "../../factories/make-create-user-use-case.factory.js";
-import { makeDeleteUserUseCase } from "../../factories/make-delete-user-use-case.factory.js";
-import { makeGetUserByIdUseCase } from "../../factories/make-get-user-by-id-use-case.factory.js";
-import { makeListUsersUseCase } from "../../factories/make-list-users-use-case.factory.js";
-import { makeUpdateUserUseCase } from "../../factories/make-update-user-use-case.factory.js";
-import { makeUserEventPublisher } from "../../factories/make-user-event-publisher.factory.js";
-
-const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
-  correlationId: request.id,
-  actor: {
-    id: request.user.id,
-    name: request.user.name,
-    roleId: request.user.role_id,
-    setorId: request.user.setor_id,
-  },
-  origin: {
-    type: "HTTP",
-    ip: request.ip,
-    method: request.method,
-    route: request.routeOptions.url ?? request.url.split("?")[0],
-  },
-});
+import {
+  makeChangeUserPasswordUseCase,
+  makeCreateUserUseCase,
+  makeDeleteUserUseCase,
+  makeGetUserByIdUseCase,
+  makeListUsersUseCase,
+  makeUpdateUserUseCase,
+  makeUserEventPublisher,
+} from "../../factories/user.factories.js";
 
 const userEventPublisher = makeUserEventPublisher();
 
@@ -39,7 +25,7 @@ export default class UserController {
     const newUser = await makeCreateUserUseCase().execute(user);
 
     await userEventPublisher.publishCreated({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       user: newUser,
     });
 
@@ -72,7 +58,7 @@ export default class UserController {
     const { before, after } = await makeUpdateUserUseCase().execute(id, user);
 
     await userEventPublisher.publishUpdated({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       before,
       after,
     });
@@ -125,7 +111,7 @@ export default class UserController {
     const { before } = await makeDeleteUserUseCase().execute(id);
 
     await userEventPublisher.publishDeleted({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       before,
     });
 
@@ -150,7 +136,7 @@ export default class UserController {
       new_password,
     );
     await userEventPublisher.publishPasswordChanged({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       userId: user.id,
     });
     reply.status(200).send({

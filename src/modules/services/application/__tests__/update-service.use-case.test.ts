@@ -13,11 +13,7 @@ const servicePayload = {
 
 test("UpdateServiceUseCase returns complete before and after aggregates", async () => {
   const fakes = makeServiceFakes();
-  const result = await new UpdateServiceUseCase(
-    fakes.services as any,
-    fakes.visibility as any,
-    fakes.permissions as any,
-  ).execute(
+  const result = await new UpdateServiceUseCase(fakes.aggregate).execute(
     6,
     servicePayload,
     [{ id: 1, role_id: 1, service_id: 6, read: true, write: true, edit: false, del: false }],
@@ -34,11 +30,10 @@ test("UpdateServiceUseCase returns complete before and after aggregates", async 
 
 test("UpdateServiceUseCase allows updating only the service", async () => {
   const fakes = makeServiceFakes();
-  const result = await new UpdateServiceUseCase(
-    fakes.services as any,
-    fakes.visibility as any,
-    fakes.permissions as any,
-  ).execute(6, { ...servicePayload, tag: undefined });
+  const result = await new UpdateServiceUseCase(fakes.aggregate).execute(
+    6,
+    { ...servicePayload, tag: undefined },
+  );
 
   assert.equal(result.after.services.tag, "ft");
   assert.deepEqual(fakes.permissions.writes, []);
@@ -47,11 +42,7 @@ test("UpdateServiceUseCase allows updating only the service", async () => {
 
 test("UpdateServiceUseCase validates all links before writing", async () => {
   const fakes = makeServiceFakes();
-  const useCase = new UpdateServiceUseCase(
-    fakes.services as any,
-    fakes.visibility as any,
-    fakes.permissions as any,
-  );
+  const useCase = new UpdateServiceUseCase(fakes.aggregate);
 
   await assert.rejects(
     () => useCase.execute(6, servicePayload, [

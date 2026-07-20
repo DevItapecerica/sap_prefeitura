@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { ServiceCreatedEvent } from "../../../services/application/events/service-created.event.js";
-import { ServiceDeletedEvent } from "../../../services/application/events/service-deleted.event.js";
-import { ServiceEventHandler } from "../../../services/application/events/service-event-handler.js";
-import { ServiceEventSubscriber } from "../../../services/application/events/service-event-subscriber.js";
-import { ServiceUpdatedEvent } from "../../../services/application/events/service-updated.event.js";
+import { ServiceEventHandler, ServiceEventSubscriber } from "../../../services/application/events/service-event-bus.js";
+import { ServiceCreatedEvent, ServiceDeletedEvent, ServiceUpdatedEvent } from "../../../services/application/events/service.events.js";
 import { Services } from "../../../services/domain/entity/Services.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { consumeAuditRequestHandled } from "../audit-request-registry.js";

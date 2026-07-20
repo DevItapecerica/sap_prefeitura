@@ -1,9 +1,3 @@
-import { Permissions } from "../../../permission/domain/entity/Permission.js";
-import { Services } from "../../domain/entity/Services.js";
-import { ServiceVisibility } from "../../domain/entity/ServiceVisibility.js";
+import { ServiceAggregate } from "../../domain/repository/service-aggregate.repository.js";
 
-export interface ServiceAggregateDto {
-  services: Services;
-  permissions: Permissions[];
-  visibility: ServiceVisibility[];
-}
+export type ServiceAggregateDto = ServiceAggregate;

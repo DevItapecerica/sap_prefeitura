@@ -1,33 +1,19 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { ApplicationEventContext } from "../../../../core/event/application-event.js";
+import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
 import { CreateServiceDto } from "../../application/dto/create-service.dto.js";
 import { ListServicesDto } from "../../application/dto/list-services.dto.js";
 import { ServicePermissionDto } from "../../application/dto/service-permission.dto.js";
 import { ServiceVisibilityDto } from "../../application/dto/service-visibility.dto.js";
 import { UpdateServiceDto } from "../../application/dto/update-service.dto.js";
-import { makeCreateServiceUseCase } from "../../factories/make-create-service-use-case.factory.js";
-import { makeDeleteServiceUseCase } from "../../factories/make-delete-service-use-case.factory.js";
-import { makeGetServiceByIdUseCase } from "../../factories/make-get-service-by-id-use-case.factory.js";
-import { makeListServicesUseCase } from "../../factories/make-list-services-use-case.factory.js";
-import { makeListVisibleServicesUseCase } from "../../factories/make-list-visible-services-use-case.factory.js";
-import { makeServiceEventPublisher } from "../../factories/make-service-event-publisher.factory.js";
-import { makeUpdateServiceUseCase } from "../../factories/make-update-service-use-case.factory.js";
-
-const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
-  correlationId: request.id,
-  actor: {
-    id: request.user.id,
-    name: request.user.name,
-    roleId: request.user.role_id,
-    setorId: request.user.setor_id,
-  },
-  origin: {
-    type: "HTTP",
-    ip: request.ip,
-    method: request.method,
-    route: request.routeOptions.url ?? request.url.split("?")[0],
-  },
-});
+import {
+  makeCreateServiceUseCase,
+  makeDeleteServiceUseCase,
+  makeGetServiceByIdUseCase,
+  makeListServicesUseCase,
+  makeListVisibleServicesUseCase,
+  makeServiceEventPublisher,
+  makeUpdateServiceUseCase,
+} from "../../factories/service.factories.js";
 
 const serviceEventPublisher = makeServiceEventPublisher();
 
@@ -93,7 +79,7 @@ export default class ServicesController {
     );
 
     await serviceEventPublisher.publishCreated({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       service,
     });
 
@@ -119,7 +105,7 @@ export default class ServicesController {
     );
 
     await serviceEventPublisher.publishUpdated({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       before,
       after,
     });
@@ -136,7 +122,7 @@ export default class ServicesController {
     );
 
     await serviceEventPublisher.publishDeleted({
-      context: eventContext(request),
+      context: makeApplicationEventContext(request),
       before,
     });
 

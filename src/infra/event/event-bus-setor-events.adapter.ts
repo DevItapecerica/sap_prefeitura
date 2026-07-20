@@ -1,11 +1,15 @@
 import { eventBus } from "../../core/event/index.js";
-import { SetorCreatedEvent } from "../../modules/setor/application/events/setor-created.event.js";
-import { SetorDeletedEvent } from "../../modules/setor/application/events/setor-deleted.event.js";
-import { SetorEventHandler } from "../../modules/setor/application/events/setor-event-handler.js";
-import { SETOR_EVENTS } from "../../modules/setor/application/events/setor-event-names.js";
-import { SetorEventPublisher } from "../../modules/setor/application/events/setor-event-publisher.js";
-import { SetorEventSubscriber } from "../../modules/setor/application/events/setor-event-subscriber.js";
-import { SetorUpdatedEvent } from "../../modules/setor/application/events/setor-updated.event.js";
+import {
+  SetorEventHandler,
+  SetorEventPublisher,
+  SetorEventSubscriber,
+} from "../../modules/setor/application/events/setor-event-bus.js";
+import {
+  SETOR_EVENTS,
+  SetorCreatedEvent,
+  SetorDeletedEvent,
+  SetorUpdatedEvent,
+} from "../../modules/setor/application/events/setor.events.js";
 
 export class EventBusSetorEventsAdapter
   implements SetorEventPublisher, SetorEventSubscriber

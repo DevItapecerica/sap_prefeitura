@@ -6,11 +6,7 @@ import { makeServiceFakes } from "./service-use-case.helpers.js";
 
 test("GetServiceByIdUseCase returns the complete aggregate", async () => {
   const fakes = makeServiceFakes();
-  const result = await new GetServiceByIdUseCase(
-    fakes.services as any,
-    fakes.visibility as any,
-    fakes.permissions as any,
-  ).execute(6);
+  const result = await new GetServiceByIdUseCase(fakes.aggregate).execute(6);
 
   assert.equal(result.services.id, 6);
   assert.equal(result.permissions.length, 2);
@@ -20,7 +16,7 @@ test("GetServiceByIdUseCase returns the complete aggregate", async () => {
 test("GetServiceByIdUseCase rejects an unknown service", async () => {
   const fakes = makeServiceFakes();
   await assert.rejects(
-    () => new GetServiceByIdUseCase(fakes.services as any, fakes.visibility as any, fakes.permissions as any).execute(99),
+    () => new GetServiceByIdUseCase(fakes.aggregate).execute(99),
     (error: AppError) => error.code === "SERVICE_NOT_FOUND",
   );
 });

@@ -11,6 +11,4 @@ export interface ServicesRepository {
   getAllServices(query: ServiceQuery): Promise<ServiceListResult>;
   getOneServices(id: number): Promise<Services | null>;
   createServices(service: ServiceWriteData): Promise<Services>;
-  updateServices(id: number, service: ServiceWriteData): Promise<Services | null>;
-  deleteOneServices(id: number): Promise<boolean>;
 }

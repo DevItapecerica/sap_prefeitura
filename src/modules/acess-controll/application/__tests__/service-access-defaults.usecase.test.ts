@@ -171,3 +171,17 @@ test("ServiceAccessDefaultsUseCase cria defaults para role e setor novos", async
   assert.equal(setorThreeVisibilities.length, 2);
   assert.ok(setorThreeVisibilities.every((visibility) => !visibility.visibility));
 });
+
+test("ServiceAccessDefaultsUseCase reconcilia defaults de forma idempotente", async () => {
+  const { useCase, permissionRepository, visibilityRepository } = makeUseCase();
+
+  await useCase.reconcile();
+  const permissionCount = permissionRepository.permissions.length;
+  const visibilityCount = visibilityRepository.visibilities.length;
+  await useCase.reconcile();
+
+  assert.equal(permissionRepository.permissions.length, permissionCount);
+  assert.equal(visibilityRepository.visibilities.length, visibilityCount);
+  assert.equal(permissionCount, 4);
+  assert.equal(visibilityCount, 4);
+});

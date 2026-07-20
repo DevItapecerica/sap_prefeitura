@@ -55,23 +55,6 @@ export class SequelizeServicesRepository implements ServicesRepository {
     return this.toEntity(created);
   }
 
-  async updateServices(
-    id: number,
-    service: ServiceWriteData,
-  ): Promise<Services | null> {
-    const current = await this.model.findByPk(id);
-    if (!current) return null;
-    await current.update(service);
-    return this.toEntity(current);
-  }
-  async deleteOneServices(id: number): Promise<boolean> {
-    const deleted = await this.model.destroy({
-      where: { id },
-    });
-
-    return deleted > 0;
-  }
-
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: any): Services {
     return new Services(

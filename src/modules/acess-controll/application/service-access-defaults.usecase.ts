@@ -30,6 +30,16 @@ export class ServiceAccessDefaultsUseCase {
     ]);
   }
 
+  async reconcile(): Promise<void> {
+    const { services } = await this.servicesRepository.getAllServices({
+      page: 0,
+      order: "id:asc",
+    });
+    for (const service of services) {
+      await this.ensureForService(service.id);
+    }
+  }
+
   async ensureForRole(role: Roles): Promise<void> {
     const { services } = await this.servicesRepository.getAllServices({
       page: 0,

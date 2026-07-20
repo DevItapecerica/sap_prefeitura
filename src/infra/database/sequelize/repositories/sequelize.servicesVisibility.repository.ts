@@ -39,16 +39,6 @@ export class SequelizeServiceVisibilityRepository
     return data.map((item: any) => this.toEntity(item));
   }
 
-  async updateServiceVisibility(
-    id: number,
-    visibility: boolean,
-  ): Promise<ServiceVisibility | null> {
-    const current = await this.model.findByPk(id);
-    if (!current) return null;
-    await current.update({ visibility });
-    return this.toEntity(current);
-  }
-
   // 🔥 mapper (ESSENCIAL)
   private toEntity(data: any): ServiceVisibility {
     return new ServiceVisibility(

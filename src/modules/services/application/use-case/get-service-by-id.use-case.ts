@@ -1,22 +1,15 @@
-import { PermissionRepository } from "../../../permission/domain/repository/permission.repository.js";
-import { ServiceVisibilityRepository } from "../../domain/repository/service-visibility.repository.js";
-import { ServicesRepository } from "../../domain/repository/services.repository.js";
+import AppError from "../../../../core/appError.js";
+import { ServiceAggregateRepository } from "../../domain/repository/service-aggregate.repository.js";
 import { ServiceAggregateDto } from "../dto/service-aggregate.dto.js";
-import { loadServiceAggregate } from "../utils/load-service-aggregate.js";
 
 export class GetServiceByIdUseCase {
-  constructor(
-    private readonly servicesRepository: ServicesRepository,
-    private readonly visibilityRepository: ServiceVisibilityRepository,
-    private readonly permissionRepository: PermissionRepository,
-  ) {}
+  constructor(private readonly repository: ServiceAggregateRepository) {}
 
-  execute(id: number): Promise<ServiceAggregateDto> {
-    return loadServiceAggregate(
-      id,
-      this.servicesRepository,
-      this.visibilityRepository,
-      this.permissionRepository,
-    );
+  async execute(id: number): Promise<ServiceAggregateDto> {
+    const aggregate = await this.repository.findById(id);
+    if (!aggregate) {
+      throw new AppError("Service not found", 404, "SERVICE_NOT_FOUND");
+    }
+    return aggregate;
   }
 }
