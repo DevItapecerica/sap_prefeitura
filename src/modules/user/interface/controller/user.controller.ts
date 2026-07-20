@@ -1,9 +1,16 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { userParams, userRequired } from "../../application/dto/user.dto.js";
+import { CreateUserDto, UpdateUserDto } from "../../application/dto/user.dto.js";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
-import { UserServiceFactory } from "../../factories/user-service.factory.js";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { userEventPublisher } from "../../application/events/user.events.js";
+import { makeUserEventPublisher } from "../../factories/user-events.factory.js";
+import {
+  makeChangeUserPasswordUseCase,
+  makeCreateUserUseCase,
+  makeDeleteUserUseCase,
+  makeGetUserByIdUseCase,
+  makeListUsersUseCase,
+  makeUpdateUserUseCase,
+} from "../../factories/user-use-cases.factory.js";
 
 const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
   correlationId: request.id,
@@ -21,15 +28,15 @@ const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
   },
 });
 
+const userEventPublisher = makeUserEventPublisher();
+
 export default class UserController {
   static cadastrar = async (
-    request: FastifyRequest<{ Body: { user: userRequired } }>,
+    request: FastifyRequest<{ Body: { user: CreateUserDto } }>,
     repply: FastifyReply,
   ) => {
     const { user } = request.body;
-    const service = UserServiceFactory(request.log);
-
-    const newUser = await service.cadastrar(user);
+    const newUser = await makeCreateUserUseCase().execute(user);
 
     await userEventPublisher.publishCreated({
       context: eventContext(request),
@@ -54,17 +61,15 @@ export default class UserController {
 
   static update = async (
     request: FastifyRequest<{
-      Body: { user: userRequired };
-      Params: { id: userParams };
+      Body: { user: UpdateUserDto };
+      Params: { id: number };
     }>,
     repply: FastifyReply,
   ) => {
-    const service = UserServiceFactory(request.log);
-
     const { id } = request.params;
     const { user } = request.body;
 
-    const { before, after } = await service.update(user, id);
+    const { before, after } = await makeUpdateUserUseCase().execute(id, user);
 
     await userEventPublisher.publishUpdated({
       context: eventContext(request),
@@ -80,14 +85,11 @@ export default class UserController {
   };
 
   static getOne = async (
-    request: FastifyRequest<{ Params: { id: userParams } }>,
+    request: FastifyRequest<{ Params: { id: number } }>,
     repply: FastifyReply,
   ) => {
-    const service = UserServiceFactory(request.log);
-
     const { id } = request.params;
-
-    const user = await service.getOne(id);
+    const user = await makeGetUserByIdUseCase().execute(id);
 
     repply.status(200).send({ user, message: "Usuário encontrado", ok: true });
   };
@@ -96,8 +98,6 @@ export default class UserController {
     request: FastifyRequest<{ Querystring: QueryParams }>,
     repply: FastifyReply,
   ) => {
-    const service = UserServiceFactory(request.log);
-
     const query = {
       page: request.query.page,
       limit: request.query.limit,
@@ -106,27 +106,23 @@ export default class UserController {
       setorId: request.query.setorId,
     };
 
-    const response = await service.getAllByQuery(query);
+    const response = await makeListUsersUseCase().execute(query);
 
-    repply
-      .status(200)
-      .send({
-        message: "Usuários encontrados",
-        count: response.count,
-        user: response.user,
-        ok: true,
-      });
+    repply.status(200).send({
+      message: "Usuários encontrados",
+      count: response.count,
+      user: response.user,
+      ok: true,
+    });
   };
 
   static delete = async (
-    request: FastifyRequest<{ Params: { id: userParams } }>,
+    request: FastifyRequest<{ Params: { id: number } }>,
     repply: FastifyReply,
   ) => {
-    const service = UserServiceFactory(request.log);
-
     const { id } = request.params;
 
-    const { before } = await service.delete(id);
+    const { before } = await makeDeleteUserUseCase().execute(id);
 
     await userEventPublisher.publishDeleted({
       context: eventContext(request),
@@ -140,15 +136,26 @@ export default class UserController {
     });
   };
 
-  static alterPassword = async (request: FastifyRequest<{Body:{old_password: string; new_password: string}}>, reply: FastifyReply) => {
-    const user = request.user
-    const service = UserServiceFactory(request.log);
+  static alterPassword = async (
+    request: FastifyRequest<{
+      Body: { old_password: string; new_password: string };
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const user = request.user;
     const { new_password, old_password } = request.body;
-    await service.alterPassword(Number(user.id), old_password, new_password);
+    await makeChangeUserPasswordUseCase().execute(
+      Number(user.id),
+      old_password,
+      new_password,
+    );
     await userEventPublisher.publishPasswordChanged({
       context: eventContext(request),
       userId: user.id,
     });
-    reply.status(200).send({message: "Senha alterada com sucesso", ok: true});
+    reply.status(200).send({
+      message: "Senha alterada com sucesso",
+      ok: true,
+    });
   };
 }

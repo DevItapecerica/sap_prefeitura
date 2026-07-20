@@ -3,9 +3,11 @@ import test from "node:test";
 import Fastify from "fastify";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { markAuditRequestHandled } from "../../events/audit-request-registry.js";
-import { userEventPublisher } from "../../../user/application/events/user.events.js";
+import { makeUserEventPublisher } from "../../../user/factories/user-events.factory.js";
 import { User } from "../../../user/domain/entity/User.js";
 import { makeAuditHttpHook } from "../audit-http.hook.js";
+
+const userEventPublisher = makeUserEventPublisher();
 
 test("HTTP hook does not duplicate a successful request already handled by an event", async () => {
   const records: RecordAuditDto[] = [];

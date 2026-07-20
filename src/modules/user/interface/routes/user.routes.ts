@@ -30,7 +30,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
     },
   };
 
-  const userRequired = {
+  const userRequiredSchema = {
     type: "object",
     required: ["name", "email", "ramal", "setor_id", "role_id"],
     properties: {
@@ -136,7 +136,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
         type: "object",
         required: ["user"],
         properties: {
-          user: userRequired,
+          user: userRequiredSchema,
         },
       },
       response: {
@@ -199,7 +199,7 @@ const userRouter: FastifyPluginAsync = async (fastify, options) => {
         type: "object",
         required: ["user"],
         properties: {
-          user: userRequired,
+          user: userRequiredSchema,
         },
       },
       response: {

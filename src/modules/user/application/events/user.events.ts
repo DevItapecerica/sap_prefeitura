@@ -1,5 +1,4 @@
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { eventBus } from "../../../../core/event/index.js";
 import { User } from "../../domain/entity/User.js";
 
 export const USER_EVENTS = {
@@ -30,12 +29,8 @@ export interface UserPasswordChangedEvent {
   userId: number | string;
 }
 
-type EventHandler<T> = (event: T) => Promise<void> | void;
-
-const subscribe = <T>(eventName: string, handler: EventHandler<T>) => {
-  eventBus.on(eventName, handler);
-  return () => eventBus.off(eventName, handler);
-};
+export type UserEventHandler<T> = (event: T) => Promise<void> | void;
+export type UnsubscribeUserEvent = () => void;
 
 export interface UserEventPublisher {
   publishCreated(event: UserCreatedEvent): Promise<void>;
@@ -44,21 +39,11 @@ export interface UserEventPublisher {
   publishPasswordChanged(event: UserPasswordChangedEvent): Promise<void>;
 }
 
-export const userEventPublisher: UserEventPublisher = {
-  publishCreated: (event) => eventBus.emit(USER_EVENTS.created, event),
-  publishUpdated: (event) => eventBus.emit(USER_EVENTS.updated, event),
-  publishDeleted: (event) => eventBus.emit(USER_EVENTS.deleted, event),
-  publishPasswordChanged: (event) =>
-    eventBus.emit(USER_EVENTS.passwordChanged, event),
-};
-
-export const userEventSubscriptions = {
-  onCreated: (handler: EventHandler<UserCreatedEvent>) =>
-    subscribe(USER_EVENTS.created, handler),
-  onUpdated: (handler: EventHandler<UserUpdatedEvent>) =>
-    subscribe(USER_EVENTS.updated, handler),
-  onDeleted: (handler: EventHandler<UserDeletedEvent>) =>
-    subscribe(USER_EVENTS.deleted, handler),
-  onPasswordChanged: (handler: EventHandler<UserPasswordChangedEvent>) =>
-    subscribe(USER_EVENTS.passwordChanged, handler),
-};
+export interface UserEventSubscriber {
+  onCreated(handler: UserEventHandler<UserCreatedEvent>): UnsubscribeUserEvent;
+  onUpdated(handler: UserEventHandler<UserUpdatedEvent>): UnsubscribeUserEvent;
+  onDeleted(handler: UserEventHandler<UserDeletedEvent>): UnsubscribeUserEvent;
+  onPasswordChanged(
+    handler: UserEventHandler<UserPasswordChangedEvent>,
+  ): UnsubscribeUserEvent;
+}

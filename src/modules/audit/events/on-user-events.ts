@@ -4,7 +4,7 @@ import {
   UserDeletedEvent,
   UserPasswordChangedEvent,
   UserUpdatedEvent,
-  userEventSubscriptions,
+  UserEventSubscriber,
 } from "../../user/application/events/user.events.js";
 import { RecordAuditDto } from "../application/dto/audit.dto.js";
 import { markAuditRequestHandled } from "./audit-request-registry.js";
@@ -39,6 +39,7 @@ const baseRecord = (event: UserAuditEvent): Omit<
 });
 
 export const registerUserAuditHandlers = (
+  userEvents: UserEventSubscriber,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
@@ -89,10 +90,10 @@ export const registerUserAuditHandlers = (
     });
 
   const unsubscribe = [
-    userEventSubscriptions.onCreated(onCreated),
-    userEventSubscriptions.onUpdated(onUpdated),
-    userEventSubscriptions.onDeleted(onDeleted),
-    userEventSubscriptions.onPasswordChanged(onPasswordChanged),
+    userEvents.onCreated(onCreated),
+    userEvents.onUpdated(onUpdated),
+    userEvents.onDeleted(onDeleted),
+    userEvents.onPasswordChanged(onPasswordChanged),
   ];
 
   return () => {

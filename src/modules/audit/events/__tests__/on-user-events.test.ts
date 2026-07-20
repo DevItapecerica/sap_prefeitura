@@ -2,14 +2,43 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
 import {
-  userEventPublisher,
+  UserCreatedEvent,
+  UserDeletedEvent,
+  UserEventHandler,
+  UserEventSubscriber,
+  UserPasswordChangedEvent,
+  UserUpdatedEvent,
 } from "../../../user/application/events/user.events.js";
 import { User } from "../../../user/domain/entity/User.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
-import {
-  consumeAuditRequestHandled,
-} from "../audit-request-registry.js";
+import { consumeAuditRequestHandled } from "../audit-request-registry.js";
 import { registerUserAuditHandlers } from "../on-user-events.js";
+
+class FakeUserEventSubscriber implements UserEventSubscriber {
+  created?: UserEventHandler<UserCreatedEvent>;
+  updated?: UserEventHandler<UserUpdatedEvent>;
+  deleted?: UserEventHandler<UserDeletedEvent>;
+  passwordChanged?: UserEventHandler<UserPasswordChangedEvent>;
+
+  onCreated(handler: UserEventHandler<UserCreatedEvent>) {
+    this.created = handler;
+    return () => { if (this.created === handler) this.created = undefined; };
+  }
+  onUpdated(handler: UserEventHandler<UserUpdatedEvent>) {
+    this.updated = handler;
+    return () => { if (this.updated === handler) this.updated = undefined; };
+  }
+  onDeleted(handler: UserEventHandler<UserDeletedEvent>) {
+    this.deleted = handler;
+    return () => { if (this.deleted === handler) this.deleted = undefined; };
+  }
+  onPasswordChanged(handler: UserEventHandler<UserPasswordChangedEvent>) {
+    this.passwordChanged = handler;
+    return () => {
+      if (this.passwordChanged === handler) this.passwordChanged = undefined;
+    };
+  }
+}
 
 const context = (id: string): ApplicationEventContext => ({
   correlationId: id,
@@ -23,8 +52,10 @@ const context = (id: string): ApplicationEventContext => ({
 });
 
 test("user events are translated into audit records with before and after", async () => {
+  const events = new FakeUserEventSubscriber();
   const records: RecordAuditDto[] = [];
   const unregister = registerUserAuditHandlers(
+    events,
     { record: async (input) => records.push(input) },
     { error() {} } as any,
   );
@@ -32,20 +63,10 @@ test("user events are translated into audit records with before and after", asyn
   const after = new User("Depois", "depois@itapecerica.sp.gov.br", null, 2, 3, 7);
 
   try {
-    await userEventPublisher.publishCreated({
-      context: context("create-request"),
-      user: after,
-    });
-    await userEventPublisher.publishUpdated({
-      context: context("update-request"),
-      before,
-      after,
-    });
-    await userEventPublisher.publishDeleted({
-      context: context("delete-request"),
-      before: after,
-    });
-    await userEventPublisher.publishPasswordChanged({
+    await events.created?.({ context: context("create-request"), user: after });
+    await events.updated?.({ context: context("update-request"), before, after });
+    await events.deleted?.({ context: context("delete-request"), before: after });
+    await events.passwordChanged?.({
       context: context("password-request"),
       userId: 7,
     });
@@ -75,14 +96,16 @@ test("user events are translated into audit records with before and after", asyn
 });
 
 test("failed audit listener leaves the HTTP hook fallback available", async () => {
+  const events = new FakeUserEventSubscriber();
   let logged = false;
   const unregister = registerUserAuditHandlers(
+    events,
     { record: async () => { throw new Error("outbox unavailable"); } },
     { error() { logged = true; } } as any,
   );
 
   try {
-    await userEventPublisher.publishPasswordChanged({
+    await events.passwordChanged?.({
       context: context("failed-request"),
       userId: 7,
     });

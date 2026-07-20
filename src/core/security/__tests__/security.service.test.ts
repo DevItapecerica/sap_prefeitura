@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import Sha256CryptService from "../sha256/sha256.service.js";
-import { BcryptService } from "../bycript/bcrypt.service.js";
+import { BcryptService } from "../bcrypt/bcrypt.service.js";
+import { RandomPasswordGenerator } from "../password/random-password-generator.service.js";
 
 process.env.NODE_ENV ??= "test";
 process.env.DATABASE_URL ??= "mariadb://user:pass@localhost:3306/app_prefeitura_test";
@@ -23,11 +24,15 @@ test("Sha256CryptService gera hash deterministico e compara valores", async () =
 
 test("BcryptService gera hash e compara senha", async () => {
   const service = new BcryptService();
-  const hash = await service.hashSync("SenhaForte1", 4);
+  const hash = await service.hash("SenhaForte1", 4);
 
   assert.notEqual(hash, "SenhaForte1");
-  assert.equal(await service.compareSync("SenhaForte1", hash), true);
-  assert.equal(await service.compareSync("OutraSenha1", hash), false);
+  assert.equal(await service.compare("SenhaForte1", hash), true);
+  assert.equal(await service.compare("OutraSenha1", hash), false);
+});
+
+test("RandomPasswordGenerator creates an eight-character password", () => {
+  assert.equal(new RandomPasswordGenerator().generate().length, 8);
 });
 
 test("AesCryptService criptografa e descriptografa dados", async () => {
