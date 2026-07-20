@@ -1,14 +1,12 @@
 import { eventBus } from "../../core/event/index.js";
-import {
-  USER_EVENTS,
-  UserCreatedEvent,
-  UserDeletedEvent,
-  UserEventHandler,
-  UserEventPublisher,
-  UserEventSubscriber,
-  UserPasswordChangedEvent,
-  UserUpdatedEvent,
-} from "../../modules/user/application/events/user.events.js";
+import { UserCreatedEvent } from "../../modules/user/application/events/user-created.event.js";
+import { UserDeletedEvent } from "../../modules/user/application/events/user-deleted.event.js";
+import { UserEventHandler } from "../../modules/user/application/events/user-event-handler.js";
+import { USER_EVENTS } from "../../modules/user/application/events/user-event-names.js";
+import { UserEventPublisher } from "../../modules/user/application/events/user-event-publisher.js";
+import { UserEventSubscriber } from "../../modules/user/application/events/user-event-subscriber.js";
+import { UserPasswordChangedEvent } from "../../modules/user/application/events/user-password-changed.event.js";
+import { UserUpdatedEvent } from "../../modules/user/application/events/user-updated.event.js";
 
 export class EventBusUserEventsAdapter
   implements UserEventPublisher, UserEventSubscriber

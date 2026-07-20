@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
+import { UserListResult } from "../../../../modules/user/domain/repository/user-list-result.js";
+import { UserQuery } from "../../../../modules/user/domain/repository/user-query.js";
 import UserRepository from "../../../../modules/user/domain/repository/user.repository.js";
 import db from "../index.js";
 import { User } from "../../../../modules/user/domain/entity/User.js";
@@ -29,8 +30,8 @@ export class SequelizeUserRepository implements UserRepository {
   };
 
   getAllUser = async (
-    query: QueryParams,
-  ): Promise<{ user: User[]; count: number }> => {
+    query: UserQuery,
+  ): Promise<UserListResult> => {
     const { page, limit, search, order, setorId } = query;
     const queryOrder = order ? order.split(":") : ["id", "desc"];
     const queryLimit = limit ? Number(limit) : undefined;

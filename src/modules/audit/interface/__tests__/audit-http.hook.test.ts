@@ -3,7 +3,7 @@ import test from "node:test";
 import Fastify from "fastify";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { markAuditRequestHandled } from "../../events/audit-request-registry.js";
-import { makeUserEventPublisher } from "../../../user/factories/user-events.factory.js";
+import { makeUserEventPublisher } from "../../../user/factories/make-user-event-publisher.factory.js";
 import { User } from "../../../user/domain/entity/User.js";
 import { makeAuditHttpHook } from "../audit-http.hook.js";
 

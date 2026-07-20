@@ -2,7 +2,8 @@ import AppError from "../../../../core/appError.js";
 import { User } from "../../domain/entity/User.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
-import { UpdateUserDto } from "../dto/user.dto.js";
+import { UpdateUserDto } from "../dto/update-user.dto.js";
+import { UpdateUserResultDto } from "../dto/update-user-result.dto.js";
 
 export class UpdateUserUseCase {
   constructor(
@@ -13,7 +14,7 @@ export class UpdateUserUseCase {
   async execute(
     id: number,
     data: UpdateUserDto,
-  ): Promise<{ before: User; after: User }> {
+  ): Promise<UpdateUserResultDto> {
     const user = new User(
       data.name,
       data.email,

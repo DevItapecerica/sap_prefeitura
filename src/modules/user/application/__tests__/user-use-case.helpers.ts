@@ -1,10 +1,10 @@
 import { IBcrypt } from "../../../../core/security/bcrypt/bcrypt.interface.js";
 import { PasswordGenerator } from "../../../../core/security/password/password-generator.interface.js";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { User } from "../../domain/entity/User.js";
+import { UserQuery } from "../../domain/repository/user-query.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import { UserPasswordNotifier } from "../../domain/repository/user-password-notifier.repository.js";
-import { CreateUserDto } from "../dto/user.dto.js";
+import { CreateUserDto } from "../dto/create-user.dto.js";
 
 export const userPayload: CreateUserDto = {
   name: "User",
@@ -17,12 +17,12 @@ export const userPayload: CreateUserDto = {
 export class FakeUserRepository implements UserRepository {
   users = new Map<number, User>();
   duplicatedEmail = false;
-  lastQuery?: QueryParams;
+  lastQuery?: UserQuery;
   createdPassword?: string;
 
   constructor(private readonly operations?: string[]) {}
 
-  getAllUser(query: QueryParams) {
+  getAllUser(query: UserQuery) {
     this.lastQuery = query;
     return Promise.resolve({ user: [...this.users.values()], count: this.users.size });
   }

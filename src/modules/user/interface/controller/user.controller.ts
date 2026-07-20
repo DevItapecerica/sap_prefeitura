@@ -1,16 +1,16 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { CreateUserDto, UpdateUserDto } from "../../application/dto/user.dto.js";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
+import { ChangeUserPasswordDto } from "../../application/dto/change-user-password.dto.js";
+import { CreateUserDto } from "../../application/dto/create-user.dto.js";
+import { ListUsersDto } from "../../application/dto/list-users.dto.js";
+import { UpdateUserDto } from "../../application/dto/update-user.dto.js";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { makeUserEventPublisher } from "../../factories/user-events.factory.js";
-import {
-  makeChangeUserPasswordUseCase,
-  makeCreateUserUseCase,
-  makeDeleteUserUseCase,
-  makeGetUserByIdUseCase,
-  makeListUsersUseCase,
-  makeUpdateUserUseCase,
-} from "../../factories/user-use-cases.factory.js";
+import { makeChangeUserPasswordUseCase } from "../../factories/make-change-user-password-use-case.factory.js";
+import { makeCreateUserUseCase } from "../../factories/make-create-user-use-case.factory.js";
+import { makeDeleteUserUseCase } from "../../factories/make-delete-user-use-case.factory.js";
+import { makeGetUserByIdUseCase } from "../../factories/make-get-user-by-id-use-case.factory.js";
+import { makeListUsersUseCase } from "../../factories/make-list-users-use-case.factory.js";
+import { makeUpdateUserUseCase } from "../../factories/make-update-user-use-case.factory.js";
+import { makeUserEventPublisher } from "../../factories/make-user-event-publisher.factory.js";
 
 const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
   correlationId: request.id,
@@ -95,7 +95,7 @@ export default class UserController {
   };
 
   static getAllByQuery = async (
-    request: FastifyRequest<{ Querystring: QueryParams }>,
+    request: FastifyRequest<{ Querystring: ListUsersDto }>,
     repply: FastifyReply,
   ) => {
     const query = {
@@ -138,7 +138,7 @@ export default class UserController {
 
   static alterPassword = async (
     request: FastifyRequest<{
-      Body: { old_password: string; new_password: string };
+      Body: ChangeUserPasswordDto;
     }>,
     reply: FastifyReply,
   ) => {

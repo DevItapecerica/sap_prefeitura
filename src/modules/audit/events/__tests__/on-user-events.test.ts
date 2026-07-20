@@ -1,14 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import {
-  UserCreatedEvent,
-  UserDeletedEvent,
-  UserEventHandler,
-  UserEventSubscriber,
-  UserPasswordChangedEvent,
-  UserUpdatedEvent,
-} from "../../../user/application/events/user.events.js";
+import { UserCreatedEvent } from "../../../user/application/events/user-created.event.js";
+import { UserDeletedEvent } from "../../../user/application/events/user-deleted.event.js";
+import { UserEventHandler } from "../../../user/application/events/user-event-handler.js";
+import { UserEventSubscriber } from "../../../user/application/events/user-event-subscriber.js";
+import { UserPasswordChangedEvent } from "../../../user/application/events/user-password-changed.event.js";
+import { UserUpdatedEvent } from "../../../user/application/events/user-updated.event.js";
 import { User } from "../../../user/domain/entity/User.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { consumeAuditRequestHandled } from "../audit-request-registry.js";

@@ -1,8 +1,9 @@
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { User } from "../entity/User.js";
+import { UserListResult } from "./user-list-result.js";
+import { UserQuery } from "./user-query.js";
 
 export default interface UserRepository {
-  getAllUser: (queryParams: QueryParams) => Promise<{ user: User[]; count: number }>;
+  getAllUser: (query: UserQuery) => Promise<UserListResult>;
   getUserById: (id: number) => Promise<User | null>;
   getUserByEmail: (email: string, excludeId?: number) => Promise<User | null>;
   createUser: (data: User, password: string) => Promise<User>;

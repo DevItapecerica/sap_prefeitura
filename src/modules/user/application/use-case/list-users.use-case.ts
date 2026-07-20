@@ -1,15 +1,15 @@
 import AppError from "../../../../core/appError.js";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import ValidateQueryOrder from "../../../../core/utils/ValidateQueryOrder.js";
-import { User } from "../../domain/entity/User.js";
+import { UserListResult } from "../../domain/repository/user-list-result.js";
 import UserRepository from "../../domain/repository/user.repository.js";
+import { ListUsersDto } from "../dto/list-users.dto.js";
 
 export class ListUsersUseCase {
   private readonly allowedOrderFields = ["id", "name", "email", "createdAt"];
 
   constructor(private readonly repository: UserRepository) {}
 
-  async execute(query: QueryParams): Promise<{ user: User[]; count: number }> {
+  async execute(query: ListUsersDto): Promise<UserListResult> {
     const {
       search,
       page = 1,

@@ -10,9 +10,21 @@ test("ListUsersUseCase validates and maps pagination", async () => {
   repository.users.set(1, new User("User", userPayload.email, "1", 1, 1, 1));
   const useCase = new ListUsersUseCase(repository);
 
-  const result = await useCase.execute({ page: 2, limit: 5, order: "name:asc" });
+  const result = await useCase.execute({
+    page: 2,
+    limit: 5,
+    order: "name:asc",
+    search: "User",
+    setorId: 3,
+  });
   assert.equal(result.count, 1);
-  assert.equal(repository.lastQuery?.page, 1);
+  assert.deepEqual(repository.lastQuery, {
+    page: 1,
+    limit: 5,
+    order: "name:asc",
+    search: "User",
+    setorId: 3,
+  });
   await assert.rejects(
     () => useCase.execute({ page: 0 }),
     (error: AppError) => error.code === "INVALID_PAGE",

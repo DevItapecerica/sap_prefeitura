@@ -5,7 +5,7 @@ import { User } from "../../domain/entity/User.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import { UserPasswordNotifier } from "../../domain/repository/user-password-notifier.repository.js";
 import { EmailPolicyService } from "../../domain/services/email-policy.service.js";
-import { CreateUserDto } from "../dto/user.dto.js";
+import { CreateUserDto } from "../dto/create-user.dto.js";
 
 export class CreateUserUseCase {
   constructor(

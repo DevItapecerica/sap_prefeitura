@@ -1,11 +1,9 @@
 import { FastifyBaseLogger } from "fastify";
-import {
-  UserCreatedEvent,
-  UserDeletedEvent,
-  UserPasswordChangedEvent,
-  UserUpdatedEvent,
-  UserEventSubscriber,
-} from "../../user/application/events/user.events.js";
+import { UserCreatedEvent } from "../../user/application/events/user-created.event.js";
+import { UserDeletedEvent } from "../../user/application/events/user-deleted.event.js";
+import { UserEventSubscriber } from "../../user/application/events/user-event-subscriber.js";
+import { UserPasswordChangedEvent } from "../../user/application/events/user-password-changed.event.js";
+import { UserUpdatedEvent } from "../../user/application/events/user-updated.event.js";
 import { RecordAuditDto } from "../application/dto/audit.dto.js";
 import { markAuditRequestHandled } from "./audit-request-registry.js";
 
