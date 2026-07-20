@@ -4,15 +4,15 @@ import { RolesRepository } from "../../roles/domain/repository/roles.repository.
 import { Services } from "../../services/domain/entity/Services.js";
 import {
   ServicesRepository,
-  serviceVisibilityRepository,
 } from "../../services/domain/repository/services.repository.js";
+import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
 import { Setor } from "../../setor/domain/entity/Setor.js";
 import { SetorRepository } from "../../setor/domain/repository/setor.repository.js";
 
 export class ServiceAccessDefaultsUseCase {
   constructor(
     private servicesRepository: ServicesRepository,
-    private serviceVisibilityRepository: serviceVisibilityRepository,
+    private serviceVisibilityRepository: ServiceVisibilityRepository,
     private rolesRepository: RolesRepository,
     private permissionRepository: PermissionRepository,
     private setorRepository: SetorRepository,
@@ -31,7 +31,10 @@ export class ServiceAccessDefaultsUseCase {
   }
 
   async ensureForRole(role: Roles): Promise<void> {
-    const { services } = await this.servicesRepository.getAllServices({});
+    const { services } = await this.servicesRepository.getAllServices({
+      page: 0,
+      order: "id:desc",
+    });
 
     await Promise.all(
       services.map((service) => this.ensurePermission(role, service.id)),
@@ -39,7 +42,10 @@ export class ServiceAccessDefaultsUseCase {
   }
 
   async ensureForSetor(setor: Setor): Promise<void> {
-    const { services } = await this.servicesRepository.getAllServices({});
+    const { services } = await this.servicesRepository.getAllServices({
+      page: 0,
+      order: "id:desc",
+    });
 
     await Promise.all(
       services.map((service) => this.ensureVisibility(setor, service.id)),
@@ -75,7 +81,7 @@ export class ServiceAccessDefaultsUseCase {
 
     if (existing) return;
 
-    await this.serviceVisibilityRepository.ServiceVisibilityCreate(
+    await this.serviceVisibilityRepository.createServiceVisibility(
       setor.id,
       serviceId,
       setor.id === 1,

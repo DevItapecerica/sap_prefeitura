@@ -6,6 +6,8 @@ import { registerUserAuditHandlers } from "./events/on-user-events.js";
 import { makeUserEventSubscriber } from "../user/factories/make-user-event-subscriber.factory.js";
 import { registerSetorAuditHandlers } from "./events/on-setor-events.js";
 import { makeSetorEventSubscriber } from "../setor/factories/make-setor-event-subscriber.factory.js";
+import { registerServiceAuditHandlers } from "./events/on-service-events.js";
+import { makeServiceEventSubscriber } from "../services/factories/make-service-event-subscriber.factory.js";
 
 const AuditModule: FastifyPluginAsync = async (fastify) => {
   const unregisterUserAuditHandlers = registerUserAuditHandlers(
@@ -18,10 +20,16 @@ const AuditModule: FastifyPluginAsync = async (fastify) => {
     makeAuditService(),
     fastify.log,
   );
+  const unregisterServiceAuditHandlers = registerServiceAuditHandlers(
+    makeServiceEventSubscriber(),
+    makeAuditService(),
+    fastify.log,
+  );
   const worker = startAuditWorker(fastify.log);
   fastify.addHook("onClose", async () => {
     unregisterUserAuditHandlers();
     unregisterSetorAuditHandlers();
+    unregisterServiceAuditHandlers();
     worker.stop();
   });
   await fastify.register(AuditRoutes, { prefix: "/audit" });

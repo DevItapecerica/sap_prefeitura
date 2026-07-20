@@ -3,14 +3,14 @@ import { PermissionRepository } from "../../permission/domain/repository/permiss
 import { RolesRepository } from "../../roles/domain/repository/roles.repository.js";
 import {
   ServicesRepository,
-  serviceVisibilityRepository,
 } from "../../services/domain/repository/services.repository.js";
+import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
 import UserRepository from "../../user/domain/repository/user.repository.js";
 
 export class AuthorizationUseCase {
   constructor(
     private serviceRepo: ServicesRepository,
-    private serviceVisibilityRepository: serviceVisibilityRepository,
+    private serviceVisibilityRepository: ServiceVisibilityRepository,
     private rolesRepo: RolesRepository,
     private permissionRepo: PermissionRepository,
     private userRepo: UserRepository,

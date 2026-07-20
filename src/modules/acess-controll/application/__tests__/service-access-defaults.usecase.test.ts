@@ -30,7 +30,7 @@ class FakeVisibilityRepository {
     );
   }
 
-  async ServiceVisibilityCreate(
+  async createServiceVisibility(
     setorId: number,
     serviceId: number,
     visibility = false,

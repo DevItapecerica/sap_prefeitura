@@ -1,12 +1,11 @@
-import { eventBus } from "../../../core/event/index.js";
+import { ServiceEventSubscriber } from "../../services/application/events/service-event-subscriber.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
-import { Services } from "../../services/domain/entity/Services.js";
 
 export const registerServiceCreatedHandler = (
+  serviceEvents: ServiceEventSubscriber,
   serviceAccessDefaults: ServiceAccessDefaultsUseCase,
-) => {
-  eventBus.on("SERVICE_CREATED", async (service: Services) => {
-    await serviceAccessDefaults.ensureForService(service.id);
+) =>
+  serviceEvents.onCreated(async (event) => {
+    await serviceAccessDefaults.ensureForService(event.service.id);
   });
-};
 

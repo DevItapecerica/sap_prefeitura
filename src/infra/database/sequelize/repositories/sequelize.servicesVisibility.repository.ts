@@ -1,13 +1,15 @@
 import db from "../index.js";
-import { serviceVisibilityRepository } from "../../../../modules/services/domain/repository/services.repository.js";
+import { ServiceVisibilityRepository } from "../../../../modules/services/domain/repository/service-visibility.repository.js";
 import { ServiceVisibility } from "../../../../modules/services/domain/entity/ServiceVisibility.js";
 
-export class SequelizeServiceVisibilityRepository implements serviceVisibilityRepository {
+export class SequelizeServiceVisibilityRepository
+  implements ServiceVisibilityRepository
+{
   private model = db.ServiceVisibilities;
 
   async findOneServiceVisibility(
     service_id: number,
-  ): Promise<ServiceVisibility[] | null> {
+  ): Promise<ServiceVisibility[]> {
     const data = await this.model.findAll({
       where: { service_id: service_id },
     });
@@ -23,7 +25,7 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
     return data ? this.toEntity(data) : null;
   }
 
-  async ServiceVisibilityCreate(
+  async createServiceVisibility(
     setor_id: number,
     service_id: number,
     visibility = false,
@@ -38,19 +40,17 @@ export class SequelizeServiceVisibilityRepository implements serviceVisibilityRe
   }
 
   async updateServiceVisibility(
-    setor_id: number,
-    service_id: number,
+    id: number,
     visibility: boolean,
-  ): Promise<ServiceVisibility[]> {
-    await this.model.update(
-      { visibility: visibility },
-      { where: { setor_id: setor_id, service_id: service_id } },
-    );
-    return this.findVisibilityBySetor(setor_id);
+  ): Promise<ServiceVisibility | null> {
+    const current = await this.model.findByPk(id);
+    if (!current) return null;
+    await current.update({ visibility });
+    return this.toEntity(current);
   }
 
   // 🔥 mapper (ESSENCIAL)
-  private toEntity(data: ServiceVisibility): ServiceVisibility {
+  private toEntity(data: any): ServiceVisibility {
     return new ServiceVisibility(
       data.setor_id,
       data.service_id,
