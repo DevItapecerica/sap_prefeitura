@@ -21,7 +21,7 @@ export class ServiceAccessDefaultsUseCase {
   async ensureForService(serviceId: number): Promise<void> {
     const [{ roles }, setores] = await Promise.all([
       this.rolesRepository.getAllRoles({}),
-      this.setorRepository.findAllSetor({}),
+      this.setorRepository.findAllSetor(),
     ]);
 
     await Promise.all([

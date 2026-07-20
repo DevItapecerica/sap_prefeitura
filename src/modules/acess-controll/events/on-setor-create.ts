@@ -1,11 +1,11 @@
-import { eventBus } from "../../../core/event/index.js";
+import { SetorEventSubscriber } from "../../setor/application/events/setor-event-subscriber.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerSetorCreatedHandler = (
+  setorEvents: SetorEventSubscriber,
   serviceAccessDefaults: ServiceAccessDefaultsUseCase,
-) => {
-  eventBus.on("SETOR_CREATED", async (setor) => {
-    await serviceAccessDefaults.ensureForSetor(setor);
+) =>
+  setorEvents.onCreated(async (event) => {
+    await serviceAccessDefaults.ensureForSetor(event.setor);
   });
-};
 

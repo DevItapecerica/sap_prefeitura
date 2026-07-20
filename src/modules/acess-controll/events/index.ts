@@ -3,6 +3,7 @@ import { registerServiceCreatedHandler } from "./on-service-create.js";
 import { registerSetorCreatedHandler } from "./on-setor-create.js";
 import { registerRoleCreatedHandler } from "./on-role-create.js";
 import { makeServiceAccessDefaults } from "../factories/service-access-defaults.factory.js";
+import { makeSetorEventSubscriber } from "../../setor/factories/make-setor-event-subscriber.factory.js";
 
 
 export const registerAccessControlEvents: FastifyPluginAsync = async function (fastify) {
@@ -10,6 +11,12 @@ export const registerAccessControlEvents: FastifyPluginAsync = async function (f
   const serviceAccessDefaults = makeServiceAccessDefaults();
 
   registerServiceCreatedHandler(serviceAccessDefaults);
-  registerSetorCreatedHandler(serviceAccessDefaults);
+  const unregisterSetorCreatedHandler = registerSetorCreatedHandler(
+    makeSetorEventSubscriber(),
+    serviceAccessDefaults,
+  );
   registerRoleCreatedHandler(serviceAccessDefaults);
+  fastify.addHook("onClose", async () => {
+    unregisterSetorCreatedHandler();
+  });
 }

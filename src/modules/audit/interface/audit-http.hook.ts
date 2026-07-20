@@ -54,75 +54,79 @@ const resultCount = (response: any): number | null => {
   return null;
 };
 
-export const makeAuditHttpHook = (service: AuditRecorder) => fp(async (fastify) => {
-  fastify.addHook("onSend", async (request, _reply, payload) => {
-    request.auditResponse = sanitizeAuditValue(parsePayload(payload));
-    return payload;
+export const makeAuditHttpHook = (service: AuditRecorder) =>
+  fp(async (fastify) => {
+    fastify.addHook("onSend", async (request, _reply, payload) => {
+      request.auditResponse = sanitizeAuditValue(parsePayload(payload));
+      return payload;
+    });
+    fastify.addHook("onResponse", async (request, reply) => {
+      if (reply.statusCode < 400 && consumeAuditRequestHandled(request.id)) {
+        return;
+      }
+      const action = classify(request, reply.statusCode);
+      const isAuthRoute =
+        request.url.includes("/login") || request.url.includes("/logout");
+      if (
+        !action ||
+        (!request.user && !isAuthRoute && reply.statusCode !== 403)
+      )
+        return;
+      const parts = routeParts(request);
+      const moduleName = parts[0] ?? "unknown";
+      const resourceId =
+        request.params && typeof request.params === "object"
+          ? Object.values(request.params as Record<string, unknown>)[0]
+          : null;
+      const response: any = request.auditResponse;
+      const actor =
+        request.user ?? (action === "LOGIN" ? response?.user : undefined);
+      const result: AuditResult =
+        reply.statusCode === 403
+          ? "DENIED"
+          : reply.statusCode >= 400
+            ? "FAILURE"
+            : "SUCCESS";
+      try {
+        await service.record({
+          actor: {
+            userId: actor?.id ?? null,
+            name: actor?.name ?? null,
+            roleId: actor?.role_id ?? null,
+            setorId: actor?.setor_id ?? null,
+          },
+          action,
+          module: moduleName,
+          resourceType: moduleName,
+          resourceId:
+            resourceId === undefined || resourceId === null
+              ? null
+              : String(resourceId),
+          result,
+          errorCode:
+            response?.code ??
+            (reply.statusCode >= 400 ? String(reply.statusCode) : null),
+          requestId: request.id,
+          ip: request.ip,
+          method: request.method,
+          route: request.routeOptions.url ?? request.url.split("?")[0],
+          filters: request.query,
+          returnedCount: resultCount(response),
+          after: ["CREATE", "UPDATE"].includes(action) ? response : undefined,
+          metadata:
+            action === "LOGIN_FAILED"
+              ? { attemptedIdentity: (request.body as any)?.email }
+              : ["CREATE", "UPDATE", "DELETE"].includes(action)
+                ? { requestedChanges: request.body }
+                : undefined,
+        });
+      } catch (error) {
+        request.log.error(
+          { err: error, requestId: request.id },
+          "Unable to enqueue audit event",
+        );
+      }
+    });
   });
-  fastify.addHook("onResponse", async (request, reply) => {
-    if (reply.statusCode < 400 && consumeAuditRequestHandled(request.id)) {
-      return;
-    }
-    const action = classify(request, reply.statusCode);
-    const isAuthRoute =
-      request.url.includes("/login") || request.url.includes("/logout");
-    if (!action || (!request.user && !isAuthRoute && reply.statusCode !== 403))
-      return;
-    const parts = routeParts(request);
-    const moduleName = parts[0] ?? "unknown";
-    const resourceId =
-      request.params && typeof request.params === "object"
-        ? Object.values(request.params as Record<string, unknown>)[0]
-        : null;
-    const response: any = request.auditResponse;
-    const actor =
-      request.user ?? (action === "LOGIN" ? response?.user : undefined);
-    const result: AuditResult =
-      reply.statusCode === 403
-        ? "DENIED"
-        : reply.statusCode >= 400
-          ? "FAILURE"
-          : "SUCCESS";
-    try {
-      await service.record({
-        actor: {
-          userId: actor?.id ?? null,
-          name: actor?.name ?? null,
-          roleId: actor?.role_id ?? null,
-          setorId: actor?.setor_id ?? null,
-        },
-        action,
-        module: moduleName,
-        resourceType: moduleName,
-        resourceId:
-          resourceId === undefined || resourceId === null
-            ? null
-            : String(resourceId),
-        result,
-        errorCode:
-          response?.code ??
-          (reply.statusCode >= 400 ? String(reply.statusCode) : null),
-        requestId: request.id,
-        ip: request.ip,
-        method: request.method,
-        route: request.routeOptions.url ?? request.url.split("?")[0],
-        filters: request.query,
-        returnedCount: resultCount(response),
-        after: ["CREATE", "UPDATE"].includes(action) ? response : undefined,
-        metadata:
-          action === "LOGIN_FAILED"
-            ? { attemptedIdentity: (request.body as any)?.email }
-            : ["CREATE", "UPDATE", "DELETE"].includes(action)
-              ? { requestedChanges: request.body }
-              : undefined,
-      });
-    } catch (error) {
-      request.log.error(
-        { err: error, requestId: request.id },
-        "Unable to enqueue audit event",
-      );
-    }
-  });
-});
 
 export default makeAuditHttpHook(makeAuditService());

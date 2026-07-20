@@ -1,4 +1,3 @@
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { Setor } from "../../../../modules/setor/domain/entity/Setor.js";
 import { SetorRepository } from "../../../../modules/setor/domain/repository/setor.repository.js";
 import db from "../index.js";
@@ -14,13 +13,15 @@ export class SequelizeSetorRepository implements SetorRepository {
     return this.toEntity(data);
   }
 
-  async findAllSetor(query?: QueryParams): Promise<Setor[]> {
+  async findAllSetor(): Promise<Setor[]> {
     const data = await this.model.findAll();
 
     return data.map((item: any) => this.toEntity(item));
   }
 
-  async createSetor(setor: Setor): Promise<Setor> {
+  async createSetor(
+    setor: Pick<Setor, "name" | "description">,
+  ): Promise<Setor> {
     const created = await this.model.create({
       name: setor.name,
       description: setor.description,
@@ -29,7 +30,10 @@ export class SequelizeSetorRepository implements SetorRepository {
     return this.toEntity(created);
   }
 
-  async updateSetor(id: number, setor: Partial<Setor>): Promise<Setor | null> {
+  async updateSetor(
+    id: number,
+    setor: Pick<Setor, "name" | "description">,
+  ): Promise<Setor | null> {
     const isSetor = await this.model.findByPk(id);
 
     if (!isSetor) return null;

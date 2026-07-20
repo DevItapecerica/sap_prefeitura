@@ -1,10 +1,12 @@
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { Setor } from "../entity/Setor.js";
 
 export interface SetorRepository {
-    findOneSetor(id: number | string): Promise<Setor | null>;
-    findAllSetor(query?: QueryParams): Promise<Setor[]>;
-    createSetor(setor: any): Promise<Setor>;
-    updateSetor(id: number, setor: any): Promise<Setor | null>;
-    deleteSetor(id: number): Promise<Boolean>;
+  findOneSetor(id: number): Promise<Setor | null>;
+  findAllSetor(): Promise<Setor[]>;
+  createSetor(setor: Pick<Setor, "name" | "description">): Promise<Setor>;
+  updateSetor(
+    id: number,
+    setor: Pick<Setor, "name" | "description">,
+  ): Promise<Setor | null>;
+  deleteSetor(id: number): Promise<boolean>;
 }

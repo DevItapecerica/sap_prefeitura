@@ -1,86 +1,103 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { CreateSetorDto, DeleteSetorDto, FindOneSetorDto, UpdateSetorDto } from "../../application/dto/setor.dto.js";
-import setorFactory from "../../factories/setor.factory.js";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
+import { ApplicationEventContext } from "../../../../core/event/application-event.js";
+import { CreateSetorDto } from "../../application/dto/create-setor.dto.js";
+import { UpdateSetorDto } from "../../application/dto/update-setor.dto.js";
+import { makeCreateSetorUseCase } from "../../factories/make-create-setor-use-case.factory.js";
+import { makeDeleteSetorUseCase } from "../../factories/make-delete-setor-use-case.factory.js";
+import { makeGetSetorByIdUseCase } from "../../factories/make-get-setor-by-id-use-case.factory.js";
+import { makeListSetoresUseCase } from "../../factories/make-list-setores-use-case.factory.js";
+import { makeSetorEventPublisher } from "../../factories/make-setor-event-publisher.factory.js";
+import { makeUpdateSetorUseCase } from "../../factories/make-update-setor-use-case.factory.js";
+
+const eventContext = (request: FastifyRequest): ApplicationEventContext => ({
+  correlationId: request.id,
+  actor: {
+    id: request.user.id,
+    name: request.user.name,
+    roleId: request.user.role_id,
+    setorId: request.user.setor_id,
+  },
+  origin: {
+    type: "HTTP",
+    ip: request.ip,
+    method: request.method,
+    route: request.routeOptions.url ?? request.url.split("?")[0],
+  },
+});
+
+const setorEventPublisher = makeSetorEventPublisher();
 
 export default class SetorController {
-  static getSetores = async (request: FastifyRequest<{ Querystring: QueryParams }>, reply: FastifyReply) => {
-
-    const query = {
-      page: request.query.page,
-      limit: request.query.limit,
-      search: request.query.search,
-      order: request.query.order
-    };
-
-      const service = setorFactory(request.log);
-      const setores = await service.findAllSetor(query);
-      reply.status(200).send({ setores });
-
+  static getSetores = async (
+    _request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
+    const setores = await makeListSetoresUseCase().execute();
+    reply.status(200).send({ setores });
   };
 
   static getOneSetor = async (
-    request: FastifyRequest<{ Params: FindOneSetorDto }>,
+    request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {
-
-      const id = request.params.id;
-      const service = setorFactory(request.log);
-      const setor = await service.findOneSetor(id);
-      reply.status(200).send({ setor });
-
+    const setor = await makeGetSetorByIdUseCase().execute(
+      Number(request.params.id),
+    );
+    reply.status(200).send({ setor });
   };
 
   static postSetor = async (
     request: FastifyRequest<{ Body: { setor: CreateSetorDto } }>,
     reply: FastifyReply,
   ) => {
+    const setor = await makeCreateSetorUseCase().execute(request.body.setor);
 
-      const { name, description } = request.body.setor;
-      const service = setorFactory(request.log);
-      const setor = await service.createSetor({ name, description });
-      reply.status(201).send({ setor });
+    await setorEventPublisher.publishCreated({
+      context: eventContext(request),
+      setor,
+    });
 
+    reply.status(201).send({ setor });
   };
 
-  static updateSetor = async (request: FastifyRequest<{ Params: { id: number }; Body: { setor: UpdateSetorDto } }>, reply: FastifyReply) => {
+  static updateSetor = async (
+    request: FastifyRequest<{
+      Params: { id: number };
+      Body: { setor: UpdateSetorDto };
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const { before, after } = await makeUpdateSetorUseCase().execute(
+      Number(request.params.id),
+      request.body.setor,
+    );
 
-      const setor = request.body.setor;
-      const id = request.params.id;
+    await setorEventPublisher.publishUpdated({
+      context: eventContext(request),
+      before,
+      after,
+    });
 
-      const service = setorFactory(request.log);
-
-      const response = await service.updateSetor(id, setor);
-
-      reply.status(200).send({message: "Setor atualizado com sucesso", setor: response, ok: true}); // importante: precisa chamar .send()
-
+    reply.status(200).send({
+      message: "Setor atualizado com sucesso",
+      setor: after,
+      ok: true,
+    });
   };
 
-  static deleteSetor = async (request: FastifyRequest<{ Params: DeleteSetorDto }>, reply: FastifyReply) => {
-      const id = request.params.id;
-      const service = setorFactory(request.log);
+  static deleteSetor = async (
+    request: FastifyRequest<{ Params: { id: number } }>,
+    reply: FastifyReply,
+  ) => {
+    const { before } = await makeDeleteSetorUseCase().execute(
+      Number(request.params.id),
+    );
 
-      if (id == 1) {
-        throw {
-          code: 403,
-          message: "Não é possível deletar o setor principal",
-          ok: false,
-          api: "Services",
-        };
-      }
+    await setorEventPublisher.publishDeleted({
+      context: eventContext(request),
+      before,
+    });
 
-      const deleted = service.deleteSetor(id);
-
-      if (!deleted) {
-        throw {
-          code: 404,
-          message: "Setor não encontrado",
-          ok: false,
-          api: "Services",
-        };
-      }
-
-      reply.status(204).send();
-
+    reply.status(204).send();
   };
 }
