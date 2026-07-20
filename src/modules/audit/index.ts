@@ -8,6 +8,10 @@ import { registerSetorAuditHandlers } from "./events/on-setor-events.js";
 import { makeSetorEventSubscriber } from "../setor/factories/setor.factories.js";
 import { registerServiceAuditHandlers } from "./events/on-service-events.js";
 import { makeServiceEventSubscriber } from "../services/factories/service.factories.js";
+import { registerRoleAuditHandlers } from "./events/on-role-events.js";
+import { makeRoleEventSubscriber } from "../roles/factories/role.factories.js";
+import { registerPermissionAuditHandlers } from "./events/on-permission-events.js";
+import { makePermissionEventSubscriber } from "../permission/factories/permission.factories.js";
 
 const AuditModule: FastifyPluginAsync = async (fastify) => {
   const auditService = makeAuditService();
@@ -26,11 +30,23 @@ const AuditModule: FastifyPluginAsync = async (fastify) => {
     auditService,
     fastify.log,
   );
+  const unregisterRoleAuditHandlers = registerRoleAuditHandlers(
+    makeRoleEventSubscriber(),
+    auditService,
+    fastify.log,
+  );
+  const unregisterPermissionAuditHandlers = registerPermissionAuditHandlers(
+    makePermissionEventSubscriber(),
+    auditService,
+    fastify.log,
+  );
   const worker = startAuditWorker(fastify.log);
   fastify.addHook("onClose", async () => {
     unregisterUserAuditHandlers();
     unregisterSetorAuditHandlers();
     unregisterServiceAuditHandlers();
+    unregisterRoleAuditHandlers();
+    unregisterPermissionAuditHandlers();
     worker.stop();
   });
   await fastify.register(AuditRoutes, { prefix: "/audit" });

@@ -65,13 +65,13 @@ export class AuthorizationUseCase {
       );
     }
 
-    const role = await this.rolesRepo.getOneRoles(user.role_id);
+    const role = await this.rolesRepo.findById(user.role_id);
     this.logger.info("Validating role");
     if (!role) {
       throw new AppError("Role not found", 404, "ROLE_NOT_FOUND");
     }
 
-    const permissions = await this.permissionRepo.getByRoleAndServiceId(
+    const permissions = await this.permissionRepo.findByRoleAndService(
       user.role_id,
       service,
     );

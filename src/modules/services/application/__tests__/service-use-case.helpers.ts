@@ -117,7 +117,7 @@ export class FakePermissionRepository {
     return Promise.resolve(updated);
   }
 
-  getTrueReadPermissionByRoleId(roleId: number | string) {
+  findReadableByRole(roleId: number | string) {
     return Promise.resolve(this.permissions.filter((item) => item.role_id === Number(roleId) && item.read));
   }
 }

@@ -5,6 +5,7 @@ import { registerRoleCreatedHandler } from "./on-role-create.js";
 import { makeServiceAccessDefaults } from "../factories/service-access-defaults.factory.js";
 import { makeSetorEventSubscriber } from "../../setor/factories/setor.factories.js";
 import { makeServiceEventSubscriber } from "../../services/factories/service.factories.js";
+import { makeRoleEventSubscriber } from "../../roles/factories/role.factories.js";
 export const registerAccessControlEvents: FastifyPluginAsync = async function (
   fastify,
 ) {
@@ -21,7 +22,11 @@ export const registerAccessControlEvents: FastifyPluginAsync = async function (
     serviceAccessDefaults,
     fastify.log,
   );
-  registerRoleCreatedHandler(serviceAccessDefaults);
+  const unregisterRoleCreatedHandler = registerRoleCreatedHandler(
+    makeRoleEventSubscriber(),
+    serviceAccessDefaults,
+    fastify.log,
+  );
   try {
     await serviceAccessDefaults.reconcile();
   } catch (error) {
@@ -33,5 +38,6 @@ export const registerAccessControlEvents: FastifyPluginAsync = async function (
   fastify.addHook("onClose", async () => {
     unregisterSetorCreatedHandler();
     unregisterServiceCreatedHandler();
+    unregisterRoleCreatedHandler();
   });
 };

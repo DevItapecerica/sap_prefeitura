@@ -20,7 +20,7 @@ export class ServiceAccessDefaultsUseCase {
 
   async ensureForService(serviceId: number): Promise<void> {
     const [{ roles }, setores] = await Promise.all([
-      this.rolesRepository.getAllRoles({}),
+      this.rolesRepository.findAll({ page: 0, order: "id:asc" }),
       this.setorRepository.findAllSetor(),
     ]);
 
@@ -63,7 +63,7 @@ export class ServiceAccessDefaultsUseCase {
   }
 
   private async ensurePermission(role: Roles, serviceId: number): Promise<void> {
-    const existing = await this.permissionRepository.getByRoleAndServiceId(
+    const existing = await this.permissionRepository.findByRoleAndService(
       role.id,
       serviceId,
     );
@@ -72,7 +72,7 @@ export class ServiceAccessDefaultsUseCase {
 
     const allowed = this.isAdminRole(role);
 
-    await this.permissionRepository.createPermissions({
+    await this.permissionRepository.create({
       role_id: role.id,
       service_id: serviceId,
       read: allowed,

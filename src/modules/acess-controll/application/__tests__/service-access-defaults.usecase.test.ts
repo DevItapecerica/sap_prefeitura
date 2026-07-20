@@ -49,7 +49,7 @@ class FakeVisibilityRepository {
 class FakeRolesRepository {
   roles = [new Roles(1, "admin"), new Roles(2, "tecnico")];
 
-  async getAllRoles() {
+  async findAll() {
     return { roles: this.roles, count: this.roles.length };
   }
 }
@@ -57,7 +57,7 @@ class FakeRolesRepository {
 class FakePermissionRepository {
   permissions = [new Permissions(10, 2, true, false, false, false, 1)];
 
-  async getByRoleAndServiceId(roleId: number, serviceId: number) {
+  async findByRoleAndService(roleId: number, serviceId: number) {
     return (
       this.permissions.find(
         (permission) =>
@@ -66,7 +66,7 @@ class FakePermissionRepository {
     );
   }
 
-  async createPermissions(data: any) {
+  async create(data: any) {
     const created = new Permissions(
       data.service_id,
       data.role_id,

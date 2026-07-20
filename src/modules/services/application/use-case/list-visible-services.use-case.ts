@@ -19,7 +19,7 @@ export class ListVisibleServicesUseCase {
     const [{ services }, visibility, permissions] = await Promise.all([
       this.servicesRepository.getAllServices({ page: 0, order: "id:desc" }),
       this.visibilityRepository.findVisibilityBySetor(setorId),
-      this.permissionRepository.getTrueReadPermissionByRoleId(roleId),
+      this.permissionRepository.findReadableByRole(roleId),
     ]);
 
     const readableServiceIds = new Set(
