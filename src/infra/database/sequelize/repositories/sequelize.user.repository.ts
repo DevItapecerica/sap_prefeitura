@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 import { UserListResult } from "../../../../modules/user/domain/repository/user-list-result.js";
-import { UserQuery } from "../../../../modules/user/domain/repository/user-query.js";
+import { UserQuery } from "../../../../modules/user/application/dto/user-query.dto.js";
 import UserRepository from "../../../../modules/user/domain/repository/user.repository.js";
 import db from "../index.js";
 import { User } from "../../../../modules/user/domain/entity/User.js";

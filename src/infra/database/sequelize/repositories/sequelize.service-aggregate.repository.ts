@@ -10,9 +10,7 @@ import {
 } from "../../../../modules/services/domain/repository/service-aggregate.repository.js";
 import db from "../index.js";
 
-export class SequelizeServiceAggregateRepository
-  implements ServiceAggregateRepository
-{
+export class SequelizeServiceAggregateRepository implements ServiceAggregateRepository {
   private readonly services;
   private readonly permissions;
   private readonly visibilities;
@@ -53,6 +51,7 @@ export class SequelizeServiceAggregateRepository
           permission,
         ]),
       );
+
       for (const permission of input.permissions ?? []) {
         await permissionRows.get(permission.id)!.update(
           {
@@ -72,10 +71,9 @@ export class SequelizeServiceAggregateRepository
         ]),
       );
       for (const visibility of input.visibility ?? []) {
-        await visibilityRows.get(visibility.id)!.update(
-          { visibility: visibility.visibility },
-          { transaction },
-        );
+        await visibilityRows
+          .get(visibility.id)!
+          .update({ visibility: visibility.visibility }, { transaction });
       }
 
       const afterRows = await this.loadRows(id, transaction, false);
@@ -112,7 +110,8 @@ export class SequelizeServiceAggregateRepository
     permissions: Model[];
     visibilities: Model[];
   } | null> {
-    const lockOption = lock && transaction ? transaction.LOCK.UPDATE : undefined;
+    const lockOption =
+      lock && transaction ? transaction.LOCK.UPDATE : undefined;
     const service = await this.services.findByPk(id, {
       transaction,
       lock: lockOption,
@@ -186,7 +185,7 @@ export class SequelizeServiceAggregateRepository
       services: new Services(
         Number(service.id),
         String(service.name),
-        service.description == null ? null : String(service.description),
+        service.description == null ? null : JSON.stringify(service.description),
         String(service.tag),
         String(service.url),
         service.createdAt as Date,

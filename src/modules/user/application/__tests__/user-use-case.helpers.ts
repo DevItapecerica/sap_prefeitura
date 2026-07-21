@@ -1,7 +1,7 @@
 import { IBcrypt } from "../../../../core/security/bcrypt/bcrypt.interface.js";
 import { PasswordGenerator } from "../../../../core/security/password/password-generator.interface.js";
 import { User } from "../../domain/entity/User.js";
-import { UserQuery } from "../../domain/repository/user-query.js";
+import { UserQuery } from "../dto/user-query.dto.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import { UserPasswordNotifier } from "../../domain/repository/user-password-notifier.repository.js";
 import { CreateUserDto } from "../dto/create-user.dto.js";

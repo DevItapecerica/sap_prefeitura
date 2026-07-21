@@ -56,7 +56,7 @@ export default class RolesController {
     });
   };
 
-  static updateRole = async (
+  static readonly updateRole = async (
     request: FastifyRequest<{
       Params: { id: number };
       Body: { role: UpdateRoleDto };
@@ -79,7 +79,7 @@ export default class RolesController {
     });
   };
 
-  static deleteRole = async (
+  static readonly deleteRole = async (
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {

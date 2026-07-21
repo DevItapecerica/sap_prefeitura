@@ -20,26 +20,31 @@ const AuditModule: FastifyPluginAsync = async (fastify) => {
     auditService,
     fastify.log,
   );
+  
   const unregisterSetorAuditHandlers = registerSetorAuditHandlers(
     makeSetorEventSubscriber(),
     auditService,
     fastify.log,
   );
+
   const unregisterServiceAuditHandlers = registerServiceAuditHandlers(
     makeServiceEventSubscriber(),
     auditService,
     fastify.log,
   );
+
   const unregisterRoleAuditHandlers = registerRoleAuditHandlers(
     makeRoleEventSubscriber(),
     auditService,
     fastify.log,
   );
+
   const unregisterPermissionAuditHandlers = registerPermissionAuditHandlers(
     makePermissionEventSubscriber(),
     auditService,
     fastify.log,
   );
+  
   const worker = startAuditWorker(fastify.log);
   fastify.addHook("onClose", async () => {
     unregisterUserAuditHandlers();

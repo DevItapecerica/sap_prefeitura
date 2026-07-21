@@ -1,9 +1,8 @@
 import { User } from "../entity/User.js";
-import { UserListResult } from "./user-list-result.js";
-import { UserQuery } from "./user-query.js";
+import { UserQuery } from "../../application/dto/user-query.dto.js";
 
 export default interface UserRepository {
-  getAllUser: (query: UserQuery) => Promise<UserListResult>;
+  getAllUser: (query: UserQuery) => Promise<{ user: User[], count: number }>;
   getUserById: (id: number) => Promise<User | null>;
   getUserByEmail: (email: string, excludeId?: number) => Promise<User | null>;
   createUser: (data: User, password: string) => Promise<User>;

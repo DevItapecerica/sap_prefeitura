@@ -122,7 +122,7 @@ export default class UserController {
     });
   };
 
-  static alterPassword = async (
+  static readonly alterPassword = async (
     request: FastifyRequest<{
       Body: ChangeUserPasswordDto;
     }>,
