@@ -1,10 +1,12 @@
 import { FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
-import { AuditAction, AuditResult } from "../domain/entity/AuditEvent.js";
+import { AuditAction } from "../domain/entity/AuditEvent.js";
 import { sanitizeAuditValue } from "../application/utils/audit-sanitizer.js";
 import { makeAuditService } from "../factories/makeAuditService.js";
 import { consumeAuditRequestHandled } from "../events/audit-request-registry.js";
 import { RecordAuditDto } from "../application/dto/audit.dto.js";
+import { verifyAuditResult } from "../domain/services/verifyAuditResult.service.js";
+import { formatMetaDataRequest } from "../domain/services/verifyAuditResult.service copy.js";
 
 interface AuditRecorder {
   record(input: RecordAuditDto): Promise<unknown>;
@@ -81,12 +83,15 @@ export const makeAuditHttpHook = (service: AuditRecorder) =>
       const response: any = request.auditResponse;
       const actor =
         request.user ?? (action === "LOGIN" ? response?.user : undefined);
-      const result: AuditResult =
-        reply.statusCode === 403
-          ? "DENIED"
-          : reply.statusCode >= 400
-            ? "FAILURE"
-            : "SUCCESS";
+      const result = verifyAuditResult(reply.statusCode);
+      let metadata = formatMetaDataRequest(action, request.body);
+
+      if (action === "LOGIN_FAILED") {
+        metadata = { attemptedIdentity: (request.body as any)?.email };
+      } else if (["CREATE", "UPDATE", "DELETE"].includes(action)) {
+        metadata = { requestedChanges: request.body };
+      }
+
       try {
         await service.record({
           actor: {
@@ -113,12 +118,7 @@ export const makeAuditHttpHook = (service: AuditRecorder) =>
           filters: request.query,
           returnedCount: resultCount(response),
           after: ["CREATE", "UPDATE"].includes(action) ? response : undefined,
-          metadata:
-            action === "LOGIN_FAILED"
-              ? { attemptedIdentity: (request.body as any)?.email }
-              : ["CREATE", "UPDATE", "DELETE"].includes(action)
-                ? { requestedChanges: request.body }
-                : undefined,
+          metadata,
         });
       } catch (error) {
         request.log.error(

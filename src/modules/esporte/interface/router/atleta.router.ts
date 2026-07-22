@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import atletaFactory from "../../factories/atleta.factory.js";
 import AtletaController from "../controller/atleta.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";

@@ -18,7 +18,7 @@ import {
 const serviceEventPublisher = makeServiceEventPublisher();
 
 export default class ServicesController {
-  static getService = async (
+  static readonly getService = async (
     request: FastifyRequest<{ Querystring: ListServicesDto }>,
     reply: FastifyReply,
   ) => {
@@ -31,7 +31,7 @@ export default class ServicesController {
     });
   };
 
-  static getOneService = async (
+  static readonly getOneService = async (
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {
@@ -47,7 +47,7 @@ export default class ServicesController {
     });
   };
 
-  static getVisiblesServices = async (
+  static readonly getVisiblesServices = async (
     request: FastifyRequest,
     reply: FastifyReply,
   ) => {
@@ -70,7 +70,7 @@ export default class ServicesController {
     });
   };
 
-  static createService = async (
+  static readonly createService = async (
     request: FastifyRequest<{ Body: { service: CreateServiceDto } }>,
     reply: FastifyReply,
   ) => {
@@ -86,7 +86,7 @@ export default class ServicesController {
     return reply.status(201).send({ service, ok: true });
   };
 
-  static updateService = async (
+  static readonly updateService = async (
     request: FastifyRequest<{
       Params: { id: number };
       Body: {
@@ -113,7 +113,7 @@ export default class ServicesController {
     return reply.status(204).send();
   };
 
-  static deleteService = async (
+  static readonly deleteService = async (
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {

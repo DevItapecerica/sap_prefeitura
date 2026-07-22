@@ -1,5 +1,5 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import UserController from "../controller/user.controller.js";
 import { changeUserPasswordSchema } from "../schemas/change-user-password.schema.js";

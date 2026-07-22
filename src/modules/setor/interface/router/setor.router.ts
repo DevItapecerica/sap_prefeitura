@@ -1,7 +1,7 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import SetorController from "../controller/setor.controller.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import { createSetorSchema } from "../schemas/create-setor.schema.js";
 import { deleteSetorSchema } from "../schemas/delete-setor.schema.js";
 import { getSetorByIdSchema } from "../schemas/get-setor-by-id.schema.js";

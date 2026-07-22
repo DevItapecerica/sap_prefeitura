@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../acess-controll/factories/makeAuthorization.js";
 import { AuditController } from "./audit.controller.js";
 import { AuditQueryDto } from "../application/dto/audit.dto.js";
 

@@ -11,11 +11,11 @@ import { SetorRepository } from "../../setor/domain/repository/setor.repository.
 
 export class ServiceAccessDefaultsUseCase {
   constructor(
-    private servicesRepository: ServicesRepository,
-    private serviceVisibilityRepository: ServiceVisibilityRepository,
-    private rolesRepository: RolesRepository,
-    private permissionRepository: PermissionRepository,
-    private setorRepository: SetorRepository,
+    private readonly servicesRepository: ServicesRepository,
+    private readonly serviceVisibilityRepository: ServiceVisibilityRepository,
+    private readonly rolesRepository: RolesRepository,
+    private readonly permissionRepository: PermissionRepository,
+    private readonly setorRepository: SetorRepository,
   ) {}
 
   async ensureForService(serviceId: number): Promise<void> {

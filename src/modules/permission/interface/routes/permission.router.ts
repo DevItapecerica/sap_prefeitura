@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import PermissionController from "../controller/permission.controller.js";
 import { getPermissionByIdSchema } from "../schemas/get-permission-by-id.schema.js";
 import { listPermissionsSchema } from "../schemas/list-permissions.schema.js";

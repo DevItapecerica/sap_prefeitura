@@ -1,7 +1,7 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import municipeController from "../controller/municipe.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 
 const MUNICIPE_SERVICE_ID = 9;
 

@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import RolesController from "../controller/roles.controller.js";
 import { createRoleSchema } from "../schemas/create-role.schema.js";
 import { deleteRoleSchema } from "../schemas/delete-role.schema.js";
