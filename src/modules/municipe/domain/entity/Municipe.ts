@@ -17,5 +17,7 @@ export default class Municipe {
     public createdAt?: Date,
     public updatedAt?: Date,
     public deletedAt?: Date | null,
+    public cpfHash?: string,
+    public cepHash?: string,
   ) {}
 }

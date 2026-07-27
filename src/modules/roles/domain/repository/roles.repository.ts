@@ -1,11 +1,24 @@
-import { QueryParams } from "../../../../core/types/genericTypes.js";
-import { CreateRoleDto, UpdateRoleDto } from "../../application/dto/roles.dto.js";
+import { Permissions } from "../../../permission/domain/entity/Permission.js";
 import { Roles } from "../entity/Role.js";
+import { RoleListResult } from "./role-list-result.js";
+import { RoleQuery } from "./role-query.js";
+
+export type RoleWriteData = Pick<Roles, "name">;
+
+export interface RoleAggregate {
+  role: Roles;
+  permissions: Permissions[];
+}
+
+export type DeleteRoleRepositoryResult =
+  | { status: "deleted"; before: RoleAggregate }
+  | { status: "not_found" }
+  | { status: "in_use" };
 
 export interface RolesRepository {
-    getAllRoles: (query: QueryParams) => Promise<{roles: Roles[], count: number}>;
-    getOneRoles: (id: number) => Promise<Roles | null>;
-    createRoles: (service: CreateRoleDto) => Promise<Roles>;
-    updateRoles: (id: number, role: UpdateRoleDto) => Promise<Roles | null>;
-    deleteOneRoles: (id: number) => Promise<boolean>;
+  findAll(query: RoleQuery): Promise<RoleListResult>;
+  findById(id: number): Promise<Roles | null>;
+  create(data: RoleWriteData): Promise<Roles>;
+  update(id: number, data: RoleWriteData): Promise<Roles | null>;
+  deleteWithPermissions(id: number): Promise<DeleteRoleRepositoryResult>;
 }

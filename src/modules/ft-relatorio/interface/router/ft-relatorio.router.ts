@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import { FtRelatorioController } from "../controller/ft-relatorio.controller.js";
 
@@ -57,6 +57,14 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     fastify.route({
       method: "GET",
       url,
+      config: {
+        audit: {
+          failureAction: "EXPORT",
+          module: "ft-relatorio",
+          resourceType: "relatorio",
+          resourceIdParam: "id",
+        },
+      },
       schema: {
         tags: relatorioTags,
         security: jwtSecurity,

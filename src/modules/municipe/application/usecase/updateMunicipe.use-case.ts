@@ -17,7 +17,7 @@ export default class updateMunicipeUseCase {
     uuid: string,
     municipe: updateMunicipeDto,
     author: string | number,
-  ): Promise<Municipe> {
+  ) {
     const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
     const current = await this.municipeRepository.getMunicipeById(uuid);
 
@@ -25,6 +25,7 @@ export default class updateMunicipeUseCase {
       throw new AppError("Municipe not found", 404, "MUNICIPE_NOT_FOUND");
 
     const currentDomain = await municipeMapper.toDomain(current);
+    const before = { ...current };
     const hashCpf = municipe.cpf
       ? await this.sha256Crypt.encrypt(municipe.cpf)
       : undefined;
@@ -70,6 +71,11 @@ export default class updateMunicipeUseCase {
 
     const municipeUpdated = await municipeMapper.toDomain(response);
 
-    return municipeUpdated;
+    return {
+      ...municipeUpdated,
+      municipe: municipeUpdated,
+      before,
+      after: { ...response },
+    };
   }
 }

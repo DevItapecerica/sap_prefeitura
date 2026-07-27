@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import { FrenteTrabalhoBolsistaController } from "../controller/frente-de-trabalho-bolsista.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
@@ -117,6 +117,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
     schema: {
       tags: tag,
       security,
@@ -152,6 +153,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "POST",
     url: "/",
+    config: { audit: { failureAction: "CREATE", module: "ft-bolsista", resourceType: "bolsista" } },
     schema: {
       tags: tag,
       security,
@@ -176,6 +178,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/vinculo-candidates",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
     schema: {
       tags: tag,
       security,
@@ -207,6 +210,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/toexpire",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
     schema: {
       tags: tag,
       security,
@@ -232,6 +236,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/toExpire",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
     schema: { hide: true },
     handler: FrenteTrabalhoBolsistaController.getToExpire,
   });
@@ -239,6 +244,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "PUT",
     url: "/prorrogate",
+    config: { audit: { failureAction: "UPDATE", module: "ft-bolsista", resourceType: "vinculo" } },
     schema: {
       tags: tag,
       security,
@@ -274,6 +280,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/edital/:id",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "edital_bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -296,6 +303,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id/historico",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "historico_bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -322,6 +330,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id",
+    config: { audit: { failureAction: "VIEW", module: "ft-bolsista", resourceType: "bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -344,6 +353,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "PUT",
     url: "/:id",
+    config: { audit: { failureAction: "UPDATE", module: "ft-bolsista", resourceType: "bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -367,6 +377,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "DELETE",
     url: "/:id",
+    config: { audit: { failureAction: "DELETE", module: "ft-bolsista", resourceType: "bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -386,6 +397,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "PUT",
     url: "/:bolsista/edital/:edital",
+    config: { audit: { failureAction: "UPDATE", module: "ft-bolsista", resourceType: "vinculo", resourceIdParam: "bolsista" } },
     schema: {
       tags: tag,
       security,
@@ -412,6 +424,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "POST",
     url: "/:id/faltas",
+    config: { audit: { failureAction: "CREATE", module: "ft-bolsista", resourceType: "falta", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -444,6 +457,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id/faltas",
+    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "falta", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -478,6 +492,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "DELETE",
     url: "/:id/faltas/:faltaId",
+    config: { audit: { failureAction: "DELETE", module: "ft-bolsista", resourceType: "falta", resourceIdParam: "faltaId" } },
     schema: {
       tags: tag,
       security,

@@ -3,18 +3,18 @@ import { PermissionRepository } from "../../permission/domain/repository/permiss
 import { RolesRepository } from "../../roles/domain/repository/roles.repository.js";
 import {
   ServicesRepository,
-  serviceVisibilityRepository,
 } from "../../services/domain/repository/services.repository.js";
+import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
 import UserRepository from "../../user/domain/repository/user.repository.js";
 
 export class AuthorizationUseCase {
   constructor(
-    private serviceRepo: ServicesRepository,
-    private serviceVisibilityRepository: serviceVisibilityRepository,
-    private rolesRepo: RolesRepository,
-    private permissionRepo: PermissionRepository,
-    private userRepo: UserRepository,
-    private logger: any,
+    private readonly serviceRepo: ServicesRepository,
+    private readonly serviceVisibilityRepository: ServiceVisibilityRepository,
+    private readonly rolesRepo: RolesRepository,
+    private readonly permissionRepo: PermissionRepository,
+    private readonly userRepo: UserRepository,
+    private readonly logger: any,
   ) {}
 
   authorize = async (
@@ -65,13 +65,13 @@ export class AuthorizationUseCase {
       );
     }
 
-    const role = await this.rolesRepo.getOneRoles(user.role_id);
+    const role = await this.rolesRepo.findById(user.role_id);
     this.logger.info("Validating role");
     if (!role) {
       throw new AppError("Role not found", 404, "ROLE_NOT_FOUND");
     }
 
-    const permissions = await this.permissionRepo.getByRoleAndServiceId(
+    const permissions = await this.permissionRepo.findByRoleAndService(
       user.role_id,
       service,
     );

@@ -1,18 +1,21 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
 import db from "../index.js";
-import { ServicesRepository } from "../../../../modules/services/domain/repository/services.repository.js";
+import { ServiceListResult } from "../../../../modules/services/domain/repository/service-list-result.js";
+import { ServiceQuery } from "../../../../modules/services/domain/repository/service-query.js";
+import {
+  ServicesRepository,
+  ServiceWriteData,
+} from "../../../../modules/services/domain/repository/services.repository.js";
 import { Services } from "../../../../modules/services/domain/entity/Services.js";
-import { CreateServicesDto, UpdateServicesDto } from "../../../../modules/services/application/dto/services.dto.js";
 
 export class SequelizeServicesRepository implements ServicesRepository {
   private model = db.ServiceModel;
 
   async getAllServices(
-    query: QueryParams,
-  ): Promise<{ services: Services[]; count: number }> {
+    query: ServiceQuery,
+  ): Promise<ServiceListResult> {
 
-    const { page = "0", limit, search = null, order = "id:desc" } = query;
+    const { page = 0, limit, search, order = "id:desc" } = query;
     
     const queryOrder = order ? order.split(":") : ["id", "desc"];
     const queryLimit = limit ? Number(limit) : undefined;
@@ -47,27 +50,13 @@ export class SequelizeServicesRepository implements ServicesRepository {
 
     return this.toEntity(data);
   }
-  async createServices(service: CreateServicesDto): Promise<Services> {
+  async createServices(service: ServiceWriteData): Promise<Services> {
     const created = await this.model.create(service);
     return this.toEntity(created);
   }
 
-  async updateServices(id: number, service: UpdateServicesDto): Promise<Services> {
-    const updated = await this.model.update(service, {
-      where: { id },
-    });
-    return this.toEntity(updated);
-  }
-  async deleteOneServices(id: number): Promise<boolean> {
-    const deleted = await this.model.destroy({
-      where: { id },
-    });
-
-    return deleted > 0;
-  }
-
   // 🔥 mapper (ESSENCIAL)
-  private toEntity(data: Services): Services {
+  private toEntity(data: any): Services {
     return new Services(
       data.id,
       data.name,

@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import modalidadeFactory from "../../factories/modalidade.factory.js";
 import ModalidadeController from "../controller/modalidade.controller.js";
@@ -35,6 +35,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/modalidades",
+    config: { audit: { failureAction: "LIST", module: "esporte", resourceType: "modalidade" } },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -66,6 +67,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/modalidades/:uuid",
+    config: { audit: { failureAction: "VIEW", module: "esporte", resourceType: "modalidade", resourceIdParam: "uuid" } },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -92,6 +94,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/modalidades",
+    config: { audit: { failureAction: "CREATE", module: "esporte", resourceType: "modalidade" } },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -120,6 +123,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/modalidades/:uuid",
+    config: { audit: { failureAction: "UPDATE", module: "esporte", resourceType: "modalidade", resourceIdParam: "uuid" } },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -152,6 +156,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "DELETE",
     url: "/modalidades/:uuid",
+    config: { audit: { failureAction: "DELETE", module: "esporte", resourceType: "modalidade", resourceIdParam: "uuid" } },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],

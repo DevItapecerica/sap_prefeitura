@@ -30,7 +30,7 @@ class FakeVisibilityRepository {
     );
   }
 
-  async ServiceVisibilityCreate(
+  async createServiceVisibility(
     setorId: number,
     serviceId: number,
     visibility = false,
@@ -49,7 +49,7 @@ class FakeVisibilityRepository {
 class FakeRolesRepository {
   roles = [new Roles(1, "admin"), new Roles(2, "tecnico")];
 
-  async getAllRoles() {
+  async findAll() {
     return { roles: this.roles, count: this.roles.length };
   }
 }
@@ -57,7 +57,7 @@ class FakeRolesRepository {
 class FakePermissionRepository {
   permissions = [new Permissions(10, 2, true, false, false, false, 1)];
 
-  async getByRoleAndServiceId(roleId: number, serviceId: number) {
+  async findByRoleAndService(roleId: number, serviceId: number) {
     return (
       this.permissions.find(
         (permission) =>
@@ -66,7 +66,7 @@ class FakePermissionRepository {
     );
   }
 
-  async createPermissions(data: any) {
+  async create(data: any) {
     const created = new Permissions(
       data.service_id,
       data.role_id,
@@ -170,4 +170,18 @@ test("ServiceAccessDefaultsUseCase cria defaults para role e setor novos", async
   );
   assert.equal(setorThreeVisibilities.length, 2);
   assert.ok(setorThreeVisibilities.every((visibility) => !visibility.visibility));
+});
+
+test("ServiceAccessDefaultsUseCase reconcilia defaults de forma idempotente", async () => {
+  const { useCase, permissionRepository, visibilityRepository } = makeUseCase();
+
+  await useCase.reconcile();
+  const permissionCount = permissionRepository.permissions.length;
+  const visibilityCount = visibilityRepository.visibilities.length;
+  await useCase.reconcile();
+
+  assert.equal(permissionRepository.permissions.length, permissionCount);
+  assert.equal(visibilityRepository.visibilities.length, visibilityCount);
+  assert.equal(permissionCount, 4);
+  assert.equal(visibilityCount, 4);
 });

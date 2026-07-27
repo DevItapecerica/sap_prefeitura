@@ -1,12 +1,21 @@
-import { eventBus } from "../../../core/event/index.js";
+import { FastifyBaseLogger } from "fastify";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import { ServiceEventMap, SERVICE_EVENTS } from "../../services/application/events/service.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
-import { Services } from "../../services/domain/entity/Services.js";
 
 export const registerServiceCreatedHandler = (
+  serviceEvents: EventSubscriber<ServiceEventMap>,
   serviceAccessDefaults: ServiceAccessDefaultsUseCase,
-) => {
-  eventBus.on("SERVICE_CREATED", async (service: Services) => {
-    await serviceAccessDefaults.ensureForService(service.id);
+  logger: Pick<FastifyBaseLogger, "error">,
+) =>
+  serviceEvents.subscribe(SERVICE_EVENTS.created, async (event) => {
+    try {
+      await serviceAccessDefaults.ensureForService(event.service.id);
+    } catch (error) {
+      logger.error(
+        { err: error, serviceId: event.service.id },
+        "Unable to create default access for service",
+      );
+    }
   });
-};
 

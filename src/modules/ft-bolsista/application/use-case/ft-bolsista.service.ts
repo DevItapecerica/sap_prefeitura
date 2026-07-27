@@ -238,10 +238,14 @@ export class FtBolsistaService {
       vinculos.push(vinculo);
     }
 
+    const before = vinculos.map((item) => item.toJSON());
     await this.repository.prorrogateVinculos(vinculos);
+    const after = vinculos.map((item) => item.toJSON());
 
     return {
       message: "Vinculos prorrogados com sucesso",
+      before,
+      after,
     };
   }
 
@@ -283,7 +287,18 @@ export class FtBolsistaService {
 
     this.vinculoPolicy.ensureCanChangeVinculo(edital, vinculo);
 
+    const before = {
+      bolsista: bolsista.toJSON(),
+      vinculo: vinculo.toJSON(),
+    };
     await this.repository.cancelVinculo(bolsista, vinculo);
+    return {
+      before,
+      after: {
+        bolsista: bolsista.toJSON(),
+        vinculo: vinculo.toJSON(),
+      },
+    };
   }
 
   // faltas
@@ -381,6 +396,7 @@ export class FtBolsistaService {
     return {
       message: "Falta deletada com sucesso",
       ok: true,
+      before: falta.toJSON(),
     };
   }
 }

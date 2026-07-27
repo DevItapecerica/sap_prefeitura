@@ -4,24 +4,24 @@ import { RolesRepository } from "../../roles/domain/repository/roles.repository.
 import { Services } from "../../services/domain/entity/Services.js";
 import {
   ServicesRepository,
-  serviceVisibilityRepository,
 } from "../../services/domain/repository/services.repository.js";
+import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
 import { Setor } from "../../setor/domain/entity/Setor.js";
 import { SetorRepository } from "../../setor/domain/repository/setor.repository.js";
 
 export class ServiceAccessDefaultsUseCase {
   constructor(
-    private servicesRepository: ServicesRepository,
-    private serviceVisibilityRepository: serviceVisibilityRepository,
-    private rolesRepository: RolesRepository,
-    private permissionRepository: PermissionRepository,
-    private setorRepository: SetorRepository,
+    private readonly servicesRepository: ServicesRepository,
+    private readonly serviceVisibilityRepository: ServiceVisibilityRepository,
+    private readonly rolesRepository: RolesRepository,
+    private readonly permissionRepository: PermissionRepository,
+    private readonly setorRepository: SetorRepository,
   ) {}
 
   async ensureForService(serviceId: number): Promise<void> {
     const [{ roles }, setores] = await Promise.all([
-      this.rolesRepository.getAllRoles({}),
-      this.setorRepository.findAllSetor({}),
+      this.rolesRepository.findAll({ page: 0, order: "id:asc" }),
+      this.setorRepository.findAllSetor(),
     ]);
 
     await Promise.all([
@@ -30,8 +30,21 @@ export class ServiceAccessDefaultsUseCase {
     ]);
   }
 
+  async reconcile(): Promise<void> {
+    const { services } = await this.servicesRepository.getAllServices({
+      page: 0,
+      order: "id:asc",
+    });
+    for (const service of services) {
+      await this.ensureForService(service.id);
+    }
+  }
+
   async ensureForRole(role: Roles): Promise<void> {
-    const { services } = await this.servicesRepository.getAllServices({});
+    const { services } = await this.servicesRepository.getAllServices({
+      page: 0,
+      order: "id:desc",
+    });
 
     await Promise.all(
       services.map((service) => this.ensurePermission(role, service.id)),
@@ -39,7 +52,10 @@ export class ServiceAccessDefaultsUseCase {
   }
 
   async ensureForSetor(setor: Setor): Promise<void> {
-    const { services } = await this.servicesRepository.getAllServices({});
+    const { services } = await this.servicesRepository.getAllServices({
+      page: 0,
+      order: "id:desc",
+    });
 
     await Promise.all(
       services.map((service) => this.ensureVisibility(setor, service.id)),
@@ -47,7 +63,7 @@ export class ServiceAccessDefaultsUseCase {
   }
 
   private async ensurePermission(role: Roles, serviceId: number): Promise<void> {
-    const existing = await this.permissionRepository.getByRoleAndServiceId(
+    const existing = await this.permissionRepository.findByRoleAndService(
       role.id,
       serviceId,
     );
@@ -56,7 +72,7 @@ export class ServiceAccessDefaultsUseCase {
 
     const allowed = this.isAdminRole(role);
 
-    await this.permissionRepository.createPermissions({
+    await this.permissionRepository.create({
       role_id: role.id,
       service_id: serviceId,
       read: allowed,
@@ -75,7 +91,7 @@ export class ServiceAccessDefaultsUseCase {
 
     if (existing) return;
 
-    await this.serviceVisibilityRepository.ServiceVisibilityCreate(
+    await this.serviceVisibilityRepository.createServiceVisibility(
       setor.id,
       serviceId,
       setor.id === 1,

@@ -1,75 +1,110 @@
-import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
-import db from "../index.js";
-import { RolesRepository } from "../../../../modules/roles/domain/repository/roles.repository.js";
+import { Model, Op } from "sequelize";
+import { Permissions } from "../../../../modules/permission/domain/entity/Permission.js";
 import { Roles } from "../../../../modules/roles/domain/entity/Role.js";
+import { RoleListResult } from "../../../../modules/roles/domain/repository/role-list-result.js";
+import { RoleQuery } from "../../../../modules/roles/domain/repository/role-query.js";
 import {
-  CreateRoleDto,
-  UpdateRoleDto,
-} from "../../../../modules/roles/application/dto/roles.dto.js";
+  DeleteRoleRepositoryResult,
+  RolesRepository,
+  RoleWriteData,
+} from "../../../../modules/roles/domain/repository/roles.repository.js";
+import db from "../index.js";
 
 export class SequelizeRolesRepository implements RolesRepository {
-  private model = db.RolesModel;
+  private readonly roles;
+  private readonly permissions;
+  private readonly users;
 
-  async getAllRoles(
-    query: QueryParams,
-  ): Promise<{ roles: Roles[]; count: number }> {
-    const { page = "0", limit, search = null, order } = query;
+  constructor(private readonly database: typeof db = db) {
+    this.roles = database.RolesModel;
+    this.permissions = database.PermissionsModel;
+    this.users = database.UserModel;
+  }
 
-    const queryOrder = order ? order.split(":") : ["id", "desc"];
-    const queryLimit = limit ? Number(limit) : undefined;
-
-    const offset = queryLimit ? Number(page) * queryLimit : undefined;
-
+  async findAll(query: RoleQuery): Promise<RoleListResult> {
+    const { page, limit, search, order } = query;
+    const [field, direction] = order.split(":");
     const where = search
-      ? {
-          [Op.or]: [{ name: { [Op.like]: `%${search}%` } }],
-        }
-      : {};
-
-    const roles = await this.model.findAndCountAll({
-      offset,
+      ? { name: { [Op.like]: `%${search}%` } }
+      : undefined;
+    const result = await this.roles.findAndCountAll({
       where,
-      limit: queryLimit,
-      order: [[queryOrder[0], queryOrder[1]]],
+      limit,
+      offset: limit === undefined ? undefined : page * limit,
+      order: [[field, direction]],
     });
-
     return {
-      roles: roles.rows.map((role: any) => this.toEntity(role)),
-      count: roles.count,
+      roles: result.rows.map((role: Model) => this.toRole(role)),
+      count: result.count,
     };
   }
 
-  async getOneRoles(id: number): Promise<Roles | null> {
-    const service = await this.model.findByPk(id);
-    return service ? this.toEntity(service) : null;
+  async findById(id: number): Promise<Roles | null> {
+    const role = await this.roles.findByPk(id);
+    return role ? this.toRole(role) : null;
   }
 
-  async createRoles(service: CreateRoleDto): Promise<Roles> {
-    const newService = await this.model.create(service);
-    return this.toEntity(newService);
+  async create(data: RoleWriteData): Promise<Roles> {
+    return this.toRole(await this.roles.create(data));
   }
 
-  async deleteOneRoles(id: number): Promise<boolean> {
-    const deletedCount = await this.model.destroy({ where: { id } });
-    return deletedCount > 0;
+  async update(id: number, data: RoleWriteData): Promise<Roles | null> {
+    const role = await this.roles.findByPk(id);
+    if (!role) return null;
+    await role.update(data);
+    return this.toRole(role);
   }
 
-  async updateRoles(id: number, role: UpdateRoleDto): Promise<Roles | null> {
-    const isRole = await this.model.findByPk(id);
+  deleteWithPermissions(id: number): Promise<DeleteRoleRepositoryResult> {
+    return this.database.sequelize.transaction(async (transaction) => {
+      const lock = transaction.LOCK.UPDATE;
+      const role = await this.roles.findByPk(id, { transaction, lock });
+      if (!role) return { status: "not_found" };
 
-    if (!isRole) {
-      return null;
-    }
+      const user = await this.users.findOne({
+        where: { role_id: id },
+        attributes: ["id"],
+        paranoid: false,
+        transaction,
+        lock,
+      });
+      if (user) return { status: "in_use" };
 
-    isRole.name = role.name;
-    isRole.save()
-    
-    return this.toEntity(isRole);
+      const permissionRows = await this.permissions.findAll({
+        where: { role_id: id },
+        transaction,
+        lock,
+      });
+      const before = {
+        role: this.toRole(role),
+        permissions: permissionRows.map((permission: Model) =>
+          this.toPermission(permission),
+        ),
+      };
+
+      await this.permissions.destroy({
+        where: { role_id: id },
+        force: true,
+        transaction,
+      });
+      await role.destroy({ transaction });
+      return { status: "deleted", before };
+    });
   }
 
-  // 🔥 mapper (ESSENCIAL)
-  private toEntity(data: Roles): Roles {
-    return new Roles(data.id, data.name);
+  private toRole(row: Model): Roles {
+    return new Roles(Number(row.get("id")), String(row.get("name")));
+  }
+
+  private toPermission(row: Model): Permissions {
+    return new Permissions(
+      Number(row.get("service_id")),
+      Number(row.get("role_id")),
+      Boolean(row.get("read")),
+      Boolean(row.get("write")),
+      Boolean(row.get("edit")),
+      Boolean(row.get("del")),
+      Number(row.get("id")),
+    );
   }
 }

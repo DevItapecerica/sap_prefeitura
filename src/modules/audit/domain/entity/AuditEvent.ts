@@ -1,20 +1,20 @@
-export const AUDIT_ACTIONS = [
-  "VIEW", "LIST", "CREATE", "UPDATE", "DELETE", "EXPORT",
-  "LOGIN", "LOGOUT", "LOGIN_FAILED", "ACCESS_DENIED", "PASSWORD_CHANGED",
-] as const;
+import type { AuditableAction } from "../../../../core/event/auditable-action.js";
 
-export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+export {
+  AUDITABLE_ACTIONS as AUDIT_ACTIONS,
+} from "../../../../core/event/auditable-action.js";
+export type AuditAction = AuditableAction;
 export type AuditResult = "SUCCESS" | "FAILURE" | "DENIED";
 
-export interface StoredAuditEvent {
-  eventId: string;
-  occurredAt: string;
-  actor: {
-    userId?: number | string | null;
-    roleId?: number | string | null;
-    setorId?: number | string | null;
-    name?: string | null;
-  };
+export interface AuditActor {
+  userId?: number | string | null;
+  roleId?: number | string | null;
+  setorId?: number | string | null;
+  name?: string | null;
+}
+
+export interface AuditEventBase {
+  actor: AuditActor;
   action: AuditAction;
   module: string;
   resourceType: string;
@@ -27,6 +27,11 @@ export interface StoredAuditEvent {
   route?: string | null;
   filters?: unknown;
   returnedCount?: number | null;
+}
+
+export interface StoredAuditEvent extends AuditEventBase {
+  eventId: string;
+  occurredAt: string;
   beforeEncrypted?: string | null;
   afterEncrypted?: string | null;
   metadataEncrypted?: string | null;

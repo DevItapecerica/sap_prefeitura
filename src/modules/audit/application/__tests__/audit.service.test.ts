@@ -35,10 +35,20 @@ class FakeAuditRepository implements AuditRepository {
 test("AuditService sanitizes and encrypts snapshots before enqueue", async () => {
   const repository = new FakeAuditRepository();
   const service = new AuditService(repository, new AuditMapper(new FakeCrypt()));
-  await service.record({ actor: {}, action: "UPDATE", module: "user", resourceType: "user", result: "SUCCESS", before: { name: "A", password: "secret" } });
+  await service.record({
+    actor: {},
+    action: "UPDATE",
+    module: "user",
+    resourceType: "user",
+    result: "SUCCESS",
+    before: { name: "A", password: "secret" },
+    after: { name: "B", password_hash: "secret-hash" },
+  });
   const payload = repository.enqueued[0];
   assert.ok(payload?.beforeEncrypted?.startsWith("encrypted:"));
+  assert.ok(payload?.afterEncrypted?.startsWith("encrypted:"));
   assert.equal(payload?.beforeEncrypted?.includes("secret"), false);
+  assert.equal(payload?.afterEncrypted?.includes("secret-hash"), false);
   assert.equal("before" in (payload || {}), false);
 });
 

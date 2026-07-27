@@ -38,6 +38,7 @@ export class GerarRelatorioFtUseCase {
       fileName: "relatorio.csv",
       csv,
       type: "text/csv; charset=utf-8",
+      returnedCount: relatorio.total_bolsistas,
     };
   }
 

@@ -1,6 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factory/makeAuthorization.js";
+import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
 import { FtEditalController } from "../controller/ft-edital.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
@@ -88,6 +88,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/",
+    config: { audit: { failureAction: "LIST", module: "ft-edital", resourceType: "edital" } },
     schema: {
       tags: tag,
       security,
@@ -119,6 +120,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/",
+    config: { audit: { failureAction: "CREATE", module: "ft-edital", resourceType: "edital" } },
     schema: {
       tags: tag,
       security,
@@ -141,6 +143,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/bolsista",
+    config: { audit: { failureAction: "LIST", module: "ft-edital", resourceType: "bolsista" } },
     schema: {
       tags: tag,
       security,
@@ -165,6 +168,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/vincularbolsista/:id",
+    config: { audit: { failureAction: "CREATE", module: "ft-edital", resourceType: "edital_bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -195,6 +199,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:id/bolsista",
+    config: { audit: { failureAction: "LIST", module: "ft-edital", resourceType: "edital_bolsista", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -226,6 +231,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:id/relatory",
+    config: { audit: { failureAction: "EXPORT", module: "ft-edital", resourceType: "edital", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -252,6 +258,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:id",
+    config: { audit: { failureAction: "VIEW", module: "ft-edital", resourceType: "edital", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -274,6 +281,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/:id",
+    config: { audit: { failureAction: "UPDATE", module: "ft-edital", resourceType: "edital", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
@@ -297,6 +305,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "DELETE",
     url: "/:id",
+    config: { audit: { failureAction: "DELETE", module: "ft-edital", resourceType: "edital", resourceIdParam: "id" } },
     schema: {
       tags: tag,
       security,
