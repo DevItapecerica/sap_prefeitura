@@ -1,9 +1,8 @@
-import {
-  AUDITABLE_ACTIONS,
-  AuditableAction,
-} from "../../../../core/event/auditable-action.js";
+import type { AuditableAction } from "../../../../core/event/auditable-action.js";
 
-export const AUDIT_ACTIONS = AUDITABLE_ACTIONS;
+export {
+  AUDITABLE_ACTIONS as AUDIT_ACTIONS,
+} from "../../../../core/event/auditable-action.js";
 export type AuditAction = AuditableAction;
 export type AuditResult = "SUCCESS" | "FAILURE" | "DENIED";
 

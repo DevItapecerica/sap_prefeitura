@@ -7,6 +7,20 @@ import {
 import { AuditRecorder } from "../application/contracts/audit-recorder.js";
 import { makeAuditBaseRecord, recordAuditEvent } from "./audit-event-recorder.js";
 
+const getFailureMetadata = (event: {
+  action: string;
+  attemptedIdentity?: string;
+  requestedChanges?: unknown;
+}) => {
+  if (event.action === "LOGIN_FAILED") {
+    return { attemptedIdentity: event.attemptedIdentity };
+  }
+  if (event.requestedChanges !== undefined) {
+    return { requestedChanges: event.requestedChanges };
+  }
+  return undefined;
+};
+
 export const registerHttpRequestFailedAuditHandler = (
   events: EventSubscriber<HttpRequestFailedEventMap>,
   auditService: AuditRecorder,
@@ -23,12 +37,7 @@ export const registerHttpRequestFailedAuditHandler = (
           event.action === "ACCESS_DENIED" ? "DENIED" : "FAILURE",
         errorCode: event.errorCode,
         filters: event.filters,
-        metadata:
-          event.action === "LOGIN_FAILED"
-            ? { attemptedIdentity: event.attemptedIdentity }
-            : event.requestedChanges === undefined
-              ? undefined
-              : { requestedChanges: event.requestedChanges },
+        metadata: getFailureMetadata(event),
       },
       auditService,
       logger,

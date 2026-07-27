@@ -20,7 +20,7 @@ const eventPublisher = makeFtBolsistaEventPublisher();
 const plain = (value: any) => value?.toJSON?.() ?? value;
 
 export class FrenteTrabalhoBolsistaController {
-  static getBolsistas = async (
+  static readonly getBolsistas = async (
     request: FastifyRequest<{ Querystring: FtBolsistaQueryDto }>,
     reply: FastifyReply,
   ) => {
@@ -35,7 +35,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(200).send(data);
   };
 
-  static getBolsistasParaVinculo = async (
+  static readonly getBolsistasParaVinculo = async (
     request: FastifyRequest<{ Querystring: FtBolsistaQueryDto }>,
     reply: FastifyReply,
   ) => {
@@ -50,7 +50,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(200).send(data);
   };
 
-  static getOneBolsista = async (
+  static readonly getOneBolsista = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
@@ -67,7 +67,7 @@ export class FrenteTrabalhoBolsistaController {
     });
   };
 
-  static createBolsista = async (
+  static readonly createBolsista = async (
     request: FastifyRequest<{ Body: { bolsista: FtBolsistaDto } }>,
     reply: FastifyReply,
   ) => {
@@ -82,7 +82,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(200).send(newBolsista);
   };
 
-  static updateBolsista = async (
+  static readonly updateBolsista = async (
     request: FastifyRequest<{
       Params: { id: string };
       Body: { bolsista: FtBolsistaDto };
@@ -109,7 +109,7 @@ export class FrenteTrabalhoBolsistaController {
     });
   };
 
-  static deleteBolsista = async (
+  static readonly deleteBolsista = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
@@ -127,7 +127,10 @@ export class FrenteTrabalhoBolsistaController {
     });
   };
 
-  static getToExpire = async (request: FastifyRequest, reply: FastifyReply) => {
+  static readonly getToExpire = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
     const toExpire = await service.getAllToExpire();
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
       context: makeApplicationEventContext(request),
@@ -144,7 +147,7 @@ export class FrenteTrabalhoBolsistaController {
     });
   };
 
-  static prorrogate = async (
+  static readonly prorrogate = async (
     request: FastifyRequest<{ Body: { bolsistas: FtBolsistaProrrogacaoDto[] } }>,
     reply: FastifyReply,
   ) => {
@@ -160,7 +163,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(201).send({ message: response.message });
   };
 
-  static getBolsistaEdital = async (
+  static readonly getBolsistaEdital = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
@@ -179,7 +182,7 @@ export class FrenteTrabalhoBolsistaController {
     });
   };
 
-  static getHistoricoBolsista = async (
+  static readonly getHistoricoBolsista = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
@@ -195,7 +198,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(200).send(response);
   };
 
-  static cancelBolsistaEdital = async (
+  static readonly cancelBolsistaEdital = async (
     request: FastifyRequest<{ Params: { bolsista: string; edital: string } }>,
     reply: FastifyReply,
   ) => {
@@ -214,7 +217,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(201).send({ message: "Bolsista alterado com sucesso!" });
   };
 
-  static createFalta = async (
+  static readonly createFalta = async (
     request: FastifyRequest<{
       Params: { id: string };
       Body: FtBolsistaFaltaDto;
@@ -232,7 +235,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(201).send(response);
   };
 
-  static listFaltas = async (
+  static readonly listFaltas = async (
     request: FastifyRequest<{
       Params: { id: string };
       Querystring: FtBolsistaFaltaQueryDto;
@@ -251,7 +254,7 @@ export class FrenteTrabalhoBolsistaController {
     return reply.status(200).send(response);
   };
 
-  static deleteFalta = async (
+  static readonly deleteFalta = async (
     request: FastifyRequest<{ Params: { id: string; faltaId: string } }>,
     reply: FastifyReply,
   ) => {

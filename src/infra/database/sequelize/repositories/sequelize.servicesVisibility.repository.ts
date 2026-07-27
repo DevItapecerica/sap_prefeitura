@@ -5,7 +5,7 @@ import { ServiceVisibility } from "../../../../modules/services/domain/entity/Se
 export class SequelizeServiceVisibilityRepository
   implements ServiceVisibilityRepository
 {
-  private model = db.ServiceVisibilities;
+  private readonly model = db.ServiceVisibilities;
 
   async findOneServiceVisibility(
     service_id: number,

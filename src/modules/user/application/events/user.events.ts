@@ -5,7 +5,7 @@ export const USER_EVENTS = {
   created: "USER_CREATED",
   updated: "USER_UPDATED",
   deleted: "USER_DELETED",
-  passwordChanged: "USER_PASSWORD_CHANGED",
+  passwordChanged: "USER_PASSWORD_CHANGED", // NOSONAR: event name, not a credential
 } as const;
 
 export interface UserCreatedEvent {

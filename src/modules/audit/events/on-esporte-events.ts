@@ -16,8 +16,12 @@ export const registerEsporteAuditHandlers = (
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
-  const id = (snapshot: Record<string, unknown>) =>
-    String(snapshot.uuid ?? snapshot.id ?? "");
+  const id = (snapshot: Record<string, unknown>) => {
+    const value = snapshot.uuid ?? snapshot.id;
+    return typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : "";
+  };
   const created = (event: EsporteCreatedEvent) =>
     recordAuditEvent(event, {
       ...makeAuditBaseRecord(event, "esporte", event.resourceType),

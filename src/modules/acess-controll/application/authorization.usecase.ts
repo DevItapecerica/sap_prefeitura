@@ -9,12 +9,12 @@ import UserRepository from "../../user/domain/repository/user.repository.js";
 
 export class AuthorizationUseCase {
   constructor(
-    private serviceRepo: ServicesRepository,
-    private serviceVisibilityRepository: ServiceVisibilityRepository,
-    private rolesRepo: RolesRepository,
-    private permissionRepo: PermissionRepository,
-    private userRepo: UserRepository,
-    private logger: any,
+    private readonly serviceRepo: ServicesRepository,
+    private readonly serviceVisibilityRepository: ServiceVisibilityRepository,
+    private readonly rolesRepo: RolesRepository,
+    private readonly permissionRepo: PermissionRepository,
+    private readonly userRepo: UserRepository,
+    private readonly logger: any,
   ) {}
 
   authorize = async (

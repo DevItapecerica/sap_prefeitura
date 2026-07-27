@@ -142,10 +142,9 @@ export class SequelizeServiceAggregateRepository implements ServiceAggregateRepo
       const stored = byId.get(item.id);
       if (
         requestedIds.has(item.id) ||
-        !stored ||
-        stored.service_id !== serviceId ||
+        stored?.service_id !== serviceId ||
         item.service_id !== serviceId ||
-        stored.role_id !== item.role_id
+        stored?.role_id !== item.role_id
       ) {
         throw new ServiceAggregateError("PERMISSION_NOT_FOUND");
       }
@@ -164,10 +163,9 @@ export class SequelizeServiceAggregateRepository implements ServiceAggregateRepo
       const stored = byId.get(item.id);
       if (
         requestedIds.has(item.id) ||
-        !stored ||
-        stored.service_id !== serviceId ||
+        stored?.service_id !== serviceId ||
         item.service_id !== serviceId ||
-        stored.setor_id !== item.setor_id
+        stored?.setor_id !== item.setor_id
       ) {
         throw new ServiceAggregateError("VISIBILITY_NOT_FOUND");
       }

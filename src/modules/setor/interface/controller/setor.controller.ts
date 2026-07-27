@@ -18,7 +18,7 @@ const setorEventPublisher = makeSetorEventPublisher();
 const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class SetorController {
-  static getSetores = async (
+  static readonly getSetores = async (
     request: FastifyRequest,
     reply: FastifyReply,
   ) => {
@@ -32,7 +32,7 @@ export default class SetorController {
     reply.status(200).send({ setores });
   };
 
-  static getOneSetor = async (
+  static readonly getOneSetor = async (
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {
@@ -48,7 +48,7 @@ export default class SetorController {
     reply.status(200).send({ setor });
   };
 
-  static postSetor = async (
+  static readonly postSetor = async (
     request: FastifyRequest<{ Body: { setor: CreateSetorDto } }>,
     reply: FastifyReply,
   ) => {
@@ -62,7 +62,7 @@ export default class SetorController {
     reply.status(201).send({ setor });
   };
 
-  static updateSetor = async (
+  static readonly updateSetor = async (
     request: FastifyRequest<{
       Params: { id: number };
       Body: { setor: UpdateSetorDto };
@@ -87,7 +87,7 @@ export default class SetorController {
     });
   };
 
-  static deleteSetor = async (
+  static readonly deleteSetor = async (
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {
