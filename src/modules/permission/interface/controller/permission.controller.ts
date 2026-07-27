@@ -16,7 +16,7 @@ const permissionEventPublisher = makePermissionEventPublisher();
 const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class PermissionController {
-  static getPermissions = async (
+  static readonly getPermissions = async (
     request: FastifyRequest<{ Querystring: ListPermissionsDto }>,
     reply: FastifyReply,
   ) => {
@@ -36,7 +36,7 @@ export default class PermissionController {
     });
   };
 
-  static getOnePermission = async (
+  static readonly getOnePermission = async (
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {
@@ -56,7 +56,7 @@ export default class PermissionController {
     });
   };
 
-  static updatePermission = async (
+  static readonly updatePermission = async (
     request: FastifyRequest<{
       Params: { id: number };
       Body: { permission: UpdatePermissionDto };
