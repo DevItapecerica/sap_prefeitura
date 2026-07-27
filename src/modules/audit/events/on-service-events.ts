@@ -1,9 +1,11 @@
 import { FastifyBaseLogger } from "fastify";
-import { ServiceEventSubscriber } from "../../services/application/events/service-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
 import {
   ServiceCreatedEvent,
   ServiceDeletedEvent,
   ServiceUpdatedEvent,
+  ServiceEventMap,
+  SERVICE_EVENTS,
 } from "../../services/application/events/service.events.js";
 import {
   AuditRecorder,
@@ -14,7 +16,7 @@ import {
 type ServiceAuditEvent = ServiceCreatedEvent | ServiceUpdatedEvent | ServiceDeletedEvent;
 
 export const registerServiceAuditHandlers = (
-  serviceEvents: ServiceEventSubscriber,
+  serviceEvents: EventSubscriber<ServiceEventMap>,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
@@ -26,7 +28,7 @@ export const registerServiceAuditHandlers = (
     makeAuditBaseRecord(event, "service", "service");
 
   const unsubscribe = [
-    serviceEvents.onCreated((event) =>
+    serviceEvents.subscribe(SERVICE_EVENTS.created, (event) =>
       record(event, {
         ...base(event),
         action: "CREATE",
@@ -35,7 +37,7 @@ export const registerServiceAuditHandlers = (
         after: event.service,
       }),
     ),
-    serviceEvents.onUpdated((event) =>
+    serviceEvents.subscribe(SERVICE_EVENTS.updated, (event) =>
       record(event, {
         ...base(event),
         action: "UPDATE",
@@ -44,7 +46,7 @@ export const registerServiceAuditHandlers = (
         after: event.after,
       }),
     ),
-    serviceEvents.onDeleted((event) =>
+    serviceEvents.subscribe(SERVICE_EVENTS.deleted, (event) =>
       record(event, {
         ...base(event),
         action: "DELETE",

@@ -1,18 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { SetorEventHandler, SetorEventSubscriber } from "../../../setor/application/events/setor-event-bus.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
 import { SetorCreatedEvent } from "../../../setor/application/events/setor.events.js";
 import { Setor } from "../../../setor/domain/entity/Setor.js";
 import { registerSetorCreatedHandler } from "../on-setor-create.js";
 
-class FakeSubscriber implements SetorEventSubscriber {
-  created?: SetorEventHandler<SetorCreatedEvent>;
-  onCreated(handler: SetorEventHandler<SetorCreatedEvent>) {
+class FakeSubscriber {
+  created?: EventHandler<SetorCreatedEvent>;
+  subscribe(_eventName: string, handler: EventHandler<any>) {
     this.created = handler;
     return () => { if (this.created === handler) this.created = undefined; };
   }
-  onUpdated() { return () => {}; }
-  onDeleted() { return () => {}; }
 }
 
 test("setor created handler creates access defaults and unsubscribes", async () => {

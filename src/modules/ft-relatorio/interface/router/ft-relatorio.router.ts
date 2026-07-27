@@ -57,6 +57,14 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     fastify.route({
       method: "GET",
       url,
+      config: {
+        audit: {
+          failureAction: "EXPORT",
+          module: "ft-relatorio",
+          resourceType: "relatorio",
+          resourceIdParam: "id",
+        },
+      },
       schema: {
         tags: relatorioTags,
         security: jwtSecurity,

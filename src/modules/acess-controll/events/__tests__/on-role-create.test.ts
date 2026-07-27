@@ -1,18 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { RoleEventHandler, RoleEventSubscriber } from "../../../roles/application/events/role-event-bus.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
 import { RoleCreatedEvent } from "../../../roles/application/events/role.events.js";
 import { Roles } from "../../../roles/domain/entity/Role.js";
 import { registerRoleCreatedHandler } from "../on-role-create.js";
 
-class FakeSubscriber implements RoleEventSubscriber {
-  created?: RoleEventHandler<RoleCreatedEvent>;
-  onCreated(handler: RoleEventHandler<RoleCreatedEvent>) {
+class FakeSubscriber {
+  created?: EventHandler<RoleCreatedEvent>;
+  subscribe(_eventName: string, handler: EventHandler<any>) {
     this.created = handler;
     return () => { if (this.created === handler) this.created = undefined; };
   }
-  onUpdated() { return () => {}; }
-  onDeleted() { return () => {}; }
 }
 
 test("role created handler creates defaults and unsubscribes", async () => {

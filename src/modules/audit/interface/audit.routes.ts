@@ -11,6 +11,7 @@ export const AuditRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: AuditQueryDto }>(
     "/",
     {
+      config: { audit: { failureAction: "LIST", module: "audit", resourceType: "audit" } },
       preHandler: async (request: FastifyRequest) =>
         authorizationFactory(request.log).authorize(
           Number(request.user.id),
@@ -23,6 +24,7 @@ export const AuditRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Params: { id: string } }>(
     "/:id",
     {
+      config: { audit: { failureAction: "VIEW", module: "audit", resourceType: "audit", resourceIdParam: "id" } },
       preHandler: async (request: FastifyRequest) =>
         authorizationFactory(request.log).authorize(
           Number(request.user.id),
@@ -35,6 +37,7 @@ export const AuditRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: AuditQueryDto }>(
     "/export",
     {
+      config: { audit: { failureAction: "EXPORT", module: "audit", resourceType: "audit" } },
       preHandler: async (request: FastifyRequest) =>
         authorizationFactory(request.log).authorize(
           Number(request.user.id),

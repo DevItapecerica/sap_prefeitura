@@ -1,13 +1,14 @@
 import { FastifyBaseLogger } from "fastify";
-import { RoleEventSubscriber } from "../../roles/application/events/role-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import { RoleEventMap, ROLE_EVENTS } from "../../roles/application/events/role.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerRoleCreatedHandler = (
-  roleEvents: RoleEventSubscriber,
+  roleEvents: EventSubscriber<RoleEventMap>,
   serviceAccessDefaults: ServiceAccessDefaultsUseCase,
   logger: Pick<FastifyBaseLogger, "error">,
 ) =>
-  roleEvents.onCreated(async (event) => {
+  roleEvents.subscribe(ROLE_EVENTS.created, async (event) => {
     try {
       await serviceAccessDefaults.ensureForRole(event.role);
     } catch (error) {

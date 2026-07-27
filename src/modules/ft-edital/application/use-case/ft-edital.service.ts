@@ -145,7 +145,7 @@ export class FtEditalService {
       vinculos.push({ bolsista, data_vinculo: dataVinculo });
     }
 
-    await this.repository.vincularBolsistas(edital, vinculos);
+    return this.repository.vincularBolsistas(edital, vinculos);
   }
 
   async getAllWithBolsista() {

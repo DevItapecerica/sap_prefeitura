@@ -76,6 +76,8 @@ export class MunicipeMapper {
       data.createdAt,
       data.updatedAt,
       data.deletedAt,
+      data.cpfHash,
+      data.cepHash,
     );
   }
 }

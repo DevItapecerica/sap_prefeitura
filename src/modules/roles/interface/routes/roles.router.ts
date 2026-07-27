@@ -18,21 +18,36 @@ const rolesRouter: FastifyPluginAsync = async (fastify) => {
     );
   });
 
-  fastify.post("/", { schema: createRoleSchema }, RolesController.createRole);
-  fastify.get("/", { schema: listRolesSchema }, RolesController.getRoles);
+  fastify.post("/", {
+    schema: createRoleSchema,
+    config: { audit: { failureAction: "CREATE", module: "roles", resourceType: "role" } },
+  }, RolesController.createRole);
+  fastify.get("/", {
+    schema: listRolesSchema,
+    config: { audit: { failureAction: "LIST", module: "roles", resourceType: "role" } },
+  }, RolesController.getRoles);
   fastify.get(
     "/:id",
-    { schema: getRoleByIdSchema },
+    {
+      schema: getRoleByIdSchema,
+      config: { audit: { failureAction: "VIEW", module: "roles", resourceType: "role", resourceIdParam: "id" } },
+    },
     RolesController.getRoleById,
   );
   fastify.put(
     "/:id",
-    { schema: updateRoleSchema },
+    {
+      schema: updateRoleSchema,
+      config: { audit: { failureAction: "UPDATE", module: "roles", resourceType: "role", resourceIdParam: "id" } },
+    },
     RolesController.updateRole,
   );
   fastify.delete(
     "/:id",
-    { schema: deleteRoleSchema },
+    {
+      schema: deleteRoleSchema,
+      config: { audit: { failureAction: "DELETE", module: "roles", resourceType: "role", resourceIdParam: "id" } },
+    },
     RolesController.deleteRole,
   );
 };

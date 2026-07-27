@@ -1,10 +1,12 @@
 import { FastifyBaseLogger } from "fastify";
-import { UserEventSubscriber } from "../../user/application/events/user-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
 import {
   UserCreatedEvent,
   UserDeletedEvent,
   UserPasswordChangedEvent,
   UserUpdatedEvent,
+  UserEventMap,
+  USER_EVENTS,
 } from "../../user/application/events/user.events.js";
 import {
   AuditRecorder,
@@ -19,7 +21,7 @@ type UserAuditEvent =
   | UserPasswordChangedEvent;
 
 export const registerUserAuditHandlers = (
-  userEvents: UserEventSubscriber,
+  userEvents: EventSubscriber<UserEventMap>,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
@@ -31,7 +33,7 @@ export const registerUserAuditHandlers = (
     makeAuditBaseRecord(event, "user", "user");
 
   const unsubscribe = [
-    userEvents.onCreated((event) =>
+    userEvents.subscribe(USER_EVENTS.created, (event) =>
       record(event, {
         ...base(event),
         action: "CREATE",
@@ -40,7 +42,7 @@ export const registerUserAuditHandlers = (
         after: event.user,
       }),
     ),
-    userEvents.onUpdated((event) =>
+    userEvents.subscribe(USER_EVENTS.updated, (event) =>
       record(event, {
         ...base(event),
         action: "UPDATE",
@@ -49,7 +51,7 @@ export const registerUserAuditHandlers = (
         after: event.after,
       }),
     ),
-    userEvents.onDeleted((event) =>
+    userEvents.subscribe(USER_EVENTS.deleted, (event) =>
       record(event, {
         ...base(event),
         action: "DELETE",
@@ -58,7 +60,7 @@ export const registerUserAuditHandlers = (
         after: null,
       }),
     ),
-    userEvents.onPasswordChanged((event) =>
+    userEvents.subscribe(USER_EVENTS.passwordChanged, (event) =>
       record(event, {
         ...base(event),
         action: "PASSWORD_CHANGED",

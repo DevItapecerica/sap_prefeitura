@@ -1,18 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ServiceEventHandler, ServiceEventSubscriber } from "../../../services/application/events/service-event-bus.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
 import { ServiceCreatedEvent } from "../../../services/application/events/service.events.js";
 import { Services } from "../../../services/domain/entity/Services.js";
 import { registerServiceCreatedHandler } from "../on-service-create.js";
 
-class FakeSubscriber implements ServiceEventSubscriber {
-  created?: ServiceEventHandler<ServiceCreatedEvent>;
-  onCreated(handler: ServiceEventHandler<ServiceCreatedEvent>) {
+class FakeSubscriber {
+  created?: EventHandler<ServiceCreatedEvent>;
+  subscribe(_eventName: string, handler: EventHandler<any>) {
     this.created = handler;
     return () => { if (this.created === handler) this.created = undefined; };
   }
-  onUpdated() { return () => {}; }
-  onDeleted() { return () => {}; }
 }
 
 test("service created handler creates access defaults and unsubscribes", async () => {

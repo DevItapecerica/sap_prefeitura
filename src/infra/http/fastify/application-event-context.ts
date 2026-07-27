@@ -5,12 +5,14 @@ export const makeApplicationEventContext = (
   request: FastifyRequest,
 ): ApplicationEventContext => ({
   correlationId: request.id,
-  actor: {
-    id: request.user.id,
-    name: request.user.name,
-    roleId: request.user.role_id,
-    setorId: request.user.setor_id,
-  },
+  actor: request.user
+    ? {
+        id: request.user.id,
+        name: request.user.name,
+        roleId: request.user.role_id,
+        setorId: request.user.setor_id,
+      }
+    : undefined,
   origin: {
     type: "HTTP",
     ip: request.ip,

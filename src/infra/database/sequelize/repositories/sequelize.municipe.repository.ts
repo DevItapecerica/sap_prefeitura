@@ -128,6 +128,8 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       data.createdAt,
       data.updatedAt,
       data.deletedAt,
+      data.cpfHash,
+      data.cepHash,
     );
   }
 }

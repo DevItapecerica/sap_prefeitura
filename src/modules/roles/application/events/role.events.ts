@@ -23,3 +23,9 @@ export interface RoleDeletedEvent {
   context: ApplicationEventContext;
   before: RoleAggregate;
 }
+
+export interface RoleEventMap {
+  [ROLE_EVENTS.created]: RoleCreatedEvent;
+  [ROLE_EVENTS.updated]: RoleUpdatedEvent;
+  [ROLE_EVENTS.deleted]: RoleDeletedEvent;
+}

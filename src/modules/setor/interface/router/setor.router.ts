@@ -22,6 +22,7 @@ const setorRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/",
+    config: { audit: { failureAction: "LIST", module: "setor", resourceType: "setor" } },
     schema: listSetoresSchema,
     handler: SetorController.getSetores,
   });
@@ -29,6 +30,7 @@ const setorRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:id",
+    config: { audit: { failureAction: "VIEW", module: "setor", resourceType: "setor", resourceIdParam: "id" } },
     schema: getSetorByIdSchema,
     handler: SetorController.getOneSetor,
   });
@@ -36,6 +38,7 @@ const setorRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/",
+    config: { audit: { failureAction: "CREATE", module: "setor", resourceType: "setor" } },
     schema: createSetorSchema,
     handler: SetorController.postSetor,
   });
@@ -43,6 +46,7 @@ const setorRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/:id",
+    config: { audit: { failureAction: "UPDATE", module: "setor", resourceType: "setor", resourceIdParam: "id" } },
     schema: updateSetorSchema,
     handler: SetorController.updateSetor,
   });
@@ -50,6 +54,7 @@ const setorRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "DELETE",
     url: "/:id",
+    config: { audit: { failureAction: "DELETE", module: "setor", resourceType: "setor", resourceIdParam: "id" } },
     schema: deleteSetorSchema,
     handler: SetorController.deleteSetor,
   });

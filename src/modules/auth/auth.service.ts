@@ -124,10 +124,11 @@ export default class authService {
     };
   }
 
-  async logout(refreshToken: string): Promise<void> {
-    await this.sessionRepository.revokeByTokenHash(
-      this.hashRefreshToken(refreshToken),
-    );
+  async logout(refreshToken: string): Promise<number | null> {
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    const session = await this.sessionRepository.findActiveByTokenHash(tokenHash);
+    await this.sessionRepository.revokeByTokenHash(tokenHash);
+    return session?.userId ?? null;
   }
 
   private generateRefreshToken(): string {

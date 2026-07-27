@@ -26,6 +26,7 @@ export class GerarListaPresencaFtUseCase {
       fileName: `lista-presenca-${relatorio.mes}.csv`,
       csv,
       type: "text/csv; charset=utf-8",
+      returnedCount: relatorio.bolsistas.length,
     };
   }
 }

@@ -30,5 +30,5 @@ export interface FtEditalRepository {
   vincularBolsistas(
     edital: any,
     bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
-  ): Promise<void>;
+  ): Promise<any[]>;
 }

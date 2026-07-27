@@ -1,29 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { ServiceEventHandler, ServiceEventSubscriber } from "../../../services/application/events/service-event-bus.js";
-import { ServiceCreatedEvent, ServiceDeletedEvent, ServiceUpdatedEvent } from "../../../services/application/events/service.events.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
+import { SERVICE_EVENTS, ServiceCreatedEvent, ServiceDeletedEvent, ServiceUpdatedEvent } from "../../../services/application/events/service.events.js";
 import { Services } from "../../../services/domain/entity/Services.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
-import { consumeAuditRequestHandled } from "../audit-request-registry.js";
 import { registerServiceAuditHandlers } from "../on-service-events.js";
 
-class FakeServiceEventSubscriber implements ServiceEventSubscriber {
-  created?: ServiceEventHandler<ServiceCreatedEvent>;
-  updated?: ServiceEventHandler<ServiceUpdatedEvent>;
-  deleted?: ServiceEventHandler<ServiceDeletedEvent>;
+class FakeServiceEventSubscriber {
+  created?: EventHandler<ServiceCreatedEvent>;
+  updated?: EventHandler<ServiceUpdatedEvent>;
+  deleted?: EventHandler<ServiceDeletedEvent>;
 
-  onCreated(handler: ServiceEventHandler<ServiceCreatedEvent>) {
-    this.created = handler;
-    return () => { if (this.created === handler) this.created = undefined; };
-  }
-  onUpdated(handler: ServiceEventHandler<ServiceUpdatedEvent>) {
-    this.updated = handler;
-    return () => { if (this.updated === handler) this.updated = undefined; };
-  }
-  onDeleted(handler: ServiceEventHandler<ServiceDeletedEvent>) {
-    this.deleted = handler;
-    return () => { if (this.deleted === handler) this.deleted = undefined; };
+  subscribe(eventName: string, handler: EventHandler<any>) {
+    const property = {
+      [SERVICE_EVENTS.created]: "created",
+      [SERVICE_EVENTS.updated]: "updated",
+      [SERVICE_EVENTS.deleted]: "deleted",
+    }[eventName] as "created" | "updated" | "deleted";
+    (this as any)[property] = handler;
+    return () => {
+      if ((this as any)[property] === handler) (this as any)[property] = undefined;
+    };
   }
 }
 
@@ -58,15 +56,12 @@ test("service events create audit records with complete aggregates", async () =>
     assert.equal(records[1].after, after);
     assert.equal(records[2].before, after);
     assert.equal(records[2].after, null);
-    assert.equal(consumeAuditRequestHandled("update-service"), true);
   } finally {
     unregister();
-    consumeAuditRequestHandled("create-service");
-    consumeAuditRequestHandled("delete-service");
   }
 });
 
-test("failed service audit listener keeps HTTP hook fallback available", async () => {
+test("failed service audit listener remains best-effort", async () => {
   const events = new FakeServiceEventSubscriber();
   let logged = false;
   const unregister = registerServiceAuditHandlers(
@@ -79,7 +74,6 @@ test("failed service audit listener keeps HTTP hook fallback available", async (
   try {
     await events.created?.({ context: context("failed-service"), service });
     assert.equal(logged, true);
-    assert.equal(consumeAuditRequestHandled("failed-service"), false);
   } finally {
     unregister();
   }

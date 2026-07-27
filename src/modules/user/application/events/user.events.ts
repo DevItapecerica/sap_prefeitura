@@ -28,3 +28,10 @@ export interface UserPasswordChangedEvent {
   context: ApplicationEventContext;
   userId: number | string;
 }
+
+export interface UserEventMap {
+  [USER_EVENTS.created]: UserCreatedEvent;
+  [USER_EVENTS.updated]: UserUpdatedEvent;
+  [USER_EVENTS.deleted]: UserDeletedEvent;
+  [USER_EVENTS.passwordChanged]: UserPasswordChangedEvent;
+}

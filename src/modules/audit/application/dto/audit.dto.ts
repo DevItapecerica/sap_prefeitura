@@ -1,4 +1,4 @@
-import { AuditAction, AuditResult } from "../../domain/entity/AuditEvent.js";
+import { AuditEventBase } from "../../domain/entity/AuditEvent.js";
 
 export type AuditQueryDto = {
   page?: number;
@@ -15,29 +15,9 @@ export type AuditQueryDto = {
   requestId?: string;
 };
 
-export interface AuditActorDto {
-  userId?: number | string | null;
-  roleId?: number | string | null;
-  setorId?: number | string | null;
-  name?: string | null;
-}
-
-export interface RecordAuditDto {
+export interface RecordAuditDto extends AuditEventBase {
   eventId?: string;
   occurredAt?: string;
-  actor: AuditActorDto;
-  action: AuditAction;
-  module: string;
-  resourceType: string;
-  resourceId?: string | null;
-  result: AuditResult;
-  errorCode?: string | null;
-  requestId?: string | null;
-  ip?: string | null;
-  method?: string | null;
-  route?: string | null;
-  filters?: unknown;
-  returnedCount?: number | null;
   before?: unknown;
   after?: unknown;
   metadata?: unknown;

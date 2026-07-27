@@ -23,6 +23,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/",
+    config: { audit: { failureAction: "LIST", module: "user", resourceType: "user" } },
     schema: listUsersSchema,
     handler: UserController.getAllByQuery,
   });
@@ -30,6 +31,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:id",
+    config: { audit: { failureAction: "VIEW", module: "user", resourceType: "user", resourceIdParam: "id" } },
     schema: getUserByIdSchema,
     handler: UserController.getOne,
   });
@@ -37,6 +39,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/",
+    config: { audit: { failureAction: "CREATE", module: "user", resourceType: "user" } },
     schema: createUserSchema,
     handler: UserController.cadastrar,
   });
@@ -44,6 +47,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "DELETE",
     url: "/:id",
+    config: { audit: { failureAction: "DELETE", module: "user", resourceType: "user", resourceIdParam: "id" } },
     schema: deleteUserSchema,
     handler: UserController.delete,
   });
@@ -51,6 +55,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/:id",
+    config: { audit: { failureAction: "UPDATE", module: "user", resourceType: "user", resourceIdParam: "id" } },
     schema: updateUserSchema,
     handler: UserController.update,
   });
@@ -58,6 +63,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/alter_password",
+    config: { audit: { failureAction: "PASSWORD_CHANGED", module: "user", resourceType: "user" } },
     schema: changeUserPasswordSchema,
     handler: UserController.alterPassword,
   });

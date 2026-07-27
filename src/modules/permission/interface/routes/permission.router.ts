@@ -18,17 +18,26 @@ const permissionRouter: FastifyPluginAsync = async (fastify) => {
 
   fastify.get(
     "/",
-    { schema: listPermissionsSchema },
+    {
+      schema: listPermissionsSchema,
+      config: { audit: { failureAction: "LIST", module: "permission", resourceType: "permission" } },
+    },
     PermissionController.getPermissions,
   );
   fastify.get(
     "/:id",
-    { schema: getPermissionByIdSchema },
+    {
+      schema: getPermissionByIdSchema,
+      config: { audit: { failureAction: "VIEW", module: "permission", resourceType: "permission", resourceIdParam: "id" } },
+    },
     PermissionController.getOnePermission,
   );
   fastify.put(
     "/:id",
-    { schema: updatePermissionSchema },
+    {
+      schema: updatePermissionSchema,
+      config: { audit: { failureAction: "UPDATE", module: "permission", resourceType: "permission", resourceIdParam: "id" } },
+    },
     PermissionController.updatePermission,
   );
 };

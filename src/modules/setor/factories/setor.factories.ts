@@ -1,9 +1,7 @@
 import { SequelizeSetorRepository } from "../../../infra/database/sequelize/repositories/sequelize.setor.repository.js";
-import { EventBusSetorEventsAdapter } from "../../../infra/event/event-bus-setor-events.adapter.js";
-import {
-  SetorEventPublisher,
-  SetorEventSubscriber,
-} from "../application/events/setor-event-bus.js";
+import { EventBusAdapter } from "../../../infra/event/event-bus.adapter.js";
+import { EventPublisher, EventSubscriber } from "../../../core/event/event-contracts.js";
+import { SetorEventMap } from "../application/events/setor.events.js";
 import { CreateSetorUseCase } from "../application/use-case/create-setor.use-case.js";
 import { DeleteSetorUseCase } from "../application/use-case/delete-setor.use-case.js";
 import { GetSetorByIdUseCase } from "../application/use-case/get-setor-by-id.use-case.js";
@@ -25,8 +23,8 @@ export const makeListSetoresUseCase = () =>
 export const makeDeleteSetorUseCase = () =>
   new DeleteSetorUseCase(new SequelizeSetorRepository());
 
-export const makeSetorEventPublisher = (): SetorEventPublisher =>
-  new EventBusSetorEventsAdapter();
+export const makeSetorEventPublisher = (): EventPublisher<SetorEventMap> =>
+  new EventBusAdapter<SetorEventMap>();
 
-export const makeSetorEventSubscriber = (): SetorEventSubscriber =>
-  new EventBusSetorEventsAdapter();
+export const makeSetorEventSubscriber = (): EventSubscriber<SetorEventMap> =>
+  new EventBusAdapter<SetorEventMap>();

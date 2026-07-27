@@ -1,29 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { SetorEventHandler, SetorEventSubscriber } from "../../../setor/application/events/setor-event-bus.js";
-import { SetorCreatedEvent, SetorDeletedEvent, SetorUpdatedEvent } from "../../../setor/application/events/setor.events.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
+import { SETOR_EVENTS, SetorCreatedEvent, SetorDeletedEvent, SetorUpdatedEvent } from "../../../setor/application/events/setor.events.js";
 import { Setor } from "../../../setor/domain/entity/Setor.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
-import { consumeAuditRequestHandled } from "../audit-request-registry.js";
 import { registerSetorAuditHandlers } from "../on-setor-events.js";
 
-class FakeSetorEventSubscriber implements SetorEventSubscriber {
-  created?: SetorEventHandler<SetorCreatedEvent>;
-  updated?: SetorEventHandler<SetorUpdatedEvent>;
-  deleted?: SetorEventHandler<SetorDeletedEvent>;
+class FakeSetorEventSubscriber {
+  created?: EventHandler<SetorCreatedEvent>;
+  updated?: EventHandler<SetorUpdatedEvent>;
+  deleted?: EventHandler<SetorDeletedEvent>;
 
-  onCreated(handler: SetorEventHandler<SetorCreatedEvent>) {
-    this.created = handler;
-    return () => { if (this.created === handler) this.created = undefined; };
-  }
-  onUpdated(handler: SetorEventHandler<SetorUpdatedEvent>) {
-    this.updated = handler;
-    return () => { if (this.updated === handler) this.updated = undefined; };
-  }
-  onDeleted(handler: SetorEventHandler<SetorDeletedEvent>) {
-    this.deleted = handler;
-    return () => { if (this.deleted === handler) this.deleted = undefined; };
+  subscribe(eventName: string, handler: EventHandler<any>) {
+    const property = {
+      [SETOR_EVENTS.created]: "created",
+      [SETOR_EVENTS.updated]: "updated",
+      [SETOR_EVENTS.deleted]: "deleted",
+    }[eventName] as "created" | "updated" | "deleted";
+    (this as any)[property] = handler;
+    return () => {
+      if ((this as any)[property] === handler) (this as any)[property] = undefined;
+    };
   }
 }
 
@@ -65,15 +63,12 @@ test("setor events create audit records with before and after", async () => {
     assert.equal(records[1].after, after);
     assert.equal(records[2].before, after);
     assert.equal(records[2].after, null);
-    assert.equal(consumeAuditRequestHandled("update-setor"), true);
   } finally {
     unregister();
-    consumeAuditRequestHandled("create-setor");
-    consumeAuditRequestHandled("delete-setor");
   }
 });
 
-test("failed setor audit listener keeps HTTP hook fallback available", async () => {
+test("failed setor audit listener remains best-effort", async () => {
   const events = new FakeSetorEventSubscriber();
   let logged = false;
   const unregister = registerSetorAuditHandlers(
@@ -88,7 +83,6 @@ test("failed setor audit listener keeps HTTP hook fallback available", async () 
       setor: new Setor(2, "TI", "Tecnologia"),
     });
     assert.equal(logged, true);
-    assert.equal(consumeAuditRequestHandled("failed-setor"), false);
   } finally {
     unregister();
   }

@@ -1,9 +1,11 @@
 import { FastifyBaseLogger } from "fastify";
-import { RoleEventSubscriber } from "../../roles/application/events/role-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
 import {
   RoleCreatedEvent,
   RoleDeletedEvent,
   RoleUpdatedEvent,
+  RoleEventMap,
+  ROLE_EVENTS,
 } from "../../roles/application/events/role.events.js";
 import {
   AuditRecorder,
@@ -14,7 +16,7 @@ import {
 type RoleAuditEvent = RoleCreatedEvent | RoleUpdatedEvent | RoleDeletedEvent;
 
 export const registerRoleAuditHandlers = (
-  roleEvents: RoleEventSubscriber,
+  roleEvents: EventSubscriber<RoleEventMap>,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
@@ -26,7 +28,7 @@ export const registerRoleAuditHandlers = (
     makeAuditBaseRecord(event, "role", "role");
 
   const unsubscribe = [
-    roleEvents.onCreated((event) =>
+    roleEvents.subscribe(ROLE_EVENTS.created, (event) =>
       record(event, {
         ...base(event),
         action: "CREATE",
@@ -35,7 +37,7 @@ export const registerRoleAuditHandlers = (
         after: event.role,
       }),
     ),
-    roleEvents.onUpdated((event) =>
+    roleEvents.subscribe(ROLE_EVENTS.updated, (event) =>
       record(event, {
         ...base(event),
         action: "UPDATE",
@@ -44,7 +46,7 @@ export const registerRoleAuditHandlers = (
         after: event.after,
       }),
     ),
-    roleEvents.onDeleted((event) =>
+    roleEvents.subscribe(ROLE_EVENTS.deleted, (event) =>
       record(event, {
         ...base(event),
         action: "DELETE",

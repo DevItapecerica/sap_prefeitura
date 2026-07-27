@@ -1,28 +1,35 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Permissions } from "../../../permission/domain/entity/Permission.js";
-import { PermissionEventHandler, PermissionEventSubscriber } from "../../../permission/application/events/permission-event-bus.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
 import { PermissionUpdatedEvent } from "../../../permission/application/events/permission.events.js";
-import { RoleEventHandler, RoleEventSubscriber } from "../../../roles/application/events/role-event-bus.js";
-import { RoleCreatedEvent, RoleDeletedEvent, RoleUpdatedEvent } from "../../../roles/application/events/role.events.js";
+import { ROLE_EVENTS, RoleCreatedEvent, RoleDeletedEvent, RoleUpdatedEvent } from "../../../roles/application/events/role.events.js";
 import { Roles } from "../../../roles/domain/entity/Role.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
-import { consumeAuditRequestHandled } from "../audit-request-registry.js";
 import { registerPermissionAuditHandlers } from "../on-permission-events.js";
 import { registerRoleAuditHandlers } from "../on-role-events.js";
 
-class FakeRoleSubscriber implements RoleEventSubscriber {
-  created?: RoleEventHandler<RoleCreatedEvent>;
-  updated?: RoleEventHandler<RoleUpdatedEvent>;
-  deleted?: RoleEventHandler<RoleDeletedEvent>;
-  onCreated(handler: RoleEventHandler<RoleCreatedEvent>) { this.created = handler; return () => { this.created = undefined; }; }
-  onUpdated(handler: RoleEventHandler<RoleUpdatedEvent>) { this.updated = handler; return () => { this.updated = undefined; }; }
-  onDeleted(handler: RoleEventHandler<RoleDeletedEvent>) { this.deleted = handler; return () => { this.deleted = undefined; }; }
+class FakeRoleSubscriber {
+  created?: EventHandler<RoleCreatedEvent>;
+  updated?: EventHandler<RoleUpdatedEvent>;
+  deleted?: EventHandler<RoleDeletedEvent>;
+  subscribe(eventName: string, handler: EventHandler<any>) {
+    const property = {
+      [ROLE_EVENTS.created]: "created",
+      [ROLE_EVENTS.updated]: "updated",
+      [ROLE_EVENTS.deleted]: "deleted",
+    }[eventName] as "created" | "updated" | "deleted";
+    (this as any)[property] = handler;
+    return () => { (this as any)[property] = undefined; };
+  }
 }
 
-class FakePermissionSubscriber implements PermissionEventSubscriber {
-  updated?: PermissionEventHandler<PermissionUpdatedEvent>;
-  onUpdated(handler: PermissionEventHandler<PermissionUpdatedEvent>) { this.updated = handler; return () => { this.updated = undefined; }; }
+class FakePermissionSubscriber {
+  updated?: EventHandler<PermissionUpdatedEvent>;
+  subscribe(_eventName: string, handler: EventHandler<any>) {
+    this.updated = handler;
+    return () => { this.updated = undefined; };
+  }
 }
 
 const context = (correlationId: string) => ({
@@ -53,15 +60,13 @@ test("role and permission events create complete audit snapshots", async () => {
     assert.equal((records[2].before as any).permissions.length, 1);
     assert.equal(records[3].before, beforePermission);
     assert.equal(records[3].after, afterPermission);
-    assert.equal(consumeAuditRequestHandled("permission-update"), true);
   } finally {
     unregisterRole();
     unregisterPermission();
-    ["role-create", "role-update", "role-delete"].forEach(consumeAuditRequestHandled);
   }
 });
 
-test("failed role and permission audit keeps hook fallback available", async () => {
+test("failed role and permission audit remains best-effort", async () => {
   const roleEvents = new FakeRoleSubscriber();
   const permissionEvents = new FakePermissionSubscriber();
   let errors = 0;
@@ -74,6 +79,4 @@ test("failed role and permission audit keeps hook fallback available", async () 
   await roleEvents.created?.({ context: context("failed-role"), role });
   await permissionEvents.updated?.({ context: context("failed-permission"), before: permission, after: permission });
   assert.equal(errors, 2);
-  assert.equal(consumeAuditRequestHandled("failed-role"), false);
-  assert.equal(consumeAuditRequestHandled("failed-permission"), false);
 });

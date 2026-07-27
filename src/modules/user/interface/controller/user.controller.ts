@@ -1,5 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
+import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
+import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
+import { USER_EVENTS } from "../../application/events/user.events.js";
 import { ChangeUserPasswordDto } from "../../application/dto/change-user-password.dto.js";
 import { CreateUserDto } from "../../application/dto/create-user.dto.js";
 import { ListUsersDto } from "../../application/dto/list-users.dto.js";
@@ -15,6 +18,7 @@ import {
 } from "../../factories/user.factories.js";
 
 const userEventPublisher = makeUserEventPublisher();
+const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class UserController {
   static cadastrar = async (
@@ -24,7 +28,7 @@ export default class UserController {
     const { user } = request.body;
     const newUser = await makeCreateUserUseCase().execute(user);
 
-    await userEventPublisher.publishCreated({
+    await userEventPublisher.publish(USER_EVENTS.created, {
       context: makeApplicationEventContext(request),
       user: newUser,
     });
@@ -57,7 +61,7 @@ export default class UserController {
 
     const { before, after } = await makeUpdateUserUseCase().execute(id, user);
 
-    await userEventPublisher.publishUpdated({
+    await userEventPublisher.publish(USER_EVENTS.updated, {
       context: makeApplicationEventContext(request),
       before,
       after,
@@ -76,6 +80,12 @@ export default class UserController {
   ) => {
     const { id } = request.params;
     const user = await makeGetUserByIdUseCase().execute(id);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
+      context: makeApplicationEventContext(request),
+      module: "user",
+      resourceType: "user",
+      resourceId: String(id),
+    });
 
     repply.status(200).send({ user, message: "Usuário encontrado", ok: true });
   };
@@ -93,6 +103,13 @@ export default class UserController {
     };
 
     const response = await makeListUsersUseCase().execute(query);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request),
+      module: "user",
+      resourceType: "user",
+      filters: query,
+      returnedCount: response.user.length,
+    });
 
     repply.status(200).send({
       message: "Usuários encontrados",
@@ -110,7 +127,7 @@ export default class UserController {
 
     const { before } = await makeDeleteUserUseCase().execute(id);
 
-    await userEventPublisher.publishDeleted({
+    await userEventPublisher.publish(USER_EVENTS.deleted, {
       context: makeApplicationEventContext(request),
       before,
     });
@@ -135,7 +152,7 @@ export default class UserController {
       old_password,
       new_password,
     );
-    await userEventPublisher.publishPasswordChanged({
+    await userEventPublisher.publish(USER_EVENTS.passwordChanged, {
       context: makeApplicationEventContext(request),
       userId: user.id,
     });

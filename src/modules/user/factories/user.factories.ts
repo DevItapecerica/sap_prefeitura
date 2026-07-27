@@ -1,12 +1,10 @@
 import { BcryptService } from "../../../core/security/bcrypt/bcrypt.service.js";
 import { RandomPasswordGenerator } from "../../../core/security/password/random-password-generator.service.js";
 import { SequelizeUserRepository } from "../../../infra/database/sequelize/repositories/sequelize.user.repository.js";
-import { EventBusUserEventsAdapter } from "../../../infra/event/event-bus-user-events.adapter.js";
+import { EventBusAdapter } from "../../../infra/event/event-bus.adapter.js";
 import { NodemailerUserPasswordNotifier } from "../../../infra/mail/nodemailer-user-password-notifier.js";
-import {
-  UserEventPublisher,
-  UserEventSubscriber,
-} from "../application/events/user-event-bus.js";
+import { EventPublisher, EventSubscriber } from "../../../core/event/event-contracts.js";
+import { UserEventMap } from "../application/events/user.events.js";
 import { ChangeUserPasswordUseCase } from "../application/use-case/change-user-password.use-case.js";
 import { CreateUserUseCase } from "../application/use-case/create-user.use-case.js";
 import { DeleteUserUseCase } from "../application/use-case/delete-user.use-case.js";
@@ -44,8 +42,8 @@ export const makeChangeUserPasswordUseCase = () =>
     new PasswordPolicyService(),
   );
 
-export const makeUserEventPublisher = (): UserEventPublisher =>
-  new EventBusUserEventsAdapter();
+export const makeUserEventPublisher = (): EventPublisher<UserEventMap> =>
+  new EventBusAdapter<UserEventMap>();
 
-export const makeUserEventSubscriber = (): UserEventSubscriber =>
-  new EventBusUserEventsAdapter();
+export const makeUserEventSubscriber = (): EventSubscriber<UserEventMap> =>
+  new EventBusAdapter<UserEventMap>();

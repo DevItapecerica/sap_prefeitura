@@ -22,3 +22,9 @@ export interface SetorDeletedEvent {
   context: ApplicationEventContext;
   before: Setor;
 }
+
+export interface SetorEventMap {
+  [SETOR_EVENTS.created]: SetorCreatedEvent;
+  [SETOR_EVENTS.updated]: SetorUpdatedEvent;
+  [SETOR_EVENTS.deleted]: SetorDeletedEvent;
+}

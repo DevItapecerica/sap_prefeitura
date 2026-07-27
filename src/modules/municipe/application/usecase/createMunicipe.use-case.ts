@@ -13,7 +13,7 @@ export default class createMunicipeUseCase {
     private sha256Crypt: ISha256Crypt,
   ) {}
 
-  async execute(municipe: MunicipeDto, author: string): Promise<Municipe> {
+  async execute(municipe: MunicipeDto, author: string) {
     const hashCpf = await this.sha256Crypt.encrypt(municipe.cpf);
 
     const alreadyExists = municipe.cpf
@@ -55,6 +55,14 @@ export default class createMunicipeUseCase {
 
     const municipeDecrypted = await municipeMapper.toDomain(response);
 
-    return municipeDecrypted;
+    return {
+      ...municipeDecrypted,
+      municipe: municipeDecrypted,
+      protected: {
+        ...response,
+        cpfHash: municipeToPersist.cpfHash,
+        cepHash: municipeToPersist.cepHash,
+      },
+    };
   }
 }

@@ -2,11 +2,9 @@ import { SequelizePermissionRepository } from "../../../infra/database/sequelize
 import { SequelizeServiceAggregateRepository } from "../../../infra/database/sequelize/repositories/sequelize.service-aggregate.repository.js";
 import { SequelizeServicesRepository } from "../../../infra/database/sequelize/repositories/sequelize.services.repository.js";
 import { SequelizeServiceVisibilityRepository } from "../../../infra/database/sequelize/repositories/sequelize.servicesVisibility.repository.js";
-import { EventBusServiceEventsAdapter } from "../../../infra/event/event-bus-service-events.adapter.js";
-import {
-  ServiceEventPublisher,
-  ServiceEventSubscriber,
-} from "../application/events/service-event-bus.js";
+import { EventBusAdapter } from "../../../infra/event/event-bus.adapter.js";
+import { EventPublisher, EventSubscriber } from "../../../core/event/event-contracts.js";
+import { ServiceEventMap } from "../application/events/service.events.js";
 import { CreateServiceUseCase } from "../application/use-case/create-service.use-case.js";
 import { DeleteServiceUseCase } from "../application/use-case/delete-service.use-case.js";
 import { GetServiceByIdUseCase } from "../application/use-case/get-service-by-id.use-case.js";
@@ -38,8 +36,8 @@ export const makeListVisibleServicesUseCase = () =>
 export const makeDeleteServiceUseCase = () =>
   new DeleteServiceUseCase(new SequelizeServiceAggregateRepository());
 
-export const makeServiceEventPublisher = (): ServiceEventPublisher =>
-  new EventBusServiceEventsAdapter();
+export const makeServiceEventPublisher = (): EventPublisher<ServiceEventMap> =>
+  new EventBusAdapter<ServiceEventMap>();
 
-export const makeServiceEventSubscriber = (): ServiceEventSubscriber =>
-  new EventBusServiceEventsAdapter();
+export const makeServiceEventSubscriber = (): EventSubscriber<ServiceEventMap> =>
+  new EventBusAdapter<ServiceEventMap>();

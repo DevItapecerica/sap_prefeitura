@@ -1,5 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
+import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
+import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
+import { SETOR_EVENTS } from "../../application/events/setor.events.js";
 import { CreateSetorDto } from "../../application/dto/create-setor.dto.js";
 import { UpdateSetorDto } from "../../application/dto/update-setor.dto.js";
 import {
@@ -12,13 +15,20 @@ import {
 } from "../../factories/setor.factories.js";
 
 const setorEventPublisher = makeSetorEventPublisher();
+const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class SetorController {
   static getSetores = async (
-    _request: FastifyRequest,
+    request: FastifyRequest,
     reply: FastifyReply,
   ) => {
     const setores = await makeListSetoresUseCase().execute();
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request),
+      module: "setor",
+      resourceType: "setor",
+      returnedCount: setores.length,
+    });
     reply.status(200).send({ setores });
   };
 
@@ -29,6 +39,12 @@ export default class SetorController {
     const setor = await makeGetSetorByIdUseCase().execute(
       Number(request.params.id),
     );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
+      context: makeApplicationEventContext(request),
+      module: "setor",
+      resourceType: "setor",
+      resourceId: String(request.params.id),
+    });
     reply.status(200).send({ setor });
   };
 
@@ -38,7 +54,7 @@ export default class SetorController {
   ) => {
     const setor = await makeCreateSetorUseCase().execute(request.body.setor);
 
-    await setorEventPublisher.publishCreated({
+    await setorEventPublisher.publish(SETOR_EVENTS.created, {
       context: makeApplicationEventContext(request),
       setor,
     });
@@ -58,7 +74,7 @@ export default class SetorController {
       request.body.setor,
     );
 
-    await setorEventPublisher.publishUpdated({
+    await setorEventPublisher.publish(SETOR_EVENTS.updated, {
       context: makeApplicationEventContext(request),
       before,
       after,
@@ -79,7 +95,7 @@ export default class SetorController {
       Number(request.params.id),
     );
 
-    await setorEventPublisher.publishDeleted({
+    await setorEventPublisher.publish(SETOR_EVENTS.deleted, {
       context: makeApplicationEventContext(request),
       before,
     });

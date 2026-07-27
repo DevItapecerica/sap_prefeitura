@@ -1,13 +1,14 @@
 import { FastifyBaseLogger } from "fastify";
-import { SetorEventSubscriber } from "../../setor/application/events/setor-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import { SetorEventMap, SETOR_EVENTS } from "../../setor/application/events/setor.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerSetorCreatedHandler = (
-  setorEvents: SetorEventSubscriber,
+  setorEvents: EventSubscriber<SetorEventMap>,
   serviceAccessDefaults: ServiceAccessDefaultsUseCase,
   logger: Pick<FastifyBaseLogger, "error">,
 ) =>
-  setorEvents.onCreated(async (event) => {
+  setorEvents.subscribe(SETOR_EVENTS.created, async (event) => {
     try {
       await serviceAccessDefaults.ensureForSetor(event.setor);
     } catch (error) {

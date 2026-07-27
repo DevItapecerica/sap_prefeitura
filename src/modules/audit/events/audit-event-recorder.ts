@@ -1,11 +1,9 @@
 import { FastifyBaseLogger } from "fastify";
 import { ApplicationEventContext } from "../../../core/event/application-event.js";
 import { RecordAuditDto } from "../application/dto/audit.dto.js";
-import { markAuditRequestHandled } from "./audit-request-registry.js";
+import { AuditRecorder } from "../application/contracts/audit-recorder.js";
 
-export interface AuditRecorder {
-  record(input: RecordAuditDto): Promise<unknown>;
-}
+export type { AuditRecorder } from "../application/contracts/audit-recorder.js";
 
 export interface AuditableApplicationEvent {
   context: ApplicationEventContext;
@@ -39,7 +37,6 @@ export const recordAuditEvent = async (
 ): Promise<void> => {
   try {
     await auditService.record(input);
-    markAuditRequestHandled(event.context.correlationId);
   } catch (error) {
     logger.error(
       { err: error, requestId: event.context.correlationId },

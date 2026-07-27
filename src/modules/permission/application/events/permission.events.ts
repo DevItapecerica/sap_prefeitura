@@ -10,3 +10,7 @@ export interface PermissionUpdatedEvent {
   before: Permissions;
   after: Permissions;
 }
+
+export interface PermissionEventMap {
+  [PERMISSION_EVENTS.updated]: PermissionUpdatedEvent;
+}

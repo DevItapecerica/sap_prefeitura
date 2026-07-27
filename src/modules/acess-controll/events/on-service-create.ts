@@ -1,13 +1,14 @@
 import { FastifyBaseLogger } from "fastify";
-import { ServiceEventSubscriber } from "../../services/application/events/service-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import { ServiceEventMap, SERVICE_EVENTS } from "../../services/application/events/service.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerServiceCreatedHandler = (
-  serviceEvents: ServiceEventSubscriber,
+  serviceEvents: EventSubscriber<ServiceEventMap>,
   serviceAccessDefaults: ServiceAccessDefaultsUseCase,
   logger: Pick<FastifyBaseLogger, "error">,
 ) =>
-  serviceEvents.onCreated(async (event) => {
+  serviceEvents.subscribe(SERVICE_EVENTS.created, async (event) => {
     try {
       await serviceAccessDefaults.ensureForService(event.service.id);
     } catch (error) {

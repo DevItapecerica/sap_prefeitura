@@ -149,6 +149,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
   ) {
     this.vincularBolsistasCalled = true;
     assert.equal(bolsistas.length, 1);
+    return [new FakeModel({ id: "vinculo-created" })];
   }
 }
 

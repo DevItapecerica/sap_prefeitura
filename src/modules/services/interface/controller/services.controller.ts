@@ -1,5 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
+import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
+import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
+import { SERVICE_EVENTS } from "../../application/events/service.events.js";
 import { CreateServiceDto } from "../../application/dto/create-service.dto.js";
 import { ListServicesDto } from "../../application/dto/list-services.dto.js";
 import { ServicePermissionDto } from "../../application/dto/service-permission.dto.js";
@@ -16,6 +19,7 @@ import {
 } from "../../factories/service.factories.js";
 
 const serviceEventPublisher = makeServiceEventPublisher();
+const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class ServicesController {
   static readonly getService = async (
@@ -23,6 +27,13 @@ export default class ServicesController {
     reply: FastifyReply,
   ) => {
     const response = await makeListServicesUseCase().execute(request.query);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request),
+      module: "service",
+      resourceType: "service",
+      filters: request.query,
+      returnedCount: response.services.length,
+    });
     return reply.status(200).send({
       message: "serviços recuperados com sucesso",
       services: response.services,
@@ -38,6 +49,12 @@ export default class ServicesController {
     const response = await makeGetServiceByIdUseCase().execute(
       Number(request.params.id),
     );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
+      context: makeApplicationEventContext(request),
+      module: "service",
+      resourceType: "service",
+      resourceId: String(request.params.id),
+    });
     return reply.status(200).send({
       message: "serviços recuperados com sucesso",
       services: response.services,
@@ -63,6 +80,17 @@ export default class ServicesController {
       user.setor_id,
       user.role_id,
     );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request),
+      module: "service",
+      resourceType: "service",
+      filters: {
+        setorId: user.setor_id,
+        roleId: user.role_id,
+        visible: true,
+      },
+      returnedCount: services.length,
+    });
     return reply.status(200).send({
       message: "serviços recuperados com sucesso",
       services,
@@ -78,7 +106,7 @@ export default class ServicesController {
       request.body.service,
     );
 
-    await serviceEventPublisher.publishCreated({
+    await serviceEventPublisher.publish(SERVICE_EVENTS.created, {
       context: makeApplicationEventContext(request),
       service,
     });
@@ -104,7 +132,7 @@ export default class ServicesController {
       request.body.visibility,
     );
 
-    await serviceEventPublisher.publishUpdated({
+    await serviceEventPublisher.publish(SERVICE_EVENTS.updated, {
       context: makeApplicationEventContext(request),
       before,
       after,
@@ -121,7 +149,7 @@ export default class ServicesController {
       Number(request.params.id),
     );
 
-    await serviceEventPublisher.publishDeleted({
+    await serviceEventPublisher.publish(SERVICE_EVENTS.deleted, {
       context: makeApplicationEventContext(request),
       before,
     });

@@ -1,6 +1,5 @@
 import AppError from "../../../../core/appError.js";
 import ValidateQueryOrder from "../../../../core/utils/ValidateQueryOrder.js";
-import { UserListResult } from "../../domain/repository/user-list-result.js";
 import UserRepository from "../../domain/repository/user.repository.js";
 import { ListUsersDto } from "../dto/list-users.dto.js";
 
@@ -9,7 +8,7 @@ export class ListUsersUseCase {
 
   constructor(private readonly repository: UserRepository) {}
 
-  async execute(query: ListUsersDto): Promise<UserListResult> {
+  async execute(query: ListUsersDto) {
     const {
       search,
       page = 1,

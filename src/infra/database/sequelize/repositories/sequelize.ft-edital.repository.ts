@@ -190,9 +190,10 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     edital: any,
     bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
   ) {
-    await db.sequelize.transaction(async (transaction: any) => {
+    return db.sequelize.transaction(async (transaction: any) => {
+      const created = [];
       for (const item of bolsistas) {
-        await db.BolsistasEdital.create({
+        const vinculo = await db.BolsistasEdital.create({
           edital_id: edital.get("id"),
           bolsista_id: item.bolsista.get("id"),
           data_vinculo: item.data_vinculo,
@@ -202,7 +203,9 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
 
         item.bolsista.set("status", "ativo");
         await item.bolsista.save({ transaction });
+        created.push(vinculo);
       }
+      return created;
     });
   }
 }

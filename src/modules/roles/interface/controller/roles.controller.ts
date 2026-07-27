@@ -1,5 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
+import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
+import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
+import { ROLE_EVENTS } from "../../application/events/role.events.js";
 import { CreateRoleDto } from "../../application/dto/create-role.dto.js";
 import { ListRolesDto } from "../../application/dto/list-roles.dto.js";
 import { UpdateRoleDto } from "../../application/dto/update-role.dto.js";
@@ -13,6 +16,7 @@ import {
 } from "../../factories/role.factories.js";
 
 const roleEventPublisher = makeRoleEventPublisher();
+const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class RolesController {
   static createRole = async (
@@ -20,7 +24,7 @@ export default class RolesController {
     reply: FastifyReply,
   ) => {
     const role = await makeCreateRoleUseCase().execute(request.body.role);
-    await roleEventPublisher.publishCreated({
+    await roleEventPublisher.publish(ROLE_EVENTS.created, {
       context: makeApplicationEventContext(request),
       role,
     });
@@ -36,6 +40,13 @@ export default class RolesController {
     reply: FastifyReply,
   ) => {
     const result = await makeListRolesUseCase().execute(request.query);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request),
+      module: "role",
+      resourceType: "role",
+      filters: request.query,
+      returnedCount: result.roles.length,
+    });
     return reply.status(200).send({
       message: "Roles found successfully",
       roles: result.roles,
@@ -49,6 +60,12 @@ export default class RolesController {
     reply: FastifyReply,
   ) => {
     const role = await makeGetRoleByIdUseCase().execute(Number(request.params.id));
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
+      context: makeApplicationEventContext(request),
+      module: "role",
+      resourceType: "role",
+      resourceId: String(request.params.id),
+    });
     return reply.status(200).send({
       message: "Role found successfully",
       role,
@@ -67,7 +84,7 @@ export default class RolesController {
       Number(request.params.id),
       request.body.role,
     );
-    await roleEventPublisher.publishUpdated({
+    await roleEventPublisher.publish(ROLE_EVENTS.updated, {
       context: makeApplicationEventContext(request),
       before,
       after,
@@ -86,7 +103,7 @@ export default class RolesController {
     const { before } = await makeDeleteRoleUseCase().execute(
       Number(request.params.id),
     );
-    await roleEventPublisher.publishDeleted({
+    await roleEventPublisher.publish(ROLE_EVENTS.deleted, {
       context: makeApplicationEventContext(request),
       before,
     });

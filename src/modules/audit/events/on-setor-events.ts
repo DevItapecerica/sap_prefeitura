@@ -1,9 +1,11 @@
 import { FastifyBaseLogger } from "fastify";
-import { SetorEventSubscriber } from "../../setor/application/events/setor-event-bus.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
 import {
   SetorCreatedEvent,
   SetorDeletedEvent,
   SetorUpdatedEvent,
+  SetorEventMap,
+  SETOR_EVENTS,
 } from "../../setor/application/events/setor.events.js";
 import {
   AuditRecorder,
@@ -14,7 +16,7 @@ import {
 type SetorAuditEvent = SetorCreatedEvent | SetorUpdatedEvent | SetorDeletedEvent;
 
 export const registerSetorAuditHandlers = (
-  setorEvents: SetorEventSubscriber,
+  setorEvents: EventSubscriber<SetorEventMap>,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
@@ -26,7 +28,7 @@ export const registerSetorAuditHandlers = (
     makeAuditBaseRecord(event, "setor", "setor");
 
   const unsubscribe = [
-    setorEvents.onCreated((event) =>
+    setorEvents.subscribe(SETOR_EVENTS.created, (event) =>
       record(event, {
         ...base(event),
         action: "CREATE",
@@ -35,7 +37,7 @@ export const registerSetorAuditHandlers = (
         after: event.setor,
       }),
     ),
-    setorEvents.onUpdated((event) =>
+    setorEvents.subscribe(SETOR_EVENTS.updated, (event) =>
       record(event, {
         ...base(event),
         action: "UPDATE",
@@ -44,7 +46,7 @@ export const registerSetorAuditHandlers = (
         after: event.after,
       }),
     ),
-    setorEvents.onDeleted((event) =>
+    setorEvents.subscribe(SETOR_EVENTS.deleted, (event) =>
       record(event, {
         ...base(event),
         action: "DELETE",

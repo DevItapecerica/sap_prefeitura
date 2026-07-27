@@ -20,6 +20,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/",
+    config: { audit: { failureAction: "LIST", module: "services", resourceType: "service" } },
     schema: listServicesSchema,
     preHandler: authorizeService,
     handler: ServicesController.getService,
@@ -28,6 +29,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/user",
+    config: { audit: { failureAction: "LIST", module: "services", resourceType: "service" } },
     schema: listVisibleServicesSchema,
     handler: ServicesController.getVisiblesServices,
   });
@@ -35,6 +37,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:id",
+    config: { audit: { failureAction: "VIEW", module: "services", resourceType: "service", resourceIdParam: "id" } },
     schema: getServiceByIdSchema,
     preHandler: authorizeService,
     handler: ServicesController.getOneService,
@@ -43,6 +46,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/",
+    config: { audit: { failureAction: "CREATE", module: "services", resourceType: "service" } },
     schema: createServiceSchema,
     preHandler: authorizeService,
     handler: ServicesController.createService,
@@ -51,6 +55,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/:id",
+    config: { audit: { failureAction: "UPDATE", module: "services", resourceType: "service", resourceIdParam: "id" } },
     schema: updateServiceSchema,
     preHandler: authorizeService,
     handler: ServicesController.updateService,
@@ -59,6 +64,7 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "DELETE",
     url: "/:id",
+    config: { audit: { failureAction: "DELETE", module: "services", resourceType: "service", resourceIdParam: "id" } },
     schema: deleteServiceSchema,
     preHandler: authorizeService,
     handler: ServicesController.deleteService,

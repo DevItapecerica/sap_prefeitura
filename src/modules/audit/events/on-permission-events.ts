@@ -1,6 +1,9 @@
 import { FastifyBaseLogger } from "fastify";
-import { PermissionEventSubscriber } from "../../permission/application/events/permission-event-bus.js";
-import { PermissionUpdatedEvent } from "../../permission/application/events/permission.events.js";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import {
+  PermissionEventMap,
+  PERMISSION_EVENTS,
+} from "../../permission/application/events/permission.events.js";
 import {
   AuditRecorder,
   makeAuditBaseRecord,
@@ -8,11 +11,11 @@ import {
 } from "./audit-event-recorder.js";
 
 export const registerPermissionAuditHandlers = (
-  permissionEvents: PermissionEventSubscriber,
+  permissionEvents: EventSubscriber<PermissionEventMap>,
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
-  const unsubscribe = permissionEvents.onUpdated((event) =>
+  const unsubscribe = permissionEvents.subscribe(PERMISSION_EVENTS.updated, (event) =>
     recordAuditEvent(
       event,
       {

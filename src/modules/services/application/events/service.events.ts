@@ -23,3 +23,9 @@ export interface ServiceDeletedEvent {
   context: ApplicationEventContext;
   before: ServiceAggregateDto;
 }
+
+export interface ServiceEventMap {
+  [SERVICE_EVENTS.created]: ServiceCreatedEvent;
+  [SERVICE_EVENTS.updated]: ServiceUpdatedEvent;
+  [SERVICE_EVENTS.deleted]: ServiceDeletedEvent;
+}

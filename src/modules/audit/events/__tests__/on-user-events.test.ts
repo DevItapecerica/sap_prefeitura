@@ -1,35 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
-import { UserEventHandler, UserEventSubscriber } from "../../../user/application/events/user-event-bus.js";
-import { UserCreatedEvent, UserDeletedEvent, UserPasswordChangedEvent, UserUpdatedEvent } from "../../../user/application/events/user.events.js";
+import { EventHandler } from "../../../../core/event/event-contracts.js";
+import { USER_EVENTS, UserCreatedEvent, UserDeletedEvent, UserPasswordChangedEvent, UserUpdatedEvent } from "../../../user/application/events/user.events.js";
 import { User } from "../../../user/domain/entity/User.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
-import { consumeAuditRequestHandled } from "../audit-request-registry.js";
 import { registerUserAuditHandlers } from "../on-user-events.js";
 
-class FakeUserEventSubscriber implements UserEventSubscriber {
-  created?: UserEventHandler<UserCreatedEvent>;
-  updated?: UserEventHandler<UserUpdatedEvent>;
-  deleted?: UserEventHandler<UserDeletedEvent>;
-  passwordChanged?: UserEventHandler<UserPasswordChangedEvent>;
+class FakeUserEventSubscriber {
+  created?: EventHandler<UserCreatedEvent>;
+  updated?: EventHandler<UserUpdatedEvent>;
+  deleted?: EventHandler<UserDeletedEvent>;
+  passwordChanged?: EventHandler<UserPasswordChangedEvent>;
 
-  onCreated(handler: UserEventHandler<UserCreatedEvent>) {
-    this.created = handler;
-    return () => { if (this.created === handler) this.created = undefined; };
-  }
-  onUpdated(handler: UserEventHandler<UserUpdatedEvent>) {
-    this.updated = handler;
-    return () => { if (this.updated === handler) this.updated = undefined; };
-  }
-  onDeleted(handler: UserEventHandler<UserDeletedEvent>) {
-    this.deleted = handler;
-    return () => { if (this.deleted === handler) this.deleted = undefined; };
-  }
-  onPasswordChanged(handler: UserEventHandler<UserPasswordChangedEvent>) {
-    this.passwordChanged = handler;
+  subscribe(eventName: string, handler: EventHandler<any>) {
+    const property = {
+      [USER_EVENTS.created]: "created",
+      [USER_EVENTS.updated]: "updated",
+      [USER_EVENTS.deleted]: "deleted",
+      [USER_EVENTS.passwordChanged]: "passwordChanged",
+    }[eventName] as "created" | "updated" | "deleted" | "passwordChanged";
+    (this as any)[property] = handler;
     return () => {
-      if (this.passwordChanged === handler) this.passwordChanged = undefined;
+      if ((this as any)[property] === handler) (this as any)[property] = undefined;
     };
   }
 }
@@ -80,16 +73,12 @@ test("user events are translated into audit records with before and after", asyn
     assert.equal(records[3]?.before, undefined);
     assert.equal(records[3]?.after, undefined);
     assert.equal(records[3]?.metadata, undefined);
-    assert.equal(consumeAuditRequestHandled("update-request"), true);
   } finally {
     unregister();
-    consumeAuditRequestHandled("create-request");
-    consumeAuditRequestHandled("delete-request");
-    consumeAuditRequestHandled("password-request");
   }
 });
 
-test("failed audit listener leaves the HTTP hook fallback available", async () => {
+test("failed user audit listener remains best-effort", async () => {
   const events = new FakeUserEventSubscriber();
   let logged = false;
   const unregister = registerUserAuditHandlers(
@@ -104,7 +93,6 @@ test("failed audit listener leaves the HTTP hook fallback available", async () =
       userId: 7,
     });
     assert.equal(logged, true);
-    assert.equal(consumeAuditRequestHandled("failed-request"), false);
   } finally {
     unregister();
   }

@@ -1,9 +1,7 @@
 import { SequelizeRolesRepository } from "../../../infra/database/sequelize/repositories/sequelize.roles.repository.js";
-import { EventBusRoleEventsAdapter } from "../../../infra/event/event-bus-role-events.adapter.js";
-import {
-  RoleEventPublisher,
-  RoleEventSubscriber,
-} from "../application/events/role-event-bus.js";
+import { EventBusAdapter } from "../../../infra/event/event-bus.adapter.js";
+import { EventPublisher, EventSubscriber } from "../../../core/event/event-contracts.js";
+import { RoleEventMap } from "../application/events/role.events.js";
 import { CreateRoleUseCase } from "../application/use-case/create-role.use-case.js";
 import { DeleteRoleUseCase } from "../application/use-case/delete-role.use-case.js";
 import { GetRoleByIdUseCase } from "../application/use-case/get-role-by-id.use-case.js";
@@ -20,7 +18,7 @@ export const makeListRolesUseCase = () =>
   new ListRolesUseCase(new SequelizeRolesRepository());
 export const makeDeleteRoleUseCase = () =>
   new DeleteRoleUseCase(new SequelizeRolesRepository());
-export const makeRoleEventPublisher = (): RoleEventPublisher =>
-  new EventBusRoleEventsAdapter();
-export const makeRoleEventSubscriber = (): RoleEventSubscriber =>
-  new EventBusRoleEventsAdapter();
+export const makeRoleEventPublisher = (): EventPublisher<RoleEventMap> =>
+  new EventBusAdapter<RoleEventMap>();
+export const makeRoleEventSubscriber = (): EventSubscriber<RoleEventMap> =>
+  new EventBusAdapter<RoleEventMap>();

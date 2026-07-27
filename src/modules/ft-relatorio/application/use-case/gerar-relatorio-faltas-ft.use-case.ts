@@ -26,6 +26,7 @@ export class GerarRelatorioFaltasFtUseCase {
       fileName: `relatorio-faltas-${relatorio.mes}.csv`,
       csv,
       type: "text/csv; charset=utf-8",
+      returnedCount: relatorio.bolsistas.length,
     };
   }
 }

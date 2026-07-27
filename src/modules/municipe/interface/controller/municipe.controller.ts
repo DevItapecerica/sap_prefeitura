@@ -10,6 +10,14 @@ import getMunicipeByIdUseCase from "../../application/usecase/getMunicipeById.us
 import updateMunicipeUseCase from "../../application/usecase/updateMunicipe.use-case.js";
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
+import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
+import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
+import { makeMunicipeEventPublisher } from "../../factories/municipe-events.factory.js";
+import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
+import { MUNICIPE_EVENTS } from "../../application/events/municipe.events.js";
+
+const resourceReadEventPublisher = makeResourceReadEventPublisher();
+const municipeEventPublisher = makeMunicipeEventPublisher();
 
 export default class municipeController {
   static async getMunicipe(
@@ -34,6 +42,13 @@ export default class municipeController {
     const maskedResponse = response.municipe.map((municipe: Municipe) =>
       MunicipePresentation.Masked(municipe),
     );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request),
+      module: "municipe",
+      resourceType: "municipe",
+      filters: query,
+      returnedCount: maskedResponse.length,
+    });
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
@@ -58,6 +73,12 @@ export default class municipeController {
     const response = await useCase.execute(uuid);
 
     const maskedResponse = MunicipePresentation.Masked(response);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
+      context: makeApplicationEventContext(request),
+      module: "municipe",
+      resourceType: "municipe",
+      resourceId: uuid,
+    });
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
@@ -92,7 +113,12 @@ export default class municipeController {
       complemento: municipe.complemento,
     };
 
-    const response = await useCase.execute(payload, String(user.id));
+    const { municipe: response, protected: after } =
+      await useCase.execute(payload, String(user.id));
+    await municipeEventPublisher.publish(MUNICIPE_EVENTS.created, {
+      context: makeApplicationEventContext(request),
+      after,
+    });
 
     const maskedResponse = MunicipePresentation.Masked(response);
 
@@ -132,7 +158,13 @@ export default class municipeController {
       }).filter(([, value]) => value !== undefined),
     ) as updateMunicipeDto;
 
-    const response = await useCase.execute(uuid, payload, user.id);
+    const { municipe: response, before, after } =
+      await useCase.execute(uuid, payload, user.id);
+    await municipeEventPublisher.publish(MUNICIPE_EVENTS.updated, {
+      context: makeApplicationEventContext(request),
+      before,
+      after,
+    });
 
     const maskedResponse = MunicipePresentation.Masked(response);
 

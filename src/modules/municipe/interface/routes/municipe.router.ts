@@ -79,6 +79,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/",
+    config: { audit: { failureAction: "LIST", module: "municipe", resourceType: "municipe" } },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
@@ -112,6 +113,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/:uuid",
+    config: { audit: { failureAction: "VIEW", module: "municipe", resourceType: "municipe", resourceIdParam: "uuid" } },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
@@ -141,6 +143,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/",
+    config: { audit: { failureAction: "CREATE", module: "municipe", resourceType: "municipe" } },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
@@ -165,6 +168,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/:uuid",
+    config: { audit: { failureAction: "UPDATE", module: "municipe", resourceType: "municipe", resourceIdParam: "uuid" } },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
