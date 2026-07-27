@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import AppError from "../../core/appError.js";
-import { MAIL_ADRESS, MAIL_HOST, MAIL_PASSWORD } from "../../core/env.js";
+import {
+  MAIL_ADRESS,
+  MAIL_HOST,
+  MAIL_PASSWORD,
+  MAIL_PORT,
+  MAIL_SECURE,
+} from "../../core/env.js";
 import { UserPasswordNotifier } from "../../modules/user/domain/repository/user-password-notifier.repository.js";
 
 export interface MailTransport {
@@ -16,8 +22,8 @@ export interface MailTransport {
 const createTransport = (): MailTransport =>
   nodemailer.createTransport({
     host: MAIL_HOST,
-    port: 25,
-    secure: true,
+    port: MAIL_PORT,
+    secure: MAIL_SECURE,
     auth: { user: MAIL_ADRESS, pass: MAIL_PASSWORD },
   });
 
