@@ -33,11 +33,9 @@ export default {
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
       for (const columnName of [...COLUMNS].reverse()) {
-        if (await hasColumn(queryInterface, columnName)) {
-          await queryInterface.removeColumn(TABLE_NAME, columnName, {
-            transaction,
-          });
-        }
+        await queryInterface.removeColumn(TABLE_NAME, columnName, {
+          transaction,
+        });
       }
     });
   },

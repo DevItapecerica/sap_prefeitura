@@ -55,10 +55,86 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
 
       APPLICATION_PORT: 3000
+      PROTOCOL_PUBLIC_URL: ${PROTOCOL_PUBLIC_URL}
+      PROTOCOL_STORAGE_DIR: /data/protocolos
+      PROTOCOL_MAX_FILE_BYTES: 10485760
+      PROTOCOL_CODE_TTL_MINUTES: 10
+      PROTOCOL_TOKEN_SECRET: ${PROTOCOL_TOKEN_SECRET}
+      PROTOCOL_PRIVACY_CONTACT_URL: ${PROTOCOL_PRIVACY_CONTACT_URL:-https://www.itapecerica.sp.gov.br/transparencia}
+      PROTOCOL_RETENTION_POLICY_REFERENCE: ${PROTOCOL_RETENTION_POLICY_REFERENCE:-}
+      PROTOCOL_RETENTION_DAYS: ${PROTOCOL_RETENTION_DAYS:-}
+      PROTOCOL_ALERT_OVERDUE_THRESHOLD: ${PROTOCOL_ALERT_OVERDUE_THRESHOLD:-10}
+      PROTOCOL_ALERT_FAILED_NOTIFICATIONS_THRESHOLD: ${PROTOCOL_ALERT_FAILED_NOTIFICATIONS_THRESHOLD:-1}
+      PROTOCOL_ALERT_OPEN_PRIVACY_DAYS: ${PROTOCOL_ALERT_OPEN_PRIVACY_DAYS:-10}
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CLAMAV_TIMEOUT_MS: 10000
+    volumes:
+      - protocol_files:/data/protocolos
     expose:
       - 3000
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/protocolo/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    networks:
+      - dokploy-network
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    expose:
+      - 3310
+    volumes:
+      - clamav_data:/var/lib/clamav
+    networks:
+      - dokploy-network
+  protocol_backup:
+    image: mariadb:10.11
+    profiles: ["operations"]
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_KEY: ${DATABASE_KEY}
+      PROTOCOL_BACKUP_PASSPHRASE: ${PROTOCOL_BACKUP_PASSPHRASE}
+      PROTOCOL_STORAGE_DIR: /data/protocolos
+      PROTOCOL_BACKUP_DIR: /backups
+    volumes:
+      - protocol_files:/data/protocolos:ro
+      - protocol_backups:/backups
+      - ./ops:/ops:ro
+    entrypoint: ["/bin/sh", "/ops/protocol-backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dokploy-network
+  protocol_restore_verify:
+    image: mariadb:10.11
+    profiles: ["operations"]
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
+      PROTOCOL_BACKUP_PASSPHRASE: ${PROTOCOL_BACKUP_PASSPHRASE}
+      PROTOCOL_BACKUP_DIR: /backups
+      BACKUP_PATH: ${BACKUP_PATH:-}
+    volumes:
+      - protocol_backups:/backups:ro
+      - ./ops:/ops:ro
+    entrypoint: ["/bin/sh", "/ops/protocol-restore-verify.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - dokploy-network
 networks:
@@ -67,3 +143,6 @@ networks:
 
 volumes:
   db_data:
+  protocol_files:
+  clamav_data:
+  protocol_backups:

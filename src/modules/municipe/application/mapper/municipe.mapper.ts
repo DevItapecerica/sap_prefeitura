@@ -7,77 +7,61 @@ export class MunicipeMapper {
     private aesCrypt: IAesCrypt,
     private sha256Crypt: ISha256Crypt,
   ) {}
-  private fieldsToEncrypt = [
-    "cpf",
-    "nascimento",
-    "telefone",
-    "rua",
-    "bairro",
-    "cidade",
-    "uf",
-    "cep",
-    "numero",
-    "complemento",
-  ];
-
   async toDomain(municipe: Municipe): Promise<Municipe> {
-    const data: Record<string, any> = {};
-
-    for (const [key, value] of Object.entries(municipe)) {
-      if (value === null || !this.fieldsToEncrypt.includes(key)) {
-        data[key] = value;
-      } else if (value !== undefined) {
-        data[key] = await this.aesCrypt.decrypt(String(value));
-      }
-    }
-
-    return this.toEntity(data);
+    const decryptNullable = (value: string | null) => value === null ? Promise.resolve(null) : this.aesCrypt.decrypt(value);
+    return new Municipe(
+      municipe.nome,
+      await this.aesCrypt.decrypt(municipe.cpf),
+      await this.aesCrypt.decrypt(municipe.nascimento),
+      await decryptNullable(municipe.telefone),
+      await this.aesCrypt.decrypt(municipe.rua),
+      await this.aesCrypt.decrypt(municipe.bairro),
+      await this.aesCrypt.decrypt(municipe.cidade),
+      await this.aesCrypt.decrypt(municipe.uf),
+      await this.aesCrypt.decrypt(municipe.cep),
+      await this.aesCrypt.decrypt(municipe.numero),
+      await decryptNullable(municipe.complemento),
+      municipe.author,
+      municipe.uuid,
+      municipe.createdAt,
+      municipe.updatedAt,
+      municipe.deletedAt,
+      municipe.cpfHash,
+      municipe.cepHash,
+    );
   }
 
   async toPersistence(
-    municipe: any,
+    municipe: Municipe,
   ): Promise<{ municipe: Municipe; cpfHash: string; cepHash: string }> {
-    const data: Record<string, any> = {};
-
-    for (const [key, value] of Object.entries(municipe)) {
-      if (value === null || !this.fieldsToEncrypt.includes(key)) {
-        data[key] = value;
-      } else if (value !== undefined) {
-        data[key] = await this.aesCrypt.encrypt(String(value));
-      }
-    }
-
-    data.cpfHash = await this.sha256Crypt.encrypt(String(municipe.cpf));
-    data.cepHash = await this.sha256Crypt.encrypt(String(municipe.cep));
+    const encryptNullable = (value: string | null) => value === null ? Promise.resolve(null) : this.aesCrypt.encrypt(value);
+    const cpfHash = await this.sha256Crypt.encrypt(municipe.cpf);
+    const cepHash = await this.sha256Crypt.encrypt(municipe.cep);
+    const persistence = new Municipe(
+      municipe.nome,
+      await this.aesCrypt.encrypt(municipe.cpf),
+      await this.aesCrypt.encrypt(municipe.nascimento),
+      await encryptNullable(municipe.telefone),
+      await this.aesCrypt.encrypt(municipe.rua),
+      await this.aesCrypt.encrypt(municipe.bairro),
+      await this.aesCrypt.encrypt(municipe.cidade),
+      await this.aesCrypt.encrypt(municipe.uf),
+      await this.aesCrypt.encrypt(municipe.cep),
+      await this.aesCrypt.encrypt(municipe.numero),
+      await encryptNullable(municipe.complemento),
+      municipe.author,
+      municipe.uuid,
+      municipe.createdAt,
+      municipe.updatedAt,
+      municipe.deletedAt,
+      cpfHash,
+      cepHash,
+    );
 
     return {
-      municipe: this.toEntity(data),
-      cpfHash: data.cpfHash,
-      cepHash: data.cepHash,
+      municipe: persistence,
+      cpfHash,
+      cepHash,
     };
-  }
-
-  private toEntity(data: any): Municipe {
-    return new Municipe(
-      data.nome,
-      data.cpf,
-      data.nascimento,
-      data.telefone,
-      data.rua,
-      data.bairro,
-      data.cidade,
-      data.uf,
-      data.cep,
-      data.numero,
-      data.complemento,
-      data.author,
-
-      data.uuid,
-      data.createdAt,
-      data.updatedAt,
-      data.deletedAt,
-      data.cpfHash,
-      data.cepHash,
-    );
   }
 }

@@ -2,36 +2,55 @@ import db from "../index.js";
 import MunicipeRepository from "../../../../modules/municipe/domain/repositories/Municipe.repository.js";
 import Municipe from "../../../../modules/municipe/domain/entity/Municipe.js";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
-import { Op } from "sequelize";
+import { ModelStatic, Op, Order, UniqueConstraintError } from "sequelize";
 import {
-  MunicipeDto,
   updateMunicipeDto,
 } from "../../../../modules/municipe/application/dto/municipe.dto.js";
+import { MunicipeIdentityConflictError } from "../../../../modules/municipe/domain/errors/municipe-identity-conflict.error.js";
+import { MunicipeDB } from "../models/municipes.model.js";
 
 export class SequelizeMunicipeRepository implements MunicipeRepository {
-  private model = db.MunicipeModel;
+  private model = db.MunicipeModel as ModelStatic<MunicipeDB>;
 
   async createMunicipe(
-    municipe: MunicipeDto,
+    municipe: Municipe,
     cpfHash: string,
     cepHash: string,
   ): Promise<Municipe> {
     const payload = {
-      ...municipe,
+      nome: municipe.nome,
+      cpf: municipe.cpf,
+      nascimento: municipe.nascimento,
+      telefone: municipe.telefone,
+      rua: municipe.rua,
+      bairro: municipe.bairro,
+      cidade: municipe.cidade,
+      uf: municipe.uf,
+      cep: municipe.cep,
+      numero: municipe.numero,
+      complemento: municipe.complemento,
+      author: String(municipe.author),
       cpfHash,
       cepHash,
     };
 
-    const response = await this.model.create(payload);
-
-    return this.toEntity(response);
+    try {
+      const response = await this.model.create(payload);
+      return this.toEntity(response);
+    } catch (error) {
+      if (error instanceof UniqueConstraintError) throw new MunicipeIdentityConflictError();
+      throw error;
+    }
   }
 
   async getMunicipe(
     query: QueryParams,
   ): Promise<{ municipe: Municipe[]; count: number }> {
     const { page, limit, search, order, searchHash } = query;
-    const queryOrder = order ? order.split(":") : ["uuid", "desc"];
+    const allowedOrders = new Set(["uuid:asc", "uuid:desc", "nome:asc", "nome:desc", "createdAt:asc", "createdAt:desc"]);
+    const safeOrder = order && allowedOrders.has(order) ? order : "uuid:desc";
+    const [orderField, orderDirection] = safeOrder.split(":");
+    const queryOrder: Order = [[orderField, orderDirection.toUpperCase()]];
     const queryLimit = limit ? Number(limit) : undefined;
     const queryPage = page ? Number(page) : 0;
 
@@ -52,16 +71,11 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       offset,
       where,
       limit: queryLimit,
-      order: [[queryOrder[0], queryOrder[1]]],
+      order: queryOrder,
     };
 
-    let municipe = await this.model.findAll(queryData);
-
-    const municipeEntities = await Promise.all(
-      municipe.map(async (m: any) => {
-        return this.toEntity(m);
-      }),
-    );
+    const municipe = await this.model.findAll(queryData);
+    const municipeEntities = municipe.map((row) => this.toEntity(row));
 
     const count = await this.model.count({ where });
     return {
@@ -85,17 +99,14 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
   async updateMunicipe(
     uuid: string,
     updated: updateMunicipeDto,
-    cpfHash?: string,
     cepHash?: string,
   ): Promise<Municipe | null> {
     const payload: updateMunicipeDto & {
-      cpfHash?: string;
       cepHash?: string;
     } = {
       ...updated,
     };
 
-    if (cpfHash) payload.cpfHash = cpfHash;
     if (cepHash) payload.cepHash = cepHash;
 
     const response = await this.model.update(payload, { where: { uuid } });
@@ -109,7 +120,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
   }
 
   // 🔥 mapper (ESSENCIAL)
-  private toEntity(data: any): Municipe {
+  private toEntity(data: MunicipeDB): Municipe {
     return new Municipe(
       data.nome,
       data.cpf,

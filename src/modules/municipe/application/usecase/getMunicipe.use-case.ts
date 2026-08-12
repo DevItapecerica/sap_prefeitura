@@ -4,6 +4,7 @@ import { QueryParams } from "../../../../core/types/genericTypes.js";
 import Municipe from "../../domain/entity/Municipe.js";
 import IMunicipeRepository from "../../domain/repositories/Municipe.repository.js";
 import { MunicipeMapper } from "../mapper/municipe.mapper.js";
+import { normalizeMunicipeQuery } from "../dto/municipe-query.dto.js";
 
 export default class getMunicipeUseCase {
   constructor(
@@ -15,14 +16,15 @@ export default class getMunicipeUseCase {
     query: QueryParams,
   ): Promise<{ municipe: Municipe[]; count: number }> {
     const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
-    const searchDigits = String(query.search || "").replace(/\D/g, "");
+    const normalizedQuery = normalizeMunicipeQuery(query);
+    const searchDigits = String(normalizedQuery.search || "").replace(/\D/g, "");
     const searchHash =
       searchDigits.length === 8 || searchDigits.length === 11
         ? await this.sha256Crypt.encrypt(searchDigits)
         : undefined;
 
     let response = await this.municipeRepository.getMunicipe({
-      ...query,
+      ...normalizedQuery,
       searchHash,
     });
 

@@ -3,13 +3,14 @@ import {
   InferAttributes,
   InferCreationAttributes,
   CreationOptional,
+  ModelStatic,
   Sequelize,
   DataTypes,
 } from "sequelize";
 
 // ─── Classe do modelo ────────────────────────────────────────────
 
-interface MunicipeDB extends Model<
+export interface MunicipeDB extends Model<
   InferAttributes<MunicipeDB>,
   InferCreationAttributes<MunicipeDB>
 > {
@@ -17,14 +18,14 @@ interface MunicipeDB extends Model<
   nome: string;
   cpf: string;
   nascimento: string;
-  telefone: CreationOptional<string>;
+  telefone: CreationOptional<string | null>;
   rua: string;
   bairro: string;
   cidade: string;
   uf: string;
   cep: string;
   numero: string;
-  complemento: CreationOptional<string>;
+  complemento: CreationOptional<string | null>;
   cpfHash: string;
   cepHash: string;
 
@@ -32,8 +33,18 @@ interface MunicipeDB extends Model<
 
   createdAt?: CreationOptional<Date>;
   updatedAt?: CreationOptional<Date>;
-  deletedAt?: CreationOptional<Date>;
+  deletedAt?: CreationOptional<Date | null>;
 }
+
+type MunicipeAssociationModels = {
+  AtletaModel: ModelStatic<Model>;
+  CarteirinhaModel: ModelStatic<Model>;
+  CarteirinhaEsporteModel: ModelStatic<Model>;
+};
+
+type AssociableMunicipeModel = ModelStatic<MunicipeDB> & {
+  associate?: (models: MunicipeAssociationModels) => void;
+};
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const MunicipeModel = sequelize.define<MunicipeDB>(
@@ -110,6 +121,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       cpfHash: {
         type: DataTypes.STRING,
         allowNull: false,
+        unique: "uq_municipes_cpf_hash",
       },
 
       cepHash: {
@@ -128,7 +140,8 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     },
   );
 
-  (MunicipeModel as any).associate = (models: any) => {
+  const associableModel = MunicipeModel as AssociableMunicipeModel;
+  associableModel.associate = (models) => {
     MunicipeModel.hasOne(models.AtletaModel, {
       foreignKey: "municipe_uuid",
       as: "atleta",
@@ -143,5 +156,5 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     });
   };
 
-  return MunicipeModel;
+  return associableModel;
 };

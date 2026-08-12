@@ -13,7 +13,6 @@ export type MunicipeDto = {
 };
 
 export type updateMunicipeDto = {
-  cpf?: string;
   nascimento?: string;
   telefone?: string | null;
   rua?: string;

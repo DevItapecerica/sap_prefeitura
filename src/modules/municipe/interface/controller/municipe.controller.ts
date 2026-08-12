@@ -145,7 +145,6 @@ export default class municipeController {
 
     const payload = Object.fromEntries(
       Object.entries({
-        cpf: municipe.cpf,
         nascimento: municipe.nascimento,
         telefone: municipe.telefone,
         rua: municipe.rua,
@@ -168,8 +167,8 @@ export default class municipeController {
 
     const maskedResponse = MunicipePresentation.Masked(response);
 
-    return reply.status(201).send({
-      message: "Municipe created sucessfully",
+    return reply.status(200).send({
+      message: "Municipe updated sucessfully",
       data: maskedResponse,
       ok: true,
     });

@@ -2,8 +2,18 @@ import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import municipeController from "../controller/municipe.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
+import AppError from "../../../../core/appError.js";
 
 const MUNICIPE_SERVICE_ID = 9;
+const createFields = new Set(["nome", "cpf", "nascimento", "telefone", "rua", "bairro", "cidade", "uf", "cep", "numero", "complemento"]);
+const updateFields = new Set(["nascimento", "telefone", "rua", "bairro", "cidade", "uf", "cep", "numero", "complemento"]);
+
+const rejectUnknownBodyFields = (allowed: Set<string>) => async (request: FastifyRequest) => {
+  const body = request.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) return;
+  const unknown = Object.keys(body).find((key) => !allowed.has(key));
+  if (unknown) throw new AppError(`Campo nao permitido: ${unknown}`, 400, "UNKNOWN_FIELD");
+};
 
 const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
@@ -20,12 +30,12 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
     type: "object",
     additionalProperties: false,
     properties: {
-      uuid: { type: "string" },
-      nome: { type: "string" },
-      cpf: { type: "string" },
+      uuid: { type: "string", format: "uuid" },
+      nome: { type: "string", maxLength: 255 },
+      cpf: { type: "string", pattern: "^\\*{8}[0-9]{3}$" },
       nascimento: { type: "number", nullable: true },
-      cidade: { type: "string" },
-      uf: { type: "string" },
+      cidade: { type: "string", maxLength: 255 },
+      uf: { type: "string", pattern: "^[A-Z]{2}$" },
       author: { type: "string" },
       createdAt: { type: "string" },
       updatedAt: { type: "string" },
@@ -47,32 +57,34 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
     ],
     additionalProperties: false,
     properties: {
-      nome: { type: "string" },
-      cpf: { type: "string" },
-      nascimento: { type: "string" },
-      telefone: { type: "string" },
-      rua: { type: "string" },
-      bairro: { type: "string" },
-      cidade: { type: "string" },
-      uf: { type: "string" },
-      cep: { type: "string" },
-      numero: { type: "string" },
-      complemento: { type: "string" },
+      nome: { type: "string", minLength: 2, maxLength: 255 },
+      cpf: { type: "string", pattern: "^(?:[0-9]{11}|[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2})$" },
+      nascimento: { type: "string", format: "date" },
+      telefone: { type: ["string", "null"], maxLength: 20 },
+      rua: { type: "string", minLength: 1, maxLength: 255 },
+      bairro: { type: "string", minLength: 1, maxLength: 255 },
+      cidade: { type: "string", minLength: 1, maxLength: 255 },
+      uf: { type: "string", pattern: "^[A-Za-z]{2}$" },
+      cep: { type: "string", pattern: "^(?:[0-9]{8}|[0-9]{5}-[0-9]{3})$" },
+      numero: { type: "string", minLength: 1, maxLength: 50 },
+      complemento: { type: ["string", "null"], maxLength: 255 },
     },
   };
   
   const municipeUpdateSchema = {
     type: "object",
+    additionalProperties: false,
+    minProperties: 1,
     properties: {
-      nascimento: { type: "string" },
-      telefone: { type: "string" },
-      rua: { type: "string" },
-      bairro: { type: "string" },
-      cidade: { type: "string" },
-      uf: { type: "string" },
-      cep: { type: "string" },
-      numero: { type: "string" },
-      complemento: { type: "string" },
+      nascimento: { type: "string", format: "date" },
+      telefone: { type: ["string", "null"], maxLength: 20 },
+      rua: { type: "string", minLength: 1, maxLength: 255 },
+      bairro: { type: "string", minLength: 1, maxLength: 255 },
+      cidade: { type: "string", minLength: 1, maxLength: 255 },
+      uf: { type: "string", pattern: "^[A-Za-z]{2}$" },
+      cep: { type: "string", pattern: "^(?:[0-9]{8}|[0-9]{5}-[0-9]{3})$" },
+      numero: { type: "string", minLength: 1, maxLength: 50 },
+      complemento: { type: ["string", "null"], maxLength: 255 },
     },
   }
 
@@ -85,11 +97,12 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
       security: [{ JWTToken: [] }],
       querystring: {
         type: "object",
+        additionalProperties: false,
         properties: {
-          search: { type: "string" },
-          order: { type: "string" },
-          page: { type: "string" },
-          limit: { type: "string" },
+          search: { type: "string", maxLength: 255 },
+          order: { type: "string", enum: ["uuid:asc", "uuid:desc", "nome:asc", "nome:desc", "createdAt:asc", "createdAt:desc"] },
+          page: { type: "integer", minimum: 0 },
+          limit: { type: "integer", minimum: 1, maximum: 100 },
         },
       },
       description:
@@ -121,7 +134,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
         type: "object",
         required: ["uuid"],
         properties: {
-          uuid: { type: "string" },
+          uuid: { type: "string", format: "uuid" },
         },
       },
       description: "Pegue u municipes por id, os dados estarão mascarados",
@@ -143,6 +156,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/",
+    preValidation: rejectUnknownBodyFields(createFields),
     config: { audit: { failureAction: "CREATE", module: "municipe", resourceType: "municipe" } },
     schema: {
       tags: ["Municipes"],
@@ -168,6 +182,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "PUT",
     url: "/:uuid",
+    preValidation: rejectUnknownBodyFields(updateFields),
     config: { audit: { failureAction: "UPDATE", module: "municipe", resourceType: "municipe", resourceIdParam: "uuid" } },
     schema: {
       tags: ["Municipes"],
@@ -179,12 +194,12 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
         type: "object",
         required: ["uuid"],
         properties: {
-          uuid: { type: "string" },
+          uuid: { type: "string", format: "uuid" },
         },
       },
       body: municipeUpdateSchema,
       response: {
-        201: {
+        200: {
           type: "object",
           properties: {
             message: { type: "string", example: "OK" },

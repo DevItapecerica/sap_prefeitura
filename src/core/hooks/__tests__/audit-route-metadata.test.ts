@@ -22,12 +22,16 @@ test("todas as rotas de negócio declaram metadata de falha de auditoria", () =>
     const routeDeclarations =
       (source.match(/method:\s*"(?:GET|POST|PUT|PATCH|DELETE)"/g) ?? [])
         .length +
-      (source.match(/fastify\.(?:get|post|put|patch|delete)(?:<|\()/g) ?? [])
+      (source.match(/\b\w+\.(?:get|post|put|patch|delete)(?:<|\()/g) ?? [])
         .length;
-    const auditDeclarations = (source.match(/audit:\s*\{/g) ?? []).length;
-    if (routeDeclarations !== auditDeclarations) {
+    const auditDeclarations =
+      (source.match(/audit:\s*\{/g) ?? []).length +
+      (source.match(/config:\s*audit\(/g) ?? []).length -
+      (source.includes("const audit =") ? 1 : 0);
+    const explicitExemptions = (source.match(/auditExempt:\s*true/g) ?? []).length;
+    if (routeDeclarations !== auditDeclarations + explicitExemptions) {
       uncovered.push(
-        `${file}: ${routeDeclarations} rotas, ${auditDeclarations} metadatas`,
+        `${file}: ${routeDeclarations} rotas, ${auditDeclarations} metadatas, ${explicitExemptions} isencoes explicitas`,
       );
     }
   }

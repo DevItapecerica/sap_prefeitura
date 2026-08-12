@@ -5,6 +5,7 @@ import Municipe from "../../domain/entity/Municipe.js";
 import { updateMunicipeDto } from "../dto/municipe.dto.js";
 import { MunicipeMapper } from "../mapper/municipe.mapper.js";
 import IMunicipeRepository from "../../domain/repositories/Municipe.repository.js";
+import MunicipePolicy from "../../domain/service/municipePolicy.service.js";
 
 export default class updateMunicipeUseCase {
   constructor(
@@ -18,6 +19,9 @@ export default class updateMunicipeUseCase {
     municipe: updateMunicipeDto,
     author: string | number,
   ) {
+    if ("cpf" in municipe || "nome" in municipe) {
+      throw new AppError("Nome e CPF nao podem ser alterados", 422, "IMMUTABLE_IDENTITY");
+    }
     const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
     const current = await this.municipeRepository.getMunicipeById(uuid);
 
@@ -26,34 +30,28 @@ export default class updateMunicipeUseCase {
 
     const currentDomain = await municipeMapper.toDomain(current);
     const before = { ...current };
-    const hashCpf = municipe.cpf
-      ? await this.sha256Crypt.encrypt(municipe.cpf)
-      : undefined;
-
-    const alreadyExists = hashCpf
-      ? await this.municipeRepository.getMunicipeByCpf(hashCpf)
-      : null;
-
-    if (alreadyExists && alreadyExists.uuid !== uuid) {
-      throw new AppError(
-        "Municipe already exists",
-        409,
-        "MUNICIPE_ALREADY_EXISTS",
-      );
+    const cep = municipe.cep === undefined ? undefined : MunicipePolicy.normalizeCep(municipe.cep);
+    if (cep !== undefined && !MunicipePolicy.cepIsValid(cep)) {
+      throw new AppError("CEP invalido", 422, "INVALID_CEP");
     }
-
+    if (municipe.nascimento !== undefined && !MunicipePolicy.birthDateIsValid(municipe.nascimento)) {
+      throw new AppError("Data de nascimento invalida", 422, "INVALID_BIRTH_DATE");
+    }
+    if (municipe.uf !== undefined && !MunicipePolicy.ufIsValid(municipe.uf)) {
+      throw new AppError("UF invalida", 422, "INVALID_UF");
+    }
     const merged = new Municipe(
       currentDomain.nome,
-      municipe.cpf ?? currentDomain.cpf,
+      currentDomain.cpf,
       municipe.nascimento ?? currentDomain.nascimento,
-      municipe.telefone ?? currentDomain.telefone,
+      municipe.telefone !== undefined ? municipe.telefone : currentDomain.telefone,
       municipe.rua ?? currentDomain.rua,
       municipe.bairro ?? currentDomain.bairro,
       municipe.cidade ?? currentDomain.cidade,
-      municipe.uf ?? currentDomain.uf,
-      municipe.cep ?? currentDomain.cep,
+      municipe.uf === undefined ? currentDomain.uf : municipe.uf.trim().toUpperCase(),
+      cep ?? currentDomain.cep,
       municipe.numero ?? currentDomain.numero,
-      municipe.complemento ?? currentDomain.complemento,
+      municipe.complemento !== undefined ? municipe.complemento : currentDomain.complemento,
       author,
     );
 
@@ -62,8 +60,7 @@ export default class updateMunicipeUseCase {
     const response = await this.municipeRepository.updateMunicipe(
       uuid,
       updatedToPersistence.municipe,
-      municipe.cpf ? updatedToPersistence.cpfHash : undefined,
-      municipe.cep ? updatedToPersistence.cepHash : undefined,
+      cep !== undefined ? updatedToPersistence.cepHash : undefined,
     );
 
     if (!response)

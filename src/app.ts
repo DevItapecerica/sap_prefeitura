@@ -13,6 +13,7 @@ import FtEditalModule from "./modules/ft-edital/index.js";
 import FtBolsistaModule from "./modules/ft-bolsista/index.js";
 import FtRelatorioModule from "./modules/ft-relatorio/index.js";
 import AuditModule from "./modules/audit/index.js";
+import ProtocolModule from "./modules/protocolo/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(AuditModule);
@@ -50,6 +51,9 @@ const App: FastifyPluginAsync = async (fastify) => {
 
   await fastify.register(authModule);
   fastify.log.info("Auth Module Registrado");
+
+  await fastify.register(ProtocolModule);
+  fastify.log.info("Protocol Module Registrado");
 
   fastify.register(registerAccessControlEvents);
   fastify.log.info("Access Control Events Registrado");

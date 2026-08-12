@@ -11,6 +11,7 @@ import userModel from "../models/user.model.js";
 import atletaModel from "../models/atleta.model.js";
 import carterinhaEsporteModel from "../models/carterinhaEsporte.model.js";
 import carterinhaModel from "../models/carterinhas.model.js";
+import municipeModel from "../models/municipes.model.js";
 
 test("access models expose the database relationships", async () => {
   const sequelize = new Sequelize("database", "username", "password", {
@@ -63,6 +64,8 @@ test("municipe resource models mirror FK and date metadata", async () => {
   const AtletaModel = atletaModel(sequelize, DataTypes);
   const CarteirinhaModel = carterinhaModel(sequelize, DataTypes);
   const CarteirinhaEsporteModel = carterinhaEsporteModel(sequelize, DataTypes);
+  const MunicipeModel = municipeModel(sequelize, DataTypes);
+  MunicipeModel.associate?.({ AtletaModel, CarteirinhaModel, CarteirinhaEsporteModel });
 
   for (const model of [AtletaModel, CarteirinhaModel, CarteirinhaEsporteModel]) {
     assert.deepEqual(model.rawAttributes.municipe_uuid.references, {
@@ -75,6 +78,10 @@ test("municipe resource models mirror FK and date metadata", async () => {
 
   assert.equal((CarteirinhaModel.rawAttributes.emissao.type as any).key, "DATE");
   assert.equal((CarteirinhaModel.rawAttributes.validade.type as any).key, "DATE");
+  assert.equal(MunicipeModel.rawAttributes.cpfHash.unique, "uq_municipes_cpf_hash");
+  assert.equal(MunicipeModel.associations.atleta.target, AtletaModel);
+  assert.equal(MunicipeModel.associations.carteirinhas.target, CarteirinhaModel);
+  assert.equal(MunicipeModel.associations.carteirinhasEsporte.target, CarteirinhaEsporteModel);
 
   await sequelize.close();
 });

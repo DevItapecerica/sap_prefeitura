@@ -55,6 +55,8 @@ fastify.log.info("Error Registrado");
 await fastify.register(notFoundHook);
 fastify.log.info("NotFound Registrado");
 
+fastify.get("/health", async () => ({ ok: true, service: "sap_prefeitura" }));
+
 //Inicialização de APP
 fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
