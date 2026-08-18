@@ -9,7 +9,7 @@ import {
 import { Services } from "../../../../modules/services/domain/entity/Services.js";
 
 export class SequelizeServicesRepository implements ServicesRepository {
-  private model = db.ServiceModel;
+  private readonly model = db.ServiceModel;
 
   async getAllServices(
     query: ServiceQuery,

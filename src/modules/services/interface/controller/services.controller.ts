@@ -117,11 +117,7 @@ export default class ServicesController {
   static readonly updateService = async (
     request: FastifyRequest<{
       Params: { id: number };
-      Body: {
-        service: UpdateServiceDto;
-        permissions?: ServicePermissionDto[];
-        visibility?: ServiceVisibilityDto[];
-      };
+      Body: UpdateServiceDto;
     }>,
     reply: FastifyReply,
   ) => {

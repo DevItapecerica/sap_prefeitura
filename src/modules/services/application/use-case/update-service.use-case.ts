@@ -5,7 +5,7 @@ import {
 } from "../../domain/repository/service-aggregate.repository.js";
 import { ServicePermissionDto } from "../dto/service-permission.dto.js";
 import { ServiceVisibilityDto } from "../dto/service-visibility.dto.js";
-import { UpdateServiceDto } from "../dto/update-service.dto.js";
+import { ServiceDto } from "../dto/update-service.dto.js";
 import { UpdateServiceResultDto } from "../dto/update-service-result.dto.js";
 
 export class UpdateServiceUseCase {
@@ -13,7 +13,7 @@ export class UpdateServiceUseCase {
 
   async execute(
     id: number,
-    service: UpdateServiceDto,
+    service: ServiceDto,
     permissions: ServicePermissionDto[] = [],
     visibility: ServiceVisibilityDto[] = [],
   ): Promise<UpdateServiceResultDto> {
