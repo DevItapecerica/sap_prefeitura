@@ -69,10 +69,8 @@ export class FtRelatorioPagamentoService {
         periodo,
       );
       const diasSemVinculo = Math.max(0, diasUteis - diasTrabalhados);
-      const desconto = Math.min(
-        valorBruto,
-        (diasSemVinculo + faltas) * valorDiario,
-      );
+      // As faltas permanecem informativas e não compõem o desconto financeiro.
+      const desconto = Math.min(valorBruto, diasSemVinculo * valorDiario);
       const valorLiquido = Math.max(0, valorBruto - desconto);
 
       if (!grouped[local]) {
