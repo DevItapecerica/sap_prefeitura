@@ -1,0 +1,47 @@
+name: Testes_api_prefeitura
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+  
+jobs: 
+  test:
+    name: testes e build
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mariadb://user:password@127.0.0.1:3306/app_prefeitura_test
+      SECRET_KEY: ci-only-secret-key
+      PDF_API_URL: http://127.0.0.1:3002/api/v1
+      MAIL_ADRESS: ci@example.invalid
+      MAIL_PASSWORD: ci-only-password
+      MAIL_HOST: 127.0.0.1
+      MAIL_PORT: 2525
+      MAIL_SECURE: "false"
+      CORS_ORIGINS: http://localhost:5173
+      APPLICATION_PORT: 3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6.5.0
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test -- --passWithNoTests
+
+      - name: build
+        run: npm run build
