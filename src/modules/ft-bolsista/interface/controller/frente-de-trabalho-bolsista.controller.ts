@@ -14,12 +14,28 @@ import { FT_BOLSISTA_EVENTS } from "../../application/events/ft-bolsista.events.
 
 const resourceReadEventPublisher = makeResourceReadEventPublisher();
 import { makeFtBolsistaService } from "../../factories/makeFtBolsistaService.js";
+import { makeGerarEspelhoPontoBolsista } from "../../factories/makeGerarEspelhoPontoBolsista.js";
 
 const service = makeFtBolsistaService();
 const eventPublisher = makeFtBolsistaEventPublisher();
+const gerarEspelhoPonto = makeGerarEspelhoPontoBolsista();
 const plain = (value: any) => value?.toJSON?.() ?? value;
 
 export class FrenteTrabalhoBolsistaController {
+  static readonly gerarEspelhoPonto = async (
+    request: FastifyRequest<{ Params: { id: string }; Querystring: { edital_id: string; mes: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const result = await gerarEspelhoPonto.execute(request.params.id, request.query.edital_id, request.query.mes);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request), module: "ft-bolsista",
+      resourceType: "espelho_ponto", resourceId: request.params.id,
+      filters: { editalId: request.query.edital_id, mes: request.query.mes }, returnedCount: 1,
+    });
+    reply.type(result.contentType).header("Content-Disposition", result.contentDisposition);
+    if (result.contentLength) reply.header("Content-Length", result.contentLength);
+    return reply.status(200).send(result.file);
+  };
   static readonly getBolsistas = async (
     request: FastifyRequest<{ Querystring: FtBolsistaQueryDto }>,
     reply: FastifyReply,
