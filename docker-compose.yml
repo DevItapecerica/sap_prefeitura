@@ -38,7 +38,7 @@ services:
           memory: 256M
     environment:
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: "mariadb://${DATABASE_USER}:${DATABASE_KEY}@db:3306/${DATABASE_NAME}"
       SECRET_KEY: ${SECRET_KEY}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
@@ -61,6 +61,8 @@ services:
       - db
     networks:
       - dokploy-network
+ 
+
 networks:
   dokploy-network:
     external: true
