@@ -1,9 +1,10 @@
-type EventHandler<T = any> = (payload: T) => Promise<void> | void;
+export type EventMap = Record<string, any>;
+type EventHandler<T> = (payload: T) => Promise<void> | void;
 
-export class EventBus {
-  private handlers: Record<string, EventHandler[]> = {};
+export class EventBus<Events extends EventMap = EventMap> {
+  private handlers: Partial<Record<keyof Events, EventHandler<any>[]>> = {};
 
-  on(event: string, handler: EventHandler) {
+  on<K extends keyof Events>(event: K, handler: EventHandler<Events[K]>) {
     if (!this.handlers[event]) {
       this.handlers[event] = [];
     }
@@ -11,12 +12,12 @@ export class EventBus {
     this.handlers[event].push(handler);
   }
 
-  off(event: string, handler: EventHandler) {
+  off<K extends keyof Events>(event: K, handler: EventHandler<Events[K]>) {
     const handlers = this.handlers[event] || [];
     this.handlers[event] = handlers.filter((h) => h !== handler);
   }
 
-  async emit(event: string, payload: any) {
+  async emit<K extends keyof Events>(event: K, payload: Events[K]) {
     const handlers = this.handlers[event] || [];
 
     await Promise.all(handlers.map((h) => h(payload)));

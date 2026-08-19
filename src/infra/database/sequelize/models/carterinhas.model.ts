@@ -14,11 +14,11 @@ interface CarterinhaDB extends Model<
   InferCreationAttributes<CarterinhaDB>
 > {
   uuid: CreationOptional<string>;
-  emissao: string;
-  validade: CreationOptional<string>;
+  emissao: Date;
+  validade: CreationOptional<Date | null>;
   municipe_uuid: string;
   origem: string;
-  atividade_uuid: string;
+  atividade: string | null;
 
   author: string | number;
 
@@ -52,6 +52,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       municipe_uuid: {
         type: DataTypes.UUID,
         allowNull: false,
+        references: {
+          model: "municipes",
+          key: "uuid",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
 
       origem: {
@@ -59,7 +65,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
       },
 
-      atividade_uuid: {
+      atividade: {
         type: DataTypes.STRING,
         allowNull: true,
       },

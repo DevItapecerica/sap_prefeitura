@@ -33,6 +33,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       municipe_uuid: {
         type: DataTypes.UUID,
         allowNull: false,
+        references: {
+          model: "municipes",
+          key: "uuid",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
       },
       ativo: {
         type: DataTypes.BOOLEAN,
@@ -58,6 +64,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     AtletaModel.belongsTo(models.MunicipeModel, {
       foreignKey: "municipe_uuid",
       as: "municipe",
+    });
+    AtletaModel.belongsToMany(models.ModalidadeModel, {
+      through: models.AtletaModalidadeModel,
+      foreignKey: "atleta_uuid",
+      otherKey: "modalidade_uuid",
+      as: "modalidades",
     });
   };
 

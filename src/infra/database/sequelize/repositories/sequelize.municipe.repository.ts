@@ -7,8 +7,6 @@ import {
   MunicipeDto,
   updateMunicipeDto,
 } from "../../../../modules/municipe/application/dto/municipe.dto.js";
-import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
-import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 
 export class SequelizeMunicipeRepository implements MunicipeRepository {
   private model = db.MunicipeModel;
@@ -32,7 +30,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
   async getMunicipe(
     query: QueryParams,
   ): Promise<{ municipe: Municipe[]; count: number }> {
-    const { page, limit, search, order } = query;
+    const { page, limit, search, order, searchHash } = query;
     const queryOrder = order ? order.split(":") : ["uuid", "desc"];
     const queryLimit = limit ? Number(limit) : undefined;
     const queryPage = page ? Number(page) : 0;
@@ -43,8 +41,9 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       ? {
           [Op.or]: [
             { nome: { [Op.like]: `%${search}%` } },
-            { cepHash: { [Op.like]: `%${search}%` } },
-            { cpfHash: { [Op.like]: `%${search}%` } },
+            ...(searchHash
+              ? [{ cepHash: searchHash }, { cpfHash: searchHash }]
+              : []),
           ],
         }
       : {};
@@ -86,8 +85,20 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
   async updateMunicipe(
     uuid: string,
     updated: updateMunicipeDto,
+    cpfHash?: string,
+    cepHash?: string,
   ): Promise<Municipe | null> {
-    const response = await this.model.update(updated, { where: { uuid } });
+    const payload: updateMunicipeDto & {
+      cpfHash?: string;
+      cepHash?: string;
+    } = {
+      ...updated,
+    };
+
+    if (cpfHash) payload.cpfHash = cpfHash;
+    if (cepHash) payload.cepHash = cepHash;
+
+    const response = await this.model.update(payload, { where: { uuid } });
 
     return response[0] > 0 ? await this.getMunicipeById(uuid) : null;
   }
@@ -117,6 +128,8 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       data.createdAt,
       data.updatedAt,
       data.deletedAt,
+      data.cpfHash,
+      data.cepHash,
     );
   }
 }

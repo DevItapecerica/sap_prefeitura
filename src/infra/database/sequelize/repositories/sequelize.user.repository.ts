@@ -1,10 +1,5 @@
 import { Op } from "sequelize";
-import { QueryParams } from "../../../../core/types/genericTypes.js";
-import {
-  userParams,
-  userRequired,
-} from "../../../../modules/user/application/dto/user.dto.js";
-
+import { UserQuery } from "../../../../modules/user/application/dto/user-query.dto.js";
 import UserRepository from "../../../../modules/user/domain/repository/user.repository.js";
 import db from "../index.js";
 import { User } from "../../../../modules/user/domain/entity/User.js";
@@ -12,7 +7,7 @@ import { User } from "../../../../modules/user/domain/entity/User.js";
 export class SequelizeUserRepository implements UserRepository {
   private model = db.UserModel;
 
-  createUser = async (user: userRequired, password: string): Promise<User> => {
+  createUser = async (user: User, password: string): Promise<User> => {
     const payload = {
       name: user.name,
       email: user.email,
@@ -28,14 +23,14 @@ export class SequelizeUserRepository implements UserRepository {
     return this.toEntity(newUser);
   };
 
-  getUserById = async (id: userParams): Promise<User | null> => {
+  getUserById = async (id: number): Promise<User | null> => {
     const user = await this.model.findByPk(id);
     return user ? this.toEntity(user) : null;
   };
 
   getAllUser = async (
-    query: QueryParams,
-  ): Promise<{ user: User[]; count: number }> => {
+    query: UserQuery,
+  ) => {
     const { page, limit, search, order, setorId } = query;
     const queryOrder = order ? order.split(":") : ["id", "desc"];
     const queryLimit = limit ? Number(limit) : undefined;
@@ -73,8 +68,8 @@ export class SequelizeUserRepository implements UserRepository {
   };
 
   updateUser = async (
-    id: userParams,
-    data: userRequired,
+    id: number,
+    data: User,
   ): Promise<User> => {
     const payload = {
       name: data.name,
@@ -98,7 +93,7 @@ export class SequelizeUserRepository implements UserRepository {
     return this.toEntity(user);
   };
 
-  deleteUser = async (id: userParams): Promise<boolean> => {
+  deleteUser = async (id: number): Promise<boolean> => {
     const deleted = await this.model.destroy({ where: { id } });
 
     return deleted > 0;
@@ -116,7 +111,7 @@ export class SequelizeUserRepository implements UserRepository {
 
   getUserByEmail = async (
     email: string,
-    excludeId?: userParams,
+    excludeId?: number,
   ): Promise<User | null> => {
     const where = excludeId ? { email, id: { [Op.ne]: excludeId } } : { email };
     const user = await this.model.findOne({ where });

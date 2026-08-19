@@ -1,20 +1,20 @@
-import { eventBus } from "../../../core/event/index.js";
-import PermissionService from "../../permission/application/use-case/permission.service.js";
-import { Roles } from "../../roles/domain/entity/Role.js";
-import ServicesService from "../../services/application/use-case/services.service.js";
+import { FastifyBaseLogger } from "fastify";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import { RoleEventMap, ROLE_EVENTS } from "../../roles/application/events/role.events.js";
+import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerRoleCreatedHandler = (
-  serviceService: ServicesService,
-  permissionService: PermissionService,
-) => {
-  eventBus.on("ROLE_CREATED", async (role: Roles) => {
-    const dataService = await serviceService.getAll({});
-
-    dataService.services.map(async (sv) => {
-      await permissionService.createPermission({
-        service_id: sv.id,
-        role_id: role.id,
-      });
-    });
+  roleEvents: EventSubscriber<RoleEventMap>,
+  serviceAccessDefaults: ServiceAccessDefaultsUseCase,
+  logger: Pick<FastifyBaseLogger, "error">,
+) =>
+  roleEvents.subscribe(ROLE_EVENTS.created, async (event) => {
+    try {
+      await serviceAccessDefaults.ensureForRole(event.role);
+    } catch (error) {
+      logger.error(
+        { err: error, roleId: event.role.id },
+        "Unable to create default access for role",
+      );
+    }
   });
-};

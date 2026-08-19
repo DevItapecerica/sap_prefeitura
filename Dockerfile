@@ -20,6 +20,7 @@ WORKDIR /app
 
 # Copia apenas dependências de produção
 COPY package*.json ./
+COPY .sequelizerc ./
 
 RUN npm install --omit=dev
 

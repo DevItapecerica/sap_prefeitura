@@ -1,0 +1,34 @@
+import {
+  FtEditalBolsistaQueryDto,
+  FtEditalQueryDto,
+} from "../../application/dto/ft-edital.dto.js";
+
+export interface FtEditalRepository {
+  findAll(): Promise<any[]>;
+  findAndCount(query?: FtEditalQueryDto): Promise<{ count: number; rows: any[] }>;
+  findById(id: string): Promise<any | null>;
+  create(data: any): Promise<any>;
+  update(edital: any, data: any): Promise<any>;
+  destroy(edital: any): Promise<void>;
+  findBolsistaById(id: string): Promise<any | null>;
+  countActiveByPagador(pagadorId: string): Promise<number>;
+  findAllWithBolsista(): Promise<any[]>;
+  findBolsistasByEdital(
+    id: string,
+    query?: FtEditalBolsistaQueryDto,
+    optionWhere?: any,
+  ): Promise<any[]>;
+  countBolsistasByEdital(
+    id: string,
+    query?: FtEditalBolsistaQueryDto,
+    optionWhere?: any,
+  ): Promise<number>;
+  findVinculosByBolsistaEdital(
+    bolsistaId: string,
+    editalId: string,
+  ): Promise<any[]>;
+  vincularBolsistas(
+    edital: any,
+    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
+  ): Promise<any[]>;
+}

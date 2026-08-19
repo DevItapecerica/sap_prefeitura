@@ -1,20 +1,26 @@
-import { QueryParams } from "../../../../core/types/genericTypes.js";
-import { CreatePermissionsDto, UpdatePermissionsDto } from "../../application/dto/permissions.dto.js";
 import { Permissions } from "../entity/Permission.js";
+import { PermissionListResult } from "./permission-list-result.js";
+import { PermissionQuery } from "./permission-query.js";
+
+export type PermissionCreateData = Pick<
+  Permissions,
+  "service_id" | "role_id"
+> &
+  Partial<Pick<Permissions, "read" | "write" | "edit" | "del">>;
+
+export type PermissionUpdateData = Pick<
+  Permissions,
+  "read" | "write" | "edit" | "del"
+>;
 
 export interface PermissionRepository {
-    getAllPermissions: (query: QueryParams) => Promise<{permissions: Permissions[], count: number}>;
-    getOnePermissions: (id: number) => Promise<Permissions | null>;
-    getByRoleAndServiceId: (roleId: number, serviceId: number) => Promise<Permissions | null>
-
-    createPermissions: (data: CreatePermissionsDto) => Promise<Permissions>;
-    createBulkPermissions: (data: CreatePermissionsDto[]) => Promise<Permissions[]>;
-
-    updatePermissions: (id: number, data: UpdatePermissionsDto) => Promise<Permissions>;
-    updatePermissionsByRoleAndSetor: (roleId: number, serviceId: number, data: UpdatePermissionsDto) => Promise<Permissions>;
-
-    deleteOnePermissions: (id: number) => Promise<boolean>;
-    getPermissionByRoleId: (roleId: number) => Promise<Permissions[]>
-    getTrueReadPermissionByRoleId: (roleId: number | string) => Promise<Permissions[]>
-    getByServiceId: (serviceId: number) => Promise<Permissions[]>
+  findAll(query: PermissionQuery): Promise<PermissionListResult>;
+  findById(id: number): Promise<Permissions | null>;
+  findByRoleAndService(
+    roleId: number,
+    serviceId: number,
+  ): Promise<Permissions | null>;
+  findReadableByRole(roleId: number | string): Promise<Permissions[]>;
+  create(data: PermissionCreateData): Promise<Permissions>;
+  update(id: number, data: PermissionUpdateData): Promise<Permissions | null>;
 }

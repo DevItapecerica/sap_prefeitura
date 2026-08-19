@@ -11,6 +11,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/login",
+    config: { audit: { failureAction: "LOGIN_FAILED", module: "auth", resourceType: "session" } },
     schema: {
       description: "Verificação de usuário",
       tags: ["Auth"],
@@ -51,6 +52,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "GET",
     url: "/auth",
+    config: { audit: { failureAction: "ACCESS_DENIED", module: "auth", resourceType: "session" } },
     preHandler: AuthMiddleware.verifyJWT,
     schema: {
       description: "Verificação de usuário",
@@ -79,6 +81,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/refresh",
+    config: { audit: { failureAction: "ACCESS_DENIED", module: "auth", resourceType: "session" } },
     schema: {
       description: "Renova a sessão usando refresh token HttpOnly",
       tags: ["Auth"],
@@ -101,6 +104,7 @@ const routes: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: "POST",
     url: "/logout",
+    config: { audit: { failureAction: "LOGOUT", module: "auth", resourceType: "session" } },
     schema: {
       description: "Revoga a sessão atual",
       tags: ["Auth"],

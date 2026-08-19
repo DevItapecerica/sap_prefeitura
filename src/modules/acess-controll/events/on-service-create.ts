@@ -1,28 +1,21 @@
-import { eventBus } from "../../../core/event/index.js";
-import PermissionService from "../../permission/application/use-case/permission.service.js";
-import RolesService from "../../roles/application/use-case/roles.use-case.js";
-import ServicesService from "../../services/application/use-case/services.service.js";
-import { Services } from "../../services/domain/entity/Services.js";
-import { SetorService } from "../../setor/application/use-case/setor.service.js";
+import { FastifyBaseLogger } from "fastify";
+import { EventSubscriber } from "../../../core/event/event-contracts.js";
+import { ServiceEventMap, SERVICE_EVENTS } from "../../services/application/events/service.events.js";
+import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerServiceCreatedHandler = (
-  setorService: SetorService,
-  servicesService: ServicesService,
-  rolesServuce:RolesService,
-  permissionService: PermissionService
-) => {
-  eventBus.on("SERVICE_CREATED", async (service: Services) => {
-    const dataSetor = await setorService.findAllSetor({});
-    const dataRoles = await rolesServuce.getAllRoles({});
-
-    dataSetor.map(async (st) => {
-      await servicesService.ServiceVisibilityCreate(st.id, service.id);
-    });
-
-    dataRoles.roles.map(async (role) => {
-      await permissionService.createPermission({service_id: service.id, role_id: role.id});
-    });
-
+  serviceEvents: EventSubscriber<ServiceEventMap>,
+  serviceAccessDefaults: ServiceAccessDefaultsUseCase,
+  logger: Pick<FastifyBaseLogger, "error">,
+) =>
+  serviceEvents.subscribe(SERVICE_EVENTS.created, async (event) => {
+    try {
+      await serviceAccessDefaults.ensureForService(event.service.id);
+    } catch (error) {
+      logger.error(
+        { err: error, serviceId: event.service.id },
+        "Unable to create default access for service",
+      );
+    }
   });
-};
 

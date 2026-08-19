@@ -1,17 +1,13 @@
 import { QueryInterface } from "sequelize";
+import { ensureServiceAccessDefaultsForSeed } from "./helpers/service-access-defaults.js";
 
-const ESPORTE_SERVICE_ID = 11;
-const DEFAULT_ROLES = [
-  { id: 1, name: "admin" },
-  { id: 2, name: "tecnico" },
-  { id: 3, name: "Gestor" },
-  { id: 4, name: "Usuario" },
-];
+const ESPORTE_SERVICE_ID = 10;
 
 /** @type {import("sequelize-cli").Migration} */
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
+      const now = new Date();
       const serviceExists = await queryInterface.rawSelect(
         "services",
         {
@@ -27,108 +23,21 @@ export default {
           [
             {
               id: ESPORTE_SERVICE_ID,
-              name: "Esporte",
-              description: "Gerenciamento de atletas e carteirinhas do esporte",
-              url: "/services/11/esporte",
+              name: "Atletas do Esporte",
+              description: "Gerenciamento de atletas do esporte",
+              url: "/services/10/esporte",
               tag: "outros",
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              createdAt: now,
+              updatedAt: now,
             },
           ],
           { transaction },
         );
       }
 
-      for (const role of DEFAULT_ROLES) {
-        const roleExists = await queryInterface.rawSelect(
-          "roles",
-          {
-            where: { id: role.id },
-            transaction,
-          },
-          "id",
-        );
-
-        if (!roleExists) {
-          await queryInterface.bulkInsert("roles", [role], { transaction });
-        }
-      }
-
-      const roles = [
-        { role_id: 1, read: 1, write: 1, edit: 1, del: 1 },
-        { role_id: 2, read: 1, write: 1, edit: 1, del: 0 },
-        { role_id: 3, read: 1, write: 1, edit: 1, del: 0 },
-        { role_id: 4, read: 1, write: 1, edit: 0, del: 0 },
-      ];
-
-      for (const role of roles) {
-        const roleExists = await queryInterface.rawSelect(
-          "roles",
-          {
-            where: { id: role.role_id },
-            transaction,
-          },
-          "id",
-        );
-
-        if (!roleExists) continue;
-
-        const permissionExists = await queryInterface.rawSelect(
-          "permissions",
-          {
-            where: {
-              role_id: role.role_id,
-              service_id: ESPORTE_SERVICE_ID,
-            },
-            transaction,
-          },
-          ["id"],
-        );
-
-        if (!permissionExists) {
-          await queryInterface.bulkInsert(
-            "permissions",
-            [
-              {
-                ...role,
-                service_id: ESPORTE_SERVICE_ID,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-              },
-            ],
-            { transaction },
-          );
-        }
-      }
-
-      for (const setor_id of [1, 2]) {
-        const visibilityExists = await queryInterface.rawSelect(
-          "service_visibilities",
-          {
-            where: {
-              setor_id,
-              service_id: ESPORTE_SERVICE_ID,
-            },
-            transaction,
-          },
-          ["id"],
-        );
-
-        if (!visibilityExists) {
-          await queryInterface.bulkInsert(
-            "service_visibilities",
-            [
-              {
-                setor_id,
-                service_id: ESPORTE_SERVICE_ID,
-                visibility: 1,
-              },
-            ],
-            { transaction },
-          );
-        }
-      }
+      await ensureServiceAccessDefaultsForSeed(queryInterface, ESPORTE_SERVICE_ID, {
+        transaction,
+      });
     });
   },
 
