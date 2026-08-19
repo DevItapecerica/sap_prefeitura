@@ -151,6 +151,22 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   });
 
   fastify.route({
+    method: "GET",
+    url: "/:id/espelho-ponto",
+    config: { audit: { failureAction: "EXPORT", module: "ft-bolsista", resourceType: "espelho_ponto", resourceIdParam: "id" } },
+    schema: {
+      tags: tag, security, summary: "Gerar espelho de ponto mensal do bolsista",
+      params: uuidParam,
+      querystring: {
+        type: "object", additionalProperties: false, required: ["edital_id", "mes"],
+        properties: { edital_id: { type: "string", format: "uuid" }, mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } },
+      },
+      response: { 200: { description: "Espelho de ponto em PDF", content: { "application/pdf": { schema: { type: "string", format: "binary" } } } }, ...errorResponseSchema },
+    },
+    handler: FrenteTrabalhoBolsistaController.gerarEspelhoPonto,
+  });
+
+  fastify.route({
     method: "POST",
     url: "/",
     config: { audit: { failureAction: "CREATE", module: "ft-bolsista", resourceType: "bolsista" } },

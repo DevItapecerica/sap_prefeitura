@@ -47,4 +47,10 @@ export interface FtBolsistaRepository {
     bolsistaId: string,
     query?: FtBolsistaFaltaQueryDto,
   ): Promise<{ count: number; rows: any[] }>;
+  findFaltasByBolsistaPeriodo(
+    bolsistaId: string,
+    editalId: string,
+    dataInicio: string,
+    dataFim: string,
+  ): Promise<any[]>;
 }

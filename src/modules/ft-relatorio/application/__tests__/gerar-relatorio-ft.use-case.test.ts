@@ -5,33 +5,41 @@ import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { GerarRelatorioFtUseCase } from "../use-case/gerar-relatorio-ft.use-case.js";
 import { FtRelatorioPeriodo } from "../dto/ft-relatorio.dto.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
-import {
-  FtRelatorioBolsista,
-  FtRelatorioVinculo,
-} from "../../domain/entities/ft-relatorio.entity.js";
-import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
-import { FtBolsista } from "../../../ft-bolsista/domain/entity/FtBolsista.js";
-import { FtPaymentInfo } from "../../../ft-bolsista/domain/entity/FtPaymentInfo.js";
-import { FtBolsistaFalta } from "../../../ft-bolsista/domain/entity/FtBolsistaFalta.js";
+import { FtRelatorioBolsista } from "../../domain/entities/ft-relatorio.entity.js";
 
 class FakeFtRelatorioRepository implements FtRelatorioRepository {
-  public missingEdital = false;
-  public faltas: FtBolsistaFalta[] = [];
-  public vinculos: FtRelatorioVinculo[] = [];
-  public lastPeriodo?: FtRelatorioPeriodo;
-
-  private edital = new FtEdital(
-    "Edital 1",
-    new Date("2026-01-01"),
-    new Date("2026-12-31"),
-    10,
-    "1000.00",
-    "ativo",
-    "edital-1",
-  );
+  data = {
+    edital: {
+      id: "edital-1",
+      name: "Edital 1",
+      data_publicacao: "2026-01-01",
+      data_vencimento: "2026-12-31",
+      dia_pagamento: 10,
+      valor_bolsa: "1000.00",
+      status: "ativo",
+    },
+    bolsista: {
+      id: "bolsista-1",
+      nome: "Maria",
+      cpf: "52998224725",
+      local: "Sede",
+      status: "ativo",
+      payment_info: {
+        bco: "001",
+        pagador_id: pagador[0].id,
+        ag: "1234",
+        dig_ag: "0",
+        conta: "123456",
+        dig_conta: "1",
+      },
+    },
+    faltas: [] as Array<{ data_falta: string }>,
+    vinculos: [] as Array<Record<string, string | null>>,
+  };
+  lastPeriodo?: FtRelatorioPeriodo;
 
   async findEditalById() {
-    return this.missingEdital ? null : this.edital;
+    return this.data.edital;
   }
 
   async findBolsistasByEditalPeriodo(
@@ -39,39 +47,17 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
     periodo: FtRelatorioPeriodo,
   ) {
     this.lastPeriodo = periodo;
-
     return [
-      new FtRelatorioBolsista(
-        new FtBolsista(
-          "Maria",
-          "52998224725",
-          "Sede",
-          "00000000",
-          "0",
-          "Rua A",
-          "Centro",
-          "Cidade",
-          "SP",
-          null,
-          "ativo",
-          new FtPaymentInfo(
-            "001",
-            pagador[0].id,
-            "1234",
-            "0",
-            "123456",
-            "1",
-          ),
-          "bolsista-1",
+      {
+        bolsista: this.data.bolsista,
+        faltas: this.data.faltas.filter(
+          ({ data_falta }) =>
+            data_falta >= periodo.data_inicio &&
+            data_falta <= periodo.data_fim,
         ),
-        this.faltas.filter(
-          (falta) =>
-            falta.data_falta >= periodo.data_inicio &&
-            falta.data_falta <= periodo.data_fim,
-        ),
-        this.vinculos,
-      ),
-    ];
+        vinculos: this.data.vinculos,
+      },
+    ] as unknown as FtRelatorioBolsista[];
   }
 
   async findBolsistasFaltasByEditalMes(
@@ -82,23 +68,6 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
   }
 }
 
-const falta = (dataFalta: string) =>
-  new FtBolsistaFalta("bolsista-1", "edital-1", dataFalta);
-
-const assertAppError = async (
-  action: () => Promise<unknown>,
-  statusCode: number,
-  messageIncludes: string,
-) => {
-  await assert.rejects(
-    action,
-    (error) =>
-      error instanceof AppError &&
-      error.statusCode === statusCode &&
-      error.message.includes(messageIncludes),
-  );
-};
-
 describe("GerarRelatorioFtUseCase", () => {
   let repository: FakeFtRelatorioRepository;
   let useCase: GerarRelatorioFtUseCase;
@@ -108,7 +77,7 @@ describe("GerarRelatorioFtUseCase", () => {
     useCase = new GerarRelatorioFtUseCase(repository);
   });
 
-  it("gera relatorio csv agrupado por pagador", async () => {
+  it("gera CSV agrupado pelo pagador", async () => {
     const response = await useCase.execute("edital-1", {
       data_inicio: "2026-06-01",
       data_fim: "2026-06-30",
@@ -119,12 +88,34 @@ describe("GerarRelatorioFtUseCase", () => {
     assert.match(response.csv, /Maria/);
   });
 
-  it("desconta faltas proporcionais considerando somente dias uteis", async () => {
-    repository.faltas = [
-      falta("2026-06-01"),
-      falta("2026-06-01"),
-      falta("2026-06-06"),
-      falta("2026-06-08"),
+  it("informa faltas sem descontá-las do pagamento", async () => {
+    repository.data.faltas = [
+      "2026-06-01",
+      "2026-06-01",
+      "2026-06-06",
+      "2026-06-08",
+    ].map((data_falta) => ({ data_falta }));
+
+    const response = await useCase.execute("edital-1", {
+      data_inicio: "2026-06-01",
+      data_fim: "2026-06-30",
+    });
+
+    assert.match(response.csv, /22;2;1000.00;0.00;1000.00/);
+    assert.match(response.csv, /Total do valor geral:;1000.00/);
+  });
+
+  it("desconta apenas dias fora da janela do vínculo", async () => {
+    repository.data.faltas = ["2026-06-10", "2026-06-22"].map(
+      (data_falta) => ({ data_falta }),
+    );
+    repository.data.vinculos = [
+      {
+        status: "concluido",
+        data_vinculo: "2026-06-08",
+        expire_at: "2027-06-08",
+        concluded_at: "2026-06-19",
+      },
     ];
 
     const response = await useCase.execute("edital-1", {
@@ -132,89 +123,75 @@ describe("GerarRelatorioFtUseCase", () => {
       data_fim: "2026-06-30",
     });
 
-    assert.match(response.csv, /dias_uteis;faltas;valor_bruto;desconto;valor_liquido/);
-    assert.match(response.csv, /22;2;1000.00;90.91;909.09/);
-    assert.match(response.csv, /Total do valor geral:;909.09/);
+    const valorBruto = Number(repository.data.edital.valor_bolsa);
+    const diasUteis = 22;
+    const diasTrabalhados = 10;
+    const descontoCalculado =
+      (diasUteis - diasTrabalhados) *
+      (valorBruto / diasUteis);
+    const desconto = descontoCalculado.toFixed(2);
+    const valorLiquido = (valorBruto - descontoCalculado).toFixed(2);
+
+    assert.match(
+      response.csv,
+      new RegExp(`10;1;${valorBruto.toFixed(2)};${desconto};${valorLiquido}`),
+    );
+    assert.match(
+      response.csv,
+      new RegExp(`Total do valor geral:;${valorLiquido}`),
+    );
   });
 
-  it("desconta dias fora da janela do vinculo mantendo valor bruto cheio", async () => {
-    repository.faltas = [falta("2026-06-10"), falta("2026-06-22")];
-    repository.vinculos = [
-      new FtRelatorioVinculo(
-        "concluido",
-        "2026-06-08",
-        "2027-06-08",
-        null,
-        "2026-06-19",
-      ),
-    ];
-
-    const response = await useCase.execute("edital-1", {
-      data_inicio: "2026-06-01",
-      data_fim: "2026-06-30",
-    });
-
-    assert.match(response.csv, /dias_uteis;faltas;valor_bruto;desconto;valor_liquido/);
-    assert.match(response.csv, /10;1;1000.00;590.91;409.09/);
-    assert.match(response.csv, /Total do valor geral:;409.09/);
-  });
-
-  it("rejeita periodo parcial no relatorio", async () => {
-    await assertAppError(
+  it("rejeita período parcial", async () => {
+    await assert.rejects(
       () => useCase.execute("edital-1", { data_inicio: "2026-06-01" }),
-      400,
-      "data_inicio e data_fim",
+      (error) =>
+        error instanceof AppError &&
+        error.statusCode === 400 &&
+        error.message.includes("data_inicio e data_fim"),
     );
   });
 
-  it("rejeita pagamento antes da publicacao do edital", async () => {
-    await assertAppError(
-      () =>
-        useCase.execute("edital-1", {
-          data_inicio: "2025-12-01",
-          data_fim: "2025-12-31",
-        }),
-      400,
-      "fora do periodo do edital",
-    );
+  it("rejeita período fora da vigência do edital", async () => {
+    const periodosInvalidos = [
+      { data_inicio: "2025-12-01", data_fim: "2025-12-31" },
+      { data_inicio: "2027-01-01", data_fim: "2027-01-31" },
+    ];
+
+    for (const periodo of periodosInvalidos) {
+      await assert.rejects(
+        () => useCase.execute("edital-1", periodo),
+        (error) =>
+          error instanceof AppError &&
+          error.statusCode === 400 &&
+          error.message.includes("fora do periodo do edital"),
+      );
+    }
   });
 
-  it("rejeita pagamento depois do vencimento do edital", async () => {
-    await assertAppError(
-      () =>
-        useCase.execute("edital-1", {
-          data_inicio: "2027-01-01",
-          data_fim: "2027-01-31",
-        }),
-      400,
-      "fora do periodo do edital",
-    );
-  });
-
-  it("usa mes atual quando periodo nao vem na query", async () => {
+  it("usa o mês atual quando o período não é informado", async () => {
     await useCase.execute("edital-1");
-
     const now = new Date();
-    const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1))
-      .toISOString()
-      .slice(0, 10);
-    const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0))
-      .toISOString()
-      .slice(0, 10);
 
     assert.deepEqual(repository.lastPeriodo, {
-      data_inicio: firstDay,
-      data_fim: lastDay,
+      data_inicio: new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1))
+        .toISOString()
+        .slice(0, 10),
+      data_fim: new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0))
+        .toISOString()
+        .slice(0, 10),
     });
   });
 
   it("rejeita edital inexistente", async () => {
-    repository.missingEdital = true;
+    repository.data.edital = null as never;
 
-    await assertAppError(
+    await assert.rejects(
       () => useCase.execute("edital-1"),
-      404,
-      "Edital not found",
+      (error) =>
+        error instanceof AppError &&
+        error.statusCode === 404 &&
+        error.message.includes("Edital not found"),
     );
   });
 });

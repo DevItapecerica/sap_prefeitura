@@ -13,6 +13,7 @@ import FtEditalModule from "./modules/ft-edital/index.js";
 import FtBolsistaModule from "./modules/ft-bolsista/index.js";
 import FtRelatorioModule from "./modules/ft-relatorio/index.js";
 import AuditModule from "./modules/audit/index.js";
+import EspelhoPontoModule from "./modules/espelho-ponto/index.js";
 
 const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(AuditModule);
@@ -47,6 +48,9 @@ const App: FastifyPluginAsync = async (fastify) => {
 
   await fastify.register(EsporteModule);
   fastify.log.info("Esporte Module Registrado");
+
+  await fastify.register(EspelhoPontoModule);
+  fastify.log.info("Espelho Ponto Module Registrado");
 
   await fastify.register(authModule);
   fastify.log.info("Auth Module Registrado");

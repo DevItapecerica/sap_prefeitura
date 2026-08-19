@@ -39,6 +39,7 @@ class FakeModel {
 }
 
 class FakeFtBolsistaRepository implements FtBolsistaRepository {
+  async findFaltasByBolsistaPeriodo() { return []; }
   public duplicatedCpf = false;
   public missingBolsista = false;
   public missingEdital = false;

@@ -341,4 +341,20 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
       ],
     });
   }
+
+  findFaltasByBolsistaPeriodo(
+    bolsistaId: string,
+    editalId: string,
+    dataInicio: string,
+    dataFim: string,
+  ) {
+    return db.BolsistaFalta.findAll({
+      where: {
+        bolsista_id: bolsistaId,
+        edital_id: editalId,
+        data_falta: { [Op.between]: [dataInicio, dataFim] },
+      },
+      order: [["data_falta", "ASC"]],
+    });
+  }
 }
