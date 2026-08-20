@@ -1,27 +1,27 @@
 services:
-  db:
-    image: mariadb:10.11
-    container_name: sap_prefeitura_db
-    environment:
-      MARIADB_USER: ${DATABASE_USER}
-      MARIADB_PASSWORD: ${DATABASE_KEY}
-      MARIADB_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${DATABASE_NAME}
-    volumes:
-      - db_data:/var/lib/mysql
-    expose:
-      - 3306
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h localhost -u${DATABASE_USER} -p${DATABASE_KEY} || exit 1",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - dokploy-network
+  # db:
+  #   image: mariadb:10.11
+  #   container_name: sap_prefeitura_db
+  #   environment:
+  #     MARIADB_USER: ${DATABASE_USER}
+  #     MARIADB_PASSWORD: ${DATABASE_KEY}
+  #     MARIADB_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
+  #     MARIADB_DATABASE: ${DATABASE_NAME}
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+  #   expose:
+  #     - 3306
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "mysqladmin ping -h localhost -u${DATABASE_USER} -p${DATABASE_KEY} || exit 1",
+  #       ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - dokploy-network
   
   sap:
     image: node:18
@@ -38,7 +38,7 @@ services:
           memory: 256M
     environment:
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: "mariadb://${DATABASE_USER}:${DATABASE_KEY}@db:3306/${DATABASE_NAME}"
+      DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
@@ -57,8 +57,8 @@ services:
       APPLICATION_PORT: 3000
     expose:
       - 3000
-    depends_on:
-      - db
+    # depends_on:
+    #   - db
     networks:
       - dokploy-network
  
@@ -67,5 +67,5 @@ networks:
   dokploy-network:
     external: true
 
-volumes:
-  db_data:
+# volumes:
+#   db_data:
