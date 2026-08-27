@@ -51,6 +51,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         type: dataTypes.DATE,
         allowNull: true,
       },
+      observacao: {
+        type: dataTypes.TEXT,
+        allowNull: true,
+      },
       concluded_at: {
         type: dataTypes.DATE,
         allowNull: true,

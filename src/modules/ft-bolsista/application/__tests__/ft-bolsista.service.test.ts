@@ -54,6 +54,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public createWithPaymentInfoCalled = false;
   public updateWithPaymentInfoCalled = false;
   public cancelVinculoCalled = false;
+  public cancelVinculoObservacao: string | null = null;
   public prorrogateVinculosCalled = false;
   public destroyBolsistaCalled = false;
   public destroyFaltaCalled = false;
@@ -174,6 +175,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
         data_vinculo: "2025-01-01",
         expire_at: "2026-01-01",
         canceled_at: "2025-06-01",
+        observacao: "Solicitacao do bolsista",
         concluded_at: null,
         expired_at: null,
         prorrogated: true,
@@ -202,8 +204,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     await bolsista.destroy();
   }
 
-  async cancelVinculo() {
+  async cancelVinculo(_bolsista: any, vinculo: any, observacao: string) {
     this.cancelVinculoCalled = true;
+    this.cancelVinculoObservacao = observacao;
+    vinculo.set({ status: "cancelado", observacao });
   }
 
   async prorrogateVinculos(vinculos: any[]) {
@@ -419,16 +423,42 @@ describe("FtBolsistaService", () => {
   });
 
   it("cancela vinculo valido", async () => {
-    await service.cancelBolsistaEdital("bolsista-1", "edital-1");
+    const response = await service.cancelBolsistaEdital(
+      "bolsista-1",
+      "edital-1",
+      { observacao: "  Solicitacao do bolsista  " },
+    );
 
     assert.equal(repository.cancelVinculoCalled, true);
+    assert.equal(repository.cancelVinculoObservacao, "Solicitacao do bolsista");
+    assert.equal(response.after.vinculo.observacao, "Solicitacao do bolsista");
   });
+
+  for (const observacao of [undefined, "", "   "]) {
+    it(`rejeita cancelamento com observacao invalida: ${String(observacao)}`, async () => {
+      await assertAppError(
+        () => service.cancelBolsistaEdital(
+          "bolsista-1",
+          "edital-1",
+          { observacao } as any,
+        ),
+        400,
+        "Observacao e obrigatoria",
+      );
+
+      assert.equal(repository.cancelVinculoCalled, false);
+    });
+  }
 
   it("rejeita cancelamento em edital inativo", async () => {
     repository.inactiveEdital = true;
 
     await assertAppError(
-      () => service.cancelBolsistaEdital("bolsista-1", "edital-1"),
+      () => service.cancelBolsistaEdital(
+        "bolsista-1",
+        "edital-1",
+        { observacao: "Cancelamento" },
+      ),
       400,
       "Edital inativo",
     );
@@ -440,7 +470,11 @@ describe("FtBolsistaService", () => {
     repository.vinculoStatus = "inativo";
 
     await assertAppError(
-      () => service.cancelBolsistaEdital("bolsista-1", "edital-1"),
+      () => service.cancelBolsistaEdital(
+        "bolsista-1",
+        "edital-1",
+        { observacao: "Cancelamento" },
+      ),
       400,
       "Bolsista inativo neste edital",
     );
@@ -491,6 +525,10 @@ describe("FtBolsistaService", () => {
     assert.equal(response.historico.length, 2);
     assert.equal(response.historico[0].get("status"), "ativo");
     assert.equal(response.historico[1].get("status"), "cancelado");
+    assert.equal(
+      response.historico[1].get("observacao"),
+      "Solicitacao do bolsista",
+    );
   });
 
   it("rejeita historico de bolsista inexistente", async () => {

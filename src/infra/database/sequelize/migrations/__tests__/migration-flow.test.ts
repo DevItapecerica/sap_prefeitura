@@ -6,6 +6,7 @@ import constraintsMigration from "../20251029121000-add-core-access-foreign-keys
 import setorMigration from "../20251028174623-create-setors.js";
 import municipeResourceConstraintsMigration from "../20260715122000-add-municipe-resource-foreign-keys.js";
 import bolsistaEditalPrimaryKeyMigration from "../20251202125717-Adicionando_pk_para_bolsista_edital.js";
+import bolsistaEditalObservacaoMigration from "../20260827120000-add-observacao-bolsistas-edital.js";
 
 const transaction = async (callback: (transaction: object) => Promise<void>) => callback({});
 
@@ -65,6 +66,25 @@ test("bolsistas edital primary key migration adds id when it is missing", async 
   await bolsistaEditalPrimaryKeyMigration.up(queryInterface);
 
   assert.equal(columnsAdded, 1);
+});
+
+test("bolsistas edital observacao migration is reversible and idempotent", async () => {
+  let hasObservacao = false;
+  let columnsAdded = 0;
+  let columnsRemoved = 0;
+  const queryInterface = {
+    describeTable: async () => hasObservacao ? { observacao: { type: "TEXT" } } : {},
+    addColumn: async () => { hasObservacao = true; columnsAdded += 1; },
+    removeColumn: async () => { hasObservacao = false; columnsRemoved += 1; },
+  } as unknown as QueryInterface;
+
+  await bolsistaEditalObservacaoMigration.up(queryInterface);
+  await bolsistaEditalObservacaoMigration.up(queryInterface);
+  await bolsistaEditalObservacaoMigration.down(queryInterface);
+  await bolsistaEditalObservacaoMigration.down(queryInterface);
+
+  assert.equal(columnsAdded, 1);
+  assert.equal(columnsRemoved, 1);
 });
 
 test("municipe resource constraints reject orphaned records before DDL", async () => {
