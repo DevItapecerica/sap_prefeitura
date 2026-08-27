@@ -2,6 +2,7 @@ import { ftError } from "../utils/ft-error.js";
 import { isValidCpf } from "../utils/cpf.js";
 import {
   FtBolsistaDto,
+  FtBolsistaCancelamentoDto,
   FtBolsistaFaltaDto,
   FtBolsistaFaltaQueryDto,
   FtBolsistaProrrogacaoDto,
@@ -272,9 +273,18 @@ export class FtBolsistaService {
     };
   }
 
-  async cancelBolsistaEdital(bolsistaId: string, editalId: string) {
+  async cancelBolsistaEdital(
+    bolsistaId: string,
+    editalId: string,
+    data: FtBolsistaCancelamentoDto,
+  ) {
     if (!bolsistaId || !editalId) {
       throw ftError(400, "Bolsista e edital sao obrigatorios");
+    }
+
+    const observacao = data?.observacao?.trim();
+    if (!observacao) {
+      throw ftError(400, "Observacao e obrigatoria");
     }
 
     const bolsista = await this.repository.findById(bolsistaId);
@@ -291,7 +301,7 @@ export class FtBolsistaService {
       bolsista: bolsista.toJSON(),
       vinculo: vinculo.toJSON(),
     };
-    await this.repository.cancelVinculo(bolsista, vinculo);
+    await this.repository.cancelVinculo(bolsista, vinculo, observacao);
     return {
       before,
       after: {
