@@ -22,7 +22,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY .sequelizerc ./
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev --no-save sequelize-cli@6.6.5
 
 # Copia build já compilado
 COPY --from=builder /app/dist ./dist
@@ -31,4 +31,4 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 3000
 
 # Sobe aplicação
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx sequelize-cli db:migrate && npm start"]
