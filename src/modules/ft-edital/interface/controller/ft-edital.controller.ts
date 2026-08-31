@@ -13,6 +13,8 @@ import { makeApplicationEventContext } from "../../../../infra/http/fastify/appl
 import { makeFtEditalEventPublisher } from "../../factories/ft-edital-events.factory.js";
 import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
 import { FT_EDITAL_EVENTS } from "../../application/events/ft-edital.events.js";
+import FtEditalVincularBolsistaUseCase from "../../application/use-case/ft-edital.vincularBolsista.usecase.js";
+import { SequelizeFtEditalRepository } from "../../../../infra/database/sequelize/repositories/sequelize.ft-edital.repository.js";
 
 const service = makeFtEditalService();
 const gerarRelatorioFtUseCase = makeGerarRelatorioFtUseCase();
@@ -117,8 +119,10 @@ export class FtEditalController {
     reply: FastifyReply,
   ) => {
     const { bolsista, data_vinculo } = request.body;
+    const vincularService = new FtEditalVincularBolsistaUseCase(new SequelizeFtEditalRepository())
 
-    const vinculos = await service.vincularBolsista(
+
+    const vinculos = await vincularService.execute(
       request.params.id,
       bolsista,
       data_vinculo,

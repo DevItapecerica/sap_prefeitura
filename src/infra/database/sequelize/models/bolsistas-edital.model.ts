@@ -73,29 +73,8 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       tableName: "bolsistas_edital",
       timestamps: true,
       paranoid: true,
-      hooks: {
-        beforeCreate: (bolsistaEdital: any) => {
-          if (!bolsistaEdital.expire_at) {
-            const vencimento = new Date(bolsistaEdital.data_vinculo);
-            vencimento.setFullYear(vencimento.getFullYear() + 1);
-            bolsistaEdital.expire_at = vencimento;
-          }
-        },
-      },
     },
   );
-
-  BolsistasEdital.beforeBulkCreate((records: any[]) => {
-    records.forEach((record) => {
-      if (!record.expire_at) {
-        const dataVinculo = record.data_vinculo || new Date();
-        const dataVencimento = new Date(dataVinculo);
-        dataVencimento.setFullYear(dataVinculo.getFullYear() + 1);
-        record.data_vinculo = dataVinculo;
-        record.expire_at = dataVencimento;
-      }
-    });
-  });
 
   (BolsistasEdital as any).associate = (models: any) => {
     BolsistasEdital.belongsTo(models.Bolsistas, {

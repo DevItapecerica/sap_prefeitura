@@ -188,7 +188,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
 
   async vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date, expire_at?: string | Date }>,
   ) {
     return db.sequelize.transaction(async (transaction: any) => {
       const created = [];
@@ -197,6 +197,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
           edital_id: edital.get("id"),
           bolsista_id: item.bolsista.get("id"),
           data_vinculo: item.data_vinculo,
+          expire_at: item.expire_at,
         }, {
           transaction,
         });
