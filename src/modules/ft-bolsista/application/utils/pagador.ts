@@ -19,7 +19,7 @@ export const pagador = [
   {
     id: "a763d7f0-8d38-45c6-b985-e9143ca7f4d1",
     name: "Secretaria do Desenvolvimento Social e Relacoes do Trabalho",
-    max_bolsista: 20,
+    max_bolsista: 0,
   },
   {
     id: "20e5601e-d3e8-4e63-8991-68d03a14ba2f",
@@ -35,6 +35,11 @@ export const pagador = [
     id: "290d6314-54d9-4879-8220-0deb321ef892",
     name: "Secretaria de Cultura",
     max_bolsista: 5,
+  },
+    {
+    id: "46775c76-069f-45f6-b973-dfa485697ad2",
+    name: "Administracao",
+    max_bolsista: 20,
   },
 ];
 
