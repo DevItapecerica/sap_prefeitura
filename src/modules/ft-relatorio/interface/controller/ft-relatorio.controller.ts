@@ -9,13 +9,57 @@ import { makeGerarListaPresencaFtUseCase } from "../../factories/makeGerarListaP
 import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
 import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
+import { makeFtRelatorioArquivoService } from "../../factories/makeFtRelatorioArquivoService.js";
 
 const gerarRelatorioFtUseCase = makeGerarRelatorioFtUseCase();
 const gerarRelatorioFaltasFtUseCase = makeGerarRelatorioFaltasFtUseCase();
 const gerarListaPresencaFtUseCase = makeGerarListaPresencaFtUseCase();
 const resourceReadEventPublisher = makeResourceReadEventPublisher();
+const arquivoService = makeFtRelatorioArquivoService();
 
 export class FtRelatorioController {
+  static solicitarEspelhosPonto = async (
+    request: FastifyRequest<{ Params: { id: string }; Body: { mes: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const arquivo = await arquivoService.request(request.params.id, request.body.mes, Number(request.user.id));
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request), module: "ft-relatorio", resourceType: "lote_espelho_ponto",
+      resourceId: arquivo.id, filters: { editalId: request.params.id, mes: request.body.mes }, returnedCount: 1,
+    });
+    return reply.status(202).send({ arquivo });
+  };
+
+  static listarDownloads = async (
+    request: FastifyRequest<{ Querystring: { page?: number; limit?: number } }>,
+    reply: FastifyReply,
+  ) => reply.status(200).send(await arquivoService.list(request.query.page, request.query.limit));
+
+  static retryDownload = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) => reply.status(202).send({ arquivo: await arquivoService.retry(request.params.id) });
+
+  static baixarArquivo = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const download = await arquivoService.openDownload(request.params.id);
+    let sent = false;
+    reply.raw.once("finish", () => {
+      sent = true;
+      void arquivoService.finishDownload(request.params.id, download.path).catch((error) => request.log.error({ err: error }, "Falha ao excluir relatorio baixado"));
+    });
+    reply.raw.once("close", () => {
+      if (!sent) void arquivoService.releaseDownload(request.params.id).catch((error) => request.log.error({ err: error }, "Falha ao liberar download"));
+    });
+    download.stream.once("error", () => void arquivoService.releaseDownload(request.params.id).catch((error) => request.log.error({ err: error }, "Falha ao liberar download")));
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request), module: "ft-relatorio", resourceType: "arquivo_espelhos_ponto",
+      resourceId: request.params.id, returnedCount: 1,
+    });
+    return reply.type("application/zip").header("Content-Disposition", `attachment; filename="${download.record.nome_arquivo}"`).header("Content-Length", download.size).send(download.stream);
+  };
   static gerarRelatorioEdital = async (
     request: FastifyRequest<{
       Params: { id: string };
