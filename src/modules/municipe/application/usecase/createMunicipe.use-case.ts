@@ -5,6 +5,7 @@ import Municipe from "../../domain/entity/Municipe.js";
 import IMunicipeRepository from "../../domain/repositories/Municipe.repository.js";
 import { MunicipeDto } from "../dto/municipe.dto.js";
 import { MunicipeMapper } from "../mapper/municipe.mapper.js";
+import MunicipePolicy from "../../domain/service/municipePolicy.service.js";
 
 export default class createMunicipeUseCase {
   constructor(
@@ -14,6 +15,10 @@ export default class createMunicipeUseCase {
   ) {}
 
   async execute(municipe: MunicipeDto, author: string) {
+    if (!MunicipePolicy.cpfIsValid(municipe.cpf)) {
+      throw new AppError("CPF invalido", 400, "INVALID_CPF");
+    }
+
     const hashCpf = await this.sha256Crypt.encrypt(municipe.cpf);
 
     const alreadyExists = municipe.cpf

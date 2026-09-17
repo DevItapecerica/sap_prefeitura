@@ -27,14 +27,17 @@ import { registerFtEditalAuditHandlers } from "./events/on-ft-edital-events.js";
 import { makeFtBolsistaEventSubscriber } from "../ft-bolsista/factories/ft-bolsista-events.factory.js";
 import { registerFtBolsistaAuditHandlers } from "./events/on-ft-bolsista-events.js";
 
-const AuditModule: FastifyPluginAsync = async (fastify) => {
+const AuditModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
+  fastify,
+  options,
+) => {
   const auditService = makeAuditService();
   const unregisterUserAuditHandlers = registerUserAuditHandlers(
     makeUserEventSubscriber(),
     auditService,
     fastify.log,
   );
-  
+
   const unregisterSetorAuditHandlers = registerSetorAuditHandlers(
     makeSetorEventSubscriber(),
     auditService,
@@ -58,12 +61,11 @@ const AuditModule: FastifyPluginAsync = async (fastify) => {
     auditService,
     fastify.log,
   );
-  const unregisterResourceReadAuditHandlers =
-    registerResourceReadAuditHandlers(
-      makeResourceReadEventSubscriber(),
-      auditService,
-      fastify.log,
-    );
+  const unregisterResourceReadAuditHandlers = registerResourceReadAuditHandlers(
+    makeResourceReadEventSubscriber(),
+    auditService,
+    fastify.log,
+  );
   const unregisterHttpRequestFailedAuditHandler =
     registerHttpRequestFailedAuditHandler(
       makeHttpRequestFailedEventSubscriber(),
@@ -95,8 +97,11 @@ const AuditModule: FastifyPluginAsync = async (fastify) => {
     auditService,
     fastify.log,
   );
-  
-  const worker = startAuditWorker(fastify.log);
+
+  const worker =
+    options.runtimeWorkers === false
+      ? { stop: () => undefined }
+      : startAuditWorker(fastify.log);
   fastify.addHook("onClose", async () => {
     unregisterUserAuditHandlers();
     unregisterSetorAuditHandlers();

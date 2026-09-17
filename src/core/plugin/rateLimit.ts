@@ -4,6 +4,10 @@ import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 import AppError from "../appError.js";
 
+export function rateLimitKey(request: FastifyRequest): string {
+  return request.ip;
+}
+
 const rateLimit: FastifyPluginAsync = async (fastify) => {
   fastify.register(fastifyRateLimit, {
     global: true,
@@ -14,15 +18,7 @@ const rateLimit: FastifyPluginAsync = async (fastify) => {
       "x-ratelimit-remaining": true,
       "retry-after": true,
     },
-    keyGenerator: (request: FastifyRequest) => {
-      const ip = request.headers["x-real-ip"] || request.ip;
-
-      if (Array.isArray(ip)) {
-        return ip[0];
-      }
-
-      return ip ?? request.ip;
-    },
+    keyGenerator: rateLimitKey,
     errorResponseBuilder: function (request: FastifyRequest, context: { after: string }) {
         const error = new AppError("Too many requests. Try again into " + context.after, 429, "TOO_MANY_REQUESTS");
         throw error;

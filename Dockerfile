@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala TODAS dependências (incluindo dev)
-RUN npm install
+RUN npm ci
 
 # Copia resto do projeto
 COPY . .
@@ -22,7 +22,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY .sequelizerc ./
 
-RUN npm install --omit=dev --no-save sequelize-cli@6.6.5
+RUN npm ci --omit=dev
 
 # Copia build já compilado
 COPY --from=builder /app/dist ./dist
@@ -30,5 +30,7 @@ COPY --from=builder /app/dist ./dist
 # Expõe porta
 EXPOSE 3000
 
+USER node
+
 # Sobe aplicação
-CMD ["sh", "-c", "npx sequelize-cli db:migrate && npm start"]
+CMD ["sh", "-c", "npx --no-install sequelize-cli db:migrate && npm start"]

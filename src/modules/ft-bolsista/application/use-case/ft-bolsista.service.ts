@@ -397,7 +397,7 @@ export class FtBolsistaService {
   async deleteFalta(bolsistaId: string, faltaId: string) {
     const falta = await this.repository.findFaltaById(faltaId);
 
-    if (!falta || falta.get("bolsista_id") !== bolsistaId) {
+    if (falta?.get("bolsista_id") !== bolsistaId) {
       throw ftError(404, "Falta not found");
     }
 

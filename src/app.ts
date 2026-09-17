@@ -15,8 +15,12 @@ import FtRelatorioModule from "./modules/ft-relatorio/index.js";
 import AuditModule from "./modules/audit/index.js";
 import EspelhoPontoModule from "./modules/espelho-ponto/index.js";
 
-const App: FastifyPluginAsync = async (fastify) => {
-  await fastify.register(AuditModule);
+const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
+  fastify,
+  options,
+) => {
+  const runtimeWorkers = options.runtimeWorkers !== false;
+  await fastify.register(AuditModule, { runtimeWorkers });
   fastify.log.info("Audit Module Registrado");
   
   await fastify.register(userModule);
@@ -34,7 +38,7 @@ const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(PermissionModule);
   fastify.log.info("Permission Module Registrado");
 
-  await fastify.register(FtEditalModule);
+  await fastify.register(FtEditalModule, { runtimeWorkers });
   fastify.log.info("FTEdital Module Registrado");
 
   await fastify.register(FtBolsistaModule);
@@ -55,7 +59,7 @@ const App: FastifyPluginAsync = async (fastify) => {
   await fastify.register(authModule);
   fastify.log.info("Auth Module Registrado");
 
-  fastify.register(registerAccessControlEvents);
+  fastify.register(registerAccessControlEvents, { reconcile: runtimeWorkers });
   fastify.log.info("Access Control Events Registrado");
 };
 

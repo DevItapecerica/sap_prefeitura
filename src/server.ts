@@ -1,4 +1,4 @@
-import { PORT } from "./core/env.js";
+import { NODE_ENV, PORT } from "./core/env.js";
 
 // fastify
 import Fastify from "fastify";
@@ -21,7 +21,9 @@ import ErrorHook from "./core/hooks/ErrorHook.js";
 import App from "./app.js";
 import rateLimit from "./core/plugin/rateLimit.js";
 import notFoundHook from "./core/hooks/notFoundHook.js";
-import { startFtScheduler } from "./modules/ft-edital/scheduler/ft-scheduler.js";
+import healthRoutes from "./core/plugin/health.js";
+import db from "./infra/database/sequelize/index.js";
+import { PDF_API_URL } from "./core/env.js";
 
 const fastify = Fastify(logConfig);
 
@@ -36,14 +38,31 @@ fastify.log.info("Cors Registrado");
 await fastify.register(fastifyCookie);
 fastify.log.info("Cookie Registrado");
 
-await fastify.register(fastifySwagger, swaggerConfig(port));
-fastify.log.info("Swagger Registrado");
+if (NODE_ENV !== "production") {
+  await fastify.register(fastifySwagger, swaggerConfig(port));
+  fastify.log.info("Swagger Registrado");
 
-await fastify.register(fastifySwaggerUi, swaggerUiConfig);
-fastify.log.info("SwaggerUi Registrado");
+  await fastify.register(fastifySwaggerUi, swaggerUiConfig);
+  fastify.log.info("SwaggerUi Registrado");
+}
 
 await fastify.register(rateLimit);
 fastify.log.info("RateLimit Registrado");
+
+await fastify.register(healthRoutes, {
+  checks: [
+    { name: "database", check: () => db.sequelize.authenticate() },
+    {
+      name: "pdf",
+      check: async () => {
+        const response = await fetch(new URL("/health", PDF_API_URL), {
+          signal: AbortSignal.timeout(2_000),
+        });
+        if (!response.ok) throw new Error("PDF API unavailable");
+      },
+    },
+  ],
+});
 
 // Registrando hooks
 await fastify.register(LoggerResponse)
@@ -58,14 +77,13 @@ fastify.log.info("NotFound Registrado");
 //Inicialização de APP
 fastify.register(App, { prefix: "/api/v2" });
 fastify.log.info("App Registrado");
-startFtScheduler(fastify.log);
 
 // inicialização
 const start = async () => {
   try {
     await fastify.listen({ port, host: "0.0.0.0" });
   } catch (error) {
-    console.error("❌ Erro ao iniciar o servidor:", error);
+    fastify.log.error({ err: error }, "Erro ao iniciar o servidor");
     process.exit(1);
   }
 };
