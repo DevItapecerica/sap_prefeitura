@@ -1,505 +1,216 @@
-# Sistema de Login e Autenticação - Prefeitura
+# SAP Prefeitura
 
-## Visão Geral
+Ecossistema web formado pela API principal, pelo frontend React e pelo serviço de geração de PDFs. O ambiente integrado usa MariaDB e pode ser iniciado pela raiz com Docker Compose.
 
-Este é um sistema de autenticação e gerenciamento de usuários desenvolvido para o ecossistema de aplicações da Prefeitura Municipal. O sistema implementa uma arquitetura limpa (Clean Architecture) com TypeScript, Fastify e Sequelize, proporcionando uma base sólida para controle de acesso, permissões e gerenciamento de usuários.
+## Componentes
 
-## Arquitetura do Sistema
+| Componente | Tecnologia | Porta no desenvolvimento | Saúde |
+| --- | --- | ---: | --- |
+| `front_prefeitura` | React 18, Vite e Nginx | 3001 | `/` |
+| `sap_prefeitura` | Node.js 22, TypeScript, Fastify e Sequelize | 3000 | `/health`, `/ready` |
+| `api_PDF` | Node.js 22, TypeScript e Fastify | 3002 | `/health`, `/ready` |
+| `db` | MariaDB 10.11 | somente rede interna | healthcheck nativo |
 
-O sistema segue os princípios da **Clean Architecture**, dividindo responsabilidades em camadas bem definidas:
+O Nginx do frontend encaminha `/api/*` para `/api/v2/*` na API principal. A API principal acessa a API PDF internamente por `http://api_pdf:3002/api/v1`. O projeto `setores_api` não faz parte do ecossistema mantido.
 
-### Diagrama de Arquitetura
+## Pré-requisitos
 
-```mermaid
-architecture-beta
-    group presentation(cloud)[Presentation Layer]
-    group application(server)[Application Layer]
-    group domain(database)[Domain Layer]
-    group infrastructure(disk)[Infrastructure Layer]
+- Docker com Compose v2 para executar o ecossistema completo; ou
+- Node.js 22 LTS, npm 10 ou superior e MariaDB 10.11 para execução nativa.
 
-    service routes(server)[Fastify Routes] in presentation
-    service controllers(server)[Controllers] in presentation
-    service middlewares(server)[Middlewares] in presentation
+Use `npm ci` em todos os projetos. Os arquivos `.nvmrc` e `.node-version` na raiz fixam a versão principal do Node.js.
 
-    service useCases(server)[Use Cases] in application
-    service dtos(server)[DTOs] in application
+## Início rápido com Docker
 
-    service entities(database)[Entities] in domain
-    service repositories(database)[Repositories] in domain
+1. Copie `.env.example` para `.env` e substitua todos os valores `change-*`.
+2. Inicie o ambiente:
 
-    service sequelize(database)[Sequelize ORM] in infrastructure
-    service mariadb(database)[MariaDB] in infrastructure
-    service jwt(internet)[JWT Auth] in infrastructure
-    service nodemailer(internet)[Email Service] in infrastructure
-
-    routes:B -- T:controllers
-    controllers:B -- T:middlewares
-    middlewares:B -- T:useCases
-    useCases:B -- T:dtos
-    dtos:B -- T:entities
-    entities:B -- T:repositories
-    repositories:B -- T:sequelize
-    sequelize:B -- T:mariadb
-    controllers:R -- L:jwt
-    useCases:R -- L:nodemailer
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build --wait
 ```
 
-### Camadas da Arquitetura
+3. Acesse o frontend em `http://localhost:3001`.
 
-#### 1. Presentation Layer (Camada de Apresentação)
-- **Routes**: Definição dos endpoints da API usando Fastify
-- **Controllers**: Manipulação das requisições HTTP e respostas
-- **Middlewares**: Autenticação JWT, autorização baseada em roles, rate limiting
+O override de desenvolvimento publica as APIs em `http://localhost:3000` e `http://localhost:3002`. O banco não é publicado no host. Em uma execução sem o override, somente o frontend é exposto:
 
-#### 2. Application Layer (Camada de Aplicação)
-- **Use Cases**: Lógica de negócio específica para cada operação
-- **DTOs**: Objetos de transferência de dados para comunicação entre camadas
-
-#### 3. Domain Layer (Camada de Domínio)
-- **Entities**: Modelos de domínio (User, Role, Permission, etc.)
-- **Repositories**: Interfaces para acesso a dados (padrão Repository)
-
-#### 4. Infrastructure Layer (Camada de Infraestrutura)
-- **Sequelize ORM**: Mapeamento objeto-relacional
-- **MariaDB**: Banco de dados relacional
-- **JWT**: Autenticação baseada em tokens
-- **Nodemailer**: Serviço de envio de emails
-
-## Tecnologias Utilizadas
-
-### Backend
-- **Fastify**: Framework web de alta performance
-- **TypeScript**: Tipagem estática para JavaScript
-- **Sequelize**: ORM para Node.js
-- **MariaDB**: Banco de dados relacional
-- **JWT**: Autenticação baseada em tokens
-- **bcryptjs**: Hashing de senhas
-- **Nodemailer**: Envio de emails
-
-### Ferramentas de Desenvolvimento
-- **tsx**: Executor TypeScript com watch mode
-- **Sequelize CLI**: Gerenciamento de migrações
-- **Swagger**: Documentação da API
-- **Pino**: Logging estruturado
-
-### Qualidade de Código
-- **ESLint**: Linting de código
-- **Prettier**: Formatação de código
-- **Husky**: Git hooks
-- **Commitlint**: Padronização de commits
-
-## Instalação e Configuração
-
-### Pré-requisitos
-- Node.js 18+
-- MariaDB 10.5+
-- npm ou yarn
-
-### Instalação
-
-1. **Clone o repositório**
-   ```bash
-   git clone <repository-url>
-   cd app_prefeitura_login
-   ```
-
-2. **Instale as dependências**
-   ```bash
-   npm install
-   ```
-
-3. **Configure as variáveis de ambiente**
-   Copie o arquivo `.env.example` para `.env` e configure:
-   ```env
-   PORT=3000
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_NAME=login_db
-   DB_USER=your_user
-   DB_PASS=your_password
-   JWT_SECRET=your_jwt_secret
-   EMAIL_HOST=smtp.gmail.com
-   EMAIL_PORT=587
-   EMAIL_USER=your_email@gmail.com
-   EMAIL_PASS=your_app_password
-   ```
-
-4. **Execute as migrações do banco**
-   ```bash
-   npm run migrate
-   ```
-
-5. **Inicie o servidor em modo desenvolvimento**
-   ```bash
-   npm run dev
-   ```
-
-## Scripts Disponíveis
-
-- `npm run dev`: Inicia o servidor em modo desenvolvimento com hot reload
-- `npm run build`: Compila TypeScript para JavaScript
-- `npm run start`: Inicia o servidor em produção
-- `npm run check`: Verifica tipos TypeScript
-- `npm run migrate`: Executa migrações do banco
-- `npm run migrate:undo`: Desfaz última migração
-- `npm run migrate:generate`: Gera nova migração baseada em mudanças
-
-## Documentação da API
-
-A API está documentada usando Swagger. Quando o servidor estiver rodando, acesse:
-- **Swagger UI**: `http://localhost:3000/docs`
-
-### Autenticação
-
-O sistema utiliza JWT (JSON Web Tokens) para autenticação. Todas as rotas protegidas requerem o header:
-```
-Authorization: Bearer <token>
+```bash
+docker compose -f docker-compose.yml up --build --wait
 ```
 
-### Módulos e Rotas
+Para encerrar sem apagar dados:
 
-#### 1. Auth (`/auth`)
-Gerenciamento de autenticação e login.
-
-**POST /auth/login**
-- **Descrição**: Autentica usuário e retorna token JWT
-- **Body**:
-  ```json
-  {
-    "email": "string",
-    "password": "string"
-  }
-  ```
-- **Resposta**: Token JWT e dados do usuário
-
-**GET /auth/auth**
-- **Descrição**: Verifica validade do token
-- **Headers**: Authorization: Bearer <token>
-- **Resposta**: Dados do usuário autenticado
-
-**POST /auth/refresh**
-- **Descricao**: Renova o access token usando o refresh token em cookie HttpOnly
-- **Cookie**: `refresh_token`
-- **Resposta**: Novo access token e `{ "ok": true }`
-
-**POST /auth/logout**
-- **Descricao**: Revoga a sessao atual e limpa o cookie de refresh
-- **Cookie**: `refresh_token`
-- **Resposta**: `{ "ok": true }`
-
-### Sessao e Refresh Token
-
-- O access token JWT expira em 15 minutos e deve ser enviado em `Authorization: Bearer <token>`.
-- O refresh token expira em 30 minutos, fica em cookie HttpOnly e não deve ser lido pelo JavaScript. O cookie pode permanecer no navegador por mais tempo, mas sessões expiradas são rejeitadas no servidor.
-- O cookie `refresh_token` usa `sameSite: "lax"`, `path: "/api"` e `secure: true` apenas em `NODE_ENV=production`.
-- O frontend precisa usar `withCredentials: true` para enviar o cookie em `/refresh` e `/logout`.
-- O CORS da API deve manter `credentials: true` e `CORS_ORIGINS` deve listar as origens permitidas do frontend.
-- A politica atual e sessao unica: um novo login revoga sessoes anteriores do mesmo usuario.
-- Execute `npm run migrate` antes de subir a versao com refresh token, pois a tabela `user_sessions` e obrigatoria.
-
-#### 2. Users (`/user`)
-Gerenciamento de usuários.
-
-**GET /user**
-- **Query Params**:
-  - `limit` (number, default: 10)
-  - `page` (number, default: 1)
-  - `search` (string)
-  - `order` (string, ex: "createdAt:desc")
-- **Resposta**: Lista paginada de usuários
-
-**GET /user/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Dados do usuário específico
-
-**POST /user**
-- **Body**:
-  ```json
-  {
-    "user": {
-      "name": "string",
-      "email": "string",
-      "ramal": "string",
-      "setor_id": "integer",
-      "role_id": "integer"
-    }
-  }
-  ```
-- **Resposta**: Usuário criado
-
-**PUT /user/:id**
-- **Parâmetros**: `id` (integer)
-- **Body**: Mesmo formato do POST
-- **Resposta**: Usuário atualizado
-
-**DELETE /user/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Confirmação de exclusão
-
-**PUT /user/alter_password**
-- **Body**:
-  ```json
-  {
-    "old_password": "string",
-    "new_password": "string"
-  }
-  ```
-- **Resposta**: Confirmação de alteração
-
-#### 3. Roles (`/roles`)
-Gerenciamento de roles/perfis.
-
-**GET /roles**
-- **Query Params**: limit, page, search, order
-- **Resposta**: Lista de roles
-
-**GET /roles/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Role específica
-
-**POST /roles**
-- **Body**:
-  ```json
-  {
-    "role": {
-      "name": "string"
-    }
-  }
-  ```
-- **Resposta**: Role criada
-
-**PUT /roles/:id**
-- **Parâmetros**: `id` (integer)
-- **Body**: Mesmo formato do POST
-- **Resposta**: Role atualizada
-
-**DELETE /roles/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Confirmação de exclusão
-
-#### 4. Permissions (`/permission`)
-Gerenciamento de permissões.
-
-**GET /permission**
-- **Query Params**: page, limit, search, order
-- **Resposta**: Lista de permissões
-
-**GET /permission/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Permissão específica
-
-**PUT /permission/:id**
-- **Parâmetros**: `id` (integer)
-- **Body**:
-  ```json
-  {
-    "permission": {
-      "read": "boolean",
-      "write": "boolean",
-      "edit": "boolean",
-      "del": "boolean"
-    }
-  }
-  ```
-- **Resposta**: Permissão atualizada
-
-#### 5. Setor (`/setor`)
-Gerenciamento de setores/departamentos.
-
-**GET /setor**
-- **Resposta**: Lista de setores
-
-**GET /setor/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Setor específico
-
-**POST /setor**
-- **Body**: Dados do setor
-- **Resposta**: Setor criado
-
-**PUT /setor/:id**
-- **Parâmetros**: `id` (integer)
-- **Body**: Dados atualizados
-- **Resposta**: Setor atualizado
-
-**DELETE /setor/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Confirmação de exclusão
-
-#### 6. Services (`/services`)
-Gerenciamento de serviços/aplicações.
-
-**GET /services**
-- **Resposta**: Lista de serviços
-
-**GET /services/user**
-- **Resposta**: Serviços visíveis para o usuário logado com permissões
-
-**GET /services/:id**
-- **Parâmetros**: `id` (integer)
-- **Resposta**: Serviço específico com visibilidade e permissões
-
-**POST /services**
-- **Body**:
-  ```json
-  {
-    "service": {
-      "name": "string",
-      "description": "string",
-      "url": "string"
-    }
-  }
-  ```
-- **Resposta**: Serviço criado
-
-## Segurança
-
-### Autenticação JWT
-- Tokens com expiração configurável
-- Refresh tokens para renovação automática
-- Validação de tokens em cada requisição
-
-### Autorização Baseada em Roles
-- Controle de acesso granular por roles
-- Middleware de autorização em cada rota
-- Verificação de permissões específicas
-
-### Rate Limiting
-- Limitação de requisições por IP
-- Configuração personalizável
-- Proteção contra ataques de força bruta
-
-### Validação de Dados
-- Validação de entrada usando JSON Schema
-- Sanitização de dados
-- Prevenção de injeção SQL via ORM
-
-### Criptografia
-- Hashing de senhas com bcrypt
-- Salt aleatório para cada senha
-- Comparação segura de senhas
-
-## Padrões de Design
-
-### Repository Pattern
-- Abstração do acesso a dados
-- Facilita testes unitários
-- Permite mudança de tecnologia de persistência
-
-### Dependency Injection
-- Injeção de dependências via factories
-- Baixo acoplamento entre módulos
-- Melhor testabilidade
-
-### Event-Driven Architecture
-- Eventos para controle de acesso
-- Comunicação assíncrona entre módulos
-- Extensibilidade do sistema
-
-## Testes
-
-### Estratégia de Testes
-- **Unitários**: Testes de funções isoladas
-- **Integração**: Testes de interação entre módulos
-- **E2E**: Testes end-to-end da API
-
-### Ferramentas
-- **Node.js test runner**: execução dos testes TypeScript via `tsx`
-- **Fastify inject**: testes HTTP sem abrir uma porta de rede
-- **Fakes/mocks**: simulação de repositórios e dependências
-
-## Monitoramento e Logs
-
-### Logging
-- Pino para logging estruturado
-- Níveis de log configuráveis
-- Formatação pretty para desenvolvimento
-
-### Métricas planejadas
-- Contadores de requisições
-- Tempos de resposta
-- Taxas de erro
-
-### Health checks planejados
-- Endpoint de vida da aplicação
-- Verificação de conectividade com banco
-- Status de dependências externas
-
-## Desempenho
-
-### Otimizações
-- Cache de consultas frequentes
-- Paginação em listagens
-- Compressão de respostas
-
-### Escalabilidade
-- Stateless design
-- Horizontal scaling possível
-- Balanceamento de carga
-
-## Desenvolvimento
-
-### Estrutura de Pastas
-```
-src/
-├── app.ts                 # Configuração principal da aplicação
-├── server.ts              # Inicialização do servidor
-├── core/                  # Componentes compartilhados
-│   ├── env.ts            # Configurações de ambiente
-│   ├── logConfig.ts      # Configuração de logs
-│   ├── swaggerConfig.ts  # Configuração Swagger
-│   ├── hooks/            # Hooks Fastify
-│   ├── plugin/           # Plugins Fastify
-│   ├── shared/           # Utilitários compartilhados
-│   └── types/            # Tipos TypeScript
-├── infra/                 # Camada de infraestrutura
-│   └── database/         # Configuração do banco
-├── modules/               # Módulos de negócio
-│   ├── auth/             # Autenticação
-│   ├── user/             # Usuários
-│   ├── roles/            # Roles/perfis
-│   ├── permission/       # Permissões
-│   ├── setor/            # Setores
-│   └── services/         # Serviços/aplicações
-└── utils/                 # Utilitários
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 ```
 
-### Convenções de Código
-- **Nomenclatura**: camelCase para variáveis/funções, PascalCase para classes
-- **Commits**: Conventional Commits
-- **Branches**: Git Flow
-- **PRs**: Code review obrigatório
+O volume `sap-prefeitura_db_data` é persistente. Não use `down --volumes` em ambientes com dados que devam ser preservados.
 
-## Deploy
+## Variáveis de ambiente
 
-### Ambiente de Produção
-- Build otimizado com TypeScript
-- PM2 para gerenciamento de processos
-- Docker para containerização
-- CI/CD com GitHub Actions
+O arquivo `.env.example` da raiz contém as variáveis consumidas pelo Compose. Cada aplicação também mantém seu próprio exemplo:
 
-### Variáveis de Ambiente
-- Separação clara entre ambientes
-- Secrets management
-- Configuração via environment
+- `sap_prefeitura/.env.example`: banco, JWT, bootstrap administrativo, SMTP, CORS, proxy confiável e API PDF;
+- `api_PDF/.env.example`: chave do serviço, SMTP, CORS e porta;
+- `front_prefeitura/.env.example`: modo do frontend e base URL da API.
 
-## Suporte e Manutenção
+Nunca versione `.env` ou credenciais reais. Em produção, use segredos longos e aleatórios, origens CORS explícitas e proxies confiáveis restritos.
 
-### Documentação
-- README abrangente
-- Swagger para API
-- Guias de desenvolvimento
+## Execução nativa
 
-### Monitoramento
-- Logs centralizados
-- Alertas automáticos
-- Dashboards de métricas
+Instale as dependências em cada projeto:
 
-### Backup e Recuperação
-- Estratégia de backup do banco
-- RPO/RTO definidos
-- Testes de recuperação
+```bash
+cd sap_prefeitura && npm ci
+cd ../api_PDF && npm ci
+cd ../front_prefeitura && npm ci
+```
 
----
+Crie um `.env` a partir do exemplo de cada diretório. Com MariaDB disponível e as URLs apontando para `localhost`, execute em terminais separados:
 
-**Desenvolvido com ❤️ para a Prefeitura Municipal**
+```bash
+cd sap_prefeitura
+npm run dev
+```
+
+```bash
+cd api_PDF
+npm run dev
+```
+
+```bash
+cd front_prefeitura
+npm run dev
+```
+
+O servidor Vite informa sua porta ao iniciar; por padrão, costuma usar `5173`.
+
+## Banco, migrations e seeds
+
+O container da API executa migrations pendentes antes de iniciar. Na execução nativa, use os comandos abaixo em `sap_prefeitura`:
+
+```bash
+npm run migrate
+npm run seed
+```
+
+Reversões disponíveis:
+
+```bash
+npm run migrate:undo
+npm run seed:undo
+```
+
+Toda alteração de banco deve possuir migration reversível e teste correspondente. Não apague volumes ou migrations para contornar falhas.
+
+## Relatórios de espelho de ponto em lote
+
+A Frente de Trabalho pode solicitar a geração assíncrona dos espelhos de ponto de todos os bolsistas vinculados a um edital no mês informado. A API principal consulta os dados, solicita cada PDF à `api_PDF`, cria um ZIP e o disponibiliza na aba **Downloads** do frontend.
+
+### Fila e worker
+
+A fila não usa BullMQ ou Redis. A tabela `ft_relatorio_arquivos` no MariaDB é a fonte persistente de verdade. Um evento em memória apenas desperta o worker imediatamente; o polling a cada cinco segundos garante que pedidos sejam encontrados mesmo após reinicialização ou perda do evento.
+
+O ciclo de estados é:
+
+```text
+aguardando -> processando -> concluido -> excluido
+                         \-> erro -> aguardando (nova tentativa)
+```
+
+- Apenas um lote é processado por instância, com até quatro chamadas simultâneas à API PDF.
+- A captura do lote e a reserva do download são atômicas.
+- Lotes presos em `processando` por mais de 30 minutos voltam para `aguardando`.
+- Se parte dos PDFs falhar, o ZIP é concluído com os arquivos gerados e um `falhas.csv`.
+- Se nenhum PDF for gerado, o lote termina como `erro` e pode ser reenviado.
+- O ZIP é removido depois do primeiro download concluído ou após sete dias sem download; o registro permanece como `excluido` para histórico.
+
+`runtimeWorkers` é uma opção interna do registro da aplicação. Workers e schedulers iniciam por padrão; passar `runtimeWorkers: false` impede a criação de timers e tarefas em segundo plano, principalmente em testes. Essa opção não é uma variável de ambiente nem desativa as rotas HTTP.
+
+### Armazenamento
+
+`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória. O Compose usa `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
+
+Na execução nativa em desenvolvimento, a ausência da variável usa `sap_prefeitura/storage/ft-reports`. O diretório deve ser gravável pelo usuário da aplicação. Com múltiplas instâncias, todas precisam compartilhar o mesmo volume; armazenamento local isolado não permite que outra instância entregue o arquivo.
+
+### Rotas protegidas
+
+| Método e rota | Finalidade |
+| --- | --- |
+| `POST /api/v2/frente-de-trabalho/relatorio/edital/:id/espelhos-ponto` | Cria o lote mensal e retorna `202`. |
+| `GET /api/v2/frente-de-trabalho/relatorio/downloads` | Lista lotes ainda não excluídos. |
+| `GET /api/v2/frente-de-trabalho/relatorio/downloads/:id` | Baixa uma vez o ZIP concluído. |
+| `POST /api/v2/frente-de-trabalho/relatorio/downloads/:id/retry` | Recoloca um lote com erro em `aguardando`. |
+
+Todas as rotas exigem JWT e autorização no serviço Frente de Trabalho. A listagem é compartilhada entre todos os usuários autorizados nesse serviço.
+
+### Recuperação e limitação atual
+
+A tabela principal registra o progresso agregado (`total_bolsistas`, `total_gerados` e `total_falhas`), mas não mantém checkpoint individual por bolsista. Se a aplicação cair durante a geração, o lote é recuperado e recomeça desde o primeiro bolsista; PDFs produzidos antes da queda podem ser solicitados novamente. O processamento continua idempotente no resultado final porque o ZIP temporário só é promovido depois de concluído.
+
+Para retomar exatamente do ponto da queda e identificar o bolsista em processamento, será necessário introduzir uma tabela filha de itens do lote, com um estado e um PDF temporário por bolsista. Essa retomada granular não faz parte da implementação atual.
+
+## Verificações locais
+
+API principal:
+
+```bash
+cd sap_prefeitura
+npm run check
+npm test
+npm run build
+```
+
+API PDF:
+
+```bash
+cd api_PDF
+npm test
+npm run build
+```
+
+Frontend:
+
+```bash
+cd front_prefeitura
+npm run lint
+npm run build
+```
+
+O workflow `.github/workflows/quality.yml` executa esses grupos em jobs independentes para push e pull request.
+
+## Autenticação e segurança
+
+- O access token é aceito exclusivamente em `Authorization: Bearer <token>`.
+- O refresh token permanece em cookie HttpOnly.
+- Tokens em query string são rejeitados.
+- Rate limits específicos protegem autenticação e rotas públicas.
+- Swagger e recursos de desenvolvimento não ficam disponíveis em produção.
+
+Consulte `sap_prefeitura/SECURITY_AUDIT.md` para a auditoria atualizada.
+
+## Diagnóstico
+
+Confira o estado dos serviços e seus logs:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs sap api_pdf app db
+```
+
+Valide prontidão diretamente no desenvolvimento:
+
+```bash
+curl http://localhost:3000/ready
+curl http://localhost:3002/ready
+```
+
+- Se `db` não ficar saudável, revise as quatro variáveis `DATABASE_*` e os logs do MariaDB.
+- Se `/health` responder e `/ready` falhar, alguma dependência essencial está indisponível.
+- Se o frontend não alcançar a API, confirme que o serviço Compose se chama `sap` e que o proxy recebe requisições sob `/api/`.
+- Se a API principal não iniciar, confirme migrations, `DATABASE_URL`, `SECRET_KEY` e as credenciais de bootstrap.
+
+## Documentação do trabalho
+
+- `codex/kamban.md`: quadro técnico, dependências, critérios e resultados das melhorias.
+- `sap_prefeitura/SECURITY_AUDIT.md`: controles e riscos de segurança.
+- READMEs dentro de cada aplicação: detalhes específicos de seus módulos.
