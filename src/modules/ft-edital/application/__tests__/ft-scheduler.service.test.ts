@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { FtSchedulerService } from "../use-case/ft-scheduler.service.js";
-import { __testing } from "../../scheduler/ft-scheduler.js";
+import {
+  __testing,
+  startFtScheduler,
+} from "../../scheduler/ft-scheduler.js";
 
 class FakeFtSchedulerRepository {
   expiredEditais = [{ id: "edital-1" }];
@@ -78,4 +81,22 @@ test("FT scheduler calcula proxima execucao para 01:00", () => {
 
   assert.equal(__testing.getDelayUntilNextRun(beforeOne), 30 * 60 * 1000);
   assert.equal(__testing.getDelayUntilNextRun(afterOne), 23.5 * 60 * 60 * 1000);
+});
+
+test("FT scheduler executa imediatamente ao iniciar", async () => {
+  let executions = 0;
+  const logger = {
+    info: () => undefined,
+    warn: () => undefined,
+    error: () => undefined,
+  } as any;
+
+  const scheduler = startFtScheduler(logger, async () => {
+    executions += 1;
+  });
+
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  scheduler.stop();
+
+  assert.equal(executions, 1);
 });

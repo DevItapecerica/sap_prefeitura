@@ -426,6 +426,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
           edital: { type: "string", format: "uuid" },
         },
       },
+      body: {
+        type: "object",
+        required: ["observacao"],
+        additionalProperties: false,
+        properties: {
+          observacao: { type: "string", minLength: 1, pattern: "\\S" },
+        },
+      },
       response: {
         201: {
           type: "object",

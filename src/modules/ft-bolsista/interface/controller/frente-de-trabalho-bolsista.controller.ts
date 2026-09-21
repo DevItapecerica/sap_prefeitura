@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   FtBolsistaDto,
+  FtBolsistaCancelamentoDto,
   FtBolsistaFaltaDto,
   FtBolsistaFaltaQueryDto,
   FtBolsistaProrrogacaoDto,
@@ -215,12 +216,16 @@ export class FrenteTrabalhoBolsistaController {
   };
 
   static readonly cancelBolsistaEdital = async (
-    request: FastifyRequest<{ Params: { bolsista: string; edital: string } }>,
+    request: FastifyRequest<{
+      Params: { bolsista: string; edital: string };
+      Body: FtBolsistaCancelamentoDto;
+    }>,
     reply: FastifyReply,
   ) => {
     const result = await service.cancelBolsistaEdital(
       request.params.bolsista,
       request.params.edital,
+      request.body,
     );
     await eventPublisher.publish(FT_BOLSISTA_EVENTS.updated, {
       context: makeApplicationEventContext(request),

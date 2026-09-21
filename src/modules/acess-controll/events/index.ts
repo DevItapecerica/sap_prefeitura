@@ -6,8 +6,9 @@ import { makeServiceAccessDefaults } from "../factories/service-access-defaults.
 import { makeSetorEventSubscriber } from "../../setor/factories/setor.factories.js";
 import { makeServiceEventSubscriber } from "../../services/factories/service.factories.js";
 import { makeRoleEventSubscriber } from "../../roles/factories/role.factories.js";
-export const registerAccessControlEvents: FastifyPluginAsync = async function (
+export const registerAccessControlEvents: FastifyPluginAsync<{ reconcile?: boolean }> = async function (
   fastify,
+  options,
 ) {
   fastify.log.info("Registering access control events");
   const serviceAccessDefaults = makeServiceAccessDefaults();
@@ -27,13 +28,15 @@ export const registerAccessControlEvents: FastifyPluginAsync = async function (
     serviceAccessDefaults,
     fastify.log,
   );
-  try {
-    await serviceAccessDefaults.reconcile();
-  } catch (error) {
-    fastify.log.error(
-      { err: error },
-      "Unable to reconcile default service access",
-    );
+  if (options.reconcile !== false) {
+    try {
+      await serviceAccessDefaults.reconcile();
+    } catch (error) {
+      fastify.log.error(
+        { err: error },
+        "Unable to reconcile default service access",
+      );
+    }
   }
   fastify.addHook("onClose", async () => {
     unregisterSetorCreatedHandler();

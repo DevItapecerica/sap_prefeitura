@@ -195,6 +195,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         "data_vinculo",
         "expire_at",
         "canceled_at",
+        "observacao",
         "concluded_at",
         "expired_at",
         "prorrogated",
@@ -254,12 +255,13 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     await bolsista.destroy();
   }
 
-  async cancelVinculo(bolsista: any, vinculo: any) {
+  async cancelVinculo(bolsista: any, vinculo: any, observacao: string) {
     await db.sequelize.transaction(async (transaction: any) => {
       bolsista.set("status", "inativo");
       vinculo.set({
         status: "cancelado",
         canceled_at: new Date(),
+        observacao,
       });
 
       await bolsista.save({ transaction });

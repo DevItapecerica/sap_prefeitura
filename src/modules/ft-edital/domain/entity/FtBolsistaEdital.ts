@@ -10,5 +10,6 @@ export class FtBolsistaEdital {
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date,
     public readonly deletedAt?: Date | null,
+    public readonly observacao?: string | null,
   ) {}
 }

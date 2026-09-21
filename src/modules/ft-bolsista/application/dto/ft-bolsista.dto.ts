@@ -45,3 +45,7 @@ export interface FtBolsistaProrrogacaoDto {
   bolsista_id: string;
   edital_id: string;
 }
+
+export interface FtBolsistaCancelamentoDto {
+  observacao: string;
+}

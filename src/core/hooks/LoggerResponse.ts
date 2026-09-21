@@ -10,11 +10,9 @@ const LoggerResponse: FastifyPluginAsync = async (fastify) => {
       requestId: request.id,
       method: request.method,
       route: request.routeOptions.url,
-      url: request.url,
       statusCode: reply.statusCode,
       responseTime: reply.elapsedTime,
       ip: request.ip,
-      realIp: request.headers["x-real-ip"] ?? null,
       userId: request.user?.id ?? null,
     });
   });

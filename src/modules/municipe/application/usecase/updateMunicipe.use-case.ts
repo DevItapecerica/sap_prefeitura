@@ -5,6 +5,7 @@ import Municipe from "../../domain/entity/Municipe.js";
 import { updateMunicipeDto } from "../dto/municipe.dto.js";
 import { MunicipeMapper } from "../mapper/municipe.mapper.js";
 import IMunicipeRepository from "../../domain/repositories/Municipe.repository.js";
+import MunicipePolicy from "../../domain/service/municipePolicy.service.js";
 
 export default class updateMunicipeUseCase {
   constructor(
@@ -18,6 +19,10 @@ export default class updateMunicipeUseCase {
     municipe: updateMunicipeDto,
     author: string | number,
   ) {
+    if (municipe.cpf && !MunicipePolicy.cpfIsValid(municipe.cpf)) {
+      throw new AppError("CPF invalido", 400, "INVALID_CPF");
+    }
+
     const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
     const current = await this.municipeRepository.getMunicipeById(uuid);
 

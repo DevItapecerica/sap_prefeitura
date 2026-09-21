@@ -190,7 +190,7 @@ Gerenciamento de autenticação e login.
 ### Sessao e Refresh Token
 
 - O access token JWT expira em 15 minutos e deve ser enviado em `Authorization: Bearer <token>`.
-- O refresh token expira em 30 minutos, fica em cookie HttpOnly e nao deve ser lido pelo JavaScript.
+- O refresh token expira em 30 minutos, fica em cookie HttpOnly e não deve ser lido pelo JavaScript. O cookie pode permanecer no navegador por mais tempo, mas sessões expiradas são rejeitadas no servidor.
 - O cookie `refresh_token` usa `sameSite: "lax"`, `path: "/api"` e `secure: true` apenas em `NODE_ENV=production`.
 - O frontend precisa usar `withCredentials: true` para enviar o cookie em `/refresh` e `/logout`.
 - O CORS da API deve manter `credentials: true` e `CORS_ORIGINS` deve listar as origens permitidas do frontend.
@@ -404,9 +404,9 @@ Gerenciamento de serviços/aplicações.
 - **E2E**: Testes end-to-end da API
 
 ### Ferramentas
-- **Jest**: Framework de testes
-- **Supertest**: Testes de API HTTP
-- **Mock**: Simulação de dependências
+- **Node.js test runner**: execução dos testes TypeScript via `tsx`
+- **Fastify inject**: testes HTTP sem abrir uma porta de rede
+- **Fakes/mocks**: simulação de repositórios e dependências
 
 ## Monitoramento e Logs
 
@@ -415,13 +415,13 @@ Gerenciamento de serviços/aplicações.
 - Níveis de log configuráveis
 - Formatação pretty para desenvolvimento
 
-### Métricas
+### Métricas planejadas
 - Contadores de requisições
 - Tempos de resposta
 - Taxas de erro
 
-### Health Checks
-- Endpoint de saúde da aplicação
+### Health checks planejados
+- Endpoint de vida da aplicação
 - Verificação de conectividade com banco
 - Status de dependências externas
 

@@ -36,6 +36,11 @@ export const pagador = [
     name: "Secretaria de Cultura",
     max_bolsista: 5,
   },
+    {
+    id: "46775c76-069f-45f6-b973-dfa485697ad2",
+    name: "Administracao",
+    max_bolsista: 20,
+  },
 ];
 
 export const verifyPagador = (target: string) => {

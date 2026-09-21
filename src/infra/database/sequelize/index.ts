@@ -19,6 +19,7 @@ const envVar = DATABASE_URL;
 
 sequelize = new Sequelize(envVar, {
   dialect: "mariadb",
+  logging: false,
 });
 
 // Carrega todos os models da pasta /model

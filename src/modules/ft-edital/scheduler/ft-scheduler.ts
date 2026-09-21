@@ -2,7 +2,6 @@ import { FastifyBaseLogger } from "fastify";
 import { SequelizeFtSchedulerRepository } from "../../../infra/database/sequelize/repositories/sequelize.ft-scheduler.repository.js";
 import { FtSchedulerService } from "../application/use-case/ft-scheduler.service.js";
 
-let timeout: NodeJS.Timeout | null = null;
 let running = false;
 let daysWithoutError = 0;
 
@@ -28,33 +27,60 @@ export const runFtSchedulerTask = async (logger: FastifyBaseLogger) => {
   try {
     logger.info(`FT scheduler iniciado. Dias sem erros: ${daysWithoutError++}`);
 
-    const service = new FtSchedulerService(new SequelizeFtSchedulerRepository());
+    const service = new FtSchedulerService(
+      new SequelizeFtSchedulerRepository(),
+    );
     const result = await service.run();
 
     logger.info({ result }, "FT scheduler finalizado com sucesso.");
   } catch (error) {
     daysWithoutError = 0;
-    logger.error({ error }, "Erro ao atualizar editais/vinculos expirados do FT.");
+    logger.error(
+      { error },
+      "Erro ao atualizar editais/vinculos expirados do FT.",
+    );
   } finally {
     running = false;
   }
 };
 
-export const startFtScheduler = (logger: FastifyBaseLogger) => {
+export const startFtScheduler = (
+  logger: FastifyBaseLogger,
+  task: (logger: FastifyBaseLogger) => Promise<void> = runFtSchedulerTask,
+) => {
+  let timeout: NodeJS.Timeout | null = null;
+  let stopped = false;
+
   const scheduleNext = () => {
+    if (stopped) return;
+
+    const delay = getDelayUntilNextRun();
+    logger.warn({ delay }, "Proxima execucao do FT scheduler agendada.");
+
     timeout = setTimeout(async () => {
-      await runFtSchedulerTask(logger);
+      if (stopped) return;
+
+      logger.warn("Executando FT scheduler agendado.");
+      await task(logger);
       scheduleNext();
-    }, getDelayUntilNextRun());
+    }, delay);
 
     timeout.unref?.();
   };
 
-  scheduleNext();
-  logger.info("FT scheduler registrado para executar diariamente as 01:00.");
+  void (async () => {
+    logger.warn("Executando FT scheduler na inicializacao.");
+    await task(logger);
+    scheduleNext();
+  })();
+
+  logger.warn(
+    "FT scheduler registrado para executar na inicializacao e diariamente as 01:00.",
+  );
 
   return {
     stop: () => {
+      stopped = true;
       if (timeout) {
         clearTimeout(timeout);
         timeout = null;

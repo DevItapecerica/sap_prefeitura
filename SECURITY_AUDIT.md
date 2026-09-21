@@ -1,6 +1,6 @@
 # Auditoria de Segurança - sap_prefeitura
 
-## Data: 2025
+## Data da revisão: 2026-09-15
 ## Escopo: Módulo de Chamados + Infraestrutura Geral
 
 ---
@@ -27,7 +27,7 @@
 - ✅ Whitelist de origem definida via variável `CORS_ORIGINS` em `.env`
 - ✅ Métodos explicitamente permitidos: GET, POST, PUT, DELETE (sem CONNECT, TRACE, etc.)
 - ✅ Headers necessários incluídos (Content-Type, Authorization)
-- ✅ Credentials definido como false (apropriado para API stateless)
+- ✅ Credentials habilitado para o cookie HttpOnly de refresh, restrito às origens permitidas
 
 **Localização**: [src/core/plugin/Cors.ts](src/core/plugin/Cors.ts)
 
@@ -62,27 +62,15 @@
 
 ## ⚠️ Áreas de Atenção (Recomendações)
 
-### 1. **Rate Limiting (NÃO IMPLEMENTADO)**
-**Risco**: DDoS, brute force em autenticação
-**Recomendação**:
-```bash
-npm install @fastify/rate-limit
-```
-Adicionar plugin em `src/server.ts`:
-```typescript
-await fastify.register(import("@fastify/rate-limit"), {
-  max: 100,
-  timeWindow: "15 minutes"
-});
-```
+### 1. **Rate Limiting (IMPLEMENTADO)**
+**Status**: limite global de 100 requisições por minuto e limites específicos para login, validação, refresh e logout.
 
-### 2. **Logging de Dados Sensíveis (OBSERVADO)**
-**Risco**: Exposição em logs de: senhas, tokens, PII
-**Observado**: 
-- ❌ `console.log()` e `logger.info()` em múltiplos arquivos pode expor dados sensíveis
-- ✅ Não há evidência de logging de tokens/senhas em verificação spot
+O identificador usa `request.ip`. Cabeçalhos encaminhados só são aceitos quando o proxy está explicitamente listado em `TRUSTED_PROXIES`; sem configuração, `trustProxy` permanece desativado.
 
-**Recomendação**: Implementar logger com sanitização de campos sensíveis
+### 2. **Logging de Dados Sensíveis (MITIGADO)**
+**Status**: o Pino remove headers de autenticação, cookies, senhas, tokens, CPF, fotos e dados bancários conhecidos. Logs HTTP usam a rota normalizada e não gravam query strings. Saídas diretas por `console.*` foram removidas dos runtimes.
+
+**Risco residual**: novos campos sensíveis precisam ser incluídos na política de redaction e validados por revisão/testes.
 
 ### 3. **PATCH /chamados/:id/assign (Mudança de Comportamento)**
 **O que foi feito**:
@@ -112,9 +100,10 @@ await fastify.register(import("@fastify/rate-limit"), {
 ## 🔍 Checklist de Segurança para Produção
 
 - [ ] Variável `CORS_ORIGINS` em `.env` com origens específicas (nunca `*`)
-- [ ] Rate limiting ativado (`@fastify/rate-limit`)
+- [x] Rate limiting ativado (`@fastify/rate-limit`)
 - [ ] HTTPS/TLS forçado (reverse proxy nginx/traefik)
-- [ ] Logging centralizado sem dados sensíveis (ELK/Datadog)
+- [x] Logging estruturado com redaction local de dados sensíveis
+- [ ] Agregação e monitoramento central dos logs
 - [ ] Secrets (`JWT_SECRET`, DB_PASSWORD`) em vault (Vaults/AWS Secrets Manager)
 - [ ] Backup automático do banco de dados
 - [ ] Monitoramento de falhas de autenticação
@@ -132,14 +121,14 @@ await fastify.register(import("@fastify/rate-limit"), {
 | Autorização | 🟢 Baixo | Role-based com factory pattern |
 | SQL Injection | 🟢 Baixo | Sequelize ORM, sem raw queries |
 | CORS | 🟢 Baixo | Whitelist configurável |
-| Rate Limiting | 🟡 Médio | NÃO IMPLEMENTADO - recomenda-se adicionar |
+| Rate Limiting | 🟢 Baixo | Global e autenticação protegidos; proxy é opt-in |
 | Error Disclosure | 🟢 Baixo | Mensagens padronizadas, sem stack traces |
 | XSS | 🟡 Médio | JSON responses, frontend responsável |
-| Dados Sensíveis | 🟡 Médio | Risco em logs - monitorar |
-| DDoS | 🟡 Médio | Sem rate limiting - recomenda-se adicionar |
+| Dados Sensíveis | 🟡 Médio | Redaction implementado; manter política atualizada |
+| DDoS | 🟡 Médio | Rate limiting reduz abuso; proteção de borda ainda recomendada |
 
 **Risco Geral**: 🟢 **BAIXO** (para ambiente controlado/staging)
-**Pronto para Produção**: ⚠️ Implementar rate limiting + monitoramento de logs antes
+**Pronto para Produção**: ⚠️ Requer TLS, configuração correta de proxy/origens, monitoramento, backup e validação operacional
 
 ---
 
@@ -157,7 +146,8 @@ await fastify.register(import("@fastify/rate-limit"), {
 ---
 
 **Próximas Etapas**:
-- [ ] Implementar rate limiting
-- [ ] Centralizar logging com sanitização
+- [x] Implementar rate limiting
+- [x] Sanitizar logging da aplicação
+- [ ] Centralizar e monitorar logs
 - [ ] Testes de penetração
 - [ ] Frontend security checklist

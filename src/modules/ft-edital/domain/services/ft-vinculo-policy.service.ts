@@ -1,8 +1,7 @@
-import AppError from "../../../../core/appError.js";
+import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 
-const ftError = (statusCode: number, message: string) =>
-  new AppError(message, statusCode, "FT_MS");
 
+// verifica se possui getter e setter
 const getValue = (target: any, key: string) =>
   typeof target?.get === "function" ? target.get(key) : target?.[key];
 
