@@ -27,6 +27,8 @@ RUN npm ci --omit=dev
 # Copia build já compilado
 COPY --from=builder /app/dist ./dist
 
+RUN mkdir -p /var/lib/sap/ft-reports && chown -R node:node /var/lib/sap
+
 # Expõe porta
 EXPOSE 3000
 

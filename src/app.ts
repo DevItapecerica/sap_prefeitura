@@ -44,7 +44,7 @@ const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   await fastify.register(FtBolsistaModule);
   fastify.log.info("FTBolsista Module Registrado");
 
-  await fastify.register(FtRelatorioModule);
+  await fastify.register(FtRelatorioModule, { runtimeWorkers });
   fastify.log.info("FTRelatorio Module Registrado");
 
   await fastify.register(MunicipeModule);
