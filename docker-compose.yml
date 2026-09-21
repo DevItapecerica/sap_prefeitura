@@ -37,24 +37,22 @@ services:
         reservations:
           memory: 256M
     environment:
-      NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: ${NODE_ENV:-production}
+      APPLICATION_PORT: 3000
+      DATABASE_URL: mariadb://${DATABASE_USER}:${DATABASE_KEY}@db:3306/${DATABASE_NAME}
       SECRET_KEY: ${SECRET_KEY}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
-
       PDF_API_URL: ${PDF_API_URL}
       PDF_API_KEY: ${PDF_API_KEY}
-
+      FT_REPORT_ARCHIVE_DIR: /var/lib/sap/ft-reports
       MAIL_ADRESS: ${MAIL_ADRESS}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
       MAIL_SECURE: ${MAIL_SECURE}
-
       CORS_ORIGINS: ${CORS_ORIGINS}
-
-      APPLICATION_PORT: 3000
+      # TRUSTED_PROXIES: ${TRUSTED_PROXIES:-loopback,linklocal,uniquelocal}
     expose:
       - 3000
     # depends_on:
