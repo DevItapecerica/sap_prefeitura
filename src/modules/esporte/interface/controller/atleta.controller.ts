@@ -278,6 +278,7 @@ export default class AtletaController {
   ) => {
     const response = await this.atletaService.renderCarteirinhaPdf(
       request.params.uuid,
+      request.id,
     );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
       context: makeApplicationEventContext(request),

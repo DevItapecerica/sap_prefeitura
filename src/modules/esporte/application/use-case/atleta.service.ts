@@ -242,7 +242,7 @@ export default class AtletaService {
     );
   }
 
-  async renderCarteirinhaPdf(uuid: string) {
-    return this.renderCarterinhaEsportePdfUseCase.execute(uuid);
+  async renderCarteirinhaPdf(uuid: string, requestId?: string) {
+    return this.renderCarterinhaEsportePdfUseCase.execute(uuid, requestId);
   }
 }

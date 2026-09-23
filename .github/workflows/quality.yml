@@ -1,0 +1,50 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: sap-prefeitura
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mariadb://user:password@127.0.0.1:3306/app_prefeitura_test
+      SECRET_KEY: ci-only-secret-key
+      PDF_API_URL: http://127.0.0.1:3002/api/v1
+      MAIL_ADRESS: ci@example.invalid
+      MAIL_PASSWORD: ci-only-password
+      MAIL_HOST: 127.0.0.1
+      MAIL_PORT: 2525
+      MAIL_SECURE: "false"
+      CORS_ORIGINS: http://localhost:5173
+      APPLICATION_PORT: 3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:coverage
+      - run: npm run build
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sap-prefeitura-coverage
+          path: coverage
+          if-no-files-found: error
+          retention-days: 14

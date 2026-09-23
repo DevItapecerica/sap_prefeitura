@@ -5,9 +5,12 @@ import RenderEspelhoPontoPdfUseCase from "../use-case/render-espelho-ponto-pdf.u
 const payload = { servidor: { matricula: "123", nome: "Maria" }, periodo: { referencia: "05/2026", inicio: "2026-05-01", fim: "2026-05-31" }, dias: [{ data: "2026-05-01", situacao: "Normal", horarioPrevisto: "08:00", marcacoes: [], apontamentos: [] }], totais: { horaExtra50: "0", horaExtra100: "0", adicionalNoturno: "0", atrasoSaidaAntecipada: "0", faltas: "0" } };
 
 test("preserva PDF e cabeçalhos retornados pelo serviço", async () => {
-  const http = { post: async () => ({ data: Buffer.from("%PDF-1.7"), headers: { "content-type": "application/pdf", "content-disposition": "inline; filename=teste.pdf", "content-length": "8" } }) } as any;
-  const result = await new RenderEspelhoPontoPdfUseCase("http://pdf/api/v1", http).execute(payload);
+  let capturedConfig: any;
+  const http = { post: async (_url: string, _payload: unknown, config: unknown) => { capturedConfig = config; return { data: Buffer.from("%PDF-1.7"), headers: { "content-type": "application/pdf", "content-disposition": "inline; filename=teste.pdf", "content-length": "8" } }; } } as any;
+  const requestId = "01994a8c-41c2-7e35-9a3b-9fb9cf158423";
+  const result = await new RenderEspelhoPontoPdfUseCase("http://pdf/api/v1", http).execute(payload, requestId);
   assert.equal(result.file.toString(), "%PDF-1.7"); assert.equal(result.contentDisposition, "inline; filename=teste.pdf"); assert.equal(result.contentLength, "8");
+  assert.equal(capturedConfig.headers["X-Request-Id"], requestId);
 });
 
 for (const invalid of [Buffer.from("erro"), Buffer.from("%PDF")]) {

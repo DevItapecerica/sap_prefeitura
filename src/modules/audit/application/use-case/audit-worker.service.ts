@@ -1,4 +1,5 @@
 import AuditRepository from "../../domain/repository/audit.repository.js";
+import { recordAuditWorkerRun } from "../../../../core/observability/metrics.js";
 
 export type AuditWorkerResult = {
   processed: number;
@@ -32,7 +33,9 @@ export class AuditWorkerService {
         );
       }
     }
-    return { processed, failed, backlog: await this.repository.backlog() };
+    const backlog = await this.repository.backlog();
+    recordAuditWorkerRun(processed, failed, backlog);
+    return { processed, failed, backlog };
   }
 
   purge(now = new Date(), retentionYears = 5): Promise<number> {

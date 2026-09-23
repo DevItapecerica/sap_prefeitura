@@ -14,8 +14,10 @@ const CorsConfig: FastifyPluginAsync = async (fastify, opts)  => {
       "Content-Type",
       "x-user-id",
       "x-real-ip",
+      "x-request-id",
       "Authorization",
     ],
+    exposedHeaders: ["X-Request-Id"],
     credentials: true,
   });
 };

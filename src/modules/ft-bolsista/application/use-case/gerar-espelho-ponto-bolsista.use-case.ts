@@ -10,7 +10,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
     private readonly pdfGateway: PdfGateway,
   ) {}
 
-  async execute(bolsistaId: string, editalId: string, mes: string) {
+  async execute(bolsistaId: string, editalId: string, mes: string, requestId?: string) {
     const periodo = this.parseMonth(mes);
     const bolsista = await this.repository.findById(bolsistaId);
     if (!bolsista) throw ftError(404, "Bolsista not found");
@@ -113,7 +113,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
         faltas: String(faltasPorDia.size),
       },
       observacoes: `Edital: ${notice.name || editalId}`,
-    });
+    }, requestId);
   }
 
   private parseMonth(value: string) {

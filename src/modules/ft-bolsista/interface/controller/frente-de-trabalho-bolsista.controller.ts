@@ -27,7 +27,12 @@ export class FrenteTrabalhoBolsistaController {
     request: FastifyRequest<{ Params: { id: string }; Querystring: { edital_id: string; mes: string } }>,
     reply: FastifyReply,
   ) => {
-    const result = await gerarEspelhoPonto.execute(request.params.id, request.query.edital_id, request.query.mes);
+    const result = await gerarEspelhoPonto.execute(
+      request.params.id,
+      request.query.edital_id,
+      request.query.mes,
+      request.id,
+    );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
       context: makeApplicationEventContext(request), module: "ft-bolsista",
       resourceType: "espelho_ponto", resourceId: request.params.id,

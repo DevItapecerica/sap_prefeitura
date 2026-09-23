@@ -5,6 +5,7 @@ import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
 import { MunicipeMapper } from "../../../municipe/application/mapper/municipe.mapper.js";
 import CarterinhaEsporteRepository from "../../domain/repositories/carterinha-esporte.repository.js";
+import { recordDependency } from "../../../../core/observability/metrics.js";
 
 type HttpClient = Pick<AxiosInstance, "post">;
 
@@ -25,7 +26,7 @@ export default class RenderCarterinhaEsportePdfUseCase {
     private httpClient: HttpClient = axios,
   ) {}
 
-  async execute(uuid: string): Promise<PdfGatewayResponse> {
+  async execute(uuid: string, requestId?: string): Promise<PdfGatewayResponse> {
     if (!uuid) {
       throw new AppError(
         "Carterinha uuid is required",
@@ -61,6 +62,7 @@ export default class RenderCarterinhaEsportePdfUseCase {
 
     const fileName = `carteirinha-esporte-${this.slugify(municipe.nome)}.pdf`;
 
+    const startedAt = performance.now();
     try {
       const response = await this.httpClient.post(
         `${this.pdfApiUrl.replace(/\/$/, "")}/carterinhas/esporte/render`,
@@ -83,7 +85,10 @@ export default class RenderCarterinhaEsportePdfUseCase {
             foto: carterinha.foto || null,
           },
         },
-        { responseType: "arraybuffer" },
+        {
+          responseType: "arraybuffer",
+          headers: requestId ? { "X-Request-Id": requestId } : undefined,
+        },
       );
 
       const contentType = this.getHeaderString(
@@ -96,6 +101,7 @@ export default class RenderCarterinhaEsportePdfUseCase {
         response.headers["content-length"],
       );
 
+      recordDependency("pdf", "success", (performance.now() - startedAt) / 1_000);
       return {
         file: Buffer.from(response.data),
         contentType: contentType || "application/pdf",
@@ -104,6 +110,7 @@ export default class RenderCarterinhaEsportePdfUseCase {
         contentLength,
       };
     } catch {
+      recordDependency("pdf", "error", (performance.now() - startedAt) / 1_000);
       throw new AppError(
         "PDF service unavailable",
         502,
