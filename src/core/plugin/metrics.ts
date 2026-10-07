@@ -17,7 +17,6 @@ type MetricsOptions = {
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 const authorized = (authorization: string | undefined, token: string) => {
-  console.log(authorization)
   if (!token || !authorization?.startsWith("Bearer ")) return false;
   return timingSafeEqual(digest(authorization.slice(7)), digest(token));
 };
