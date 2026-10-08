@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginCallback } from "fastify";
 import fp from "fastify-plugin";
 import { getDatabasePoolStats } from "../../infra/database/sequelize/database-pool-stats.js";
 import {
@@ -21,9 +21,10 @@ const authorized = (authorization: string | undefined, token: string) => {
   return timingSafeEqual(digest(authorization.slice(7)), digest(token));
 };
 
-const metricsPlugin: FastifyPluginAsync<MetricsOptions> = async (
+const metricsPlugin: FastifyPluginCallback<MetricsOptions> = (
   fastify,
   options,
+  done
 ) => {
   setDatabasePoolStatsProvider(
     options.databasePoolStatsProvider ?? getDatabasePoolStats,
@@ -40,7 +41,7 @@ const metricsPlugin: FastifyPluginAsync<MetricsOptions> = async (
     };
     recordHttpRequest(labels, reply.elapsedTime / 1_000);
 
-    const authOperation = route.match(/\/(login|refresh|logout|auth)$/)?.[1];
+    const authOperation = new RegExp(/\/(login|refresh|logout|auth)$/).exec(route)?.[1];
     if (authOperation) {
       recordAuthRequest(
         authOperation,
@@ -66,6 +67,8 @@ const metricsPlugin: FastifyPluginAsync<MetricsOptions> = async (
         .send(await metricsRegistry.metrics());
     },
   );
+
+  done()
 };
 
 export default fp(metricsPlugin);

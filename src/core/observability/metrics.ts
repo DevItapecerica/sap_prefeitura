@@ -84,32 +84,32 @@ const auditBacklog = new Gauge({
   registers: [metricsRegistry],
 });
 
-new Gauge({
-  name: "sap_feature_available",
-  help: "Whether an optional integration is configured.",
-  labelNames: ["feature"] as const,
-  registers: [metricsRegistry],
-  collect() {
-    this.set({ feature: "antivirus" }, 0);
-  },
-});
+// new Gauge({
+//   name: "sap_feature_available",
+//   help: "Whether an optional integration is configured.",
+//   labelNames: ["feature"] as const,
+//   registers: [metricsRegistry],
+//   collect() {
+//     this.set({ feature: "antivirus" }, 0);
+//   },
+// });
 
 let databasePoolStatsProvider: DatabasePoolStatsProvider | undefined;
 
-new Gauge({
-  name: "sap_database_pool_connections",
-  help: "Database pool connections by state.",
-  labelNames: ["state"] as const,
-  registers: [metricsRegistry],
-  collect() {
-    this.reset();
-    const stats = databasePoolStatsProvider?.();
-    if (!stats) return;
-    for (const [state, value] of Object.entries(stats)) {
-      this.set({ state }, value);
-    }
-  },
-});
+// new Gauge({
+//   name: "sap_database_pool_connections",
+//   help: "Database pool connections by state.",
+//   labelNames: ["state"] as const,
+//   registers: [metricsRegistry],
+//   collect() {
+//     this.reset();
+//     const stats = databasePoolStatsProvider?.();
+//     if (!stats) return;
+//     for (const [state, value] of Object.entries(stats)) {
+//       this.set({ state }, value);
+//     }
+//   },
+// });
 
 export const setDatabasePoolStatsProvider = (
   provider: DatabasePoolStatsProvider | undefined,
