@@ -4,16 +4,24 @@ import { eventBus } from "../../../../core/event/index.js";
 import AuditRepository from "../../domain/repository/audit.repository.js";
 import { AuditQueryDto, RecordAuditDto } from "../dto/audit.dto.js";
 import { AuditMapper } from "../mapper/audit.mapper.js";
+import { recordDependency } from "../../../../core/observability/metrics.js";
 
 export class AuditService {
   constructor(private repository: AuditRepository, private mapper: AuditMapper) {}
 
   async record(input: RecordAuditDto, transaction?: unknown): Promise<string> {
+    const startedAt = performance.now();
     const eventId = input.eventId ?? randomUUID();
-    const event = await this.mapper.toPersistence({ ...input, eventId, occurredAt: input.occurredAt ?? new Date().toISOString() });
-    await this.repository.enqueue(event, transaction);
-    await eventBus.emit("AUDIT_OUTBOX_AVAILABLE", { eventId });
-    return eventId;
+    try {
+      const event = await this.mapper.toPersistence({ ...input, eventId, occurredAt: input.occurredAt ?? new Date().toISOString() });
+      await this.repository.enqueue(event, transaction);
+      await eventBus.emit("AUDIT_OUTBOX_AVAILABLE", { eventId });
+      recordDependency("audit", "success", (performance.now() - startedAt) / 1_000);
+      return eventId;
+    } catch (error) {
+      recordDependency("audit", "error", (performance.now() - startedAt) / 1_000);
+      throw error;
+    }
   }
 
   list(query: AuditQueryDto) { return this.repository.list(query); }

@@ -55,6 +55,7 @@ export const TRUSTED_PROXIES = (process.env.TRUSTED_PROXIES ?? "")
 export const PORT = must("APPLICATION_PORT");
 
 export const PDF_API_URL = must("PDF_API_URL");
+export const METRICS_TOKEN = process.env.METRICS_TOKEN?.trim() ?? "";
 export const FT_REPORT_ARCHIVE_DIR =
   process.env.FT_REPORT_ARCHIVE_DIR ||
   (NODE_ENV === "production"

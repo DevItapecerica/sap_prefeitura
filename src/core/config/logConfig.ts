@@ -1,10 +1,12 @@
 import { type FastifyServerOptions } from "fastify";
 import { TRUSTED_PROXIES } from "../env.js";
+import { getRequestId } from "../plugin/requestId.js";
 
 const logg = { translateTime: "HH:MM:ss", ignore: "hostname" };
 
 const logConfig: FastifyServerOptions = {
   disableRequestLogging: true,
+  genReqId: getRequestId,
   trustProxy: TRUSTED_PROXIES.length > 0 ? TRUSTED_PROXIES : false,
   logger: {
     level: "info",

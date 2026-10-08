@@ -1,5 +1,3 @@
-import { NODE_ENV, PORT } from "./core/env.js";
-
 // fastify
 import Fastify from "fastify";
 import logConfig from "./core/config/logConfig.js";
@@ -22,8 +20,11 @@ import App from "./app.js";
 import rateLimit from "./core/plugin/rateLimit.js";
 import notFoundHook from "./core/hooks/notFoundHook.js";
 import healthRoutes from "./core/plugin/health.js";
+import requestIdHeader from "./core/plugin/requestId.js";
 import db from "./infra/database/sequelize/index.js";
-import { PDF_API_URL } from "./core/env.js";
+import { METRICS_TOKEN, PDF_API_URL, NODE_ENV, PORT } from "./core/env.js";
+import metricsPlugin from "./core/plugin/metrics.js";
+import { recordDependency } from "./core/observability/metrics.js";
 
 const fastify = Fastify(logConfig);
 
@@ -31,6 +32,8 @@ const port: number = Number(PORT);
 
 // Registrando Plugins
 fastify.log.info("Registrando plugins");
+
+await fastify.register(requestIdHeader);
 
 await fastify.register(corsConfig);
 fastify.log.info("Cors Registrado");
@@ -49,9 +52,23 @@ if (NODE_ENV !== "production") {
 await fastify.register(rateLimit);
 fastify.log.info("RateLimit Registrado");
 
+await fastify.register(metricsPlugin, { token: METRICS_TOKEN });
+
 await fastify.register(healthRoutes, {
   checks: [
-    { name: "database", check: () => db.sequelize.authenticate() },
+    {
+      name: "database",
+      check: async () => {
+        const startedAt = performance.now();
+        try {
+          await db.sequelize.authenticate();
+          recordDependency("database", "success", (performance.now() - startedAt) / 1_000);
+        } catch (error) {
+          recordDependency("database", "error", (performance.now() - startedAt) / 1_000);
+          throw error;
+        }
+      },
+    },
     {
       name: "pdf",
       check: async () => {

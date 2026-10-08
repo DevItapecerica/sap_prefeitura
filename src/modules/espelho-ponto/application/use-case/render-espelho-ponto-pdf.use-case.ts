@@ -1,17 +1,23 @@
 import axios, { AxiosInstance } from "axios";
 import AppError from "../../../../core/appError.js";
 import { EspelhoPontoPdfDto, EspelhoPontoRequestDto } from "../dto/espelho-ponto.dto.js";
+import { recordDependency } from "../../../../core/observability/metrics.js";
 
 type HttpClient = Pick<AxiosInstance, "post">;
 
 export default class RenderEspelhoPontoPdfUseCase {
   constructor(private readonly pdfApiUrl: string, private readonly httpClient: HttpClient = axios) {}
 
-  async execute(data: EspelhoPontoRequestDto): Promise<EspelhoPontoPdfDto> {
+  async execute(data: EspelhoPontoRequestDto, requestId?: string): Promise<EspelhoPontoPdfDto> {
+    const startedAt = performance.now();
     try {
       const response = await this.httpClient.post(
         `${this.pdfApiUrl.replace(/\/$/, "")}/espelhos-ponto/render`, data,
-        { responseType: "arraybuffer", timeout: 15_000 },
+        {
+          responseType: "arraybuffer",
+          timeout: 15_000,
+          headers: requestId ? { "X-Request-Id": requestId } : undefined,
+        },
       );
       const file = Buffer.from(response.data);
       const contentType = this.header(response.headers["content-type"]);
@@ -19,11 +25,13 @@ export default class RenderEspelhoPontoPdfUseCase {
         throw new Error("Invalid PDF response");
       }
       const fallback = `inline; filename="espelho-ponto-${this.slug(data.servidor.matricula)}-${data.periodo.referencia.replace("/", "-")}.pdf"`;
+      recordDependency("pdf", "success", (performance.now() - startedAt) / 1_000);
       return {
         file, contentType, contentDisposition: this.header(response.headers["content-disposition"]) || fallback,
         contentLength: this.header(response.headers["content-length"]),
       };
     } catch {
+      recordDependency("pdf", "error", (performance.now() - startedAt) / 1_000);
       throw new AppError("PDF service unavailable", 502, "PDF_SERVICE_UNAVAILABLE");
     }
   }

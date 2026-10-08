@@ -84,9 +84,11 @@ class FakeMunicipeRepository implements MunicipeRepository {
 
 test("RenderCarterinhaEsportePdfUseCase envia observacao e validade do exame ao PDF", async () => {
   let capturedPayload: any = null;
+  let capturedConfig: any = null;
   const httpClient = {
-    post: async (_url: string, payload: any) => {
+    post: async (_url: string, payload: any, config: any) => {
       capturedPayload = payload;
+      capturedConfig = config;
       return {
         data: Buffer.from("%PDF-1.4"),
         headers: {
@@ -106,11 +108,13 @@ test("RenderCarterinhaEsportePdfUseCase envia observacao e validade do exame ao 
     httpClient as any,
   );
 
-  const response = await useCase.execute("cart-1");
+  const requestId = "01994a8c-41c2-7e35-9a3b-9fb9cf158423";
+  const response = await useCase.execute("cart-1", requestId);
 
   assert.equal(response.contentType, "application/pdf");
   assert.equal(capturedPayload.entityData.obs, "Liberado para treino");
   assert.equal(capturedPayload.entityData.exame, "2026-12-31");
   assert.equal(capturedPayload.entityData.modalidade, "Futebol");
   assert.equal(capturedPayload.entityData.foto, FOTO_FIXTURE);
+  assert.equal(capturedConfig.headers["X-Request-Id"], requestId);
 });

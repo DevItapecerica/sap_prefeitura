@@ -10,7 +10,7 @@ const resourceReadEventPublisher = makeResourceReadEventPublisher();
 export default class EspelhoPontoController {
   constructor(private readonly renderPdf: RenderEspelhoPontoPdfUseCase) {}
   render = async (request: FastifyRequest<{ Body: EspelhoPontoRequestDto }>, reply: FastifyReply) => {
-    const result = await this.renderPdf.execute(request.body);
+    const result = await this.renderPdf.execute(request.body, request.id);
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
       context: makeApplicationEventContext(request),
       module: "espelho-ponto",
