@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { FastifyPluginCallback } from "fastify";
+import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 import { getDatabasePoolStats } from "../../infra/database/sequelize/database-pool-stats.js";
 import {
@@ -21,16 +21,15 @@ const authorized = (authorization: string | undefined, token: string) => {
   return timingSafeEqual(digest(authorization.slice(7)), digest(token));
 };
 
-const metricsPlugin: FastifyPluginCallback<MetricsOptions> = (
+const metricsPlugin: FastifyPluginAsync<MetricsOptions> = async (
   fastify,
   options,
-  done
 ) => {
   setDatabasePoolStatsProvider(
     options.databasePoolStatsProvider ?? getDatabasePoolStats,
   );
 
-  fastify.addHook("onResponse", (request, reply) => {
+  fastify.addHook("onResponse", async (request, reply) => {
     const route = request.routeOptions.url || "unmatched";
     if (route === "/metrics") return;
 
@@ -42,6 +41,7 @@ const metricsPlugin: FastifyPluginCallback<MetricsOptions> = (
     recordHttpRequest(labels, reply.elapsedTime / 1_000);
 
     const authOperation = new RegExp(/\/(login|refresh|logout|auth)$/).exec(route)?.[1];
+
     if (authOperation) {
       recordAuthRequest(
         authOperation,
@@ -67,8 +67,6 @@ const metricsPlugin: FastifyPluginCallback<MetricsOptions> = (
         .send(await metricsRegistry.metrics());
     },
   );
-
-  done()
 };
 
 export default fp(metricsPlugin);
