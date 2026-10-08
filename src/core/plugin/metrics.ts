@@ -30,7 +30,7 @@ const metricsPlugin: FastifyPluginCallback<MetricsOptions> = (
     options.databasePoolStatsProvider ?? getDatabasePoolStats,
   );
 
-  fastify.addHook("onResponse", async (request, reply) => {
+  fastify.addHook("onResponse", (request, reply) => {
     const route = request.routeOptions.url || "unmatched";
     if (route === "/metrics") return;
 

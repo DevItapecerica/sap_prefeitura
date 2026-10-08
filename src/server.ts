@@ -1,5 +1,3 @@
-import { NODE_ENV, PORT } from "./core/env.js";
-
 // fastify
 import Fastify from "fastify";
 import logConfig from "./core/config/logConfig.js";
@@ -24,7 +22,7 @@ import notFoundHook from "./core/hooks/notFoundHook.js";
 import healthRoutes from "./core/plugin/health.js";
 import requestIdHeader from "./core/plugin/requestId.js";
 import db from "./infra/database/sequelize/index.js";
-import { METRICS_TOKEN, PDF_API_URL } from "./core/env.js";
+import { METRICS_TOKEN, PDF_API_URL, NODE_ENV, PORT } from "./core/env.js";
 import metricsPlugin from "./core/plugin/metrics.js";
 import { recordDependency } from "./core/observability/metrics.js";
 

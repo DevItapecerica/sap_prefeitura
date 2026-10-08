@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { FastifyPluginAsync, FastifyPluginCallback } from "fastify";
+import { FastifyPluginCallback } from "fastify";
 import fp from "fastify-plugin";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -12,10 +12,10 @@ export const getRequestId = (request: { headers: Record<string, unknown> }) => {
 };
 
 const requestIdHeader: FastifyPluginCallback = (fastify, options, done) => {
-  fastify.addHook("onRequest", async (request, reply) => {
+  fastify.addHook("onRequest", (request, reply) => {
     reply.header("X-Request-Id", request.id);
   });
-  
+
   done();
 };
 
