@@ -44,7 +44,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       email: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
+        unique: false,
       },
       ramal: {
         type: DataTypes.STRING(255),
