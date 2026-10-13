@@ -340,7 +340,7 @@ describe("FtBolsistaService", () => {
 
     await assertAppError(
       () => service.saveBolsista(validBolsistaPayload()),
-      403,
+      409,
       "Bolsista already exists",
     );
   });

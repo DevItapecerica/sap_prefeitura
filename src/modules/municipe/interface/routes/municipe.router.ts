@@ -32,6 +32,29 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
     },
   };
 
+  const municipeFullSchema = {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      uuid: { type: "string" },
+      nome: { type: "string" },
+      cpf: { type: "string" },
+      nascimento: { type: ["string", "number", "null"] },
+      telefone: { type: ["string", "null"] },
+      rua: { type: "string" },
+      bairro: { type: "string" },
+      cidade: { type: "string" },
+      uf: { type: "string" },
+      cep: { type: "string" },
+      numero: { type: "string" },
+      complemento: { type: ["string", "null"] },
+      author: { type: ["string", "number"] },
+      createdAt: { type: "string" },
+      updatedAt: { type: "string" },
+      deletedAt: { type: ["string", "null"] },
+    },
+  };
+
   const municipeRequiredSchema = {
     type: "object",
     required: [
@@ -124,14 +147,14 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
           uuid: { type: "string" },
         },
       },
-      description: "Pegue u municipes por id, os dados estarão mascarados",
+      description: "Pegue um municipe por id para consulta e atualização",
       summary: "Get one municipes",
       response: {
         200: {
           type: "object",
           properties: {
             message: { type: "string", example: "OK" },
-            data: municipeSchema,
+            data: municipeFullSchema,
             ok: { type: "boolean", example: true },
           },
         },

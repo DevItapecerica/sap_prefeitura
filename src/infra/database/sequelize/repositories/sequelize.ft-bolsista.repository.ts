@@ -96,7 +96,8 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   }
 
   async findAndCount(query: FtBolsistaQueryDto = {}) {
-    const { page = "0", limit = "10", search = "" } = query;
+    const { page = "0", limit = "10", search: rawSearch = "" } = query;
+    const search = String(rawSearch).trim();
     const offset = Number(page) * Number(limit);
     const cpf = String(search).replace(/\D/g, "");
     const cpfHash = cpf.length === 11
@@ -132,6 +133,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           required: false,
         },
       ],
+      subQuery: false,
       distinct: true,
     });
     result.rows = await this.hydrateMany(result.rows);
@@ -139,7 +141,8 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   }
 
   async findAndCountVinculoCandidates(query: FtBolsistaQueryDto = {}) {
-    const { page = "0", limit = "10", search = "" } = query;
+    const { page = "0", limit = "10", search: rawSearch = "" } = query;
+    const search = String(rawSearch).trim();
     const offset = Number(page) * Number(limit);
     const result = await db.Bolsistas.findAndCountAll({
       where: { "$bolsistas_edital.id$": null },
