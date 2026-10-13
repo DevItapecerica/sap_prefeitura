@@ -183,7 +183,7 @@ export class SequelizeServiceAggregateRepository implements ServiceAggregateRepo
       services: new Services(
         Number(service.id),
         String(service.name),
-        service.description == null ? null : JSON.stringify(service.description),
+        service.description == null ? null : String(service.description),
         String(service.tag),
         String(service.url),
         service.createdAt as Date,
