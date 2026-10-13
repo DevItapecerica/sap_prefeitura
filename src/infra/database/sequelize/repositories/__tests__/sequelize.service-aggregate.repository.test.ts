@@ -27,14 +27,14 @@ class FakeRow {
   }
 }
 
-const makeDatabase = () => {
+const makeDatabase = (description: string | null = "Frente de Trabalho") => {
   let failPermission = false;
   let failVisibility = false;
   let failService = false;
   const service = new FakeRow({
     id: 6,
     name: "FT",
-    description: "Frente de Trabalho",
+    description,
     tag: "ft",
     url: "/ft",
     createdAt: new Date("2026-01-01"),
@@ -117,6 +117,41 @@ test("service aggregate repository updates atomically and returns snapshots", as
   assert.equal(result.after.permissions[0].write, true);
   assert.equal(result.after.visibility[0].visibility, true);
   assert.ok(fake.lockCalls.slice(0, 3).every((options: any) => options.lock === "UPDATE"));
+});
+
+test("service aggregate repository preserves plain-text descriptions", async () => {
+  const description = "Atendimento à população, com \"prioridade\".\nSegunda linha.";
+  const fake = makeDatabase(description);
+
+  const loaded = await fake.repository.findById(6);
+
+  assert.equal(loaded?.services.description, description);
+});
+
+test("service aggregate repository preserves null descriptions", async () => {
+  const fake = makeDatabase(null);
+
+  const loaded = await fake.repository.findById(6);
+
+  assert.equal(loaded?.services.description, null);
+});
+
+test("service aggregate repository keeps descriptions unchanged across updates", async () => {
+  const description = "Atendimento à população, com \"prioridade\".\nSegunda linha.";
+  const fake = makeDatabase(description);
+  const unchangedDescriptionUpdate = {
+    ...update,
+    service: { ...update.service, description },
+  };
+
+  const firstUpdate = await fake.repository.update(6, unchangedDescriptionUpdate);
+  const secondUpdate = await fake.repository.update(6, unchangedDescriptionUpdate);
+
+  assert.equal(firstUpdate.before.services.description, description);
+  assert.equal(firstUpdate.after.services.description, description);
+  assert.equal(secondUpdate.before.services.description, description);
+  assert.equal(secondUpdate.after.services.description, description);
+  assert.equal(fake.service.state.description, description);
 });
 
 test("service aggregate repository rolls back permission and visibility failures", async () => {
