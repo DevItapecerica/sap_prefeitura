@@ -16,7 +16,7 @@ interface MunicipeDB extends Model<
   uuid: CreationOptional<string>;
   nome: string;
   cpf: string;
-  nascimento: string;
+  nascimento: CreationOptional<string | null>;
   telefone: CreationOptional<string>;
   rua: string;
   bairro: string;
@@ -58,7 +58,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
 
       nascimento: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       telefone: {
         type: DataTypes.STRING,
@@ -140,6 +140,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     MunicipeModel.hasMany(models.CarteirinhaEsporteModel, {
       foreignKey: "municipe_uuid",
       as: "carterinhasEsporte",
+    });
+    MunicipeModel.hasOne(models.Bolsistas, {
+      foreignKey: "municipe_uuid",
+      as: "bolsista",
     });
   };
 

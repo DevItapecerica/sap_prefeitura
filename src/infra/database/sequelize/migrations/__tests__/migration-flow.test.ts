@@ -8,6 +8,10 @@ import municipeResourceConstraintsMigration from "../20260715122000-add-municipe
 import bolsistaEditalPrimaryKeyMigration from "../20251202125717-Adicionando_pk_para_bolsista_edital.js";
 import bolsistaEditalObservacaoMigration from "../20260827120000-add-observacao-bolsistas-edital.js";
 import usersEmailUniqueMigration from "../20261009120000-remove-unique-users-email.js";
+import normalizeBolsistasMigration, {
+  normalizeDigits,
+} from "../20261013170000-normalize-bolsistas-to-municipes.js";
+import AesCryptService from "../../../../../core/security/aes/AesCrypt.service.js";
 
 const transaction = async (callback: (transaction: object) => Promise<void>) => callback({});
 
@@ -179,4 +183,259 @@ test("users email migration replaces only the unique email index with a regular 
     columns: ["email"],
   });
   assert.ok(indexes.has("idx_users_role_id"));
+});
+
+const legacyBolsista = {
+  id: "11111111-1111-4111-8111-111111111111",
+  nome: "Maria da Silva",
+  cpf: "529.982.247-25",
+  local: "Secretaria de Educação",
+  status: "ativo",
+  cep: "06850-000",
+  numero: "10",
+  logradouro: "Rua das Flores",
+  bairro: "Centro",
+  cidade: "Itapecerica da Serra",
+  uf: "SP",
+  telefone: "(11)99999-9999" as string | null,
+  createdAt: new Date("2024-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2024-01-02T00:00:00.000Z"),
+  deletedAt: null,
+};
+
+const makeBolsistaMigrationQueryInterface = (
+  rows: typeof legacyBolsista[],
+  existing: Record<string, unknown> | undefined = undefined,
+  validation: {
+    missing?: number;
+    archiveCount?: number;
+    duplicateLinks?: boolean;
+    missingLocals?: boolean;
+    missingResultEmpty?: boolean;
+    archiveResultEmpty?: boolean;
+  } = {},
+) => {
+  const inserts: Array<{ table: string; records: any[] }> = [];
+  const updates: Array<{ table: string; values: any; where: any }> = [];
+  const schemaActions: string[] = [];
+  const qi = {
+    sequelize: {
+      transaction,
+      query: async (sql: string) => {
+        if (sql.startsWith("SELECT id, nome")) return rows;
+        if (sql.startsWith("SELECT uuid, nome")) return existing ? [existing] : [];
+        if (sql.includes("WHERE municipe_uuid IS NULL")) {
+          if (validation.missingResultEmpty) return [];
+          return [{ count: validation.missing ?? 0 }];
+        }
+        if (sql.includes("COUNT(*) AS count FROM bolsistas_legacy_archive")) {
+          if (validation.archiveResultEmpty) return [];
+          return [{ count: validation.archiveCount ?? rows.length }];
+        }
+        if (sql.includes("GROUP BY municipe_uuid")) {
+          return validation.duplicateLinks ? [{ municipe_uuid: "duplicate" }] : [];
+        }
+        if (sql.includes("WHERE be.local IS NULL")) {
+          return validation.missingLocals ? [{ id: "missing-local" }] : [];
+        }
+        return [];
+      },
+    },
+    createTable: async (table: string) => { schemaActions.push(`create:${table}`); },
+    addColumn: async (table: string, field: string) => { schemaActions.push(`add:${table}.${field}`); },
+    changeColumn: async (table: string, field: string) => { schemaActions.push(`change:${table}.${field}`); },
+    bulkInsert: async (table: string, records: any[]) => { inserts.push({ table, records }); },
+    bulkUpdate: async (table: string, values: any, where: any) => { updates.push({ table, values, where }); },
+    addConstraint: async () => {},
+    addIndex: async () => {},
+    removeColumn: async () => {},
+  } as unknown as QueryInterface;
+
+  return { qi, inserts, updates, schemaActions };
+};
+
+test("bolsista normalization handles an empty database", async () => {
+  const migration = makeBolsistaMigrationQueryInterface([]);
+
+  await normalizeBolsistasMigration.up(migration.qi);
+
+  assert.equal(migration.inserts.length, 0);
+  assert.ok(migration.schemaActions.includes("create:bolsistas_legacy_archive"));
+  assert.ok(migration.schemaActions.includes("add:bolsistas.municipe_uuid"));
+});
+
+test("bolsista normalization normalizes absent identifiers safely", () => {
+  assert.equal(normalizeDigits(null), "");
+});
+
+test("bolsista normalization archives, creates municipe and copies local", async () => {
+  const migration = makeBolsistaMigrationQueryInterface([legacyBolsista]);
+
+  await normalizeBolsistasMigration.up(migration.qi);
+
+  assert.equal(migration.inserts.filter((item) => item.table === "bolsistas_legacy_archive").length, 1);
+  const createdMunicipe = migration.inserts.find((item) => item.table === "municipes")?.records[0];
+  assert.equal(createdMunicipe.nascimento, null);
+  assert.equal(createdMunicipe.complemento, null);
+  assert.equal(createdMunicipe.author, "migration:issue-37");
+  assert.notEqual(createdMunicipe.cpf, "52998224725");
+  assert.ok(migration.updates.some((item) => item.table === "bolsistas" && item.values.municipe_uuid));
+  assert.ok(migration.updates.some((item) => item.table === "bolsistas_edital" && item.values.local === legacyBolsista.local));
+});
+
+test("bolsista normalization reuses municipe and records divergent field names only", async () => {
+  const aes = new AesCryptService();
+  const encrypted = async (value: string) => aes.encrypt(value);
+  const existing = {
+    uuid: "22222222-2222-4222-8222-222222222222",
+    nome: "Outro nome",
+    telefone: await encrypted("11999999999"),
+    rua: await encrypted(legacyBolsista.logradouro),
+    bairro: await encrypted(legacyBolsista.bairro),
+    cidade: await encrypted(legacyBolsista.cidade),
+    uf: await encrypted(legacyBolsista.uf),
+    cep: await encrypted("06850000"),
+    numero: await encrypted(legacyBolsista.numero),
+  };
+  const migration = makeBolsistaMigrationQueryInterface([legacyBolsista], existing);
+
+  await normalizeBolsistasMigration.up(migration.qi);
+
+  assert.equal(migration.inserts.some((item) => item.table === "municipes"), false);
+  const divergence = migration.inserts.find(
+    (item) => item.table === "bolsistas_migration_divergences",
+  )?.records[0];
+  assert.deepEqual(JSON.parse(divergence.divergent_fields), ["nome"]);
+  assert.equal(JSON.stringify(divergence).includes("Outro nome"), false);
+});
+
+test("bolsista normalization records every divergent reused field without values", async () => {
+  const aes = new AesCryptService();
+  const encrypted = async (value: string) => aes.encrypt(value);
+  const rowWithoutPhone = { ...legacyBolsista, telefone: null };
+  const existing = {
+    uuid: "22222222-2222-4222-8222-222222222222",
+    nome: legacyBolsista.nome,
+    telefone: await encrypted("11988888888"),
+    rua: await encrypted("Outra rua"),
+    bairro: await encrypted("Outro bairro"),
+    cidade: await encrypted("Outra cidade"),
+    uf: await encrypted("RJ"),
+    cep: await encrypted("00000000"),
+    numero: await encrypted("999"),
+  };
+  const migration = makeBolsistaMigrationQueryInterface([rowWithoutPhone], existing);
+
+  await normalizeBolsistasMigration.up(migration.qi);
+
+  const divergence = migration.inserts.find(
+    (item) => item.table === "bolsistas_migration_divergences",
+  )?.records[0];
+  assert.deepEqual(JSON.parse(divergence.divergent_fields), [
+    "telefone", "rua", "bairro", "cidade", "uf", "cep", "numero",
+  ]);
+  assert.deepEqual(Object.keys(divergence).sort(), [
+    "bolsista_id", "createdAt", "divergent_fields", "id", "municipe_uuid",
+  ]);
+});
+
+test("bolsista normalization does not report equal nullable reused data", async () => {
+  const aes = new AesCryptService();
+  const encrypted = async (value: string) => aes.encrypt(value);
+  const rowWithoutPhone = { ...legacyBolsista, telefone: null };
+  const existing = {
+    uuid: "22222222-2222-4222-8222-222222222222",
+    nome: legacyBolsista.nome,
+    telefone: null,
+    rua: await encrypted(legacyBolsista.logradouro),
+    bairro: await encrypted(legacyBolsista.bairro),
+    cidade: await encrypted(legacyBolsista.cidade),
+    uf: await encrypted(legacyBolsista.uf),
+    cep: await encrypted("06850000"),
+    numero: await encrypted(legacyBolsista.numero),
+  };
+  const migration = makeBolsistaMigrationQueryInterface([rowWithoutPhone], existing);
+
+  await normalizeBolsistasMigration.up(migration.qi);
+
+  assert.equal(
+    migration.inserts.some((item) => item.table === "bolsistas_migration_divergences"),
+    false,
+  );
+});
+
+test("bolsista normalization creates nullable optional migrated data", async () => {
+  const rowWithoutPhone = { ...legacyBolsista, telefone: null };
+  const migration = makeBolsistaMigrationQueryInterface([rowWithoutPhone]);
+
+  await normalizeBolsistasMigration.up(migration.qi);
+
+  const createdMunicipe = migration.inserts.find((item) => item.table === "municipes")?.records[0];
+  assert.equal(createdMunicipe.telefone, null);
+});
+
+test("bolsista normalization rejects missing validation aggregates", async () => {
+  const missing = makeBolsistaMigrationQueryInterface([], undefined, {
+    missingResultEmpty: true,
+  });
+  await normalizeBolsistasMigration.up(missing.qi);
+
+  const archive = makeBolsistaMigrationQueryInterface([], undefined, {
+    archiveResultEmpty: true,
+  });
+  await normalizeBolsistasMigration.up(archive.qi);
+});
+
+for (const scenario of [
+  { validation: { missing: 1 }, message: "without municipe_uuid" },
+  { validation: { archiveCount: 0 }, message: "archive count mismatch" },
+  { validation: { duplicateLinks: true }, message: "Duplicate municipe linkage" },
+  { validation: { missingLocals: true }, message: "without local" },
+] as const) {
+  test(`bolsista normalization aborts validation: ${scenario.message}`, async () => {
+    const migration = makeBolsistaMigrationQueryInterface(
+      [legacyBolsista],
+      undefined,
+      scenario.validation,
+    );
+
+    await assert.rejects(
+      () => normalizeBolsistasMigration.up(migration.qi),
+      new RegExp(scenario.message),
+    );
+  });
+}
+
+test("bolsista normalization rejects duplicate legacy CPFs before writing data", async () => {
+  const duplicate = { ...legacyBolsista, id: "33333333-3333-4333-8333-333333333333" };
+  const migration = makeBolsistaMigrationQueryInterface([legacyBolsista, duplicate]);
+
+  await assert.rejects(
+    () => normalizeBolsistasMigration.up(migration.qi),
+    /Duplicate legacy bolsista CPF/,
+  );
+  assert.equal(migration.inserts.length, 0);
+  assert.equal(migration.schemaActions.length, 0);
+});
+
+test("bolsista normalization rollback restores archive before dropping support tables", async () => {
+  const actions: string[] = [];
+  const queryInterface = {
+    sequelize: {
+      transaction,
+      query: async () => { actions.push("restore"); return []; },
+    },
+    addColumn: async (_table: string, field: string) => { actions.push(`add:${field}`); },
+    removeIndex: async () => { actions.push("remove:index"); },
+    removeConstraint: async () => { actions.push("remove:constraint"); },
+    removeColumn: async (_table: string, field: string) => { actions.push(`remove:${field}`); },
+    changeColumn: async () => { actions.push("birth:required"); },
+    dropTable: async (table: string) => { actions.push(`drop:${table}`); },
+  } as unknown as QueryInterface;
+
+  await normalizeBolsistasMigration.down(queryInterface);
+
+  assert.ok(actions.indexOf("restore") < actions.indexOf("drop:bolsistas_legacy_archive"));
+  assert.ok(actions.includes("drop:bolsistas_migration_divergences"));
+  assert.ok(actions.includes("birth:required"));
 });

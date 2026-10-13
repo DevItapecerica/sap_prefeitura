@@ -73,9 +73,8 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   private bolsista = new FakeModel({
     id: "bolsista-1",
-    nome: "Maria",
-    cpf: "52998224725",
-    status: "inativo",
+    municipe_uuid: "11111111-1111-4111-8111-111111111111",
+    municipe: { uuid: "11111111-1111-4111-8111-111111111111", nome: "Maria", cpf: "52998224725" },
     payment_info: this.paymentInfo,
   });
 
@@ -95,12 +94,15 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findById() {
     if (this.missingBolsista) return null;
-    this.bolsista.set("status", this.inactiveBolsista ? "inativo" : "ativo");
     return this.bolsista;
   }
 
-  async findByCpf() {
+  async findByMunicipeUuid() {
     return this.duplicatedCpf ? this.bolsista : null;
+  }
+
+  async findMunicipeById() {
+    return new FakeModel({ uuid: "11111111-1111-4111-8111-111111111111" });
   }
 
   async create(data: any) {
@@ -121,12 +123,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async updateWithPaymentInfo(
     bolsista: any,
-    bolsistaData: any,
     paymentInfo: any,
     paymentInfoData: any,
   ) {
     this.updateWithPaymentInfoCalled = true;
-    bolsista.set(bolsistaData);
     paymentInfo.set(paymentInfoData);
     return bolsista;
   }
@@ -141,6 +141,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async countActiveByPagador() {
     return this.activeQuantityByPagador;
+  }
+
+  async findActiveVinculoByBolsista() {
+    return this.inactiveBolsista ? null : this.vinculo;
   }
 
   async findToExpire() {
@@ -249,16 +253,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 }
 
 const validBolsistaPayload = (): FtBolsistaDto => ({
-  nome: "Maria Silva",
-  cpf: "52998224725",
-  telefone: "11999999999",
-  local: "Secretaria",
-  cep: "12345678",
-  numero: "10",
-  logradouro: "Rua A",
-  bairro: "Centro",
-  cidade: "Cidade",
-  uf: "SP",
+  municipe_uuid: "11111111-1111-4111-8111-111111111111",
   payment_info: {
     bco: "001",
     ag: "1234",
@@ -318,17 +313,9 @@ describe("FtBolsistaService", () => {
     assert.equal(response.payment_info.pagador_id, pagador[0].id);
   });
 
-  it("rejeita CPF invalido", async () => {
+  it("rejeita municipe ausente", async () => {
     const payload = validBolsistaPayload();
-    payload.cpf = "123";
-
-    await assertAppError(() => service.saveBolsista(payload), 400, "CPF invalido");
-    assert.equal(repository.createWithPaymentInfoCalled, false);
-  });
-
-  it("rejeita dados pessoais incompletos", async () => {
-    const payload = validBolsistaPayload();
-    payload.nome = "";
+    payload.municipe_uuid = "";
 
     await assertAppError(
       () => service.saveBolsista(payload),
@@ -348,7 +335,7 @@ describe("FtBolsistaService", () => {
     );
   });
 
-  it("rejeita CPF duplicado", async () => {
+  it("rejeita municipe ja vinculado", async () => {
     repository.duplicatedCpf = true;
 
     await assertAppError(
@@ -362,7 +349,23 @@ describe("FtBolsistaService", () => {
     const response = await service.saveBolsista(validBolsistaPayload(), "bolsista-1");
 
     assert.equal(repository.updateWithPaymentInfoCalled, true);
-    assert.equal(response.get("nome"), "Maria Silva");
+    assert.equal(response.get("municipe_uuid"), "11111111-1111-4111-8111-111111111111");
+  });
+
+  it("aplica limite do novo pagador somente quando existe vinculo ativo", async () => {
+    const payload = validBolsistaPayload();
+    payload.payment_info.pagador_id = pagador[1].id;
+    repository.activeQuantityByPagador = pagador[1].max_bolsista;
+
+    await assertAppError(
+      () => service.saveBolsista(payload, "bolsista-1"),
+      403,
+      "Quantidade maxima de bolsistas alcancada",
+    );
+
+    repository.inactiveBolsista = true;
+    await service.saveBolsista(payload, "bolsista-1");
+    assert.equal(repository.updateWithPaymentInfoCalled, true);
   });
 
   it("prorroga vinculos validos", async () => {
@@ -409,17 +412,14 @@ describe("FtBolsistaService", () => {
     );
   });
 
-  it("rejeita prorrogacao de bolsista inativo", async () => {
+  it("ignora o antigo status global ao prorrogar vinculo ativo", async () => {
     repository.inactiveBolsista = true;
 
-    await assertAppError(
-      () =>
-        service.prorrogate([
-          { bolsista_id: "bolsista-1", edital_id: "edital-1" },
-        ]),
-      404,
-      "Bolsista not found",
-    );
+    await service.prorrogate([
+      { bolsista_id: "bolsista-1", edital_id: "edital-1" },
+    ]);
+
+    assert.equal(repository.prorrogateVinculosCalled, true);
   });
 
   it("cancela vinculo valido", async () => {

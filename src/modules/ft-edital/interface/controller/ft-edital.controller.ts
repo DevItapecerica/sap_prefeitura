@@ -118,13 +118,13 @@ export class FtEditalController {
     }>,
     reply: FastifyReply,
   ) => {
-    const { bolsista, data_vinculo } = request.body;
+    const { bolsistas, data_vinculo } = request.body;
     const vincularService = new FtEditalVincularBolsistaUseCase(new SequelizeFtEditalRepository())
 
 
     const vinculos = await vincularService.execute(
       request.params.id,
-      bolsista,
+      bolsistas,
       data_vinculo,
     );
     await ftEditalEvents.publish(FT_EDITAL_EVENTS.bolsistasLinked, {

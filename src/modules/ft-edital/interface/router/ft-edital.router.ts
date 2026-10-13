@@ -176,11 +176,20 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
       params: uuidParam,
       body: {
         type: "object",
-        required: ["bolsista"],
+        required: ["bolsistas", "data_vinculo"],
         properties: {
-          bolsista: {
+          bolsistas: {
             type: "array",
-            items: { type: "string", format: "uuid" },
+            minItems: 1,
+            items: {
+              type: "object",
+              required: ["bolsista_id", "local"],
+              additionalProperties: false,
+              properties: {
+                bolsista_id: { type: "string", format: "uuid" },
+                local: { type: "string", minLength: 1, pattern: "\\S" },
+              },
+            },
           },
           data_vinculo: { type: "string" },
         },

@@ -30,15 +30,17 @@ export class FtRelatorioFaltasCsvFormatter {
     ];
 
     for (const item of relatorio.bolsistas) {
+      const municipe = item.bolsista.municipe as any;
+      const status = item.vinculos[0]?.status || item.bolsista.status || "sem_vinculo";
       const faltas = [...item.faltas].sort((a, b) =>
         String(a.data_falta).localeCompare(String(b.data_falta)),
       );
 
       rows.push([
         item.bolsista.id,
-        item.bolsista.nome,
-        item.bolsista.cpf,
-        item.bolsista.status,
+        municipe?.nome || item.bolsista.nome,
+        municipe?.cpf || item.bolsista.cpf,
+        status,
         faltas.length,
         faltas.map((falta) => this.formatDate(falta.data_falta)).join(", "),
         faltas

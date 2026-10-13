@@ -5,8 +5,20 @@ import {
   FtEditalBolsistaQueryDto,
   FtEditalQueryDto,
 } from "../../../../modules/ft-edital/application/dto/ft-edital.dto.js";
+import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
+import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
+import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
 
 export class SequelizeFtEditalRepository implements FtEditalRepository {
+  private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
+
+  private async hydrateBolsistas(rows: any[]) {
+    return Promise.all(rows.map(async (row) => {
+      const municipe = row.get?.("municipe");
+      if (municipe) row.setDataValue("municipe", await this.municipeMapper.toDomain(municipe.toJSON()));
+      return row;
+    }));
+  }
   findAll() {
     return db.Edital.findAll();
   }
@@ -56,20 +68,29 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
 
   findBolsistaById(id: string) {
     return db.Bolsistas.findByPk(id, {
-      include: [{ model: db.PaymentInfo, as: "payment_info" }],
+      include: [
+        { model: db.PaymentInfo, as: "payment_info" },
+        { model: db.MunicipeModel, as: "municipe" },
+      ],
     });
   }
 
   countActiveByPagador(pagadorId: string) {
     return db.Bolsistas.count({
-      where: { status: "ativo" },
       include: [
         {
           model: db.PaymentInfo,
           as: "payment_info",
           where: { pagador_id: pagadorId },
         },
+        {
+          model: db.BolsistasEdital,
+          as: "bolsistas_edital",
+          required: true,
+          where: { status: "ativo" },
+        },
       ],
+      distinct: true,
     });
   }
 
@@ -80,6 +101,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         {
           model: db.Bolsistas,
           as: "bolsistas",
+          include: [{ model: db.MunicipeModel, as: "municipe", attributes: ["uuid", "nome"] }],
           through: {
             attributes: [],
             where: { [Op.or]: [{ status: "ativo" }, { status: "concluido" }] },
@@ -89,29 +111,24 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     });
   }
 
-  findBolsistasByEdital(
+  async findBolsistasByEdital(
     id: string,
     query: FtEditalBolsistaQueryDto = {},
     optionWhere: any = {},
   ) {
     const { page = "0", limit = "10", search = "" } = query;
     const offset = Number(page) * Number(limit);
-    const where = search
-      ? {
-          ...optionWhere,
-          [Op.or]: [
-            { nome: { [Op.like]: `%${search}%` } },
-            { cpf: { [Op.like]: `%${search}%` } },
-          ],
-        }
-      : { ...optionWhere };
-
-    return db.Bolsistas.findAll({
-      where,
+    const rows = await db.Bolsistas.findAll({
+      where: optionWhere,
       offset,
       limit: Number(limit),
-      order: [["nome", "ASC"]],
+      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
       include: [
+        {
+          model: db.MunicipeModel,
+          as: "municipe",
+          where: search ? { nome: { [Op.like]: `%${search}%` } } : undefined,
+        },
         {
           model: db.PaymentInfo,
           as: "payment_info",
@@ -138,6 +155,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
       ],
       distinct: true,
     });
+    return this.hydrateBolsistas(rows);
   }
 
   countBolsistasByEdital(
@@ -146,19 +164,14 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     optionWhere: any = {},
   ) {
     const { search = "" } = query;
-    const where = search
-      ? {
-          ...optionWhere,
-          [Op.or]: [
-            { nome: { [Op.like]: `%${search}%` } },
-            { cpf: { [Op.like]: `%${search}%` } },
-          ],
-        }
-      : { ...optionWhere };
-
     return db.Bolsistas.count({
-      where,
+      where: optionWhere,
       include: [
+        {
+          model: db.MunicipeModel,
+          as: "municipe",
+          where: search ? { nome: { [Op.like]: `%${search}%` } } : undefined,
+        },
         {
           model: db.BolsistasEdital,
           as: "bolsistas_edital",
@@ -186,9 +199,15 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     });
   }
 
+  findActiveVinculoByBolsista(bolsistaId: string) {
+    return db.BolsistasEdital.findOne({
+      where: { bolsista_id: bolsistaId, status: "ativo" },
+    });
+  }
+
   async vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date, expire_at?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; local: string; data_vinculo?: string | Date, expire_at?: string | Date }>,
   ) {
     return db.sequelize.transaction(async (transaction: any) => {
       const created = [];
@@ -196,14 +215,13 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         const vinculo = await db.BolsistasEdital.create({
           edital_id: edital.get("id"),
           bolsista_id: item.bolsista.get("id"),
+          local: item.local,
           data_vinculo: item.data_vinculo,
           expire_at: item.expire_at,
         }, {
           transaction,
         });
 
-        item.bolsista.set("status", "ativo");
-        await item.bolsista.save({ transaction });
         created.push(vinculo);
       }
       return created;

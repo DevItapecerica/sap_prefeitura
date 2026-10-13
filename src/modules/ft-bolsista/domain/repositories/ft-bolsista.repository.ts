@@ -5,16 +5,16 @@ import {
 
 export interface FtBolsistaRepository {
   findById(id: string): Promise<any | null>;
-  findByCpf(cpf: string): Promise<any | null>;
+  findByMunicipeUuid(municipeUuid: string): Promise<any | null>;
+  findMunicipeById(municipeUuid: string): Promise<any | null>;
   create(data: any): Promise<any>;
   createPaymentInfo(data: any): Promise<any>;
   createWithPaymentInfo(
-    bolsistaData: any,
+    bolsistaData: { municipe_uuid: string },
     paymentInfoData: any,
   ): Promise<{ bolsista: any; paymentInfo: any }>;
   updateWithPaymentInfo(
     bolsista: any,
-    bolsistaData: any,
     paymentInfo: any,
     paymentInfoData: any,
   ): Promise<any>;
@@ -23,6 +23,7 @@ export interface FtBolsistaRepository {
     query?: FtBolsistaQueryDto,
   ): Promise<{ count: number; rows: any[] }>;
   countActiveByPagador(pagadorId: string): Promise<number>;
+  findActiveVinculoByBolsista(bolsistaId: string): Promise<any | null>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;
   findHistoricoByBolsistaId(bolsistaId: string): Promise<any[]>;

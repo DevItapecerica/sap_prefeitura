@@ -20,6 +20,6 @@ export interface FtEditalBolsistaQueryDto {
 }
 
 export interface FtVincularBolsistaDto {
-  bolsista: string[];
+  bolsistas: Array<{ bolsista_id: string; local: string }>;
   data_vinculo?: string | Date;
 }

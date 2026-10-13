@@ -3,16 +3,12 @@ import MunicipeRepository from "../../../../modules/municipe/domain/repositories
 import Municipe from "../../../../modules/municipe/domain/entity/Municipe.js";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
 import { Op } from "sequelize";
-import {
-  MunicipeDto,
-  updateMunicipeDto,
-} from "../../../../modules/municipe/application/dto/municipe.dto.js";
 
 export class SequelizeMunicipeRepository implements MunicipeRepository {
   private model = db.MunicipeModel;
 
   async createMunicipe(
-    municipe: MunicipeDto,
+    municipe: Municipe,
     cpfHash: string,
     cepHash: string,
   ): Promise<Municipe> {
@@ -84,11 +80,11 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
 
   async updateMunicipe(
     uuid: string,
-    updated: updateMunicipeDto,
+    updated: Partial<Municipe>,
     cpfHash?: string,
     cepHash?: string,
   ): Promise<Municipe | null> {
-    const payload: updateMunicipeDto & {
+    const payload: Partial<Municipe> & {
       cpfHash?: string;
       cepHash?: string;
     } = {

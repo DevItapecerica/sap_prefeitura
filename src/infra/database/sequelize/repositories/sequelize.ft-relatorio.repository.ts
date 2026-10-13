@@ -10,8 +10,12 @@ import {
   FtRelatorioBolsista,
   FtRelatorioVinculo,
 } from "../../../../modules/ft-relatorio/domain/entities/ft-relatorio.entity.js";
+import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
+import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
+import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
 
 export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
+  private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
   async findEditalById(id: string) {
     const edital = await db.Edital.findByPk(id);
 
@@ -34,8 +38,9 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     periodo: FtRelatorioPeriodo,
   ) {
     const bolsistas = await db.Bolsistas.findAll({
-      order: [["nome", "ASC"]],
+      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
       include: [
+        { model: db.MunicipeModel, as: "municipe", required: true },
         {
           model: db.PaymentInfo,
           as: "payment_info",
@@ -54,6 +59,7 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
             "bolsista_id",
             "edital_id",
             "status",
+            "local",
             "data_vinculo",
             "expire_at",
             "canceled_at",
@@ -77,9 +83,10 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       distinct: true,
     });
 
-    return bolsistas
-      .map((bolsista: any) => this.toFtRelatorioBolsista(bolsista, periodo))
-      .filter(
+    const mapped = await Promise.all(
+      bolsistas.map((bolsista: any) => this.toFtRelatorioBolsista(bolsista, periodo)),
+    );
+    return mapped.filter(
         (bolsista: FtRelatorioBolsista | null): bolsista is FtRelatorioBolsista =>
           Boolean(bolsista),
       );
@@ -102,10 +109,10 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     );
   }
 
-  private toFtRelatorioBolsista(
+  private async toFtRelatorioBolsista(
     model: any,
     periodo: FtRelatorioPeriodo,
-  ): FtRelatorioBolsista | null {
+  ): Promise<FtRelatorioBolsista | null> {
     const bolsista = this.toPlain(model);
     const paymentInfo = bolsista.payment_info
       ? this.toFtPaymentInfo(bolsista.payment_info)
@@ -118,19 +125,11 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       return null;
     }
 
+    const municipe = await this.municipeMapper.toDomain(bolsista.municipe);
     return new FtRelatorioBolsista(
       new FtBolsista(
-        bolsista.nome,
-        `${bolsista.cpf}`,
-        bolsista.local,
-        bolsista.cep,
-        bolsista.numero,
-        bolsista.logradouro,
-        bolsista.bairro,
-        bolsista.cidade,
-        bolsista.uf,
-        bolsista.telefone,
-        bolsista.status,
+        bolsista.municipe_uuid,
+        municipe as unknown as Record<string, unknown>,
         paymentInfo,
         bolsista.id,
         bolsista.createdAt,
@@ -153,6 +152,7 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       vinculo.concluded_at,
       vinculo.expired_at,
       vinculo.id,
+      vinculo.local,
     );
   }
 

@@ -46,6 +46,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
   public vincularBolsistasCalled = false;
   public vinculosPayload: Array<{
     bolsista: any;
+    local: string;
     data_vinculo?: string | Date;
     expire_at?: Date;
   }> = [];
@@ -149,10 +150,17 @@ class FakeFtEditalRepository implements FtEditalRepository {
     );
   }
 
+  async findActiveVinculoByBolsista() {
+    return this.bolsistaStatus === "ativo"
+      ? new FakeModel({ id: "vinculo-ativo", status: "ativo" })
+      : null;
+  }
+
   async vincularBolsistas(
     _edital: any,
     bolsistas: Array<{
       bolsista: any;
+      local: string;
       data_vinculo?: string | Date;
       expire_at?: Date;
     }>,
@@ -274,7 +282,7 @@ describe("FtEditalService", () => {
   });
 
   it("vincula bolsistas validos", async () => {
-    await vincularBolsista.execute("edital-1", ["bolsista-1"], "2026-06-09");
+    await vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], "2026-06-09");
 
     assert.equal(repository.vincularBolsistasCalled, true);
     assert.equal(
@@ -286,7 +294,7 @@ describe("FtEditalService", () => {
   it("permite novo vinculo quando historico do par esta cancelado", async () => {
     repository.vinculoStatuses = ["cancelado"];
 
-    await vincularBolsista.execute("edital-1", ["bolsista-1"], "2026-06-09");
+    await vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], "2026-06-09");
 
     assert.equal(repository.vincularBolsistasCalled, true);
   });
@@ -296,7 +304,7 @@ describe("FtEditalService", () => {
       repository.vinculoStatuses = [status];
 
       await assertAppError(
-        () => vincularBolsista.execute("edital-1", ["bolsista-1"], "2026-06-09"),
+        () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], "2026-06-09"),
         403,
         "Bolsista ja vinculado a este edital",
       );
@@ -309,7 +317,7 @@ describe("FtEditalService", () => {
     repository.editalInativo = true;
 
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", ["bolsista-1"], undefined),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], undefined),
       400,
       "Edital inativo",
     );
@@ -319,25 +327,18 @@ describe("FtEditalService", () => {
     repository.missingBolsista = true;
 
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", ["bolsista-1"], undefined),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], undefined),
       404,
       "Bolsista not found",
     );
   });
 
-  it("rejeita bolsista ativo ou pendente ao vincular", async () => {
+  it("rejeita bolsista que ja possui vinculo ativo", async () => {
     repository.bolsistaStatus = "ativo";
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", ["bolsista-1"], undefined),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], undefined),
       403,
-      "Bolsista com documentos pendentes",
-    );
-
-    repository.bolsistaStatus = "pendente";
-    await assertAppError(
-      () => vincularBolsista.execute("edital-1", ["bolsista-1"], undefined),
-      403,
-      "Bolsista com documentos pendentes",
+      "Bolsista ja ativo em outro edital",
     );
   });
 
@@ -345,7 +346,7 @@ describe("FtEditalService", () => {
     repository.invalidPagador = true;
 
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", ["bolsista-1"], undefined),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria" }], undefined),
       403,
       "Pagador nao encontrado",
     );

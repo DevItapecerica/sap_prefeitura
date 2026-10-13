@@ -32,6 +32,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
         defaultValue: () => new Date(),
       },
+      local: {
+        type: dataTypes.STRING,
+        allowNull: false,
+      },
       status: {
         type: dataTypes.ENUM(
           "ativo",

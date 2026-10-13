@@ -10,6 +10,7 @@ export class FtRelatorioVinculo {
     public readonly concluded_at: string | Date | null = null,
     public readonly expired_at: string | Date | null = null,
     public readonly id?: string,
+    public readonly local?: string,
   ) {}
 }
 

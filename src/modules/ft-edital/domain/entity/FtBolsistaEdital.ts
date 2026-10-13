@@ -3,6 +3,7 @@ export class FtBolsistaEdital {
     public readonly bolsista_id: string,
     public readonly edital_id: string,
     public readonly data_vinculo: string | Date,
+    public readonly local: string,
     public readonly status = "ativo",
     public readonly expire_at?: string | Date | null,
     public readonly prorrogated = false,

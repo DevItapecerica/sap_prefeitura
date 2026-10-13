@@ -1,5 +1,5 @@
-import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
+import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtRelatorioPeriodo } from "../../application/dto/ft-relatorio.dto.js";
 import {
   FtRelatorioBolsista,
@@ -56,9 +56,14 @@ export class FtRelatorioPagamentoService {
     for (const relatorioBolsista of bolsistas) {
       const { bolsista, faltas: bolsistaFaltas } = relatorioBolsista;
 
+      const fallbackPagador = pagador.find(
+        (item) => item.id === bolsista.payment_info?.pagador_id,
+      );
       const local =
-        pagador.find((item) => item.id === bolsista.payment_info?.pagador_id)
-          ?.name || "SEM LOCAL";
+        relatorioBolsista.vinculos[0]?.local ||
+        fallbackPagador?.name ||
+        "SEM LOCAL";
+      const municipe = bolsista.municipe as any;
       const diasTrabalhados = this.countDiasUteisTrabalhados(
         relatorioBolsista,
         periodo,
@@ -83,8 +88,8 @@ export class FtRelatorioPagamentoService {
         dig_ag: bolsista.payment_info?.dig_ag ?? undefined,
         conta: bolsista.payment_info?.conta ?? undefined,
         dig_conta: bolsista.payment_info?.dig_conta ?? undefined,
-        nome: bolsista.nome,
-        cpf: `${bolsista.cpf}`,
+        nome: String(municipe?.nome || bolsista.nome || ""),
+        cpf: String(municipe?.cpf || bolsista.cpf || ""),
         local,
         vencimento: this.toDateOnly(edital.data_vencimento),
         dias_uteis: diasTrabalhados,

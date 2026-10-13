@@ -27,7 +27,11 @@ export default class FtEditalVincularBolsistaUseCase {
     private readonly vinculoPolicy = new FtVinculoPolicyService(),
   ) {}
 
-  async execute(id: string, bolsistas: string[], dataVinculo: any) {
+  async execute(
+    id: string,
+    bolsistas: Array<{ bolsista_id: string; local: string }>,
+    dataVinculo: any,
+  ) {
     if (!id) {
       throw ftError(400, "Edital e obrigatorio");
     }
@@ -51,9 +55,11 @@ export default class FtEditalVincularBolsistaUseCase {
     const vinculos = [];
 
     // recebe o id do bolsista
-    for (const bolsistaId of bolsistas) {
-      if (!bolsistaId) {
-        throw ftError(400, "Bolsista e obrigatorio");
+    for (const item of bolsistas) {
+      const bolsistaId = item?.bolsista_id;
+      const local = item?.local?.trim();
+      if (!bolsistaId || !local) {
+        throw ftError(400, "Bolsista e local sao obrigatorios");
       }
 
       const bolsista = await this.repository.findBolsistaById(bolsistaId);
@@ -71,13 +77,13 @@ export default class FtEditalVincularBolsistaUseCase {
       // se tiver algo diferente de cancelado, n deixa vincular
       this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar);
 
-      if (
-        bolsista.get("status") === "pendente" ||
-        bolsista.get("status") === "ativo"
-      ) {
+      const activeVinculo = await this.repository.findActiveVinculoByBolsista(
+        bolsistaId,
+      );
+      if (activeVinculo) {
         throw ftError(
           403,
-          "Bolsista com documentos pendentes ou ja ativo em outro edital",
+          "Bolsista ja ativo em outro edital",
         );
       }
 
@@ -102,6 +108,7 @@ export default class FtEditalVincularBolsistaUseCase {
 
       vinculos.push({
         bolsista,
+        local,
         data_vinculo: dataVinculo,
         expire_at: vencimento,
       });

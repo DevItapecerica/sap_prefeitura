@@ -8,16 +8,7 @@ export interface FtPaymentInfoDto {
 }
 
 export interface FtBolsistaDto {
-  nome: string;
-  cpf: string;
-  telefone?: string | null;
-  local: string;
-  cep: string;
-  numero: string;
-  logradouro: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
+  municipe_uuid: string;
   payment_info: FtPaymentInfoDto;
 }
 

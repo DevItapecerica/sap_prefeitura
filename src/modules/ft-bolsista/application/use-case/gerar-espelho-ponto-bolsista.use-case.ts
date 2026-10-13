@@ -54,6 +54,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
     }
 
     const person = this.plain(bolsista);
+    const municipe = this.plain(person.municipe);
     const notice = this.plain(edital);
     const days = this.days(periodo.inicio, periodo.fim).map((data) => {
       const weekday = new Date(`${data}T00:00:00.000Z`).getUTCDay();
@@ -80,23 +81,23 @@ export class GerarEspelhoPontoBolsistaUseCase {
     });
 
     const address = [
-      person.logradouro,
-      person.numero,
-      person.bairro,
-      person.cidade,
-      person.uf,
+      municipe.rua,
+      municipe.numero,
+      municipe.bairro,
+      municipe.cidade,
+      municipe.uf,
     ]
       .filter(Boolean)
       .join(", ");
     return this.pdfGateway.execute({
-      name: `espelho-ponto-${person.nome || bolsistaId}-${mes}`,
+      name: `espelho-ponto-${municipe.nome || bolsistaId}-${mes}`,
       servidor: {
         matricula: String(person.id || bolsistaId),
-        nome: String(person.nome || ""),
+        nome: String(municipe.nome || ""),
         cargo: "Bolsista",
-        unidade: String(person.local || ""),
+        unidade: String(link.local || ""),
         horario: "07:00 16:00",
-        localTrabalho: String(person.local || ""),
+        localTrabalho: String(link.local || ""),
         endereco: address,
       },
       periodo: {

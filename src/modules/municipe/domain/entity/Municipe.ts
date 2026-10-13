@@ -2,7 +2,7 @@ export default class Municipe {
   constructor(
     public nome: string,
     public cpf: string,
-    public nascimento: string,
+    public nascimento: string | null,
     public telefone: string | null,
     public rua: string,
     public bairro: string,

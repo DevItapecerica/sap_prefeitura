@@ -27,8 +27,9 @@ export interface FtEditalRepository {
     bolsistaId: string,
     editalId: string,
   ): Promise<any[]>;
+  findActiveVinculoByBolsista(bolsistaId: string): Promise<any | null>;
   vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; local: string; data_vinculo?: string | Date }>,
   ): Promise<any[]>;
 }
