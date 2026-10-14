@@ -13,8 +13,28 @@ import normalizeBolsistasMigration, {
 } from "../20261013170000-normalize-bolsistas-to-municipes.js";
 import AesCryptService from "../../../../../core/security/aes/AesCrypt.service.js";
 import pagadoresMigration, { PAGADORES_INICIAIS } from "../20261014100000-create-pagadores-and-move-to-vinculos.js";
+import auditErrorMessageMigration from "../20261014170000-add-error-message-to-audit-logs.js";
 
 const transaction = async (callback: (transaction: object) => Promise<void>) => callback({});
+
+test("audit error message migration is idempotent and reversible", async () => {
+  let hasErrorMessage = false;
+  let added = 0;
+  let removed = 0;
+  const queryInterface = {
+    describeTable: async () => hasErrorMessage ? { error_message: { type: "TEXT" } } : {},
+    addColumn: async () => { hasErrorMessage = true; added += 1; },
+    removeColumn: async () => { hasErrorMessage = false; removed += 1; },
+  } as unknown as QueryInterface;
+
+  await auditErrorMessageMigration.up(queryInterface);
+  await auditErrorMessageMigration.up(queryInterface);
+  await auditErrorMessageMigration.down(queryInterface);
+  await auditErrorMessageMigration.down(queryInterface);
+
+  assert.equal(added, 1);
+  assert.equal(removed, 1);
+});
 
 test("roles down removes dependent tables first", async () => {
   const dropped: string[] = [];

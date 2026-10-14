@@ -21,6 +21,7 @@ export interface AuditEventBase {
   resourceId?: string | null;
   result: AuditResult;
   errorCode?: string | null;
+  errorMessage?: string | null;
   requestId?: string | null;
   ip?: string | null;
   method?: string | null;

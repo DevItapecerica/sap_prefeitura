@@ -11,6 +11,7 @@ export interface HttpRequestFailedEvent {
   resourceId?: string;
   statusCode: number;
   errorCode: string;
+  errorMessage: string;
   filters?: unknown;
   requestedChanges?: unknown;
   attemptedIdentity?: string;

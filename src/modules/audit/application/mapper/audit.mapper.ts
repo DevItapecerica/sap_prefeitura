@@ -23,6 +23,7 @@ export class AuditMapper {
       resourceId: input.resourceId ?? null,
       result: input.result,
       errorCode: input.errorCode ?? null,
+      errorMessage: input.errorMessage ?? null,
       requestId: input.requestId ?? null,
       ip: input.ip ?? null,
       method: input.method ?? null,

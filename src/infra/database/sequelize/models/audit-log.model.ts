@@ -12,6 +12,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => sequelize.
   resourceType: { type: dataTypes.STRING(80), allowNull: false, field: "resource_type" },
   resourceId: { type: dataTypes.STRING(120), allowNull: true, field: "resource_id" },
   result: { type: dataTypes.STRING(16), allowNull: false }, errorCode: { type: dataTypes.STRING(80), allowNull: true, field: "error_code" },
+  errorMessage: { type: dataTypes.TEXT, allowNull: true, field: "error_message" },
   requestId: { type: dataTypes.STRING(120), allowNull: true, field: "request_id" }, ip: { type: dataTypes.STRING(64), allowNull: true },
   method: { type: dataTypes.STRING(10), allowNull: true }, route: { type: dataTypes.STRING(500), allowNull: true },
   filtersJson: { type: dataTypes.TEXT("long"), allowNull: true, field: "filters_json" },

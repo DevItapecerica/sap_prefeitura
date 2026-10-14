@@ -36,6 +36,7 @@ export const registerHttpRequestFailedAuditHandler = (
         result:
           event.action === "ACCESS_DENIED" ? "DENIED" : "FAILURE",
         errorCode: event.errorCode,
+        errorMessage: event.errorMessage,
         filters: event.filters,
         metadata: getFailureMetadata(event),
       },
