@@ -21,11 +21,6 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         type: dataTypes.STRING(3),
         allowNull: false,
       },
-      pagador_id: {
-        type: dataTypes.STRING(50),
-        allowNull: false,
-        defaultValue: "pendente",
-      },
       ag: {
         type: dataTypes.STRING(4),
         allowNull: false,

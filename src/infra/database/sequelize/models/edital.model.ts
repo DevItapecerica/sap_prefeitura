@@ -53,6 +53,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       as: "bolsistas",
     });
 
+    Edital.hasMany(models.BolsistasEdital, {
+      foreignKey: "edital_id",
+      as: "bolsistas_edital",
+      onDelete: "CASCADE",
+    });
+
     Edital.hasMany(models.BolsistaFalta, {
       foreignKey: "edital_id",
       as: "faltas",

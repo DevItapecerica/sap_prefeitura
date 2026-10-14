@@ -3,11 +3,6 @@ import { beforeEach, describe, it } from "node:test";
 import AppError from "../../../../core/appError.js";
 import { FtBolsistaService } from "../use-case/ft-bolsista.service.js";
 import { isValidCpf } from "../utils/cpf.js";
-import {
-  pagador,
-  verifyPagador,
-  verifyQuantityPagador,
-} from "../utils/pagador.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import { FtBolsistaDto } from "../dto/ft-bolsista.dto.js";
 
@@ -50,7 +45,6 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public vinculoDataVinculo = "2026-06-01";
   public vinculoExpireAt: string | null = "2026-06-30";
   public existingFalta = false;
-  public activeQuantityByPagador = 0;
   public createWithPaymentInfoCalled = false;
   public updateWithPaymentInfoCalled = false;
   public cancelVinculoCalled = false;
@@ -63,7 +57,6 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   private paymentInfo = new FakeModel({
     id: "payment-1",
-    pagador_id: pagador[0].id,
     bco: "001",
     ag: "1234",
     dig_ag: "0",
@@ -137,14 +130,6 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findAndCountVinculoCandidates() {
     return { count: 1, rows: [this.bolsista] };
-  }
-
-  async countActiveByPagador() {
-    return this.activeQuantityByPagador;
-  }
-
-  async findActiveVinculoByBolsista() {
-    return this.inactiveBolsista ? null : this.vinculo;
   }
 
   async findToExpire() {
@@ -260,7 +245,6 @@ const validBolsistaPayload = (): FtBolsistaDto => ({
     dig_ag: "0",
     conta: "123456",
     dig_conta: "1",
-    pagador_id: pagador[0].id,
   },
 });
 
@@ -285,15 +269,6 @@ describe("ft-bolsista utils", () => {
     assert.equal(isValidCpf("123"), false);
   });
 
-  it("valida pagador existente", () => {
-    assert.equal(verifyPagador(pagador[0].id).id, pagador[0].id);
-    assert.throws(() => verifyPagador("invalido"), AppError);
-  });
-
-  it("valida limite de pagador", () => {
-    assert.doesNotThrow(() => verifyQuantityPagador(2, 1));
-    assert.throws(() => verifyQuantityPagador(2, 2), AppError);
-  });
 });
 
 describe("FtBolsistaService", () => {
@@ -310,7 +285,7 @@ describe("FtBolsistaService", () => {
 
     assert.equal(repository.createWithPaymentInfoCalled, true);
     assert.equal(response.ok, true);
-    assert.equal(response.payment_info.pagador_id, pagador[0].id);
+    assert.equal(response.payment_info.bco, "001");
   });
 
   it("rejeita municipe ausente", async () => {
@@ -350,22 +325,6 @@ describe("FtBolsistaService", () => {
 
     assert.equal(repository.updateWithPaymentInfoCalled, true);
     assert.equal(response.get("municipe_uuid"), "11111111-1111-4111-8111-111111111111");
-  });
-
-  it("aplica limite do novo pagador somente quando existe vinculo ativo", async () => {
-    const payload = validBolsistaPayload();
-    payload.payment_info.pagador_id = pagador[1].id;
-    repository.activeQuantityByPagador = pagador[1].max_bolsista;
-
-    await assertAppError(
-      () => service.saveBolsista(payload, "bolsista-1"),
-      403,
-      "Quantidade maxima de bolsistas alcancada",
-    );
-
-    repository.inactiveBolsista = true;
-    await service.saveBolsista(payload, "bolsista-1");
-    assert.equal(repository.updateWithPaymentInfoCalled, true);
   });
 
   it("prorroga vinculos validos", async () => {

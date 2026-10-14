@@ -29,7 +29,6 @@ export class FtBolsistaPolicyService {
     }
 
     const requiredFields = [
-      ["pagador_id", "Pagador"],
       ["bco", "Banco"],
       ["ag", "Agencia"],
       ["dig_ag", "Digito da agencia"],

@@ -4,6 +4,7 @@ import {
   FtEditalDto,
   FtEditalQueryDto,
   FtVincularBolsistaDto,
+  FtAtualizarVinculoDto,
 } from "../../application/dto/ft-edital.dto.js";
 import { makeFtEditalService } from "../../factories/makeFtEditalService.js";
 import { FtRelatorioQueryDto } from "../../../ft-relatorio/application/dto/ft-relatorio.dto.js";
@@ -14,6 +15,7 @@ import { makeFtEditalEventPublisher } from "../../factories/ft-edital-events.fac
 import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
 import { FT_EDITAL_EVENTS } from "../../application/events/ft-edital.events.js";
 import FtEditalVincularBolsistaUseCase from "../../application/use-case/ft-edital.vincularBolsista.usecase.js";
+import FtEditalAtualizarVinculoUseCase from "../../application/use-case/ft-edital.atualizarVinculo.usecase.js";
 import { SequelizeFtEditalRepository } from "../../../../infra/database/sequelize/repositories/sequelize.ft-edital.repository.js";
 
 const service = makeFtEditalService();
@@ -134,6 +136,29 @@ export class FtEditalController {
     });
 
     return reply.status(201).send({ message: "Bolsista vinculado com sucesso" });
+  };
+
+  static atualizarVinculo = async (
+    request: FastifyRequest<{
+      Params: { id: string; bolsistaId: string };
+      Body: FtAtualizarVinculoDto;
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const useCase = new FtEditalAtualizarVinculoUseCase(new SequelizeFtEditalRepository());
+    const result = await useCase.execute(
+      request.params.id,
+      request.params.bolsistaId,
+      request.body,
+    );
+    await ftEditalEvents.publish(FT_EDITAL_EVENTS.vinculoUpdated, {
+      context: makeApplicationEventContext(request),
+      editalId: request.params.id,
+      bolsistaId: request.params.bolsistaId,
+      before: result.before,
+      after: result.after,
+    });
+    return reply.status(200).send({ message: "Vinculo atualizado com sucesso", vinculo: result.after });
   };
 
   static getAllEditalWithBolsista = async (

@@ -27,6 +27,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         },
         onDelete: "CASCADE",
       },
+      pagador_id: {
+        type: dataTypes.UUID,
+        allowNull: true,
+        references: { model: "pagadores", key: "uuid" },
+        onDelete: "RESTRICT",
+      },
       data_vinculo: {
         type: dataTypes.DATE,
         allowNull: false,
@@ -91,6 +97,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       foreignKey: "edital_id",
       as: "edital",
       onDelete: "CASCADE",
+    });
+
+    BolsistasEdital.belongsTo(models.Pagador, {
+      foreignKey: "pagador_id",
+      as: "pagador",
+      onDelete: "RESTRICT",
     });
   };
 

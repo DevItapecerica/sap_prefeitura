@@ -183,11 +183,12 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
             minItems: 1,
             items: {
               type: "object",
-              required: ["bolsista_id", "local"],
+              required: ["bolsista_id", "local", "pagador_id"],
               additionalProperties: false,
               properties: {
                 bolsista_id: { type: "string", format: "uuid" },
                 local: { type: "string", minLength: 1, pattern: "\\S" },
+                pagador_id: { type: "string", format: "uuid" },
               },
             },
           },
@@ -235,6 +236,45 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
       },
     },
     handler: FtEditalController.getEditalWithBolsista,
+  });
+
+  fastify.route({
+    method: "PUT",
+    url: "/:id/bolsista/:bolsistaId",
+    config: { audit: { failureAction: "UPDATE", module: "ft-edital", resourceType: "edital_bolsista", resourceIdParam: "bolsistaId" } },
+    schema: {
+      tags: tag,
+      security,
+      summary: "Atualizar local e pagador do vínculo ativo",
+      params: {
+        type: "object",
+        required: ["id", "bolsistaId"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          bolsistaId: { type: "string", format: "uuid" },
+        },
+      },
+      body: {
+        type: "object",
+        additionalProperties: false,
+        required: ["local", "pagador_id"],
+        properties: {
+          local: { type: "string", minLength: 1, pattern: "\\S" },
+          pagador_id: { type: "string", format: "uuid" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            vinculo: { type: "object", additionalProperties: true },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FtEditalController.atualizarVinculo,
   });
 
   fastify.route({

@@ -1,25 +1,12 @@
 import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
-// mockado - divida técnica;
-import {
-  pagador,
-  verifyQuantityPagador,
-} from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtEditalRepository } from "../../domain/repositories/ft-edital.repository.js";
 import { FtVinculoPolicyService } from "../../domain/services/ft-vinculo-policy.service.js";
 
 export default class FtEditalVincularBolsistaUseCase {
-  private readonly VALIDADE_ANOS = 0;
-  private readonly VALIDADE_MESES = 6;
-  private readonly VALIDADE_DIAS = 0;
-
-  private readonly calcularVencimento = (data_vinculo: Date) => {
-    const dataVencimento = new Date(data_vinculo);
-    dataVencimento.setFullYear(
-      dataVencimento.getFullYear() + this.VALIDADE_ANOS,
-    );
-    dataVencimento.setMonth(dataVencimento.getMonth() + this.VALIDADE_MESES);
-    dataVencimento.setDate(dataVencimento.getDate() + this.VALIDADE_DIAS);
-    return dataVencimento;
+  private readonly calcularVencimento = (dataVinculo: Date) => {
+    const vencimento = new Date(dataVinculo);
+    vencimento.setMonth(vencimento.getMonth() + 6);
+    return vencimento;
   };
 
   constructor(
@@ -29,91 +16,41 @@ export default class FtEditalVincularBolsistaUseCase {
 
   async execute(
     id: string,
-    bolsistas: Array<{ bolsista_id: string; local: string }>,
+    bolsistas: Array<{ bolsista_id: string; local: string; pagador_id: string }>,
     dataVinculo: any,
   ) {
-    if (!id) {
-      throw ftError(400, "Edital e obrigatorio");
-    }
-
-    if (!Array.isArray(bolsistas) || bolsistas.length === 0) {
-      throw ftError(400, "Lista de bolsistas e obrigatoria");
-    }
-
-    if (dataVinculo && Number.isNaN(Date.parse(String(dataVinculo)))) {
-      throw ftError(400, "Data de vinculo invalida");
-    }
+    if (!id) throw ftError(400, "Edital e obrigatorio");
+    if (!Array.isArray(bolsistas) || bolsistas.length === 0) throw ftError(400, "Lista de bolsistas e obrigatoria");
+    if (!dataVinculo || Number.isNaN(Date.parse(String(dataVinculo)))) throw ftError(400, "Data de vinculo invalida");
 
     const edital = await this.repository.findById(id);
-
-    if (!edital) {
-      throw ftError(404, "Edital not found");
-    }
-
+    if (!edital) throw ftError(404, "Edital not found");
     this.vinculoPolicy.ensureEditalAtivo(edital);
 
     const vinculos = [];
-
-    // recebe o id do bolsista
+    const ids = new Set<string>();
     for (const item of bolsistas) {
       const bolsistaId = item?.bolsista_id;
       const local = item?.local?.trim();
-      if (!bolsistaId || !local) {
-        throw ftError(400, "Bolsista e local sao obrigatorios");
-      }
+      const pagadorId = item?.pagador_id;
+      if (!bolsistaId || !local || !pagadorId) throw ftError(400, "Bolsista, local e pagador sao obrigatorios");
+      if (ids.has(bolsistaId)) throw ftError(400, "Bolsista duplicado no lote");
+      ids.add(bolsistaId);
 
       const bolsista = await this.repository.findBolsistaById(bolsistaId);
-
-      if (!bolsista) {
-        throw ftError(404, "Bolsista not found");
-      }
-
-      // pega os vinculos no edital
-      const vinculosDoPar = await this.repository.findVinculosByBolsistaEdital(
-        bolsistaId,
-        id,
-      );
-
-      // se tiver algo diferente de cancelado, n deixa vincular
+      if (!bolsista) throw ftError(404, "Bolsista not found");
+      const vinculosDoPar = await this.repository.findVinculosByBolsistaEdital(bolsistaId, id);
       this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar);
-
-      const activeVinculo = await this.repository.findActiveVinculoByBolsista(
-        bolsistaId,
-      );
-      if (activeVinculo) {
-        throw ftError(
-          403,
-          "Bolsista ja ativo em outro edital",
-        );
-      }
-
-      // edital e bolsistas tudo okay, vamos verificar pagamento
-      const paymentInfo = bolsista.get("payment_info");
-      const pagadorTarget = pagador.find(
-        (item) => item.id === paymentInfo?.pagador_id,
-      );
-
-      if (!pagadorTarget) {
-        throw ftError(403, "Pagador nao encontrado");
-      }
-
-      // verifica a quantidade de pagadores naquele edital deveria verificar por edital, mas acho que está geral
-      const quantity = await this.repository.countActiveByPagador(
-        paymentInfo.pagador_id,
-      );
-
-      verifyQuantityPagador(pagadorTarget.max_bolsista, quantity);
-
-      const vencimento = this.calcularVencimento(dataVinculo);
+      if (await this.repository.findActiveVinculoByBolsista(bolsistaId)) throw ftError(403, "Bolsista ja ativo em outro edital");
 
       vinculos.push({
         bolsista,
         local,
+        pagador_id: pagadorId,
         data_vinculo: dataVinculo,
-        expire_at: vencimento,
+        expire_at: this.calcularVencimento(new Date(dataVinculo)),
       });
     }
-
     return this.repository.vincularBolsistas(edital, vinculos);
   }
 }

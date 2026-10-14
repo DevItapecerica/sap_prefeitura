@@ -12,6 +12,7 @@ import normalizeBolsistasMigration, {
   normalizeDigits,
 } from "../20261013170000-normalize-bolsistas-to-municipes.js";
 import AesCryptService from "../../../../../core/security/aes/AesCrypt.service.js";
+import pagadoresMigration, { PAGADORES_INICIAIS } from "../20261014100000-create-pagadores-and-move-to-vinculos.js";
 
 const transaction = async (callback: (transaction: object) => Promise<void>) => callback({});
 
@@ -438,4 +439,82 @@ test("bolsista normalization rollback restores archive before dropping support t
   assert.ok(actions.indexOf("restore") < actions.indexOf("drop:bolsistas_legacy_archive"));
   assert.ok(actions.includes("drop:bolsistas_migration_divergences"));
   assert.ok(actions.includes("birth:required"));
+});
+
+const makePagadoresMigrationQueryInterface = (
+  links: Array<{ id: string; bolsista_id: string; pagador_id: string | null }> = [],
+  paymentRows: Array<{ id: string; bolsista_id: string; pagador_id: string | null }> = [],
+) => {
+  const tables = new Set<string>();
+  const columns: Record<string, Set<string>> = {
+    bolsistas_edital: new Set(),
+    payment_info: new Set(["pagador_id"]),
+  };
+  const inserts: Array<{ table: string; records: any[] }> = [];
+  const actions: string[] = [];
+  const seeded = new Set<string>();
+  const qi = {
+    tableExists: async (table: string) => tables.has(table),
+    describeTable: async (table: string) => Object.fromEntries([...(columns[table] ?? new Set())].map((column) => [column, {}])),
+    sequelize: {
+      transaction,
+      query: async (sql: string, options: any = {}) => {
+        if (sql.startsWith("SELECT uuid FROM pagadores WHERE")) return seeded.has(options.replacements.uuid) ? [{ uuid: options.replacements.uuid }] : [];
+        if (sql === "SELECT id, bolsista_id, pagador_id FROM payment_info") return paymentRows;
+        if (sql.startsWith("SELECT be.id")) return links;
+        if (sql.includes("pagadores_migration_pending WHERE")) return [];
+        if (sql.includes("COUNT(*) AS total")) return [{ total: 0 }];
+        if (sql.includes("COUNT(DISTINCT pagador_id)")) return [];
+        return [];
+      },
+    },
+    createTable: async (table: string) => { tables.add(table); actions.push(`create:${table}`); },
+    dropTable: async (table: string) => { tables.delete(table); actions.push(`drop:${table}`); },
+    addColumn: async (table: string, column: string) => { columns[table] ??= new Set(); columns[table].add(column); actions.push(`add:${table}.${column}`); },
+    removeColumn: async (table: string, column: string) => { columns[table]?.delete(column); actions.push(`remove:${table}.${column}`); },
+    addConstraint: async () => {}, removeConstraint: async () => {}, addIndex: async () => {}, removeIndex: async () => {},
+    bulkInsert: async (table: string, records: any[]) => {
+      inserts.push({ table, records });
+      if (table === "pagadores") records.forEach((record) => seeded.add(record.uuid));
+    },
+  } as unknown as QueryInterface;
+  return { qi, inserts, actions, tables, columns };
+};
+
+test("pagadores migration seeds eight records and removes payer from payment info", async () => {
+  const migration = makePagadoresMigrationQueryInterface();
+  await pagadoresMigration.up(migration.qi);
+  assert.equal(migration.inserts.filter((item) => item.table === "pagadores").length, PAGADORES_INICIAIS.length);
+  assert.ok(migration.actions.includes("add:bolsistas_edital.pagador_id"));
+  assert.ok(migration.actions.includes("remove:payment_info.pagador_id"));
+});
+
+test("pagadores migration can be safely reexecuted", async () => {
+  const migration = makePagadoresMigrationQueryInterface();
+  await pagadoresMigration.up(migration.qi);
+  await pagadoresMigration.up(migration.qi);
+  assert.equal(migration.inserts.filter((item) => item.table === "pagadores").length, PAGADORES_INICIAIS.length);
+});
+
+test("pagadores migration audits unknown legacy payer without PII", async () => {
+  const migration = makePagadoresMigrationQueryInterface([{ id: "v1", bolsista_id: "b1", pagador_id: "desconhecido" }]);
+  await pagadoresMigration.up(migration.qi);
+  const pending = migration.inserts.find((item) => item.table === "pagadores_migration_pending")?.records[0];
+  assert.deepEqual(Object.keys(pending).sort(), ["bolsista_edital_id", "bolsista_id", "createdAt", "legacy_pagador_id", "motivo", "uuid"]);
+  assert.equal(pending.motivo, "NAO_RECONHECIDO");
+});
+
+test("pagadores migration archives the original payment payer for lossless rollback", async () => {
+  const migration = makePagadoresMigrationQueryInterface([], [{ id: "pi1", bolsista_id: "b1", pagador_id: PAGADORES_INICIAIS[0][0] }]);
+  await pagadoresMigration.up(migration.qi);
+  const archived = migration.inserts.find((item) => item.table === "payment_info_pagador_legacy")?.records[0];
+  assert.equal(archived.payment_info_id, "pi1");
+  assert.equal(archived.pagador_id, PAGADORES_INICIAIS[0][0]);
+});
+
+test("pagadores migration rollback aborts when a bolsista has multiple payers", async () => {
+  const migration = makePagadoresMigrationQueryInterface();
+  (migration.qi.sequelize.query as any) = async (sql: string) => sql.includes("COUNT(DISTINCT pagador_id)") ? [{ bolsista_id: "b1" }] : [];
+  await assert.rejects(() => pagadoresMigration.down(migration.qi), /multiplos pagadores/);
+  assert.equal(migration.actions.length, 0);
 });

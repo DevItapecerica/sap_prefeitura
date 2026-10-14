@@ -1,5 +1,4 @@
 import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
-import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtRelatorioPeriodo } from "../../application/dto/ft-relatorio.dto.js";
 import {
   FtRelatorioBolsista,
@@ -24,7 +23,7 @@ export type FtRelatorioBolsistaRow = {
 };
 
 export type FtRelatorioLocal = {
-  local: string;
+  pagador: string;
   rows: FtRelatorioBolsistaRow[];
   total_bolsistas: number;
   total_valor: number;
@@ -52,17 +51,26 @@ export class FtRelatorioPagamentoService {
     const valorBruto = Number(edital.valor_bolsa);
     const valorDiario = diasUteis > 0 ? valorBruto / diasUteis : 0;
     const grouped: Record<string, FtRelatorioBolsistaRow[]> = {};
+    const bolsistasPorPagador = bolsistas.flatMap((item) => {
+      if (item.vinculos.length === 0) return [item];
+      const grupos = new Map<string, FtRelatorioVinculo[]>();
+      for (const vinculo of item.vinculos) {
+        const chave =
+          vinculo.pagador?.uuid || vinculo.pagador_id || "nao-identificado";
+        grupos.set(chave, [...(grupos.get(chave) ?? []), vinculo]);
+      }
+      return [...grupos.values()].map(
+        (vinculos) =>
+          new FtRelatorioBolsista(item.bolsista, item.faltas, vinculos),
+      );
+    });
 
-    for (const relatorioBolsista of bolsistas) {
+    for (const relatorioBolsista of bolsistasPorPagador) {
       const { bolsista, faltas: bolsistaFaltas } = relatorioBolsista;
 
-      const fallbackPagador = pagador.find(
-        (item) => item.id === bolsista.payment_info?.pagador_id,
-      );
-      const local =
-        relatorioBolsista.vinculos[0]?.local ||
-        fallbackPagador?.name ||
-        "SEM LOCAL";
+      const vinculo = relatorioBolsista.vinculos[0];
+      const pagador = vinculo?.pagador?.nome || "Pagador não identificado";
+      const local = vinculo?.local || "SEM LOCAL";
       const municipe = bolsista.municipe as any;
       const diasTrabalhados = this.countDiasUteisTrabalhados(
         relatorioBolsista,
@@ -78,11 +86,11 @@ export class FtRelatorioPagamentoService {
       const desconto = Math.min(valorBruto, diasSemVinculo * valorDiario);
       const valorLiquido = Math.max(0, valorBruto - desconto);
 
-      if (!grouped[local]) {
-        grouped[local] = [];
+      if (!grouped[pagador]) {
+        grouped[pagador] = [];
       }
 
-      grouped[local].push({
+      grouped[pagador].push({
         bco: bolsista.payment_info?.bco ?? undefined,
         ag: bolsista.payment_info?.ag ?? undefined,
         dig_ag: bolsista.payment_info?.dig_ag ?? undefined,
@@ -100,10 +108,10 @@ export class FtRelatorioPagamentoService {
       });
     }
 
-    const locais = Object.keys(grouped).map((local) => {
-      const rows = grouped[local];
+    const locais = Object.keys(grouped).map((pagador) => {
+      const rows = grouped[pagador];
       return {
-        local,
+        pagador,
         rows,
         total_bolsistas: rows.length,
         total_valor: this.roundCurrency(

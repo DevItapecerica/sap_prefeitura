@@ -37,7 +37,7 @@ export class FtRelatorioCsvFormatter {
 
     for (const local of relatorio.locais) {
       rows.push([]);
-      rows.push([`Local de pagamento: ${local.local}`]);
+      rows.push([`Pagador: ${local.pagador}`]);
       rows.push(header);
       rows.push(
         ...local.rows.map((row) => [
@@ -73,7 +73,9 @@ export class FtRelatorioCsvFormatter {
       this.formatCurrency(relatorio.total_valor),
     ]);
 
-    return rows.map((row) => row.map((cell) => this.formatCell(cell)).join(";")).join("\n");
+    return rows
+      .map((row) => row.map((cell) => this.formatCell(cell)).join(";"))
+      .join("\n");
   }
 
   private formatCell(cell: any): string {

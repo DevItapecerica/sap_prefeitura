@@ -1,7 +1,6 @@
 export class FtPaymentInfo {
   constructor(
     public readonly bco: string,
-    public readonly pagador_id: string,
     public readonly ag: string,
     public readonly dig_ag: string,
     public readonly conta: string,

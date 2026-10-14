@@ -7,11 +7,6 @@ import {
   FtBolsistaProrrogacaoDto,
   FtBolsistaQueryDto,
 } from "../dto/ft-bolsista.dto.js";
-import {
-  pagador,
-  verifyPagador,
-  verifyQuantityPagador,
-} from "../utils/pagador.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import { FtBolsistaPolicyService } from "../../domain/services/ft-bolsista-policy.service.js";
 import { FtFaltaPolicyService } from "../../domain/services/ft-falta-policy.service.js";
@@ -43,18 +38,10 @@ export class FtBolsistaService {
   async getAllBolsistas(query: FtBolsistaQueryDto = {}) {
     const { count, rows } = await this.repository.findAndCount(query);
 
-    const pagadorWithQuantity = await Promise.all(
-      pagador.map(async (item) => ({
-        ...item,
-        quantity: await this.repository.countActiveByPagador(item.id),
-      })),
-    );
-
     return {
       code: 200,
       bolsista: rows,
       count,
-      pagador: pagadorWithQuantity,
       message: "Bolsistas retrieved successfully",
       ok: true,
     };
@@ -88,8 +75,6 @@ export class FtBolsistaService {
 
     this.policy.validatePaymentInfo(paymentInfo);
 
-    verifyPagador(paymentInfo.pagador_id);
-
     const municipe = await this.repository.findMunicipeById(data.municipe_uuid);
     if (!municipe) {
       throw ftError(404, "Municipe not found");
@@ -111,7 +96,6 @@ export class FtBolsistaService {
           dig_ag: paymentInfo.dig_ag,
           conta: paymentInfo.conta,
           dig_conta: paymentInfo.dig_conta,
-          pagador_id: paymentInfo.pagador_id,
         },
       );
 
@@ -131,19 +115,6 @@ export class FtBolsistaService {
 
     this.policy.validatePaymentInfo(paymentInfo);
 
-    const selectedPagador = verifyPagador(paymentInfo.pagador_id);
-
-    const activeVinculo = await this.repository.findActiveVinculoByBolsista(id);
-    if (
-      activeVinculo &&
-      bolsista.get("payment_info")?.pagador_id !== paymentInfo.pagador_id
-    ) {
-      const quantity = await this.repository.countActiveByPagador(
-        paymentInfo.pagador_id,
-      );
-      verifyQuantityPagador(selectedPagador.max_bolsista, quantity);
-    }
-
     const currentPaymentInfo = bolsista.get("payment_info");
 
     if (!currentPaymentInfo) {
@@ -159,7 +130,6 @@ export class FtBolsistaService {
         dig_ag: paymentInfo.dig_ag,
         conta: paymentInfo.conta,
         dig_conta: paymentInfo.dig_conta,
-        pagador_id: paymentInfo.pagador_id,
       },
     );
   }

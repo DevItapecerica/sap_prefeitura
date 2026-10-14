@@ -60,12 +60,19 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
             "edital_id",
             "status",
             "local",
+            "pagador_id",
             "data_vinculo",
             "expire_at",
             "canceled_at",
             "concluded_at",
             "expired_at",
           ],
+          include: [{
+            model: db.Pagador,
+            as: "pagador",
+            paranoid: false,
+            attributes: ["uuid", "nome", "quantidade", "deletedAt"],
+          }],
         },
         {
           model: db.BolsistaFalta,
@@ -153,6 +160,8 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       vinculo.expired_at,
       vinculo.id,
       vinculo.local,
+      vinculo.pagador_id,
+      vinculo.pagador ?? null,
     );
   }
 
@@ -185,7 +194,6 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
 
     return new FtPaymentInfo(
       paymentInfo.bco,
-      paymentInfo.pagador_id,
       paymentInfo.ag,
       paymentInfo.dig_ag,
       paymentInfo.conta,

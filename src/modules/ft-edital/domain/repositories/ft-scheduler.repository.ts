@@ -4,11 +4,16 @@ export interface FtSchedulerRepository {
   concludeExpiredEdital(edital: any): Promise<{
     editalId: string;
     editalName: string;
-    bolsistasUpdated: number;
     vinculosUpdated: number;
+    before: unknown;
+    after: unknown;
+    vinculos: unknown[];
   }>;
   expireVinculo(vinculo: any): Promise<{
     bolsistaId: string;
     vinculoId: string;
+    editalId: string;
+    before: unknown;
+    after: unknown;
   }>;
 }

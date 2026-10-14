@@ -30,6 +30,20 @@ export const registerFtEditalAuditHandlers = (
       ...makeAuditBaseRecord(event, "ft-edital", "edital_bolsista"), action: "CREATE",
       resourceId: event.editalId, result: "SUCCESS", before: null, after: event.after,
     }, auditService, logger)),
+    events.subscribe(FT_EDITAL_EVENTS.vinculoUpdated, (event) => recordAuditEvent(event, {
+      ...makeAuditBaseRecord(event, "ft-edital", "edital_bolsista"), action: "UPDATE",
+      resourceId: `${event.editalId}:${event.bolsistaId}`, result: "SUCCESS", before: event.before, after: event.after,
+    }, auditService, logger)),
+    events.subscribe(FT_EDITAL_EVENTS.editalConcluded, (event) => recordAuditEvent(event, {
+      ...makeAuditBaseRecord(event, "ft-edital", "edital"), action: "UPDATE",
+      resourceId: event.editalId, result: "SUCCESS", before: event.before, after: event.after,
+      metadata: { automatic: true, vinculos: event.vinculos },
+    }, auditService, logger)),
+    events.subscribe(FT_EDITAL_EVENTS.vinculoExpired, (event) => recordAuditEvent(event, {
+      ...makeAuditBaseRecord(event, "ft-edital", "edital_bolsista"), action: "UPDATE",
+      resourceId: `${event.editalId}:${event.bolsistaId}`, result: "SUCCESS",
+      before: event.before, after: event.after, metadata: { automatic: true, vinculoId: event.vinculoId },
+    }, auditService, logger)),
   ];
   return () => unsubscribe.forEach((off) => off());
 };

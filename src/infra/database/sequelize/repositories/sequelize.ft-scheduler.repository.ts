@@ -43,34 +43,39 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
 
   async concludeExpiredEdital(edital: any) {
     return db.sequelize.transaction(async (transaction: any) => {
-      let bolsistasUpdated = 0;
       let vinculosUpdated = 0;
+      const now = new Date();
+      const before = edital.toJSON();
+      const vinculos: Array<{ before: unknown; after: unknown }> = [];
 
       edital.set("status", "inativo");
       await edital.save({ transaction });
 
       for (const bolsista of edital.get("bolsistas") || []) {
-        bolsista.set("status", "inativo");
-        await bolsista.save({ transaction });
-        bolsistasUpdated += 1;
-
         const vinculo = bolsista.get("BolsistasEdital");
 
         if (vinculo) {
+          const vinculoBefore = vinculo.toJSON();
           vinculo.set({
             status: "concluido",
-            concluded_at: new Date(),
+            concluded_at: now,
           });
           await vinculo.save({ transaction });
           vinculosUpdated += 1;
+          vinculos.push({
+            before: vinculoBefore,
+            after: vinculo.toJSON(),
+          });
         }
       }
 
       return {
         editalId: edital.get("id"),
         editalName: edital.get("name"),
-        bolsistasUpdated,
         vinculosUpdated,
+        before,
+        after: edital.toJSON(),
+        vinculos,
       };
     });
   }
@@ -78,14 +83,11 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
   async expireVinculo(vinculo: any) {
     return db.sequelize.transaction(async (transaction: any) => {
       const bolsistaId = vinculo.get("bolsista_id");
-      const bolsista = await db.Bolsistas.findByPk(bolsistaId, {
-        transaction,
-      });
-
-      if (bolsista) {
-        bolsista.set("status", "inativo");
-        await bolsista.save({ transaction });
-      }
+      const editalId = vinculo.get("edital_id");
+      const before = {
+        vinculo: vinculo.toJSON(),
+        bolsistaId,
+      };
 
       vinculo.set({
         status: "expirado",
@@ -96,6 +98,12 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
       return {
         bolsistaId,
         vinculoId: vinculo.get("id"),
+        editalId,
+        before,
+        after: {
+          vinculo: vinculo.toJSON(),
+          bolsistaId,
+        },
       };
     });
   }

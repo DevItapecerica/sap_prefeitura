@@ -22,8 +22,6 @@ export interface FtBolsistaRepository {
   findAndCountVinculoCandidates(
     query?: FtBolsistaQueryDto,
   ): Promise<{ count: number; rows: any[] }>;
-  countActiveByPagador(pagadorId: string): Promise<number>;
-  findActiveVinculoByBolsista(bolsistaId: string): Promise<any | null>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;
   findHistoricoByBolsistaId(bolsistaId: string): Promise<any[]>;

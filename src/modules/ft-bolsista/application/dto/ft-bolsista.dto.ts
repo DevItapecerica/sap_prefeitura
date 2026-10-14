@@ -1,6 +1,5 @@
 export interface FtPaymentInfoDto {
   bco: string;
-  pagador_id: string;
   ag: string;
   dig_ag: string;
   conta: string;

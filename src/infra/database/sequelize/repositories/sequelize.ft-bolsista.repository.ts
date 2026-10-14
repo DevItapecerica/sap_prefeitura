@@ -128,7 +128,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           as: "edital",
           attributes: ["id", "name"],
           through: {
-            attributes: ["status", "local", "data_vinculo", "expire_at"],
+            attributes: ["status", "local", "pagador_id", "data_vinculo", "expire_at"],
           },
           required: false,
         },
@@ -175,31 +175,6 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     return result;
   }
 
-  countActiveByPagador(pagadorId: string) {
-    return db.Bolsistas.count({
-      include: [
-        {
-          model: db.PaymentInfo,
-          as: "payment_info",
-          where: { pagador_id: pagadorId },
-        },
-        {
-          model: db.BolsistasEdital,
-          as: "bolsistas_edital",
-          required: true,
-          where: { status: "ativo" },
-        },
-      ],
-      distinct: true,
-    });
-  }
-
-  findActiveVinculoByBolsista(bolsistaId: string) {
-    return db.BolsistasEdital.findOne({
-      where: { bolsista_id: bolsistaId, status: "ativo" },
-    });
-  }
-
   async findToExpire(limitDate: Date) {
     const result = await db.Bolsistas.findAndCountAll({
       attributes: ["id", "municipe_uuid"],
@@ -219,6 +194,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
             prorrogated: false,
           },
           attributes: ["expire_at"],
+          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
         },
       ],
     });
@@ -234,7 +210,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           model: db.Edital,
           as: "edital",
           where: { id: editalId },
-          through: { attributes: ["status", "local", "data_vinculo", "expire_at"] },
+          through: { attributes: ["status", "local", "pagador_id", "data_vinculo", "expire_at"] },
         },
       ],
     });
@@ -258,6 +234,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         "expired_at",
         "prorrogated",
         "local",
+        "pagador_id",
         "createdAt",
         "updatedAt",
         "deletedAt",
@@ -273,6 +250,12 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
             "data_publicacao",
             "data_vencimento",
           ],
+        },
+        {
+          model: db.Pagador,
+          as: "pagador",
+          paranoid: false,
+          attributes: ["uuid", "nome", "quantidade", "deletedAt"],
         },
       ],
       order: [

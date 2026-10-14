@@ -27,11 +27,10 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   const paymentInfoSchema = {
     type: "object",
     additionalProperties: true,
-    required: ["bco", "pagador_id", "ag", "dig_ag", "conta", "dig_conta"],
+    required: ["bco", "ag", "dig_ag", "conta", "dig_conta"],
     properties: {
       id: { type: "string", format: "uuid" },
       bco: { type: "string" },
-      pagador_id: { type: "string", format: "uuid" },
       ag: { type: "string" },
       dig_ag: { type: "string" },
       conta: { type: "string" },
@@ -139,10 +138,6 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
             ok: { type: "boolean" },
             count: { type: "number" },
             bolsista: { type: "array", items: bolsistaSchema },
-            pagador: {
-              type: "array",
-              items: { type: "object", additionalProperties: true },
-            },
           },
         },
         ...errorResponseSchema,

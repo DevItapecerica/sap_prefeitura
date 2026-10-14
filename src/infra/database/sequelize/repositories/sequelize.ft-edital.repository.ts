@@ -8,6 +8,7 @@ import {
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
+import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
 
 export class SequelizeFtEditalRepository implements FtEditalRepository {
   private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
@@ -75,25 +76,6 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     });
   }
 
-  countActiveByPagador(pagadorId: string) {
-    return db.Bolsistas.count({
-      include: [
-        {
-          model: db.PaymentInfo,
-          as: "payment_info",
-          where: { pagador_id: pagadorId },
-        },
-        {
-          model: db.BolsistasEdital,
-          as: "bolsistas_edital",
-          required: true,
-          where: { status: "ativo" },
-        },
-      ],
-      distinct: true,
-    });
-  }
-
   findAllWithBolsista() {
     return db.Edital.findAll({
       attributes: ["name", "id"],
@@ -106,6 +88,13 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
             attributes: [],
             where: { [Op.or]: [{ status: "ativo" }, { status: "concluido" }] },
           },
+        },
+        {
+          model: db.BolsistasEdital,
+          as: "bolsistas_edital",
+          where: { [Op.or]: [{ status: "ativo" }, { status: "concluido" }] },
+          required: false,
+          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
         },
       ],
     });
@@ -151,6 +140,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
               { status: "expirado" },
             ],
           },
+          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
         },
       ],
       distinct: true,
@@ -207,15 +197,34 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
 
   async vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; local: string; data_vinculo?: string | Date, expire_at?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; local: string; pagador_id: string; data_vinculo?: string | Date, expire_at?: string | Date }>,
   ) {
     return db.sequelize.transaction(async (transaction: any) => {
+      const porPagador = new Map<string, number>();
+      for (const item of bolsistas) {
+        porPagador.set(item.pagador_id, (porPagador.get(item.pagador_id) ?? 0) + 1);
+      }
+      for (const [pagadorId, novos] of porPagador) {
+        const pagador = await db.Pagador.findByPk(pagadorId, {
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        });
+        if (!pagador) throw ftError(400, "Pagador inexistente ou excluido");
+        const ocupacao = await db.BolsistasEdital.count({
+          where: { edital_id: edital.get("id"), pagador_id: pagadorId, status: "ativo" },
+          transaction,
+        });
+        if (ocupacao + novos > Number(pagador.get("quantidade"))) {
+          throw ftError(409, `Capacidade do pagador excedida neste edital (${ocupacao + novos}/${pagador.get("quantidade")})`);
+        }
+      }
       const created = [];
       for (const item of bolsistas) {
         const vinculo = await db.BolsistasEdital.create({
           edital_id: edital.get("id"),
           bolsista_id: item.bolsista.get("id"),
           local: item.local,
+          pagador_id: item.pagador_id,
           data_vinculo: item.data_vinculo,
           expire_at: item.expire_at,
         }, {
@@ -225,6 +234,44 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         created.push(vinculo);
       }
       return created;
+    });
+  }
+
+  async updateActiveVinculo(
+    editalId: string,
+    bolsistaId: string,
+    data: { local: string; pagador_id: string },
+  ) {
+    return db.sequelize.transaction(async (transaction: any) => {
+      const vinculo = await db.BolsistasEdital.findOne({
+        where: { edital_id: editalId, bolsista_id: bolsistaId, status: "ativo" },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!vinculo) return null;
+
+      const pagador = await db.Pagador.findByPk(data.pagador_id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!pagador) throw ftError(400, "Pagador inexistente ou excluido");
+
+      const ocupacaoDestino = await db.BolsistasEdital.count({
+        where: {
+          edital_id: editalId,
+          pagador_id: data.pagador_id,
+          status: "ativo",
+          id: { [Op.ne]: vinculo.get("id") },
+        },
+        transaction,
+      });
+      if (ocupacaoDestino + 1 > Number(pagador.get("quantidade"))) {
+        throw ftError(409, `Capacidade do pagador excedida neste edital (${ocupacaoDestino + 1}/${pagador.get("quantidade")})`);
+      }
+
+      const before = vinculo.toJSON();
+      await vinculo.update(data, { transaction });
+      return { before, after: vinculo.toJSON() };
     });
   }
 }
