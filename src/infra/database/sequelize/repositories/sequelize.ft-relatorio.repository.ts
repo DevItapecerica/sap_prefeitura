@@ -61,18 +61,27 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
             "status",
             "local",
             "pagador_id",
+            "turno_id",
             "data_vinculo",
             "expire_at",
             "canceled_at",
             "concluded_at",
             "expired_at",
           ],
-          include: [{
-            model: db.Pagador,
-            as: "pagador",
-            paranoid: false,
-            attributes: ["uuid", "nome", "quantidade", "deletedAt"],
-          }],
+          include: [
+            {
+              model: db.Pagador,
+              as: "pagador",
+              paranoid: false,
+              attributes: ["uuid", "nome", "quantidade", "deletedAt"],
+            },
+            {
+              model: db.Turno,
+              as: "turno",
+              paranoid: false,
+              attributes: ["uuid", "nome", "hora_inicio", "hora_fim", "deletedAt"],
+            },
+          ],
         },
         {
           model: db.BolsistaFalta,
@@ -162,6 +171,8 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       vinculo.local,
       vinculo.pagador_id,
       vinculo.pagador ?? null,
+      vinculo.turno_id,
+      vinculo.turno ?? null,
     );
   }
 

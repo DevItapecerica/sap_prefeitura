@@ -35,6 +35,11 @@ class FakeModel {
 
 class FakeFtBolsistaRepository implements FtBolsistaRepository {
   async findFaltasByBolsistaPeriodo() { return []; }
+  async findAniversariantesAtivos() { return []; }
+  async createOcorrencia(data: any) { return new FakeModel({ id: "ocorrencia-1", ...data }); }
+  async findOcorrenciaById() { return null; }
+  async destroyOcorrencia() {}
+  async findAndCountOcorrenciasByBolsista() { return { count: 0, rows: [] }; }
   public duplicatedCpf = false;
   public missingBolsista = false;
   public missingEdital = false;

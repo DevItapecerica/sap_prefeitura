@@ -29,11 +29,11 @@ export interface FtEditalRepository {
   findActiveVinculoByBolsista(bolsistaId: string): Promise<any | null>;
   vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; local: string; pagador_id: string; data_vinculo?: string | Date; expire_at?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; local: string; pagador_id: string; turno_id: string; data_vinculo?: string | Date; expire_at?: string | Date }>,
   ): Promise<any[]>;
   updateActiveVinculo(
     editalId: string,
     bolsistaId: string,
-    data: { local: string; pagador_id: string },
+    data: { local: string; pagador_id: string; turno_id: string },
   ): Promise<{ before: any; after: any } | null>;
 }

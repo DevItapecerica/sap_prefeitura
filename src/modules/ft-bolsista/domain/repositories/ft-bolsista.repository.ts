@@ -23,6 +23,7 @@ export interface FtBolsistaRepository {
   findAndCountVinculoCandidates(
     query: FtBolsistaVinculoCandidatesQueryDto,
   ): Promise<{ count: number; rows: any[] }>;
+  findAniversariantesAtivos(): Promise<any[]>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;
   findHistoricoByBolsistaId(bolsistaId: string): Promise<any[]>;
@@ -53,4 +54,11 @@ export interface FtBolsistaRepository {
     dataInicio: string,
     dataFim: string,
   ): Promise<any[]>;
+  createOcorrencia(data: any): Promise<any>;
+  findOcorrenciaById(id: string): Promise<any | null>;
+  destroyOcorrencia(ocorrencia: any): Promise<void>;
+  findAndCountOcorrenciasByBolsista(
+    bolsistaId: string,
+    query?: import("../../application/dto/ft-bolsista.dto.js").FtBolsistaOcorrenciaQueryDto,
+  ): Promise<{ count: number; rows: any[] }>;
 }

@@ -33,6 +33,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         references: { model: "pagadores", key: "uuid" },
         onDelete: "RESTRICT",
       },
+      turno_id: {
+        type: dataTypes.UUID,
+        allowNull: true,
+        references: { model: "turnos", key: "uuid" },
+        onDelete: "RESTRICT",
+      },
       data_vinculo: {
         type: dataTypes.DATE,
         allowNull: false,
@@ -103,6 +109,15 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       foreignKey: "pagador_id",
       as: "pagador",
       onDelete: "RESTRICT",
+    });
+    BolsistasEdital.belongsTo(models.Turno, {
+      foreignKey: "turno_id",
+      as: "turno",
+      onDelete: "RESTRICT",
+    });
+    BolsistasEdital.hasMany(models.BolsistaOcorrencia, {
+      foreignKey: "bolsista_edital_id",
+      as: "ocorrencias",
     });
   };
 

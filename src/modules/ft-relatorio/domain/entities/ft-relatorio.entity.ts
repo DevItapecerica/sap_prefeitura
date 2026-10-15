@@ -18,6 +18,14 @@ export class FtRelatorioVinculo {
       quantidade: number;
       deletedAt?: Date | null;
     } | null,
+    public readonly turno_id?: string | null,
+    public readonly turno?: {
+      uuid: string;
+      nome: string;
+      hora_inicio: string;
+      hora_fim: string;
+      deletedAt?: Date | null;
+    } | null,
   ) {}
 }
 

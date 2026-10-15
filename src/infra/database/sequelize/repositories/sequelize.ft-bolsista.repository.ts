@@ -3,13 +3,15 @@ import db from "../index.js";
 import { FtBolsistaRepository } from "../../../../modules/ft-bolsista/domain/repositories/ft-bolsista.repository.js";
 import {
   FtBolsistaFaltaQueryDto,
+  FtBolsistaOcorrenciaQueryDto,
   FtBolsistaQueryDto,
   FtBolsistaVinculoCandidatesQueryDto,
 } from "../../../../modules/ft-bolsista/application/dto/ft-bolsista.dto.js";
-import { CANT_DUPLICATE } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
+import { CANT_DUPLICATE, MAX_IDADE_VINCULO } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
+import { calcularIdadeNaData } from "../../../../modules/ft-edital/domain/services/ft-idade-policy.service.js";
 
 export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   private readonly municipeMapper = new MunicipeMapper(
@@ -133,6 +135,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
               "status",
               "local",
               "pagador_id",
+              "turno_id",
               "data_vinculo",
               "expire_at",
             ],
@@ -157,11 +160,10 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
       edital_id: editalId,
     } = query;
     const search = String(rawSearch).trim();
-    const offset = Number(page) * Number(limit);
+    const referenceDate =
+      query.data_vinculo || new Date().toISOString().slice(0, 10);
     const result = await db.Bolsistas.findAndCountAll({
       where: { "$bolsistas_edital.id$": null },
-      offset,
-      limit: Number(limit),
       order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
       include: [
         {
@@ -191,7 +193,43 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
       distinct: true,
     });
     result.rows = await this.hydrateMany(result.rows);
-    return result;
+    const eligible = result.rows.filter((row: any) => {
+      const municipe = row.get?.("municipe") ?? row.municipe;
+      const nascimento = municipe?.nascimento ?? municipe?.get?.("nascimento");
+      if (!nascimento) return false;
+      try {
+        return (
+          calcularIdadeNaData(nascimento, referenceDate) <= MAX_IDADE_VINCULO
+        );
+      } catch {
+        return false;
+      }
+    });
+    const offset = Number(page) * Number(limit);
+    return {
+      count: eligible.length,
+      rows: eligible.slice(offset, offset + Number(limit)),
+    };
+  }
+
+  async findAniversariantesAtivos() {
+    const rows = await db.Bolsistas.findAll({
+      include: [
+        this.municipeInclude,
+        {
+          model: db.BolsistasEdital,
+          as: "bolsistas_edital",
+          required: true,
+          where: { status: "ativo" },
+          include: [
+            { model: db.Edital, as: "edital", attributes: ["id", "name"] },
+            { model: db.Turno, as: "turno", paranoid: false },
+          ],
+        },
+      ],
+      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
+    });
+    return this.hydrateMany(rows);
   }
 
   async findToExpire(limitDate: Date) {
@@ -213,7 +251,10 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
             prorrogated: false,
           },
           attributes: ["expire_at"],
-          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
+          include: [
+            { model: db.Pagador, as: "pagador", paranoid: false },
+            { model: db.Turno, as: "turno", paranoid: false },
+          ],
         },
       ],
     });
@@ -234,6 +275,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
               "status",
               "local",
               "pagador_id",
+              "turno_id",
               "data_vinculo",
               "expire_at",
             ],
@@ -262,6 +304,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         "prorrogated",
         "local",
         "pagador_id",
+        "turno_id",
         "createdAt",
         "updatedAt",
         "deletedAt",
@@ -284,6 +327,12 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           paranoid: false,
           attributes: ["uuid", "nome", "quantidade", "deletedAt"],
         },
+        {
+          model: db.Turno,
+          as: "turno",
+          paranoid: false,
+          attributes: ["uuid", "nome", "hora_inicio", "hora_fim", "deletedAt"],
+        },
       ],
       order: [
         ["data_vinculo", "DESC"],
@@ -303,6 +352,11 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         edital_id: editalId,
         ...(status ? { status } : {}),
       },
+      include: [{ model: db.Turno, as: "turno", paranoid: false }],
+      order: [
+        ["data_vinculo", "DESC"],
+        ["createdAt", "DESC"],
+      ],
     });
   }
 
@@ -424,6 +478,64 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         data_falta: { [Op.between]: [dataInicio, dataFim] },
       },
       order: [["data_falta", "ASC"]],
+    });
+  }
+
+  createOcorrencia(data: any) {
+    return db.BolsistaOcorrencia.create(data);
+  }
+
+  findOcorrenciaById(id: string) {
+    return db.BolsistaOcorrencia.findByPk(id, {
+      include: [{ model: db.BolsistasEdital, as: "vinculo", paranoid: false }],
+    });
+  }
+
+  async destroyOcorrencia(ocorrencia: any) {
+    await ocorrencia.destroy();
+  }
+
+  findAndCountOcorrenciasByBolsista(
+    bolsistaId: string,
+    query: FtBolsistaOcorrenciaQueryDto = {},
+  ) {
+    const { edital_id, page = "0", limit = "10" } = query;
+    return db.BolsistaOcorrencia.findAndCountAll({
+      offset: Number(page) * Number(limit),
+      limit: Number(limit),
+      order: [
+        ["data_ocorrencia", "DESC"],
+        ["createdAt", "DESC"],
+      ],
+      include: [
+        {
+          model: db.BolsistasEdital,
+          as: "vinculo",
+          paranoid: false,
+          required: true,
+          where: {
+            bolsista_id: bolsistaId,
+            ...(edital_id ? { edital_id } : {}),
+          },
+          include: [
+            { model: db.Edital, as: "edital", attributes: ["id", "name"] },
+            {
+              model: db.Pagador,
+              as: "pagador",
+              paranoid: false,
+              attributes: ["uuid", "nome"],
+            },
+            {
+              model: db.Turno,
+              as: "turno",
+              paranoid: false,
+              attributes: ["uuid", "nome", "hora_inicio", "hora_fim"],
+            },
+          ],
+        },
+        { model: db.UserModel, as: "author", attributes: ["id", "name"] },
+      ],
+      distinct: true,
     });
   }
 }

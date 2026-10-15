@@ -8,6 +8,7 @@ import { FtEditalRepository } from "../../domain/repositories/ft-edital.reposito
 import { FtEditalDto } from "../dto/ft-edital.dto.js";
 import { FtVinculoPolicyService } from "../../domain/services/ft-vinculo-policy.service.js";
 const PAGADOR_ID = "9d0f3aa1-1143-48d2-9cc2-45d38998fe36";
+const TURNO_ID = "6a9a904b-13d8-448d-b939-e8542afec428";
 
 class FakeModel {
   public destroyed = false;
@@ -53,6 +54,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
     bolsista: any;
     local: string;
     pagador_id: string;
+    turno_id: string;
     data_vinculo?: string | Date;
     expire_at?: string | Date;
   }> = [];
@@ -82,6 +84,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
     cpf: "52998224725",
     status: "inativo",
     payment_info: this.paymentInfo.toJSON(),
+    municipe: { nascimento: "1990-05-10" },
   });
 
   async findAll() {
@@ -159,6 +162,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
       bolsista: any;
       local: string;
       pagador_id: string;
+      turno_id: string;
       data_vinculo?: string | Date;
       expire_at?: string | Date;
     }>,
@@ -225,21 +229,22 @@ describe("FtEditalService", () => {
     const result = await atualizarVinculo.execute("edital-1", "bolsista-1", {
       local: "  Nova Secretaria  ",
       pagador_id: PAGADOR_ID,
+      turno_id: TURNO_ID,
     });
     assert.equal(repository.updateActiveVinculoCalled, true);
-    assert.deepEqual(repository.updatedVinculoPayload, { local: "Nova Secretaria", pagador_id: PAGADOR_ID });
+    assert.deepEqual(repository.updatedVinculoPayload, { local: "Nova Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID });
     assert.equal(result.after.local, "Nova Secretaria");
   });
 
   it("rejeita atualizacao sem local ou sem vinculo ativo", async () => {
     await assertAppError(
-      () => atualizarVinculo.execute("edital-1", "bolsista-1", { local: " ", pagador_id: PAGADOR_ID }),
+      () => atualizarVinculo.execute("edital-1", "bolsista-1", { local: " ", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }),
       400,
       "obrigatorios",
     );
     repository.missingActiveVinculo = true;
     await assertAppError(
-      () => atualizarVinculo.execute("edital-1", "bolsista-1", { local: "Secretaria", pagador_id: PAGADOR_ID }),
+      () => atualizarVinculo.execute("edital-1", "bolsista-1", { local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }),
       404,
       "Vinculo ativo",
     );
@@ -248,7 +253,7 @@ describe("FtEditalService", () => {
   it("rejeita atualizacao de vinculo em edital inativo", async () => {
     repository.editalInativo = true;
     await assertAppError(
-      () => atualizarVinculo.execute("edital-1", "bolsista-1", { local: "Secretaria", pagador_id: PAGADOR_ID }),
+      () => atualizarVinculo.execute("edital-1", "bolsista-1", { local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }),
       400,
       "Edital inativo",
     );
@@ -326,7 +331,7 @@ describe("FtEditalService", () => {
   });
 
   it("vincula bolsistas validos", async () => {
-    await vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09");
+    await vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09");
 
     assert.equal(repository.vincularBolsistasCalled, true);
     assert.equal(
@@ -337,8 +342,8 @@ describe("FtEditalService", () => {
 
   it("mantem pagadores diferentes no mesmo lote", async () => {
     await vincularBolsista.execute("edital-1", [
-      { bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID },
-      { bolsista_id: "bolsista-2", local: "CRAS", pagador_id: "e3f162d8-6187-456c-b85d-fc9243dcbce8" },
+      { bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID },
+      { bolsista_id: "bolsista-2", local: "CRAS", pagador_id: "e3f162d8-6187-456c-b85d-fc9243dcbce8", turno_id: TURNO_ID },
     ], "2026-06-09");
     assert.deepEqual(repository.vinculosPayload.map((item) => item.pagador_id), [
       PAGADOR_ID,
@@ -348,7 +353,7 @@ describe("FtEditalService", () => {
 
   it("exige pagador em cada item do lote", async () => {
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: "" }], "2026-06-09"),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: "", turno_id: TURNO_ID }], "2026-06-09"),
       400,
       "pagador",
     );
@@ -359,7 +364,7 @@ describe("FtEditalService", () => {
       repository.vinculoStatuses = [status];
 
       await assertAppError(
-        () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09"),
+        () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09"),
         403,
         "Bolsista ja vinculado a este edital",
       );
@@ -404,7 +409,7 @@ describe("FtEditalService", () => {
     repository.editalInativo = true;
 
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09"),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09"),
       400,
       "Edital inativo",
     );
@@ -414,7 +419,7 @@ describe("FtEditalService", () => {
     repository.missingBolsista = true;
 
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09"),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09"),
       404,
       "Bolsista not found",
     );
@@ -423,7 +428,7 @@ describe("FtEditalService", () => {
   it("rejeita bolsista que ja possui vinculo ativo", async () => {
     repository.bolsistaStatus = "ativo";
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09"),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09"),
       403,
       "Bolsista ja ativo em outro edital",
     );
@@ -433,7 +438,7 @@ describe("FtEditalService", () => {
     repository.invalidPagador = true;
 
     await assertAppError(
-      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09"),
+      () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09"),
       400,
       "Pagador inexistente",
     );

@@ -45,7 +45,7 @@ export class GerarFolhaPresencaBolsistaUseCase {
         nome: String(municipe.nome || ""),
         cargo: "Bolsista",
         unidade: String(vinculo.local || ""),
-        horario: "07:00 16:00",
+        horario: this.horarioTurno(vinculo.turno),
         localTrabalho: String(vinculo.local || ""),
         endereco: address,
       },
@@ -107,5 +107,11 @@ export class GerarFolhaPresencaBolsistaUseCase {
 
   private plain(value: any): any {
     return value?.toJSON?.() ?? value ?? {};
+  }
+
+  private horarioTurno(turno: any): string {
+    const data = this.plain(turno);
+    if (!data.hora_inicio || !data.hora_fim) return "Não informado";
+    return `${String(data.hora_inicio).slice(0, 5)} ${String(data.hora_fim).slice(0, 5)}`;
   }
 }

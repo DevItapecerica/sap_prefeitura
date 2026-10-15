@@ -23,6 +23,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
       throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
 
     const link = this.plain(vinculo);
+    const horarioTurno = this.horarioTurno(link.turno);
     const inicioVinculo = this.dateOnly(link.data_vinculo);
     const fimVinculo = this.dateOnly(
       link.canceled_at ||
@@ -74,7 +75,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
         data,
         situacao,
         horarioPrevisto:
-          inLink && weekday > 0 && weekday < 6 ? "07:00 16:00" : "",
+          inLink && weekday > 0 && weekday < 6 && link.turno ? horarioTurno : "",
         marcacoes: [] as string[],
         apontamentos: hasAbsence ? faltasPorDia.get(data)! : [],
       };
@@ -96,7 +97,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
         nome: String(municipe.nome || ""),
         cargo: "Bolsista",
         unidade: String(link.local || ""),
-        horario: "07:00 16:00",
+        horario: horarioTurno,
         localTrabalho: String(link.local || ""),
         endereco: address,
       },
@@ -148,5 +149,11 @@ export class GerarEspelhoPontoBolsistaUseCase {
 
   private plain(value: any): any {
     return value?.toJSON?.() ?? value ?? {};
+  }
+
+  private horarioTurno(turno: any): string {
+    const data = this.plain(turno);
+    if (!data.hora_inicio || !data.hora_fim) return "Não informado";
+    return `${String(data.hora_inicio).slice(0, 5)} ${String(data.hora_fim).slice(0, 5)}`;
   }
 }

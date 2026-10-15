@@ -10,6 +10,7 @@ import Sha256CryptService from "../../../../core/security/sha256/sha256.service.
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
 import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
 import { hasBlockingVinculo } from "../../../../modules/ft-edital/domain/services/ft-vinculo-policy.service.js";
+import { ensureBolsistaElegivelPorIdade } from "../../../../modules/ft-edital/domain/services/ft-idade-policy.service.js";
 
 export class SequelizeFtEditalRepository implements FtEditalRepository {
   private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
@@ -68,13 +69,17 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     await edital.destroy();
   }
 
-  findBolsistaById(id: string) {
-    return db.Bolsistas.findByPk(id, {
+  async findBolsistaById(id: string) {
+    const bolsista = await db.Bolsistas.findByPk(id, {
       include: [
         { model: db.PaymentInfo, as: "payment_info" },
         { model: db.MunicipeModel, as: "municipe" },
       ],
     });
+    if (!bolsista) return null;
+    const municipe = bolsista.get("municipe") as any;
+    if (municipe) bolsista.setDataValue("municipe", await this.municipeMapper.toDomain(municipe.toJSON()));
+    return bolsista;
   }
 
   findAllWithBolsista() {
@@ -95,7 +100,10 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
           as: "bolsistas_edital",
           where: { [Op.or]: [{ status: "ativo" }, { status: "concluido" }] },
           required: false,
-          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
+          include: [
+            { model: db.Pagador, as: "pagador", paranoid: false },
+            { model: db.Turno, as: "turno", paranoid: false },
+          ],
         },
       ],
     });
@@ -141,7 +149,10 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
               { status: "expirado" },
             ],
           },
-          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
+          include: [
+            { model: db.Pagador, as: "pagador", paranoid: false },
+            { model: db.Turno, as: "turno", paranoid: false },
+          ],
         },
       ],
       distinct: true,
@@ -198,7 +209,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
 
   async vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; local: string; pagador_id: string; data_vinculo?: string | Date, expire_at?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; local: string; pagador_id: string; turno_id: string; data_vinculo?: string | Date, expire_at?: string | Date }>,
   ) {
     return db.sequelize.transaction(async (transaction: any) => {
       const editalId = edital.get("id");
@@ -208,10 +219,15 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
 
       for (const item of bolsistasOrdenados) {
         const bolsistaId = item.bolsista.get("id");
-        await db.Bolsistas.findByPk(bolsistaId, {
+        const lockedBolsista = await db.Bolsistas.findByPk(bolsistaId, {
+          include: [{ model: db.MunicipeModel, as: "municipe" }],
           transaction,
           lock: transaction.LOCK.UPDATE,
         });
+        if (!lockedBolsista) throw ftError(404, "Bolsista not found");
+        const rawMunicipe = lockedBolsista.get("municipe") as any;
+        if (rawMunicipe) lockedBolsista.setDataValue("municipe", await this.municipeMapper.toDomain(rawMunicipe.toJSON()));
+        ensureBolsistaElegivelPorIdade(lockedBolsista, item.data_vinculo as string | Date);
 
         const vinculosDoPar = await db.BolsistasEdital.findAll({
           where: { bolsista_id: bolsistaId, edital_id: editalId },
@@ -252,6 +268,10 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
           throw ftError(409, `Capacidade do pagador excedida neste edital (${ocupacao + novos}/${pagador.get("quantidade")})`);
         }
       }
+      for (const turnoId of [...new Set(bolsistas.map((item) => item.turno_id))].sort()) {
+        const turno = await db.Turno.findByPk(turnoId, { transaction, lock: transaction.LOCK.UPDATE });
+        if (!turno) throw ftError(400, "Turno inexistente ou excluido");
+      }
       const created = [];
       for (const item of bolsistas) {
         const vinculo = await db.BolsistasEdital.create({
@@ -259,6 +279,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
           bolsista_id: item.bolsista.get("id"),
           local: item.local,
           pagador_id: item.pagador_id,
+          turno_id: item.turno_id,
           data_vinculo: item.data_vinculo,
           expire_at: item.expire_at,
         }, {
@@ -274,7 +295,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
   async updateActiveVinculo(
     editalId: string,
     bolsistaId: string,
-    data: { local: string; pagador_id: string },
+    data: { local: string; pagador_id: string; turno_id: string },
   ) {
     return db.sequelize.transaction(async (transaction: any) => {
       const vinculo = await db.BolsistasEdital.findOne({
@@ -289,6 +310,14 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         lock: transaction.LOCK.UPDATE,
       });
       if (!pagador) throw ftError(400, "Pagador inexistente ou excluido");
+      const turno = await db.Turno.findByPk(data.turno_id, {
+        paranoid: false,
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!turno || (turno.get("deletedAt") && data.turno_id !== vinculo.get("turno_id"))) {
+        throw ftError(400, "Turno inexistente ou excluido");
+      }
 
       const ocupacaoDestino = await db.BolsistasEdital.count({
         where: {
