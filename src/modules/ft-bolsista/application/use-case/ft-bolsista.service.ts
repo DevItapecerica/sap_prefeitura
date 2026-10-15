@@ -14,6 +14,7 @@ import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repo
 import { FtBolsistaPolicyService } from "../../domain/services/ft-bolsista-policy.service.js";
 import { FtFaltaPolicyService } from "../../domain/services/ft-falta-policy.service.js";
 import { FtVinculoPolicyService } from "../../../ft-edital/domain/services/ft-vinculo-policy.service.js";
+import { saoPauloDateParts, todayInSaoPaulo } from "../../../../core/utils/sao-paulo-date.js";
 
 export class FtBolsistaService {
   constructor(
@@ -51,23 +52,26 @@ export class FtBolsistaService {
   }
 
   async getBolsistasParaVinculo(query: FtBolsistaVinculoCandidatesQueryDto) {
-    const { count, rows } = await this.repository.findAndCountVinculoCandidates(
+    const { rows, hasMore, nextCursor } = await this.repository.findAndCountVinculoCandidates(
       query,
     );
 
     return {
       code: 200,
       bolsistas: rows,
-      count,
+      returned_count: rows.length,
+      has_more: hasMore,
+      next_cursor: nextCursor,
       message: "Bolsistas para vinculo retrieved successfully",
       ok: true,
     };
   }
 
   async getAniversariantes(mes?: string | number) {
-    const month = mes === undefined ? new Date().getMonth() + 1 : Number(mes);
+    const now = saoPauloDateParts();
+    const month = mes === undefined ? now.month : Number(mes);
     if (!Number.isInteger(month) || month < 1 || month > 12) throw ftError(400, "Mes invalido");
-    const year = new Date().getFullYear();
+    const year = now.year;
     const rows = await this.repository.findAniversariantesAtivos();
     const aniversariantes = rows.flatMap((row: any) => {
       const plain = row.toJSON?.() ?? row;
@@ -391,16 +395,21 @@ export class FtBolsistaService {
   }
 
   async createOcorrencia(bolsistaId: string, data: FtBolsistaOcorrenciaDto, authorId: number) {
-    const editalId = data?.edital_id;
+    const vinculoId = data?.bolsista_edital_id;
     const descricao = String(data?.descricao ?? "").trim();
     const date = String(data?.data_ocorrencia ?? "");
-    if (!bolsistaId || !editalId || !descricao || !date) throw ftError(400, "Bolsista, edital, data e descricao sao obrigatorios");
-    if (Number.isNaN(Date.parse(date))) throw ftError(400, "Data da ocorrencia invalida");
-    const today = new Date().toISOString().slice(0, 10);
+    if (!bolsistaId || !vinculoId || !descricao || !date) throw ftError(400, "Bolsista, vinculo, data e descricao sao obrigatorios");
+    if (descricao.length > 2000) throw ftError(400, "Descricao deve ter no maximo 2000 caracteres");
+    const parsedDate = new Date(`${date}T00:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date)
+      throw ftError(400, "Data da ocorrencia invalida");
+    const today = todayInSaoPaulo();
     if (date.slice(0, 10) > today) throw ftError(400, "Data da ocorrencia nao pode ser futura");
     if (!(await this.repository.findById(bolsistaId))) throw ftError(404, "Bolsista not found");
-    const vinculo = await this.repository.findVinculo(bolsistaId, editalId);
-    if (!vinculo) throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
+    const vinculo = await this.repository.findVinculoById(vinculoId);
+    if (!vinculo || String(vinculo.get("bolsista_id")) !== bolsistaId) {
+      throw ftError(404, "Vinculo do bolsista nao encontrado");
+    }
     const ocorrencia = await this.repository.createOcorrencia({
       bolsista_edital_id: vinculo.get("id"),
       data_ocorrencia: date.slice(0, 10),

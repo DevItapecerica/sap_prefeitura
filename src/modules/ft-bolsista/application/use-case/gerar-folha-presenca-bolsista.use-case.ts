@@ -1,6 +1,11 @@
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import RenderFolhaPresencaPdfUseCase from "../../../espelho-ponto/application/use-case/render-folha-presenca-pdf.use-case.js";
 import { ftError } from "../utils/ft-error.js";
+import {
+  getVinculoOperationalEnd,
+  resolveTurnoSnapshot,
+  selectLatestVinculoForPeriod,
+} from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
 
 type PdfGateway = Pick<RenderFolhaPresencaPdfUseCase, "execute">;
 
@@ -19,13 +24,10 @@ export class GerarFolhaPresencaBolsistaUseCase {
     if (!edital) throw ftError(404, "Edital not found");
 
     const vinculos = await this.repository.findHistoricoByBolsistaId(bolsistaId);
-    const vinculo = vinculos
-      .map((item) => this.plain(item))
-      .filter((item) => item.edital_id === editalId && this.intersects(item, periodo))
-      .sort((left, right) => {
-        const byStart = this.dateOnly(right.data_vinculo).localeCompare(this.dateOnly(left.data_vinculo));
-        return byStart || this.dateOnly(right.createdAt).localeCompare(this.dateOnly(left.createdAt));
-      })[0];
+    const vinculo = selectLatestVinculoForPeriod(
+      vinculos.filter((item: any) => String(item.get?.("edital_id") ?? item.edital_id) === editalId),
+      { inicio: periodo.inicio, fim: periodo.fim },
+    );
     if (!vinculo) throw ftError(409, "O vinculo nao abrange o mes selecionado");
 
     const person = this.plain(bolsista);
@@ -45,7 +47,7 @@ export class GerarFolhaPresencaBolsistaUseCase {
         nome: String(municipe.nome || ""),
         cargo: "Bolsista",
         unidade: String(vinculo.local || ""),
-        horario: this.horarioTurno(vinculo.turno),
+        horario: this.horarioTurno(resolveTurnoSnapshot(vinculo)),
         localTrabalho: String(vinculo.local || ""),
         endereco: address,
       },
@@ -57,14 +59,6 @@ export class GerarFolhaPresencaBolsistaUseCase {
       dias: this.days(periodo.inicio, periodo.fim, this.dateOnly(vinculo.data_vinculo), this.endDate(vinculo)),
       observacoes: "",
     }, requestId);
-  }
-
-  private intersects(link: any, periodo: { inicio: string; fim: string }) {
-    const inicio = this.dateOnly(link.data_vinculo);
-    const fim = this.dateOnly(
-      link.canceled_at || link.concluded_at || link.expired_at || link.expire_at,
-    );
-    return inicio <= periodo.fim && (!fim || fim >= periodo.inicio);
   }
 
   private parseMonth(value: string) {
@@ -97,7 +91,7 @@ export class GerarFolhaPresencaBolsistaUseCase {
   }
 
   private endDate(link: any): string {
-    return this.dateOnly(link.canceled_at || link.concluded_at || link.expired_at || link.expire_at);
+    return getVinculoOperationalEnd(link);
   }
 
   private dateOnly(value?: string | Date | null): string {

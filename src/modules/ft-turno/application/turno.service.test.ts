@@ -47,6 +47,9 @@ describe("TurnoService", () => {
     await service.create({ nome: "Tarde", hora_inicio: "13:00", hora_fim: "18:00" });
     await assert.rejects(() => service.update("t2", { nome: "Manhã", hora_inicio: "13:00", hora_fim: "18:00" }), (error: any) => error.statusCode === 409);
     await assert.rejects(() => service.get("missing"), (error: any) => error.statusCode === 404);
+    await assert.rejects(() => service.create({ nome: "x".repeat(121), hora_inicio: "08:00", hora_fim: "14:00" }), (error: any) => error.statusCode === 400);
+    assert.throws(() => service.list({ page: -1 }), (error: any) => error.statusCode === 400);
+    assert.throws(() => service.list({ limit: 101 }), (error: any) => error.statusCode === 400);
   });
 });
 

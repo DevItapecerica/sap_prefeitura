@@ -22,7 +22,7 @@ export interface FtBolsistaRepository {
   findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
   findAndCountVinculoCandidates(
     query: FtBolsistaVinculoCandidatesQueryDto,
-  ): Promise<{ count: number; rows: any[] }>;
+  ): Promise<{ rows: any[]; hasMore: boolean; nextCursor: string | null }>;
   findAniversariantesAtivos(): Promise<any[]>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;
@@ -33,6 +33,7 @@ export interface FtBolsistaRepository {
     editalId: string,
     status?: string,
   ): Promise<any | null>;
+  findVinculoById(id: string): Promise<any | null>;
   findFaltaByBolsistaEditalData(
     bolsistaId: string,
     editalId: string,

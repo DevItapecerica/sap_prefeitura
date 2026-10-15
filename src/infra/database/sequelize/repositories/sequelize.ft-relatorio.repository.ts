@@ -13,6 +13,7 @@ import {
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
+import { resolveTurnoSnapshot, selectLatestVinculoForPeriod } from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
 
 export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
   private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
@@ -62,6 +63,9 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
             "local",
             "pagador_id",
             "turno_id",
+            "turno_nome_snapshot",
+            "turno_hora_inicio_snapshot",
+            "turno_hora_fim_snapshot",
             "data_vinculo",
             "expire_at",
             "canceled_at",
@@ -133,9 +137,11 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     const paymentInfo = bolsista.payment_info
       ? this.toFtPaymentInfo(bolsista.payment_info)
       : undefined;
-    const vinculos = (bolsista.bolsistas_edital || [])
-      .filter((vinculo: any) => this.vinculoIntersectsPeriod(vinculo, periodo))
-      .map((vinculo: any) => this.toFtRelatorioVinculo(vinculo));
+    const selected = selectLatestVinculoForPeriod(bolsista.bolsistas_edital || [], {
+      inicio: periodo.data_inicio,
+      fim: periodo.data_fim,
+    });
+    const vinculos = selected ? [this.toFtRelatorioVinculo(selected)] : [];
 
     if (vinculos.length === 0) {
       return null;
@@ -159,6 +165,7 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
 
   private toFtRelatorioVinculo(model: any): FtRelatorioVinculo {
     const vinculo = this.toPlain(model);
+    const turnoSnapshot = resolveTurnoSnapshot(vinculo);
 
     return new FtRelatorioVinculo(
       vinculo.status,
@@ -172,32 +179,11 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       vinculo.pagador_id,
       vinculo.pagador ?? null,
       vinculo.turno_id,
-      vinculo.turno ?? null,
+      turnoSnapshot.hora_inicio ? { ...(vinculo.turno ?? {}), ...turnoSnapshot } : null,
+      vinculo.turno_nome_snapshot,
+      vinculo.turno_hora_inicio_snapshot,
+      vinculo.turno_hora_fim_snapshot,
     );
-  }
-
-  private vinculoIntersectsPeriod(
-    vinculo: any,
-    periodo: FtRelatorioPeriodo,
-  ): boolean {
-    const dataVinculo = this.toDateOnly(vinculo.data_vinculo);
-    const fimOperacional = this.getOperationalEndDate(vinculo);
-
-    if (dataVinculo > periodo.data_fim) {
-      return false;
-    }
-
-    return !fimOperacional || fimOperacional >= periodo.data_inicio;
-  }
-
-  private getOperationalEndDate(vinculo: any): string | null {
-    const value =
-      vinculo.canceled_at ||
-      vinculo.concluded_at ||
-      vinculo.expired_at ||
-      vinculo.expire_at;
-
-    return value ? this.toDateOnly(value) : null;
   }
 
   private toFtPaymentInfo(model: any): FtPaymentInfo {

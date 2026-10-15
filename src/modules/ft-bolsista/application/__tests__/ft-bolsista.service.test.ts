@@ -136,7 +136,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findAndCountVinculoCandidates(query: any) {
     this.vinculoCandidatesQuery = query;
-    return { count: 1, rows: [this.bolsista] };
+    return { rows: [this.bolsista], hasMore: false, nextCursor: null };
   }
 
   async findToExpire() {
@@ -193,6 +193,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     this.vinculo.set("data_vinculo", this.vinculoDataVinculo);
     this.vinculo.set("expire_at", this.vinculoExpireAt);
     return this.missingVinculo ? null : this.vinculo;
+  }
+
+  async findVinculoById() {
+    return this.findVinculo();
   }
 
   async destroyBolsista(bolsista: any) {
@@ -482,7 +486,7 @@ describe("FtBolsistaService", () => {
     });
 
     assert.equal(response.ok, true);
-    assert.equal(response.count, 1);
+    assert.equal(response.returned_count, 1);
     assert.equal(response.bolsistas.length, 1);
     assert.equal(
       repository.vinculoCandidatesQuery.edital_id,

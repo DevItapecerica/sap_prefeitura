@@ -1,6 +1,11 @@
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import RenderEspelhoPontoPdfUseCase from "../../../espelho-ponto/application/use-case/render-espelho-ponto-pdf.use-case.js";
 import { ftError } from "../utils/ft-error.js";
+import {
+  getVinculoOperationalEnd,
+  resolveTurnoSnapshot,
+  selectLatestVinculoForPeriod,
+} from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
 
 type PdfGateway = Pick<RenderEspelhoPontoPdfUseCase, "execute">;
 
@@ -18,25 +23,23 @@ export class GerarEspelhoPontoBolsistaUseCase {
     const edital = await this.repository.findEditalById(editalId);
     if (!edital) throw ftError(404, "Edital not found");
 
-    const vinculo = await this.repository.findVinculo(bolsistaId, editalId);
-    if (!vinculo)
+    const vinculos = (await this.repository.findHistoricoByBolsistaId(bolsistaId))
+      .map((item: any) => this.plain(item))
+      .filter((item: any) => String(item.edital_id) === editalId);
+    if (!vinculos.length)
       throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
+    const vinculo = selectLatestVinculoForPeriod(
+      vinculos,
+      { inicio: periodo.inicio, fim: periodo.fim },
+    );
+    if (!vinculo)
+      throw ftError(409, "Vinculo nao vigente no mes informado");
 
     const link = this.plain(vinculo);
-    const horarioTurno = this.horarioTurno(link.turno);
+    const turno = resolveTurnoSnapshot(link);
+    const horarioTurno = this.horarioTurno(turno);
     const inicioVinculo = this.dateOnly(link.data_vinculo);
-    const fimVinculo = this.dateOnly(
-      link.canceled_at ||
-        link.concluded_at ||
-        link.expired_at ||
-        link.expire_at,
-    );
-    if (
-      inicioVinculo > periodo.fim ||
-      (fimVinculo && fimVinculo < periodo.inicio)
-    ) {
-      throw ftError(409, "O vinculo nao abrange o mes selecionado");
-    }
+    const fimVinculo = getVinculoOperationalEnd(link);
 
     const faltas = await this.repository.findFaltasByBolsistaPeriodo(
       bolsistaId,
@@ -75,7 +78,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
         data,
         situacao,
         horarioPrevisto:
-          inLink && weekday > 0 && weekday < 6 && link.turno ? horarioTurno : "",
+          inLink && weekday > 0 && weekday < 6 && turno.hora_inicio ? horarioTurno : "",
         marcacoes: [] as string[],
         apontamentos: hasAbsence ? faltasPorDia.get(data)! : [],
       };

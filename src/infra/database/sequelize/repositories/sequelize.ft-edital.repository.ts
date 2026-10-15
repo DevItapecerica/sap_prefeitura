@@ -11,6 +11,7 @@ import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/
 import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
 import { hasBlockingVinculo } from "../../../../modules/ft-edital/domain/services/ft-vinculo-policy.service.js";
 import { ensureBolsistaElegivelPorIdade } from "../../../../modules/ft-edital/domain/services/ft-idade-policy.service.js";
+import { resolveTurnoSnapshot } from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
 
 export class SequelizeFtEditalRepository implements FtEditalRepository {
   private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
@@ -19,6 +20,15 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
     return Promise.all(rows.map(async (row) => {
       const municipe = row.get?.("municipe");
       if (municipe) row.setDataValue("municipe", await this.municipeMapper.toDomain(municipe.toJSON()));
+      for (const vinculo of (row.get?.("bolsistas_edital") as any[]) ?? []) {
+        const snapshot = resolveTurnoSnapshot(vinculo.toJSON?.() ?? vinculo);
+        if (snapshot.hora_inicio && snapshot.hora_fim) {
+          vinculo.setDataValue("turno", {
+            ...(vinculo.get?.("turno")?.toJSON?.() ?? {}),
+            ...snapshot,
+          });
+        }
+      }
       return row;
     }));
   }
@@ -268,18 +278,24 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
           throw ftError(409, `Capacidade do pagador excedida neste edital (${ocupacao + novos}/${pagador.get("quantidade")})`);
         }
       }
+      const turnos = new Map<string, any>();
       for (const turnoId of [...new Set(bolsistas.map((item) => item.turno_id))].sort()) {
         const turno = await db.Turno.findByPk(turnoId, { transaction, lock: transaction.LOCK.UPDATE });
         if (!turno) throw ftError(400, "Turno inexistente ou excluido");
+        turnos.set(turnoId, turno);
       }
       const created = [];
       for (const item of bolsistas) {
+        const turno = turnos.get(item.turno_id);
         const vinculo = await db.BolsistasEdital.create({
           edital_id: editalId,
           bolsista_id: item.bolsista.get("id"),
           local: item.local,
           pagador_id: item.pagador_id,
           turno_id: item.turno_id,
+          turno_nome_snapshot: turno.get("nome"),
+          turno_hora_inicio_snapshot: turno.get("hora_inicio"),
+          turno_hora_fim_snapshot: turno.get("hora_fim"),
           data_vinculo: item.data_vinculo,
           expire_at: item.expire_at,
         }, {
@@ -333,7 +349,15 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
       }
 
       const before = vinculo.toJSON();
-      await vinculo.update(data, { transaction });
+      const turnoChanged = data.turno_id !== vinculo.get("turno_id");
+      await vinculo.update({
+        ...data,
+        ...(turnoChanged ? {
+          turno_nome_snapshot: turno.get("nome"),
+          turno_hora_inicio_snapshot: turno.get("hora_inicio"),
+          turno_hora_fim_snapshot: turno.get("hora_fim"),
+        } : {}),
+      }, { transaction });
       return { before, after: vinculo.toJSON() };
     });
   }

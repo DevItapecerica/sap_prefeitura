@@ -11,6 +11,7 @@ const normalizeTime = (value: unknown) => {
 const normalize = (raw: TurnoInput): TurnoInput => {
   const nome = String(raw?.nome ?? "").trim().replace(/\s+/g, " ");
   if (!nome) throw ftError(400, "Nome do turno e obrigatorio");
+  if (nome.length > 120) throw ftError(400, "Nome do turno deve ter no maximo 120 caracteres");
   const hora_inicio = normalizeTime(raw?.hora_inicio);
   const hora_fim = normalizeTime(raw?.hora_fim);
   if (hora_inicio === hora_fim) throw ftError(400, "Inicio e fim do turno devem ser diferentes");
@@ -19,7 +20,15 @@ const normalize = (raw: TurnoInput): TurnoInput => {
 
 export class TurnoService {
   constructor(private readonly repository: TurnoRepository) {}
-  list(query: TurnoQuery) { return this.repository.list(query); }
+  list(query: TurnoQuery) {
+    const page = Number(query.page ?? 0);
+    const limit = Number(query.limit ?? 10);
+    if (!Number.isInteger(page) || page < 0)
+      throw ftError(400, "Pagina invalida");
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+      throw ftError(400, "Limite invalido");
+    return this.repository.list({ ...query, page, limit });
+  }
   async get(uuid: string) {
     const item = await this.repository.findById(uuid);
     if (!item) throw ftError(404, "Turno nao encontrado");

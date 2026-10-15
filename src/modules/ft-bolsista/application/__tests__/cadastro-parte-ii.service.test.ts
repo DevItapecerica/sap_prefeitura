@@ -25,14 +25,14 @@ describe("cadastro parte II no bolsista", () => {
     const ocorrencia = model({ id: "o1", vinculo });
     const repository = {
       findById: async () => model({ id: "b1" }),
-      findVinculo: async () => vinculo,
+      findVinculoById: async () => vinculo,
       createOcorrencia: async (data: any) => model({ id: "o1", ...data }),
       findAndCountOcorrenciasByBolsista: async () => ({ count: 1, rows: [ocorrencia] }),
       findOcorrenciaById: async () => ocorrencia,
       destroyOcorrencia: async () => { removed = true; },
     };
     const service = new FtBolsistaService(repository as any);
-    const created = await service.createOcorrencia("b1", { edital_id: "e1", data_ocorrencia: "2026-10-15", descricao: "  Atendimento  " }, 7);
+    const created = await service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "2026-10-15", descricao: "  Atendimento  " }, 7);
     assert.equal(created.ocorrencia.get("descricao"), "Atendimento");
     assert.equal((await service.listOcorrencias("b1")).count, 1);
     await service.deleteOcorrencia("b1", "o1");
@@ -41,7 +41,21 @@ describe("cadastro parte II no bolsista", () => {
 
   it("valida dados e data futura da ocorrencia", async () => {
     const service = new FtBolsistaService({} as any);
-    await assert.rejects(() => service.createOcorrencia("b1", { edital_id: "e1", data_ocorrencia: "", descricao: "" }, 1), (error: any) => error.statusCode === 400);
-    await assert.rejects(() => service.createOcorrencia("b1", { edital_id: "e1", data_ocorrencia: "2999-01-01", descricao: "Teste" }, 1), (error: any) => error.statusCode === 400);
+    await assert.rejects(() => service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "", descricao: "" }, 1), (error: any) => error.statusCode === 400);
+    await assert.rejects(() => service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "2999-01-01", descricao: "Teste" }, 1), (error: any) => error.statusCode === 400);
+    await assert.rejects(() => service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "2026-02-30", descricao: "Teste" }, 1), (error: any) => error.statusCode === 400);
+    await assert.rejects(() => service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "2026-10-15", descricao: "x".repeat(2001) }, 1), (error: any) => error.statusCode === 400);
+  });
+
+  it("rejeita vinculo pertencente a outro bolsista", async () => {
+    const repository = {
+      findById: async () => model({ id: "b1" }),
+      findVinculoById: async () => model({ id: "v1", bolsista_id: "b2" }),
+    };
+    const service = new FtBolsistaService(repository as any);
+    await assert.rejects(
+      () => service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "2026-10-15", descricao: "Teste" }, 1),
+      (error: any) => error.statusCode === 404,
+    );
   });
 });

@@ -212,11 +212,11 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         type: "object",
         required: ["edital_id"],
         properties: {
-          page: { type: "string" },
-          limit: { type: "string" },
+          limit: { type: "string", pattern: "^(?:[1-9]|[1-4][0-9]|50)$" },
           search: { type: "string" },
           edital_id: { type: "string", format: "uuid" },
           data_vinculo: { type: "string", format: "date" },
+          cursor: { type: "string", maxLength: 1024 },
         },
       },
       response: {
@@ -225,7 +225,9 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
           properties: {
             message: { type: "string" },
             ok: { type: "boolean" },
-            count: { type: "number" },
+            returned_count: { type: "number" },
+            has_more: { type: "boolean" },
+            next_cursor: { anyOf: [{ type: "string" }, { type: "null" }] },
             bolsistas: { type: "array", items: bolsistaSchema },
           },
         },
@@ -576,9 +578,9 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
     config: { audit: { failureAction: "CREATE", module: "ft-bolsista", resourceType: "ocorrencia", resourceIdParam: "id" } },
     schema: {
       tags: tag, security, summary: "Registrar ocorrencia no historico do bolsista", params: uuidParam,
-      body: { type: "object", additionalProperties: false, required: ["edital_id", "data_ocorrencia", "descricao"], properties: {
-        edital_id: { type: "string", format: "uuid" }, data_ocorrencia: { type: "string", format: "date" },
-        descricao: { type: "string", minLength: 1, pattern: "\\S" },
+      body: { type: "object", additionalProperties: false, required: ["bolsista_edital_id", "data_ocorrencia", "descricao"], properties: {
+        bolsista_edital_id: { type: "string", format: "uuid" }, data_ocorrencia: { type: "string", format: "date" },
+        descricao: { type: "string", minLength: 1, maxLength: 2000, pattern: "\\S" },
       } },
       response: { 201: { type: "object", properties: { message: { type: "string" }, ocorrencia: ocorrenciaSchema, ok: { type: "boolean" } } }, ...errorResponseSchema },
     },
@@ -591,7 +593,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
     config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "ocorrencia", resourceIdParam: "id" } },
     schema: {
       tags: tag, security, summary: "Listar ocorrencias do bolsista", params: uuidParam,
-      querystring: { type: "object", properties: { edital_id: { type: "string", format: "uuid" }, page: { type: "string" }, limit: { type: "string" } } },
+      querystring: { type: "object", properties: { bolsista_edital_id: { type: "string", format: "uuid" }, edital_id: { type: "string", format: "uuid" }, page: { type: "string", pattern: "^\\d+$" }, limit: { type: "string", pattern: "^(?:[1-9]|[1-9]\\d|100)$" } } },
       response: { 200: { type: "object", properties: { message: { type: "string" }, ocorrencias: { type: "array", items: ocorrenciaSchema }, count: { type: "number" }, ok: { type: "boolean" } } }, ...errorResponseSchema },
     },
     handler: FrenteTrabalhoBolsistaController.listOcorrencias,

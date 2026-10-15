@@ -39,6 +39,18 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         references: { model: "turnos", key: "uuid" },
         onDelete: "RESTRICT",
       },
+      turno_nome_snapshot: {
+        type: dataTypes.STRING(120),
+        allowNull: true,
+      },
+      turno_hora_inicio_snapshot: {
+        type: dataTypes.TIME,
+        allowNull: true,
+      },
+      turno_hora_fim_snapshot: {
+        type: dataTypes.TIME,
+        allowNull: true,
+      },
       data_vinculo: {
         type: dataTypes.DATE,
         allowNull: false,

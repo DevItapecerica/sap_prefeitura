@@ -12,6 +12,9 @@ import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
 import { calcularIdadeNaData } from "../../../../modules/ft-edital/domain/services/ft-idade-policy.service.js";
+import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
+import { todayInSaoPaulo } from "../../../../core/utils/sao-paulo-date.js";
+import { resolveTurnoSnapshot } from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
 
 export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   private readonly municipeMapper = new MunicipeMapper(
@@ -136,6 +139,9 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
               "local",
               "pagador_id",
               "turno_id",
+              "turno_nome_snapshot",
+              "turno_hora_inicio_snapshot",
+              "turno_hora_fim_snapshot",
               "data_vinculo",
               "expire_at",
             ],
@@ -154,62 +160,111 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     query: FtBolsistaVinculoCandidatesQueryDto,
   ) {
     const {
-      page = "0",
-      limit = "10",
+      limit: rawLimit = "25",
       search: rawSearch = "",
       edital_id: editalId,
     } = query;
+    const limit = Number(rawLimit);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+      throw ftError(400, "Limite deve ser um inteiro entre 1 e 50");
+    }
     const search = String(rawSearch).trim();
-    const referenceDate =
-      query.data_vinculo || new Date().toISOString().slice(0, 10);
-    const result = await db.Bolsistas.findAndCountAll({
-      where: { "$bolsistas_edital.id$": null },
-      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
-      include: [
-        {
-          ...this.municipeInclude,
-          where: search ? { nome: { [Op.like]: `%${search}%` } } : undefined,
-        },
-        {
-          model: db.PaymentInfo,
-          as: "payment_info",
-          required: true,
-          attributes: { exclude: ["bolsista_id"] },
-        },
-        {
-          model: db.BolsistasEdital,
-          as: "bolsistas_edital",
-          required: false,
-          paranoid: false,
-          where: CANT_DUPLICATE
-            ? {
-                [Op.or]: [{ status: "ativo" }, { edital_id: editalId }],
-              }
-            : { status: "ativo" },
-          attributes: ["id"],
-        },
-      ],
-      subQuery: false,
-      distinct: true,
-    });
-    result.rows = await this.hydrateMany(result.rows);
-    const eligible = result.rows.filter((row: any) => {
-      const municipe = row.get?.("municipe") ?? row.municipe;
-      const nascimento = municipe?.nascimento ?? municipe?.get?.("nascimento");
-      if (!nascimento) return false;
-      try {
-        return (
-          calcularIdadeNaData(nascimento, referenceDate) <= MAX_IDADE_VINCULO
-        );
-      } catch {
-        return false;
+    const referenceDate = query.data_vinculo || todayInSaoPaulo();
+    let scanCursor = this.decodeCandidateCursor(query.cursor);
+    const eligible: any[] = [];
+    const batchSize = Math.max(50, Math.min(200, limit * 4));
+
+    while (eligible.length <= limit) {
+      const cursorWhere = scanCursor
+        ? {
+            [Op.or]: [
+              { "$municipe.nome$": { [Op.gt]: scanCursor.nome } },
+              {
+                [Op.and]: [
+                  { "$municipe.nome$": scanCursor.nome },
+                  { id: { [Op.gt]: scanCursor.id } },
+                ],
+              },
+            ],
+          }
+        : {};
+      const rows = await db.Bolsistas.findAll({
+        where: { "$bolsistas_edital.id$": null, ...cursorWhere },
+        limit: batchSize,
+        order: [
+          [{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"],
+          ["id", "ASC"],
+        ],
+        include: [
+          {
+            ...this.municipeInclude,
+            where: search ? { nome: { [Op.like]: `%${search}%` } } : undefined,
+          },
+          {
+            model: db.PaymentInfo,
+            as: "payment_info",
+            required: true,
+            attributes: { exclude: ["bolsista_id"] },
+          },
+          {
+            model: db.BolsistasEdital,
+            as: "bolsistas_edital",
+            required: false,
+            paranoid: false,
+            where: CANT_DUPLICATE
+              ? { [Op.or]: [{ status: "ativo" }, { edital_id: editalId }] }
+              : { status: "ativo" },
+            attributes: ["id"],
+          },
+        ],
+        subQuery: false,
+      });
+      if (!rows.length) break;
+      const hydrated = await this.hydrateMany(rows);
+      for (const row of hydrated) {
+        const municipe = row.get?.("municipe") ?? row.municipe;
+        const nome = String(municipe?.nome ?? municipe?.get?.("nome") ?? "");
+        scanCursor = { nome, id: String(row.get?.("id") ?? row.id) };
+        const nascimento = municipe?.nascimento ?? municipe?.get?.("nascimento");
+        if (!nascimento) continue;
+        try {
+          if (calcularIdadeNaData(nascimento, referenceDate) <= MAX_IDADE_VINCULO) {
+            eligible.push(row);
+            if (eligible.length > limit) break;
+          }
+        } catch { /* dado legado inválido não é elegível */ }
       }
-    });
-    const offset = Number(page) * Number(limit);
+      if (eligible.length > limit || rows.length < batchSize) break;
+    }
+    const selected = eligible.slice(0, limit);
+    const last = selected.at(-1);
+    const lastMunicipe = last?.get?.("municipe") ?? last?.municipe;
+    const hasMore = eligible.length > limit;
     return {
-      count: eligible.length,
-      rows: eligible.slice(offset, offset + Number(limit)),
+      rows: selected,
+      hasMore,
+      nextCursor: hasMore && last
+        ? this.encodeCandidateCursor({
+            nome: String(lastMunicipe?.nome ?? lastMunicipe?.get?.("nome") ?? ""),
+            id: String(last.get?.("id") ?? last.id),
+          })
+        : null,
     };
+  }
+
+  private encodeCandidateCursor(value: { nome: string; id: string }) {
+    return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+  }
+
+  private decodeCandidateCursor(value?: string) {
+    if (!value) return null;
+    try {
+      const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+      if (typeof parsed?.nome !== "string" || typeof parsed?.id !== "string") throw new Error();
+      return { nome: parsed.nome, id: parsed.id };
+    } catch {
+      throw ftError(400, "Cursor de candidatos invalido");
+    }
   }
 
   async findAniversariantesAtivos() {
@@ -276,6 +331,9 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
               "local",
               "pagador_id",
               "turno_id",
+              "turno_nome_snapshot",
+              "turno_hora_inicio_snapshot",
+              "turno_hora_fim_snapshot",
               "data_vinculo",
               "expire_at",
             ],
@@ -286,8 +344,8 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     return this.hydrateMany(rows);
   }
 
-  findHistoricoByBolsistaId(bolsistaId: string) {
-    return db.BolsistasEdital.findAll({
+  async findHistoricoByBolsistaId(bolsistaId: string) {
+    const rows = await db.BolsistasEdital.findAll({
       where: { bolsista_id: bolsistaId },
       paranoid: false,
       attributes: [
@@ -305,6 +363,9 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         "local",
         "pagador_id",
         "turno_id",
+        "turno_nome_snapshot",
+        "turno_hora_inicio_snapshot",
+        "turno_hora_fim_snapshot",
         "createdAt",
         "updatedAt",
         "deletedAt",
@@ -339,6 +400,14 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         ["createdAt", "DESC"],
       ],
     });
+    for (const row of rows) {
+      const turno = resolveTurnoSnapshot(row.toJSON());
+      if (turno.hora_inicio && turno.hora_fim) row.setDataValue("turno", {
+        ...(row.get("turno") as any)?.toJSON?.(),
+        ...turno,
+      });
+    }
+    return rows;
   }
 
   findEditalById(editalId: string) {
@@ -358,6 +427,10 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         ["createdAt", "DESC"],
       ],
     });
+  }
+
+  findVinculoById(id: string) {
+    return db.BolsistasEdital.findByPk(id, { paranoid: false });
   }
 
   findFaltaByBolsistaEditalData(
@@ -499,7 +572,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     bolsistaId: string,
     query: FtBolsistaOcorrenciaQueryDto = {},
   ) {
-    const { edital_id, page = "0", limit = "10" } = query;
+    const { edital_id, bolsista_edital_id, page = "0", limit = "10" } = query;
     return db.BolsistaOcorrencia.findAndCountAll({
       offset: Number(page) * Number(limit),
       limit: Number(limit),
@@ -515,6 +588,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           required: true,
           where: {
             bolsista_id: bolsistaId,
+            ...(bolsista_edital_id ? { id: bolsista_edital_id } : {}),
             ...(edital_id ? { edital_id } : {}),
           },
           include: [

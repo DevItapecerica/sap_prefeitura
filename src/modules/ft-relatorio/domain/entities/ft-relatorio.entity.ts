@@ -26,6 +26,9 @@ export class FtRelatorioVinculo {
       hora_fim: string;
       deletedAt?: Date | null;
     } | null,
+    public readonly turno_nome_snapshot?: string | null,
+    public readonly turno_hora_inicio_snapshot?: string | null,
+    public readonly turno_hora_fim_snapshot?: string | null,
   ) {}
 }
 
