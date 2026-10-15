@@ -14,6 +14,7 @@ import normalizeBolsistasMigration, {
 import AesCryptService from "../../../../../core/security/aes/AesCrypt.service.js";
 import pagadoresMigration, { PAGADORES_INICIAIS } from "../20261014100000-create-pagadores-and-move-to-vinculos.js";
 import auditErrorMessageMigration from "../20261014170000-add-error-message-to-audit-logs.js";
+import relatorioTipoMigration from "../20261015120000-add-tipo-ft-relatorio-arquivos.js";
 
 const transaction = async (callback: (transaction: object) => Promise<void>) => callback({});
 
@@ -31,6 +32,30 @@ test("audit error message migration is idempotent and reversible", async () => {
   await auditErrorMessageMigration.up(queryInterface);
   await auditErrorMessageMigration.down(queryInterface);
   await auditErrorMessageMigration.down(queryInterface);
+
+  assert.equal(added, 1);
+  assert.equal(removed, 1);
+});
+
+test("report file type migration is idempotent and reversible", async () => {
+  let hasType = false;
+  let added = 0;
+  let removed = 0;
+  const queryInterface = {
+    describeTable: async () => hasType ? { tipo: { type: "VARCHAR(32)" } } : {},
+    addColumn: async (_table: string, column: string, definition: any) => {
+      assert.equal(column, "tipo");
+      assert.equal(definition.defaultValue, "espelhos_ponto");
+      hasType = true;
+      added += 1;
+    },
+    removeColumn: async () => { hasType = false; removed += 1; },
+  } as unknown as QueryInterface;
+
+  await relatorioTipoMigration.up(queryInterface);
+  await relatorioTipoMigration.up(queryInterface);
+  await relatorioTipoMigration.down(queryInterface);
+  await relatorioTipoMigration.down(queryInterface);
 
   assert.equal(added, 1);
   assert.equal(removed, 1);

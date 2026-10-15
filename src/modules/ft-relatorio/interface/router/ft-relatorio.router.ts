@@ -36,6 +36,7 @@ const arquivoSchema = {
   type: "object", additionalProperties: true,
   properties: {
     id: { type: "string", format: "uuid" }, nome_arquivo: { type: "string" },
+    tipo: { type: "string", enum: ["espelhos_ponto", "folhas_presenca"] },
     status: { type: "string", enum: ["aguardando", "processando", "concluido", "erro", "excluido"] },
     edital_id: { type: "string", format: "uuid" }, mes: { type: "string" }, solicitado_por: { type: "number" },
     tamanho_bytes: { type: ["number", "null"] }, total_bolsistas: { type: "number" }, total_gerados: { type: "number" }, total_falhas: { type: "number" },
@@ -116,6 +117,15 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
       body: { type: "object", additionalProperties: false, required: ["mes"], properties: { mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } } },
       response: { 202: { type: "object", properties: { arquivo: arquivoSchema } }, ...errorResponseSchema } },
     handler: FtRelatorioController.solicitarEspelhosPonto,
+  });
+
+  fastify.route({
+    method: "POST", url: "/edital/:id/folhas-presenca",
+    config: { audit: { failureAction: "EXPORT", module: "ft-relatorio", resourceType: "lote_folha_presenca", resourceIdParam: "id" } },
+    schema: { tags: relatorioTags, security: jwtSecurity, summary: "Solicitar folhas de presenca em lote", params: editalIdParamsSchema,
+      body: { type: "object", additionalProperties: false, required: ["mes"], properties: { mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } } },
+      response: { 202: { type: "object", properties: { arquivo: arquivoSchema } }, ...errorResponseSchema } },
+    handler: FtRelatorioController.solicitarFolhasPresenca,
   });
 
   fastify.route({

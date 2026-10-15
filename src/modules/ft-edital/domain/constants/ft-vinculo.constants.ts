@@ -1,1 +1,1 @@
-export const CANT_DUPLICATE = false;
+export const CANT_DUPLICATE = true;

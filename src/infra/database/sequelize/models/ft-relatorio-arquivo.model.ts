@@ -4,6 +4,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const model = sequelize.define<Model>("FtRelatorioArquivo", {
     id: { type: dataTypes.UUID, primaryKey: true, allowNull: false },
     nome_arquivo: { type: dataTypes.STRING(255), allowNull: false },
+    tipo: { type: dataTypes.STRING(32), allowNull: false, defaultValue: "espelhos_ponto" },
     status: { type: dataTypes.ENUM("aguardando", "processando", "concluido", "erro", "excluido"), allowNull: false, defaultValue: "aguardando" },
     edital_id: { type: dataTypes.UUID, allowNull: false },
     mes: { type: dataTypes.STRING(7), allowNull: false },
