@@ -3,7 +3,7 @@ export interface MunicipeProtectedSnapshot {
   nome: string;
   cpf: string;
   cpfHash?: string;
-  nascimento: string;
+  nascimento: string | null;
   telefone: string | null;
   rua: string;
   bairro: string;

@@ -9,7 +9,13 @@ import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.re
 type PdfGenerator = { execute(bolsistaId: string, editalId: string, mes: string): Promise<{ file: Buffer }> };
 
 export class FtRelatorioArquivoWorkerService {
-  constructor(private readonly files: FtRelatorioArquivoRepository, private readonly reports: FtRelatorioRepository, private readonly pdf: PdfGenerator, private readonly archiveDir = FT_REPORT_ARCHIVE_DIR) {}
+  constructor(
+    private readonly files: FtRelatorioArquivoRepository,
+    private readonly reports: FtRelatorioRepository,
+    private readonly espelhoPdf: PdfGenerator,
+    private readonly archiveDir = FT_REPORT_ARCHIVE_DIR,
+    private readonly folhaPresencaPdf: PdfGenerator = espelhoPdf,
+  ) {}
 
   async run(now = new Date()) {
     const stale = new Date(now.getTime() - 30 * 60_000);
@@ -41,7 +47,13 @@ export class FtRelatorioArquivoWorkerService {
 
   private async process(job: any) {
     const period = { data_inicio: `${job.mes}-01`, data_fim: this.monthEnd(job.mes) };
-    const people = await this.reports.findBolsistasFaltasByEditalMes(job.edital_id, period);
+    const people = (await this.reports.findBolsistasFaltasByEditalMes(job.edital_id, period))
+      .slice()
+      .sort((left: any, right: any) => String(left.bolsista?.nome || "").localeCompare(
+        String(right.bolsista?.nome || ""),
+        "pt-BR",
+        { sensitivity: "base" },
+      ));
     if (people.length === 0) throw new Error("Nenhum bolsista vinculado ao edital no mes selecionado");
     await this.files.progress(job.id, people.length, 0, 0);
     const root = resolve(this.archiveDir);
@@ -54,16 +66,22 @@ export class FtRelatorioArquivoWorkerService {
     archive.pipe(output);
     let generated = 0;
     const failures: Array<{ id: string; nome: string; erro: string }> = [];
+    const isFolhaPresenca = job.tipo === "folhas_presenca";
+    const pdf = isFolhaPresenca ? this.folhaPresencaPdf : this.espelhoPdf;
     try {
       for (let index = 0; index < people.length; index += 4) {
         const chunk = people.slice(index, index + 4);
         const results = await Promise.all(chunk.map(async (item) => {
           const person: any = item.bolsista;
-          try { return { person, pdf: await this.pdf.execute(String(person.id), job.edital_id, job.mes) }; }
+          try { return { person, pdf: await pdf.execute(String(person.id), job.edital_id, job.mes) }; }
           catch (error) { return { person, error: error instanceof Error ? error.message : String(error) }; }
         }));
         for (const result of results) {
-          if (result.pdf) { archive.append(result.pdf.file, { name: `${this.slug(result.person.nome)}-${String(result.person.id).slice(0, 8)}.pdf` }); generated += 1; }
+          if (result.pdf) {
+            const prefix = isFolhaPresenca ? "folha-presenca-" : "";
+            archive.append(result.pdf.file, { name: `${prefix}${this.slug(result.person.nome)}-${String(result.person.id).slice(0, 8)}.pdf` });
+            generated += 1;
+          }
           else failures.push({ id: String(result.person.id), nome: String(result.person.nome || ""), erro: String(result.error) });
         }
         await this.files.progress(job.id, people.length, generated, failures.length);

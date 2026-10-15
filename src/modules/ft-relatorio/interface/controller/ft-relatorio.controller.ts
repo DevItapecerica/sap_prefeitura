@@ -30,6 +30,23 @@ export class FtRelatorioController {
     return reply.status(202).send({ arquivo });
   };
 
+  static solicitarFolhasPresenca = async (
+    request: FastifyRequest<{ Params: { id: string }; Body: { mes: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const arquivo = await arquivoService.request(
+      request.params.id,
+      request.body.mes,
+      Number(request.user.id),
+      "folhas_presenca",
+    );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request), module: "ft-relatorio", resourceType: "lote_folha_presenca",
+      resourceId: arquivo.id, filters: { editalId: request.params.id, mes: request.body.mes }, returnedCount: 1,
+    });
+    return reply.status(202).send({ arquivo });
+  };
+
   static listarDownloads = async (
     request: FastifyRequest<{ Querystring: { page?: number; limit?: number } }>,
     reply: FastifyReply,

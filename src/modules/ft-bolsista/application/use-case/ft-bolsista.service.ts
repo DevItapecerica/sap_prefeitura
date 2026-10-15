@@ -1,5 +1,4 @@
 import { ftError } from "../utils/ft-error.js";
-import { isValidCpf } from "../utils/cpf.js";
 import {
   FtBolsistaDto,
   FtBolsistaCancelamentoDto,
@@ -7,12 +6,8 @@ import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaProrrogacaoDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../dto/ft-bolsista.dto.js";
-import {
-  pagador,
-  verifyPagador,
-  verifyQuantityPagador,
-} from "../utils/pagador.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import { FtBolsistaPolicyService } from "../../domain/services/ft-bolsista-policy.service.js";
 import { FtFaltaPolicyService } from "../../domain/services/ft-falta-policy.service.js";
@@ -44,24 +39,16 @@ export class FtBolsistaService {
   async getAllBolsistas(query: FtBolsistaQueryDto = {}) {
     const { count, rows } = await this.repository.findAndCount(query);
 
-    const pagadorWithQuantity = await Promise.all(
-      pagador.map(async (item) => ({
-        ...item,
-        quantity: await this.repository.countActiveByPagador(item.id),
-      })),
-    );
-
     return {
       code: 200,
       bolsista: rows,
       count,
-      pagador: pagadorWithQuantity,
       message: "Bolsistas retrieved successfully",
       ok: true,
     };
   }
 
-  async getBolsistasParaVinculo(query: FtBolsistaQueryDto = {}) {
+  async getBolsistasParaVinculo(query: FtBolsistaVinculoCandidatesQueryDto) {
     const { count, rows } = await this.repository.findAndCountVinculoCandidates(
       query,
     );
@@ -76,16 +63,11 @@ export class FtBolsistaService {
   }
 
   async saveBolsista(data: FtBolsistaDto, id?: string) {
-    this.policy.validateBolsistaPayload(data);
-
-    if (!isValidCpf(data?.cpf)) {
-      throw ftError(400, "CPF invalido");
-    }
-
     if (id) {
       return await this.updateBolsista(data, id);
     }
 
+    this.policy.validateBolsistaPayload(data);
     return await this.createBolsista(data);
   }
 
@@ -94,26 +76,20 @@ export class FtBolsistaService {
 
     this.policy.validatePaymentInfo(paymentInfo);
 
-    verifyPagador(paymentInfo.pagador_id);
+    const municipe = await this.repository.findMunicipeById(data.municipe_uuid);
+    if (!municipe) {
+      throw ftError(404, "Municipe not found");
+    }
 
-    const repeated = await this.repository.findByCpf(data.cpf);
+    const repeated = await this.repository.findByMunicipeUuid(data.municipe_uuid);
     if (repeated) {
-      throw ftError(403, "Bolsista already exists");
+      throw ftError(409, "Bolsista already exists");
     }
 
     const { bolsista: newBolsista, paymentInfo: newPaymentInfo } =
       await this.repository.createWithPaymentInfo(
         {
-          nome: data.nome,
-          cpf: data.cpf,
-          telefone: data.telefone,
-          local: data.local,
-          cep: data.cep,
-          numero: data.numero,
-          logradouro: data.logradouro,
-          bairro: data.bairro,
-          cidade: data.cidade,
-          uf: data.uf,
+          municipe_uuid: data.municipe_uuid,
         },
         {
           bco: paymentInfo.bco,
@@ -121,12 +97,13 @@ export class FtBolsistaService {
           dig_ag: paymentInfo.dig_ag,
           conta: paymentInfo.conta,
           dig_conta: paymentInfo.dig_conta,
-          pagador_id: paymentInfo.pagador_id,
         },
       );
 
+    const created = await this.repository.findById(newBolsista.get("id"));
+
     return {
-      ...newBolsista.toJSON(),
+      ...(created?.toJSON?.() ?? newBolsista.toJSON()),
       payment_info: newPaymentInfo.toJSON(),
       ok: true,
       message: "Bolsista created successfully",
@@ -139,18 +116,6 @@ export class FtBolsistaService {
 
     this.policy.validatePaymentInfo(paymentInfo);
 
-    const selectedPagador = verifyPagador(paymentInfo.pagador_id);
-
-    if (
-      bolsista.get("status") === "ativo" &&
-      bolsista.get("payment_info")?.pagador_id !== paymentInfo.pagador_id
-    ) {
-      const quantity = await this.repository.countActiveByPagador(
-        paymentInfo.pagador_id,
-      );
-      verifyQuantityPagador(selectedPagador.max_bolsista, quantity);
-    }
-
     const currentPaymentInfo = bolsista.get("payment_info");
 
     if (!currentPaymentInfo) {
@@ -159,18 +124,6 @@ export class FtBolsistaService {
 
     return this.repository.updateWithPaymentInfo(
       bolsista,
-      {
-        nome: data.nome,
-        cpf: data.cpf,
-        telefone: data.telefone,
-        local: data.local,
-        cep: data.cep,
-        numero: data.numero,
-        logradouro: data.logradouro,
-        bairro: data.bairro,
-        cidade: data.cidade,
-        uf: data.uf,
-      },
       currentPaymentInfo,
       {
         bco: paymentInfo.bco,
@@ -178,7 +131,6 @@ export class FtBolsistaService {
         dig_ag: paymentInfo.dig_ag,
         conta: paymentInfo.conta,
         dig_conta: paymentInfo.dig_conta,
-        pagador_id: paymentInfo.pagador_id,
       },
     );
   }
@@ -215,7 +167,7 @@ export class FtBolsistaService {
 
       const { bolsista } = await this.getBolsistaById(item.bolsista_id);
 
-      if (!bolsista || bolsista.get("status") !== "ativo") {
+      if (!bolsista) {
         throw ftError(404, "Bolsista not found");
       }
 

@@ -11,7 +11,6 @@ export interface FtEditalRepository {
   update(edital: any, data: any): Promise<any>;
   destroy(edital: any): Promise<void>;
   findBolsistaById(id: string): Promise<any | null>;
-  countActiveByPagador(pagadorId: string): Promise<number>;
   findAllWithBolsista(): Promise<any[]>;
   findBolsistasByEdital(
     id: string,
@@ -27,8 +26,14 @@ export interface FtEditalRepository {
     bolsistaId: string,
     editalId: string,
   ): Promise<any[]>;
+  findActiveVinculoByBolsista(bolsistaId: string): Promise<any | null>;
   vincularBolsistas(
     edital: any,
-    bolsistas: Array<{ bolsista: any; data_vinculo?: string | Date }>,
+    bolsistas: Array<{ bolsista: any; local: string; pagador_id: string; data_vinculo?: string | Date; expire_at?: string | Date }>,
   ): Promise<any[]>;
+  updateActiveVinculo(
+    editalId: string,
+    bolsistaId: string,
+    data: { local: string; pagador_id: string },
+  ): Promise<{ before: any; after: any } | null>;
 }

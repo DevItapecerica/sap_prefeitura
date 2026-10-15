@@ -8,6 +8,7 @@ import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 import { FtRelatorioArquivoRepository } from "../../domain/repositories/ft-relatorio-arquivo.repository.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
 import { FtRelatorioPeriodoService } from "../../domain/services/ft-relatorio-periodo.service.js";
+import { FtRelatorioArquivoTipo } from "../../domain/entities/ft-relatorio-arquivo.entity.js";
 
 export class FtRelatorioArquivoService {
   constructor(
@@ -16,13 +17,19 @@ export class FtRelatorioArquivoService {
     private readonly period = new FtRelatorioPeriodoService(),
   ) {}
 
-  async request(editalId: string, mes: string, userId: number) {
+  async request(
+    editalId: string,
+    mes: string,
+    userId: number,
+    tipo: FtRelatorioArquivoTipo = "espelhos_ponto",
+  ) {
     this.period.resolveMonth({ mes });
     const edital = await this.reports.findEditalById(editalId);
     if (!edital) throw ftError(404, "Edital not found");
     const id = randomUUID();
-    const name = `espelhos-ponto-${this.slug(edital.name || editalId)}-${mes}.zip`;
-    const created = await this.files.create({ id, nome_arquivo: name, status: "aguardando", edital_id: editalId, mes, solicitado_por: userId, total_bolsistas: 0, total_gerados: 0, total_falhas: 0, tentativas: 0 });
+    const prefix = tipo === "folhas_presenca" ? "folhas-presenca" : "espelhos-ponto";
+    const name = `${prefix}-${this.slug(edital.name || editalId)}-${mes}.zip`;
+    const created = await this.files.create({ id, nome_arquivo: name, tipo, status: "aguardando", edital_id: editalId, mes, solicitado_por: userId, total_bolsistas: 0, total_gerados: 0, total_falhas: 0, tentativas: 0 });
     await eventBus.emit("FT_REPORT_BATCH_AVAILABLE", { id });
     return this.present(created);
   }

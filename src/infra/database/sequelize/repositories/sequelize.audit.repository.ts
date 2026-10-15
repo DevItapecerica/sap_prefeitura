@@ -87,6 +87,7 @@ export class SequelizeAuditRepository implements AuditRepository {
           resourceId: event.resourceId ?? null,
           result: event.result,
           errorCode: event.errorCode ?? null,
+          errorMessage: event.errorMessage ?? null,
           requestId: event.requestId ?? null,
           ip: event.ip ?? null,
           method: event.method ?? null,

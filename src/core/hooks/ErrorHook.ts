@@ -88,6 +88,7 @@ const publishAuditFailure = async (
       resourceId: getResourceId(request, audit.resourceIdParam),
       statusCode: error.statusCode,
       errorCode: error.code,
+      errorMessage: error.message,
       filters: request.query,
       requestedChanges:
         MUTATION_METHODS.has(request.method) &&

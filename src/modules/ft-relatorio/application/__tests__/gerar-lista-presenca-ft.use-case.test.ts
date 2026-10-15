@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 import AppError from "../../../../core/appError.js";
-import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtBolsista } from "../../../ft-bolsista/domain/entity/FtBolsista.js";
 import { FtBolsistaFalta } from "../../../ft-bolsista/domain/entity/FtBolsistaFalta.js";
 import { FtPaymentInfo } from "../../../ft-bolsista/domain/entity/FtPaymentInfo.js";
@@ -83,7 +82,7 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
         "SP",
         null,
         "ativo",
-        new FtPaymentInfo("001", pagador[0].id, "1234", "0", "123456", "1"),
+        new FtPaymentInfo("001", "1234", "0", "123456", "1"),
         id,
       ),
       faltas,
@@ -132,7 +131,10 @@ describe("GerarListaPresencaFtUseCase", () => {
 
     assert.equal(response.fileName, "lista-presenca-2026-02.csv");
     assert.match(response.csv, /Lista de presenca/);
-    assert.match(response.csv, /id_bolsista;nome;cpf;status;01\/02;02\/02;03\/02/);
+    assert.match(
+      response.csv,
+      /id_bolsista;nome;cpf;status;01\/02;02\/02;03\/02/,
+    );
     assert.match(response.csv, /total_presencas;total_faltas/);
     assert.match(response.csv, /27\/02;28\/02/);
     assert.match(response.csv, /bolsista-1;Maria;52998224725;ativo;;F;P/);
@@ -169,7 +171,7 @@ describe("GerarListaPresencaFtUseCase", () => {
     assert.ok(mariaRow);
     assert.match(
       mariaRow,
-      /bolsista-1;Maria;52998224725;ativo;;;P;F;P;;;;;P;P;F/,
+      /bolsista-1;Maria;52998224725;cancelado;;;P;F;P;;;;;P;P;F/,
     );
     assert.match(mariaRow, /;4;2$/);
   });

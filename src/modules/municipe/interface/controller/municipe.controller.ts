@@ -72,7 +72,7 @@ export default class municipeController {
 
     const response = await useCase.execute(uuid);
 
-    const maskedResponse = MunicipePresentation.Masked(response);
+    // const maskedResponse = MunicipePresentation.Masked(response);
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
       context: makeApplicationEventContext(request),
       module: "municipe",
@@ -82,7 +82,7 @@ export default class municipeController {
 
     return reply.status(200).send({
       message: "Retrivied sucessfully",
-      data: maskedResponse,
+      data: response,
       ok: true,
     });
   }

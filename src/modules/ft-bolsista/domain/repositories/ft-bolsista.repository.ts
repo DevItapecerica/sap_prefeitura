@@ -1,28 +1,28 @@
 import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../../application/dto/ft-bolsista.dto.js";
 
 export interface FtBolsistaRepository {
   findById(id: string): Promise<any | null>;
-  findByCpf(cpf: string): Promise<any | null>;
+  findByMunicipeUuid(municipeUuid: string): Promise<any | null>;
+  findMunicipeById(municipeUuid: string): Promise<any | null>;
   create(data: any): Promise<any>;
   createPaymentInfo(data: any): Promise<any>;
   createWithPaymentInfo(
-    bolsistaData: any,
+    bolsistaData: { municipe_uuid: string },
     paymentInfoData: any,
   ): Promise<{ bolsista: any; paymentInfo: any }>;
   updateWithPaymentInfo(
     bolsista: any,
-    bolsistaData: any,
     paymentInfo: any,
     paymentInfoData: any,
   ): Promise<any>;
   findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
   findAndCountVinculoCandidates(
-    query?: FtBolsistaQueryDto,
+    query: FtBolsistaVinculoCandidatesQueryDto,
   ): Promise<{ count: number; rows: any[] }>;
-  countActiveByPagador(pagadorId: string): Promise<number>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;
   findHistoricoByBolsistaId(bolsistaId: string): Promise<any[]>;

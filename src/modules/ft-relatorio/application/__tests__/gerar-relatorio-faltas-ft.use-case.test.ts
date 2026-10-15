@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 import AppError from "../../../../core/appError.js";
-import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { FtBolsista } from "../../../ft-bolsista/domain/entity/FtBolsista.js";
 import { FtBolsistaFalta } from "../../../ft-bolsista/domain/entity/FtBolsistaFalta.js";
 import { FtPaymentInfo } from "../../../ft-bolsista/domain/entity/FtPaymentInfo.js";
@@ -79,7 +78,7 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
         "SP",
         null,
         "ativo",
-        new FtPaymentInfo("001", pagador[0].id, "1234", "0", "123456", "1"),
+        new FtPaymentInfo("001", "1234", "0", "123456", "1"),
         id,
       ),
       faltas,
@@ -138,8 +137,14 @@ describe("GerarRelatorioFaltasFtUseCase", () => {
 
     assert.equal(response.fileName, "relatorio-faltas-2026-06.csv");
     assert.match(response.csv, /Relatorio de faltas/);
-    assert.match(response.csv, /id_bolsista;nome;cpf;status;total_faltas;datas_faltas;observacoes/);
-    assert.match(response.csv, /bolsista-1;Maria;52998224725;ativo;2;01\/06\/2026, 15\/06\/2026;Ausencia justificada/);
+    assert.match(
+      response.csv,
+      /id_bolsista;nome;cpf;status;total_faltas;datas_faltas;observacoes/,
+    );
+    assert.match(
+      response.csv,
+      /bolsista-1;Maria;52998224725;ativo;2;01\/06\/2026, 15\/06\/2026;Ausencia justificada/,
+    );
     assert.match(response.csv, /bolsista-2;Joao;12345678900;ativo;0;;/);
   });
 

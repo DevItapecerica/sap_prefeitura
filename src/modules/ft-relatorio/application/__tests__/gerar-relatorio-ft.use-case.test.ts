@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 import AppError from "../../../../core/appError.js";
-import { pagador } from "../../../ft-bolsista/application/utils/pagador.js";
 import { GerarRelatorioFtUseCase } from "../use-case/gerar-relatorio-ft.use-case.js";
 import { FtRelatorioPeriodo } from "../dto/ft-relatorio.dto.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
@@ -26,7 +25,6 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
       status: "ativo",
       payment_info: {
         bco: "001",
-        pagador_id: pagador[0].id,
         ag: "1234",
         dig_ag: "0",
         conta: "123456",
@@ -34,7 +32,20 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
       },
     },
     faltas: [] as Array<{ data_falta: string }>,
-    vinculos: [] as Array<Record<string, string | null>>,
+    vinculos: [
+      {
+        status: "ativo",
+        data_vinculo: "2026-01-01",
+        expire_at: "2026-12-31",
+        local: "Sede",
+        pagador_id: "9d0f3aa1-1143-48d2-9cc2-45d38998fe36",
+        pagador: {
+          uuid: "9d0f3aa1-1143-48d2-9cc2-45d38998fe36",
+          nome: "Secretaria de Esporte e Lazer",
+          quantidade: 12,
+        },
+      },
+    ] as Array<Record<string, any>>,
   };
   lastPeriodo?: FtRelatorioPeriodo;
 
@@ -42,18 +53,14 @@ class FakeFtRelatorioRepository implements FtRelatorioRepository {
     return this.data.edital;
   }
 
-  async findBolsistasByEditalPeriodo(
-    _id: string,
-    periodo: FtRelatorioPeriodo,
-  ) {
+  async findBolsistasByEditalPeriodo(_id: string, periodo: FtRelatorioPeriodo) {
     this.lastPeriodo = periodo;
     return [
       {
         bolsista: this.data.bolsista,
         faltas: this.data.faltas.filter(
           ({ data_falta }) =>
-            data_falta >= periodo.data_inicio &&
-            data_falta <= periodo.data_fim,
+            data_falta >= periodo.data_inicio && data_falta <= periodo.data_fim,
         ),
         vinculos: this.data.vinculos,
       },
@@ -84,7 +91,7 @@ describe("GerarRelatorioFtUseCase", () => {
     });
 
     assert.equal(response.fileName, "relatorio.csv");
-    assert.match(response.csv, /Local de pagamento: Secretaria de Esporte e Lazer/);
+    assert.match(response.csv, /Pagador: Secretaria de Esporte e Lazer/);
     assert.match(response.csv, /Maria/);
   });
 
@@ -106,9 +113,9 @@ describe("GerarRelatorioFtUseCase", () => {
   });
 
   it("desconta apenas dias fora da janela do vínculo", async () => {
-    repository.data.faltas = ["2026-06-10", "2026-06-22"].map(
-      (data_falta) => ({ data_falta }),
-    );
+    repository.data.faltas = ["2026-06-10", "2026-06-22"].map((data_falta) => ({
+      data_falta,
+    }));
     repository.data.vinculos = [
       {
         status: "concluido",
@@ -127,8 +134,7 @@ describe("GerarRelatorioFtUseCase", () => {
     const diasUteis = 22;
     const diasTrabalhados = 10;
     const descontoCalculado =
-      (diasUteis - diasTrabalhados) *
-      (valorBruto / diasUteis);
+      (diasUteis - diasTrabalhados) * (valorBruto / diasUteis);
     const desconto = descontoCalculado.toFixed(2);
     const valorLiquido = (valorBruto - descontoCalculado).toFixed(2);
 

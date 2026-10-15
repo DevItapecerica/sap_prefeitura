@@ -9,17 +9,7 @@ export class FtBolsistaPolicyService {
       throw ftError(400, "Bolsista e obrigatorio");
     }
 
-    const requiredFields = [
-      ["nome", "Nome"],
-      ["cpf", "CPF"],
-      ["local", "Local"],
-      ["cep", "CEP"],
-      ["numero", "Numero"],
-      ["logradouro", "Logradouro"],
-      ["bairro", "Bairro"],
-      ["cidade", "Cidade"],
-      ["uf", "UF"],
-    ];
+    const requiredFields = [["municipe_uuid", "Municipe"]];
 
     const missingFields = requiredFields
       .filter(([field]) => !String(data[field] ?? "").trim())
@@ -39,7 +29,6 @@ export class FtBolsistaPolicyService {
     }
 
     const requiredFields = [
-      ["pagador_id", "Pagador"],
       ["bco", "Banco"],
       ["ag", "Agencia"],
       ["dig_ag", "Digito da agencia"],

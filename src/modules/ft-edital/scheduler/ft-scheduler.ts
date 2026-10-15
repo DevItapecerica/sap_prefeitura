@@ -61,8 +61,13 @@ export const startFtScheduler = (
       if (stopped) return;
 
       logger.warn("Executando FT scheduler agendado.");
-      await task(logger);
-      scheduleNext();
+      try {
+        await task(logger);
+      } catch (error) {
+        logger.error({ error }, "Erro inesperado no FT scheduler agendado.");
+      } finally {
+        scheduleNext();
+      }
     }, delay);
 
     timeout.unref?.();
@@ -70,8 +75,13 @@ export const startFtScheduler = (
 
   void (async () => {
     logger.warn("Executando FT scheduler na inicializacao.");
-    await task(logger);
-    scheduleNext();
+    try {
+      await task(logger);
+    } catch (error) {
+      logger.error({ error }, "Erro inesperado no FT scheduler inicial.");
+    } finally {
+      scheduleNext();
+    }
   })();
 
   logger.warn(

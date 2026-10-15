@@ -9,56 +9,14 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         defaultValue: dataTypes.UUIDV4,
         primaryKey: true,
       },
-      nome: {
-        type: dataTypes.STRING,
+      municipe_uuid: {
+        type: dataTypes.UUID,
         allowNull: false,
-      },
-      cpf: {
-        type: dataTypes.STRING(11),
-        allowNull: false,
-      },
-      local: {
-        type: dataTypes.STRING,
-        allowNull: false,
-      },
-      status: {
-        type: dataTypes.ENUM("ativo", "inativo", "pendente"),
-        allowNull: false,
-        defaultValue: "inativo",
-      },
-      cep: {
-        type: dataTypes.STRING(8),
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      numero: {
-        type: dataTypes.STRING,
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      logradouro: {
-        type: dataTypes.STRING,
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      bairro: {
-        type: dataTypes.STRING,
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      cidade: {
-        type: dataTypes.STRING,
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      uf: {
-        type: dataTypes.STRING(2),
-        allowNull: false,
-        defaultValue: "NA",
-      },
-      telefone: {
-        type: dataTypes.STRING(11),
-        allowNull: true,
+        unique: true,
+        references: {
+          model: "municipes",
+          key: "uuid",
+        },
       },
     },
     {
@@ -69,6 +27,11 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   );
 
   (Bolsistas as any).associate = (models: any) => {
+    Bolsistas.belongsTo(models.MunicipeModel, {
+      foreignKey: "municipe_uuid",
+      as: "municipe",
+      onDelete: "RESTRICT",
+    });
     Bolsistas.belongsToMany(models.Edital, {
       through: models.BolsistasEdital,
       foreignKey: "bolsista_id",

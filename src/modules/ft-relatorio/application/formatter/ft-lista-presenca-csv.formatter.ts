@@ -31,6 +31,8 @@ export class FtListaPresencaCsvFormatter {
     ];
 
     for (const item of relatorio.bolsistas) {
+      const municipe = item.bolsista.municipe as any;
+      const status = item.vinculos[0]?.status || item.bolsista.status || "sem_vinculo";
       const faltas = new Set(
         item.faltas.map((falta) => this.toDateOnly(falta.data_falta)),
       );
@@ -51,9 +53,9 @@ export class FtListaPresencaCsvFormatter {
 
       rows.push([
         item.bolsista.id,
-        item.bolsista.nome,
-        item.bolsista.cpf,
-        item.bolsista.status,
+        municipe?.nome || item.bolsista.nome,
+        municipe?.cpf || item.bolsista.cpf,
+        status,
         ...marcacoes,
         totalPresencas,
         totalFaltas,

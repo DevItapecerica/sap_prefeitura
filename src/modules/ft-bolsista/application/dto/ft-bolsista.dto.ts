@@ -1,6 +1,5 @@
 export interface FtPaymentInfoDto {
   bco: string;
-  pagador_id: string;
   ag: string;
   dig_ag: string;
   conta: string;
@@ -8,16 +7,7 @@ export interface FtPaymentInfoDto {
 }
 
 export interface FtBolsistaDto {
-  nome: string;
-  cpf: string;
-  telefone?: string | null;
-  local: string;
-  cep: string;
-  numero: string;
-  logradouro: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
+  municipe_uuid: string;
   payment_info: FtPaymentInfoDto;
 }
 
@@ -25,6 +15,10 @@ export interface FtBolsistaQueryDto {
   page?: string | number;
   limit?: string | number;
   search?: string;
+}
+
+export interface FtBolsistaVinculoCandidatesQueryDto extends FtBolsistaQueryDto {
+  edital_id: string;
 }
 
 export interface FtBolsistaFaltaDto {

@@ -10,6 +10,14 @@ export class FtRelatorioVinculo {
     public readonly concluded_at: string | Date | null = null,
     public readonly expired_at: string | Date | null = null,
     public readonly id?: string,
+    public readonly local?: string,
+    public readonly pagador_id?: string | null,
+    public readonly pagador?: {
+      uuid: string;
+      nome: string;
+      quantidade: number;
+      deletedAt?: Date | null;
+    } | null,
   ) {}
 }
 

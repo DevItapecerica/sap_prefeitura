@@ -1,8 +1,10 @@
 export type FtRelatorioArquivoStatus = "aguardando" | "processando" | "concluido" | "erro" | "excluido";
+export type FtRelatorioArquivoTipo = "espelhos_ponto" | "folhas_presenca";
 
 export interface FtRelatorioArquivoDto {
   id: string;
   nome_arquivo: string;
+  tipo: FtRelatorioArquivoTipo;
   status: FtRelatorioArquivoStatus;
   edital_id: string;
   mes: string;

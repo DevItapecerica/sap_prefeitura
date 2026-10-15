@@ -4,12 +4,41 @@ import { FtBolsistaRepository } from "../../../../modules/ft-bolsista/domain/rep
 import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../../../../modules/ft-bolsista/application/dto/ft-bolsista.dto.js";
+import { CANT_DUPLICATE } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
+import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
+import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
+import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
 
 export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
-  findById(id: string) {
-    return db.Bolsistas.findByPk(id, {
+  private readonly municipeMapper = new MunicipeMapper(
+    new AesCryptService(),
+    new Sha256CryptService(),
+  );
+
+  private get municipeInclude() {
+    return { model: db.MunicipeModel, as: "municipe" };
+  }
+
+  private async hydrate<T>(bolsista: T): Promise<T> {
+    const row = bolsista as any;
+    const municipe = row?.get?.("municipe");
+    if (municipe) {
+      const decrypted = await this.municipeMapper.toDomain(municipe.toJSON());
+      row.setDataValue("municipe", decrypted);
+    }
+    return bolsista;
+  }
+
+  private async hydrateMany(rows: any[]) {
+    return Promise.all(rows.map((row) => this.hydrate(row)));
+  }
+
+  async findById(id: string) {
+    const row = await db.Bolsistas.findByPk(id, {
       include: [
+        this.municipeInclude,
         {
           model: db.PaymentInfo,
           as: "payment_info",
@@ -17,10 +46,15 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         },
       ],
     });
+    return row ? this.hydrate(row) : null;
   }
 
-  findByCpf(cpf: string) {
-    return db.Bolsistas.findOne({ where: { cpf } });
+  findByMunicipeUuid(municipeUuid: string) {
+    return db.Bolsistas.findOne({ where: { municipe_uuid: municipeUuid } });
+  }
+
+  findMunicipeById(municipeUuid: string) {
+    return db.MunicipeModel.findByPk(municipeUuid);
   }
 
   create(data: any) {
@@ -51,39 +85,40 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
 
   async updateWithPaymentInfo(
     bolsista: any,
-    bolsistaData: any,
     paymentInfo: any,
     paymentInfoData: any,
   ) {
     return db.sequelize.transaction(async (transaction: any) => {
-      bolsista.set(bolsistaData);
       paymentInfo.set(paymentInfoData);
 
-      await bolsista.save({ transaction });
       await paymentInfo.save({ transaction });
 
       return bolsista;
     });
   }
 
-  findAndCount(query: FtBolsistaQueryDto = {}) {
-    const { page = "0", limit = "10", search = "" } = query;
+  async findAndCount(query: FtBolsistaQueryDto = {}) {
+    const { page = "0", limit = "10", search: rawSearch = "" } = query;
+    const search = String(rawSearch).trim();
     const offset = Number(page) * Number(limit);
-    const where = search
+    const cpf = String(search).replace(/\D/g, "");
+    const cpfHash =
+      cpf.length === 11 ? await new Sha256CryptService().encrypt(cpf) : null;
+    const municipeWhere = search
       ? {
           [Op.or]: [
             { nome: { [Op.like]: `%${search}%` } },
-            { cpf: { [Op.like]: `%${search}%` } },
+            ...(cpfHash ? [{ cpfHash }] : []),
           ],
         }
-      : {};
+      : undefined;
 
-    return db.Bolsistas.findAndCountAll({
-      where,
+    const result = await db.Bolsistas.findAndCountAll({
       offset,
       limit: Number(limit),
-      order: [["nome", "ASC"]],
+      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
       include: [
+        { ...this.municipeInclude, where: municipeWhere },
         {
           model: db.PaymentInfo,
           as: "payment_info",
@@ -94,63 +129,76 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           as: "edital",
           attributes: ["id", "name"],
           through: {
-            attributes: ["status", "data_vinculo", "expire_at"],
+            attributes: [
+              "status",
+              "local",
+              "pagador_id",
+              "data_vinculo",
+              "expire_at",
+            ],
           },
           required: false,
         },
       ],
+      subQuery: false,
       distinct: true,
     });
+    result.rows = await this.hydrateMany(result.rows);
+    return result;
   }
 
-  findAndCountVinculoCandidates(query: FtBolsistaQueryDto = {}) {
-    const { page = "0", limit = "10", search = "" } = query;
+  async findAndCountVinculoCandidates(
+    query: FtBolsistaVinculoCandidatesQueryDto,
+  ) {
+    const {
+      page = "0",
+      limit = "10",
+      search: rawSearch = "",
+      edital_id: editalId,
+    } = query;
+    const search = String(rawSearch).trim();
     const offset = Number(page) * Number(limit);
-    const where: any = {
-      status: { [Op.notIn]: ["ativo", "pendente"] },
-    };
-
-    if (search) {
-      where[Op.or] = [
-        { nome: { [Op.like]: `%${search}%` } },
-        { cpf: { [Op.like]: `%${search}%` } },
-      ];
-    }
-
-    return db.Bolsistas.findAndCountAll({
-      where,
+    const result = await db.Bolsistas.findAndCountAll({
+      where: { "$bolsistas_edital.id$": null },
       offset,
       limit: Number(limit),
-      order: [["nome", "ASC"]],
+      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
       include: [
+        {
+          ...this.municipeInclude,
+          where: search ? { nome: { [Op.like]: `%${search}%` } } : undefined,
+        },
         {
           model: db.PaymentInfo,
           as: "payment_info",
           required: true,
           attributes: { exclude: ["bolsista_id"] },
         },
-      ],
-      distinct: true,
-    });
-  }
-
-  countActiveByPagador(pagadorId: string) {
-    return db.Bolsistas.count({
-      where: { status: "ativo" },
-      include: [
         {
-          model: db.PaymentInfo,
-          as: "payment_info",
-          where: { pagador_id: pagadorId },
+          model: db.BolsistasEdital,
+          as: "bolsistas_edital",
+          required: false,
+          paranoid: false,
+          where: CANT_DUPLICATE
+            ? {
+                [Op.or]: [{ status: "ativo" }, { edital_id: editalId }],
+              }
+            : { status: "ativo" },
+          attributes: ["id"],
         },
       ],
+      subQuery: false,
+      distinct: true,
     });
+    result.rows = await this.hydrateMany(result.rows);
+    return result;
   }
 
-  findToExpire(limitDate: Date) {
-    return db.Bolsistas.findAndCountAll({
-      attributes: ["id", "nome"],
+  async findToExpire(limitDate: Date) {
+    const result = await db.Bolsistas.findAndCountAll({
+      attributes: ["id", "municipe_uuid"],
       include: [
+        this.municipeInclude,
         {
           model: db.Edital,
           as: "edital",
@@ -165,22 +213,35 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
             prorrogated: false,
           },
           attributes: ["expire_at"],
+          include: [{ model: db.Pagador, as: "pagador", paranoid: false }],
         },
       ],
     });
+    result.rows = await this.hydrateMany(result.rows);
+    return result;
   }
 
-  findByEditalId(editalId: string) {
-    return db.Bolsistas.findAll({
+  async findByEditalId(editalId: string) {
+    const rows = await db.Bolsistas.findAll({
       include: [
+        this.municipeInclude,
         {
           model: db.Edital,
           as: "edital",
           where: { id: editalId },
-          through: { attributes: ["status"] },
+          through: {
+            attributes: [
+              "status",
+              "local",
+              "pagador_id",
+              "data_vinculo",
+              "expire_at",
+            ],
+          },
         },
       ],
     });
+    return this.hydrateMany(rows);
   }
 
   findHistoricoByBolsistaId(bolsistaId: string) {
@@ -199,6 +260,8 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         "concluded_at",
         "expired_at",
         "prorrogated",
+        "local",
+        "pagador_id",
         "createdAt",
         "updatedAt",
         "deletedAt",
@@ -214,6 +277,12 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
             "data_publicacao",
             "data_vencimento",
           ],
+        },
+        {
+          model: db.Pagador,
+          as: "pagador",
+          paranoid: false,
+          attributes: ["uuid", "nome", "quantidade", "deletedAt"],
         },
       ],
       order: [
@@ -257,14 +326,12 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
 
   async cancelVinculo(bolsista: any, vinculo: any, observacao: string) {
     await db.sequelize.transaction(async (transaction: any) => {
-      bolsista.set("status", "inativo");
       vinculo.set({
         status: "cancelado",
         canceled_at: new Date(),
         observacao,
       });
 
-      await bolsista.save({ transaction });
       await vinculo.save({ transaction });
     });
   }

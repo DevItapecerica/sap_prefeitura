@@ -52,7 +52,9 @@ test("ErrorHook publica login inválido sem credencial", async () => {
       payload: { email: "user@example.com", password: "secret" },
     });
     assert.equal(response.statusCode, 401);
+    assert.equal(response.json().message, "declared failure");
     assert.equal(events[0]?.action, "LOGIN_FAILED");
+    assert.equal(events[0]?.errorMessage, "declared failure");
     assert.equal(events[0]?.attemptedIdentity, "user@example.com");
     assert.equal(events[0]?.requestedChanges, undefined);
   } finally {
@@ -95,7 +97,9 @@ test("ErrorHook preserva ação e alterações solicitadas nas demais falhas", a
       payload: { name: "new value", password: "must be sanitized downstream" },
     });
     assert.equal(response.statusCode, 422);
+    assert.equal(response.json().message, "declared failure");
     assert.equal(events[0]?.action, "UPDATE");
+    assert.equal(events[0]?.errorMessage, "declared failure");
     assert.deepEqual(events[0]?.requestedChanges, {
       name: "new value",
       password: "must be sanitized downstream",

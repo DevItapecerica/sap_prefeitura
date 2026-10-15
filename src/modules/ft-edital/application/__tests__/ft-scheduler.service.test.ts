@@ -27,8 +27,10 @@ class FakeFtSchedulerRepository {
     return {
       editalId: "edital-1",
       editalName: "Edital 1",
-      bolsistasUpdated: 3,
       vinculosUpdated: 3,
+      before: { status: "ativo" },
+      after: { status: "inativo" },
+      vinculos: [],
     };
   }
 
@@ -37,6 +39,9 @@ class FakeFtSchedulerRepository {
     return {
       bolsistaId: `bolsista-${vinculo.id}`,
       vinculoId: vinculo.id,
+      editalId: "edital-1",
+      before: { status: "ativo" },
+      after: { status: "expirado" },
     };
   }
 }
@@ -53,7 +58,6 @@ test("FtSchedulerService inativa editais vencidos e expira vinculos vencidos", a
   assert.equal(repository.expired, 2);
   assert.deepEqual(result, {
     editaisInativados: 1,
-    bolsistasInativados: 5,
     vinculosConcluidos: 3,
     vinculosExpirados: 2,
   });
@@ -69,10 +73,33 @@ test("FtSchedulerService retorna zeros quando nao ha pendencias", async () => {
 
   assert.deepEqual(result, {
     editaisInativados: 0,
-    bolsistasInativados: 0,
     vinculosConcluidos: 0,
     vinculosExpirados: 0,
   });
+});
+
+test("FtSchedulerService publica auditoria das transicoes automaticas", async () => {
+  const repository = new FakeFtSchedulerRepository();
+  const events: Array<{ name: string; payload: any }> = [];
+  const service = new FtSchedulerService(repository, {
+    publish: async (name: string, payload: any) => {
+      events.push({ name, payload });
+    },
+  } as any);
+
+  await service.run(
+    new Date("2026-06-09T12:00:00.000Z"),
+    {
+      correlationId: "scheduler-1",
+      actor: { id: "system" },
+      origin: { type: "SCHEDULER", route: "ft-scheduler" },
+    },
+  );
+
+  assert.equal(events.length, 3);
+  assert.equal(events[0].name, "FT_EDITAL_CONCLUDED");
+  assert.equal(events[1].name, "FT_EDITAL_VINCULO_EXPIRED");
+  assert.equal(events[2].name, "FT_EDITAL_VINCULO_EXPIRED");
 });
 
 test("FT scheduler calcula proxima execucao para 01:00", () => {

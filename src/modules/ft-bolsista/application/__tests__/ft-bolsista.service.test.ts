@@ -3,11 +3,6 @@ import { beforeEach, describe, it } from "node:test";
 import AppError from "../../../../core/appError.js";
 import { FtBolsistaService } from "../use-case/ft-bolsista.service.js";
 import { isValidCpf } from "../utils/cpf.js";
-import {
-  pagador,
-  verifyPagador,
-  verifyQuantityPagador,
-} from "../utils/pagador.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import { FtBolsistaDto } from "../dto/ft-bolsista.dto.js";
 
@@ -50,7 +45,6 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public vinculoDataVinculo = "2026-06-01";
   public vinculoExpireAt: string | null = "2026-06-30";
   public existingFalta = false;
-  public activeQuantityByPagador = 0;
   public createWithPaymentInfoCalled = false;
   public updateWithPaymentInfoCalled = false;
   public cancelVinculoCalled = false;
@@ -60,10 +54,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public destroyFaltaCalled = false;
   public createFaltaPayload: any = null;
   public historicoCalled = false;
+  public vinculoCandidatesQuery: any = null;
 
   private paymentInfo = new FakeModel({
     id: "payment-1",
-    pagador_id: pagador[0].id,
     bco: "001",
     ag: "1234",
     dig_ag: "0",
@@ -73,9 +67,8 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   private bolsista = new FakeModel({
     id: "bolsista-1",
-    nome: "Maria",
-    cpf: "52998224725",
-    status: "inativo",
+    municipe_uuid: "11111111-1111-4111-8111-111111111111",
+    municipe: { uuid: "11111111-1111-4111-8111-111111111111", nome: "Maria", cpf: "52998224725" },
     payment_info: this.paymentInfo,
   });
 
@@ -95,12 +88,15 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findById() {
     if (this.missingBolsista) return null;
-    this.bolsista.set("status", this.inactiveBolsista ? "inativo" : "ativo");
     return this.bolsista;
   }
 
-  async findByCpf() {
+  async findByMunicipeUuid() {
     return this.duplicatedCpf ? this.bolsista : null;
+  }
+
+  async findMunicipeById() {
+    return new FakeModel({ uuid: "11111111-1111-4111-8111-111111111111" });
   }
 
   async create(data: any) {
@@ -121,12 +117,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async updateWithPaymentInfo(
     bolsista: any,
-    bolsistaData: any,
     paymentInfo: any,
     paymentInfoData: any,
   ) {
     this.updateWithPaymentInfoCalled = true;
-    bolsista.set(bolsistaData);
     paymentInfo.set(paymentInfoData);
     return bolsista;
   }
@@ -135,12 +129,9 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     return { count: 1, rows: [this.bolsista] };
   }
 
-  async findAndCountVinculoCandidates() {
+  async findAndCountVinculoCandidates(query: any) {
+    this.vinculoCandidatesQuery = query;
     return { count: 1, rows: [this.bolsista] };
-  }
-
-  async countActiveByPagador() {
-    return this.activeQuantityByPagador;
   }
 
   async findToExpire() {
@@ -249,23 +240,13 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 }
 
 const validBolsistaPayload = (): FtBolsistaDto => ({
-  nome: "Maria Silva",
-  cpf: "52998224725",
-  telefone: "11999999999",
-  local: "Secretaria",
-  cep: "12345678",
-  numero: "10",
-  logradouro: "Rua A",
-  bairro: "Centro",
-  cidade: "Cidade",
-  uf: "SP",
+  municipe_uuid: "11111111-1111-4111-8111-111111111111",
   payment_info: {
     bco: "001",
     ag: "1234",
     dig_ag: "0",
     conta: "123456",
     dig_conta: "1",
-    pagador_id: pagador[0].id,
   },
 });
 
@@ -290,15 +271,6 @@ describe("ft-bolsista utils", () => {
     assert.equal(isValidCpf("123"), false);
   });
 
-  it("valida pagador existente", () => {
-    assert.equal(verifyPagador(pagador[0].id).id, pagador[0].id);
-    assert.throws(() => verifyPagador("invalido"), AppError);
-  });
-
-  it("valida limite de pagador", () => {
-    assert.doesNotThrow(() => verifyQuantityPagador(2, 1));
-    assert.throws(() => verifyQuantityPagador(2, 2), AppError);
-  });
 });
 
 describe("FtBolsistaService", () => {
@@ -315,20 +287,12 @@ describe("FtBolsistaService", () => {
 
     assert.equal(repository.createWithPaymentInfoCalled, true);
     assert.equal(response.ok, true);
-    assert.equal(response.payment_info.pagador_id, pagador[0].id);
+    assert.equal(response.payment_info.bco, "001");
   });
 
-  it("rejeita CPF invalido", async () => {
+  it("rejeita municipe ausente", async () => {
     const payload = validBolsistaPayload();
-    payload.cpf = "123";
-
-    await assertAppError(() => service.saveBolsista(payload), 400, "CPF invalido");
-    assert.equal(repository.createWithPaymentInfoCalled, false);
-  });
-
-  it("rejeita dados pessoais incompletos", async () => {
-    const payload = validBolsistaPayload();
-    payload.nome = "";
+    payload.municipe_uuid = "";
 
     await assertAppError(
       () => service.saveBolsista(payload),
@@ -348,12 +312,12 @@ describe("FtBolsistaService", () => {
     );
   });
 
-  it("rejeita CPF duplicado", async () => {
+  it("rejeita municipe ja vinculado", async () => {
     repository.duplicatedCpf = true;
 
     await assertAppError(
       () => service.saveBolsista(validBolsistaPayload()),
-      403,
+      409,
       "Bolsista already exists",
     );
   });
@@ -362,7 +326,7 @@ describe("FtBolsistaService", () => {
     const response = await service.saveBolsista(validBolsistaPayload(), "bolsista-1");
 
     assert.equal(repository.updateWithPaymentInfoCalled, true);
-    assert.equal(response.get("nome"), "Maria Silva");
+    assert.equal(response.get("municipe_uuid"), "11111111-1111-4111-8111-111111111111");
   });
 
   it("prorroga vinculos validos", async () => {
@@ -409,17 +373,14 @@ describe("FtBolsistaService", () => {
     );
   });
 
-  it("rejeita prorrogacao de bolsista inativo", async () => {
+  it("ignora o antigo status global ao prorrogar vinculo ativo", async () => {
     repository.inactiveBolsista = true;
 
-    await assertAppError(
-      () =>
-        service.prorrogate([
-          { bolsista_id: "bolsista-1", edital_id: "edital-1" },
-        ]),
-      404,
-      "Bolsista not found",
-    );
+    await service.prorrogate([
+      { bolsista_id: "bolsista-1", edital_id: "edital-1" },
+    ]);
+
+    assert.equal(repository.prorrogateVinculosCalled, true);
   });
 
   it("cancela vinculo valido", async () => {
@@ -510,11 +471,18 @@ describe("FtBolsistaService", () => {
   });
 
   it("lista bolsistas elegiveis para vinculo", async () => {
-    const response = await service.getBolsistasParaVinculo({ search: "Maria" });
+    const response = await service.getBolsistasParaVinculo({
+      search: "Maria",
+      edital_id: "11111111-1111-4111-8111-111111111111",
+    });
 
     assert.equal(response.ok, true);
     assert.equal(response.count, 1);
     assert.equal(response.bolsistas.length, 1);
+    assert.equal(
+      repository.vinculoCandidatesQuery.edital_id,
+      "11111111-1111-4111-8111-111111111111",
+    );
   });
 
   it("lista historico de vinculos do bolsista", async () => {
