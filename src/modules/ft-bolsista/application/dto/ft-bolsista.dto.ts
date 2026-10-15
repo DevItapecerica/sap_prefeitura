@@ -17,6 +17,10 @@ export interface FtBolsistaQueryDto {
   search?: string;
 }
 
+export interface FtBolsistaVinculoCandidatesQueryDto extends FtBolsistaQueryDto {
+  edital_id: string;
+}
+
 export interface FtBolsistaFaltaDto {
   edital_id: string;
   data_falta: string;

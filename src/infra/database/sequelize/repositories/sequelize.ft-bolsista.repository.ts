@@ -4,7 +4,9 @@ import { FtBolsistaRepository } from "../../../../modules/ft-bolsista/domain/rep
 import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../../../../modules/ft-bolsista/application/dto/ft-bolsista.dto.js";
+import { CANT_DUPLICATE } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
@@ -100,9 +102,8 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     const search = String(rawSearch).trim();
     const offset = Number(page) * Number(limit);
     const cpf = String(search).replace(/\D/g, "");
-    const cpfHash = cpf.length === 11
-      ? await new Sha256CryptService().encrypt(cpf)
-      : null;
+    const cpfHash =
+      cpf.length === 11 ? await new Sha256CryptService().encrypt(cpf) : null;
     const municipeWhere = search
       ? {
           [Op.or]: [
@@ -128,7 +129,13 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           as: "edital",
           attributes: ["id", "name"],
           through: {
-            attributes: ["status", "local", "pagador_id", "data_vinculo", "expire_at"],
+            attributes: [
+              "status",
+              "local",
+              "pagador_id",
+              "data_vinculo",
+              "expire_at",
+            ],
           },
           required: false,
         },
@@ -140,8 +147,15 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     return result;
   }
 
-  async findAndCountVinculoCandidates(query: FtBolsistaQueryDto = {}) {
-    const { page = "0", limit = "10", search: rawSearch = "" } = query;
+  async findAndCountVinculoCandidates(
+    query: FtBolsistaVinculoCandidatesQueryDto,
+  ) {
+    const {
+      page = "0",
+      limit = "10",
+      search: rawSearch = "",
+      edital_id: editalId,
+    } = query;
     const search = String(rawSearch).trim();
     const offset = Number(page) * Number(limit);
     const result = await db.Bolsistas.findAndCountAll({
@@ -164,7 +178,12 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           model: db.BolsistasEdital,
           as: "bolsistas_edital",
           required: false,
-          where: { status: { [Op.in]: ["ativo", "inativo"] } },
+          paranoid: false,
+          where: CANT_DUPLICATE
+            ? {
+                [Op.or]: [{ status: "ativo" }, { edital_id: editalId }],
+              }
+            : { status: "ativo" },
           attributes: ["id"],
         },
       ],
@@ -210,7 +229,15 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           model: db.Edital,
           as: "edital",
           where: { id: editalId },
-          through: { attributes: ["status", "local", "pagador_id", "data_vinculo", "expire_at"] },
+          through: {
+            attributes: [
+              "status",
+              "local",
+              "pagador_id",
+              "data_vinculo",
+              "expire_at",
+            ],
+          },
         },
       ],
     });

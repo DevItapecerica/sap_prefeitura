@@ -197,10 +197,12 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
       summary: "Listar bolsistas elegiveis para vinculo",
       querystring: {
         type: "object",
+        required: ["edital_id"],
         properties: {
           page: { type: "string" },
           limit: { type: "string" },
           search: { type: "string" },
+          edital_id: { type: "string", format: "uuid" },
         },
       },
       response: {

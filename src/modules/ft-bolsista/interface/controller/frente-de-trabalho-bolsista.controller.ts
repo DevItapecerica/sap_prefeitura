@@ -6,6 +6,7 @@ import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaProrrogacaoDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../../application/dto/ft-bolsista.dto.js";
 import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
@@ -58,7 +59,7 @@ export class FrenteTrabalhoBolsistaController {
   };
 
   static readonly getBolsistasParaVinculo = async (
-    request: FastifyRequest<{ Querystring: FtBolsistaQueryDto }>,
+    request: FastifyRequest<{ Querystring: FtBolsistaVinculoCandidatesQueryDto }>,
     reply: FastifyReply,
   ) => {
     const data = await service.getBolsistasParaVinculo(request.query);

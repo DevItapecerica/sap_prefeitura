@@ -6,6 +6,7 @@ import FtEditalVincularBolsistaUseCase from "../use-case/ft-edital.vincularBolsi
 import FtEditalAtualizarVinculoUseCase from "../use-case/ft-edital.atualizarVinculo.usecase.js";
 import { FtEditalRepository } from "../../domain/repositories/ft-edital.repository.js";
 import { FtEditalDto } from "../dto/ft-edital.dto.js";
+import { FtVinculoPolicyService } from "../../domain/services/ft-vinculo-policy.service.js";
 const PAGADOR_ID = "9d0f3aa1-1143-48d2-9cc2-45d38998fe36";
 
 class FakeModel {
@@ -334,14 +335,6 @@ describe("FtEditalService", () => {
     );
   });
 
-  it("permite novo vinculo quando historico do par esta cancelado", async () => {
-    repository.vinculoStatuses = ["cancelado"];
-
-    await vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID }], "2026-06-09");
-
-    assert.equal(repository.vincularBolsistasCalled, true);
-  });
-
   it("mantem pagadores diferentes no mesmo lote", async () => {
     await vincularBolsista.execute("edital-1", [
       { bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID },
@@ -361,7 +354,7 @@ describe("FtEditalService", () => {
     );
   });
 
-  for (const status of ["ativo", "inativo", "concluido", "expirado"]) {
+  for (const status of ["ativo", "inativo", "cancelado", "concluido", "expirado"]) {
     it(`rejeita novo vinculo quando historico do par esta ${status}`, async () => {
       repository.vinculoStatuses = [status];
 
@@ -374,6 +367,38 @@ describe("FtEditalService", () => {
       assert.equal(repository.vincularBolsistasCalled, false);
     });
   }
+
+  it("permite historico nao ativo quando CANT_DUPLICATE esta desativada", () => {
+    const policy = new FtVinculoPolicyService(false);
+
+    for (const status of ["inativo", "cancelado", "concluido", "expirado"]) {
+      assert.doesNotThrow(() => policy.ensureCanCreateVinculo([{ status }]));
+    }
+  });
+
+  it("bloqueia historico ativo quando CANT_DUPLICATE esta desativada", () => {
+    const policy = new FtVinculoPolicyService(false);
+
+    assert.throws(
+      () => policy.ensureCanCreateVinculo([{ status: "ativo" }]),
+      (error) =>
+        error instanceof AppError &&
+        error.statusCode === 403 &&
+        error.message.includes("Bolsista ja vinculado a este edital"),
+    );
+  });
+
+  it("considera historico excluido logicamente quando CANT_DUPLICATE esta ativa", () => {
+    const policy = new FtVinculoPolicyService(true);
+
+    assert.throws(
+      () =>
+        policy.ensureCanCreateVinculo([
+          { status: "cancelado", deletedAt: new Date("2026-01-01") },
+        ]),
+      (error) => error instanceof AppError && error.statusCode === 403,
+    );
+  });
 
   it("rejeita edital inativo ao vincular", async () => {
     repository.editalInativo = true;

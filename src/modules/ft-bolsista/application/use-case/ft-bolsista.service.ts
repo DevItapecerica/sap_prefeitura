@@ -6,6 +6,7 @@ import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaProrrogacaoDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../dto/ft-bolsista.dto.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import { FtBolsistaPolicyService } from "../../domain/services/ft-bolsista-policy.service.js";
@@ -47,7 +48,7 @@ export class FtBolsistaService {
     };
   }
 
-  async getBolsistasParaVinculo(query: FtBolsistaQueryDto = {}) {
+  async getBolsistasParaVinculo(query: FtBolsistaVinculoCandidatesQueryDto) {
     const { count, rows } = await this.repository.findAndCountVinculoCandidates(
       query,
     );

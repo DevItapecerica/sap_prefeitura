@@ -1,6 +1,7 @@
 import {
   FtBolsistaFaltaQueryDto,
   FtBolsistaQueryDto,
+  FtBolsistaVinculoCandidatesQueryDto,
 } from "../../application/dto/ft-bolsista.dto.js";
 
 export interface FtBolsistaRepository {
@@ -20,7 +21,7 @@ export interface FtBolsistaRepository {
   ): Promise<any>;
   findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
   findAndCountVinculoCandidates(
-    query?: FtBolsistaQueryDto,
+    query: FtBolsistaVinculoCandidatesQueryDto,
   ): Promise<{ count: number; rows: any[] }>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
   findByEditalId(editalId: string): Promise<any[]>;

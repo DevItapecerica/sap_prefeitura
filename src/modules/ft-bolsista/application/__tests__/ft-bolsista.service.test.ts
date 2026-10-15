@@ -54,6 +54,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   public destroyFaltaCalled = false;
   public createFaltaPayload: any = null;
   public historicoCalled = false;
+  public vinculoCandidatesQuery: any = null;
 
   private paymentInfo = new FakeModel({
     id: "payment-1",
@@ -128,7 +129,8 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     return { count: 1, rows: [this.bolsista] };
   }
 
-  async findAndCountVinculoCandidates() {
+  async findAndCountVinculoCandidates(query: any) {
+    this.vinculoCandidatesQuery = query;
     return { count: 1, rows: [this.bolsista] };
   }
 
@@ -469,11 +471,18 @@ describe("FtBolsistaService", () => {
   });
 
   it("lista bolsistas elegiveis para vinculo", async () => {
-    const response = await service.getBolsistasParaVinculo({ search: "Maria" });
+    const response = await service.getBolsistasParaVinculo({
+      search: "Maria",
+      edital_id: "11111111-1111-4111-8111-111111111111",
+    });
 
     assert.equal(response.ok, true);
     assert.equal(response.count, 1);
     assert.equal(response.bolsistas.length, 1);
+    assert.equal(
+      repository.vinculoCandidatesQuery.edital_id,
+      "11111111-1111-4111-8111-111111111111",
+    );
   });
 
   it("lista historico de vinculos do bolsista", async () => {
