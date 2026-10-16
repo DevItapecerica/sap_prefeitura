@@ -171,7 +171,7 @@ describe("GerarListaPresencaFtUseCase", () => {
     assert.ok(mariaRow);
     assert.match(
       mariaRow,
-      /bolsista-1;Maria;52998224725;cancelado;;;P;F;P;;;;;P;P;F/,
+      /bolsista-1;Maria;52998224725;expirado;;;P;F;P;;;;;P;P;F/,
     );
     assert.match(mariaRow, /;4;2$/);
   });

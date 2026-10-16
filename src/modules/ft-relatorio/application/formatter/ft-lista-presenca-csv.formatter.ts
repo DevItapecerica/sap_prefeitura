@@ -32,7 +32,8 @@ export class FtListaPresencaCsvFormatter {
 
     for (const item of relatorio.bolsistas) {
       const municipe = item.bolsista.municipe as any;
-      const status = item.vinculos[0]?.status || item.bolsista.status || "sem_vinculo";
+      const status =
+        item.vinculos.at(-1)?.status || item.bolsista.status || "sem_vinculo";
       const faltas = new Set(
         item.faltas.map((falta) => this.toDateOnly(falta.data_falta)),
       );
@@ -62,7 +63,9 @@ export class FtListaPresencaCsvFormatter {
       ]);
     }
 
-    return rows.map((row) => row.map((cell) => this.formatCell(cell)).join(";")).join("\n");
+    return rows
+      .map((row) => row.map((cell) => this.formatCell(cell)).join(";"))
+      .join("\n");
   }
 
   private isDiaTrabalhado(item: FtRelatorioBolsista, dia: string): boolean {

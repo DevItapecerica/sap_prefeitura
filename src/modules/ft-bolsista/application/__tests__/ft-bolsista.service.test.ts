@@ -35,6 +35,11 @@ class FakeModel {
 
 class FakeFtBolsistaRepository implements FtBolsistaRepository {
   async findFaltasByBolsistaPeriodo() { return []; }
+  async findAniversariantesAtivos() { return []; }
+  async createOcorrencia(data: any) { return new FakeModel({ id: "ocorrencia-1", ...data }); }
+  async findOcorrenciaById() { return null; }
+  async destroyOcorrencia() {}
+  async findAndCountOcorrenciasByBolsista() { return { count: 0, rows: [] }; }
   public duplicatedCpf = false;
   public missingBolsista = false;
   public missingEdital = false;
@@ -131,7 +136,7 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
 
   async findAndCountVinculoCandidates(query: any) {
     this.vinculoCandidatesQuery = query;
-    return { count: 1, rows: [this.bolsista] };
+    return { rows: [this.bolsista], hasMore: false, nextCursor: null };
   }
 
   async findToExpire() {
@@ -188,6 +193,10 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
     this.vinculo.set("data_vinculo", this.vinculoDataVinculo);
     this.vinculo.set("expire_at", this.vinculoExpireAt);
     return this.missingVinculo ? null : this.vinculo;
+  }
+
+  async findVinculoById() {
+    return this.findVinculo();
   }
 
   async destroyBolsista(bolsista: any) {
@@ -474,10 +483,11 @@ describe("FtBolsistaService", () => {
     const response = await service.getBolsistasParaVinculo({
       search: "Maria",
       edital_id: "11111111-1111-4111-8111-111111111111",
+      data_vinculo: "2026-06-09",
     });
 
     assert.equal(response.ok, true);
-    assert.equal(response.count, 1);
+    assert.equal(response.returned_count, 1);
     assert.equal(response.bolsistas.length, 1);
     assert.equal(
       repository.vinculoCandidatesQuery.edital_id,
@@ -537,7 +547,7 @@ describe("FtBolsistaService", () => {
           data_falta: "2026-06-09",
         }),
       404,
-      "Vinculo entre bolsista e edital nao encontrado",
+      "Vinculo ativo entre bolsista e edital nao encontrado",
     );
 
     assert.equal(repository.createFaltaPayload, null);

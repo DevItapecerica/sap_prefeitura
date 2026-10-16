@@ -4,6 +4,8 @@ import {
   FtBolsistaCancelamentoDto,
   FtBolsistaFaltaDto,
   FtBolsistaFaltaQueryDto,
+  FtBolsistaOcorrenciaDto,
+  FtBolsistaOcorrenciaQueryDto,
   FtBolsistaProrrogacaoDto,
   FtBolsistaQueryDto,
   FtBolsistaVinculoCandidatesQueryDto,
@@ -69,6 +71,18 @@ export class FrenteTrabalhoBolsistaController {
       resourceType: "bolsista",
       filters: { ...request.query, eligibleForLink: true },
       returnedCount: data.bolsistas.length,
+    });
+    return reply.status(200).send(data);
+  };
+
+  static readonly getAniversariantes = async (
+    request: FastifyRequest<{ Querystring: { mes?: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const data = await service.getAniversariantes(request.query.mes);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request), module: "ft-bolsista",
+      resourceType: "aniversariante", filters: request.query, returnedCount: data.count,
     });
     return reply.status(200).send(data);
   };
@@ -297,6 +311,43 @@ export class FrenteTrabalhoBolsistaController {
     });
     const { before: _before, ...payload } = response;
 
+    return reply.status(200).send(payload);
+  };
+
+  static readonly createOcorrencia = async (
+    request: FastifyRequest<{ Params: { id: string }; Body: FtBolsistaOcorrenciaDto }>,
+    reply: FastifyReply,
+  ) => {
+    const response = await service.createOcorrencia(request.params.id, request.body, Number(request.user.id));
+    await eventPublisher.publish(FT_BOLSISTA_EVENTS.created, {
+      context: makeApplicationEventContext(request), resourceType: "ocorrencia",
+      resourceId: String(plain(response.ocorrencia)?.id ?? ""), after: plain(response.ocorrencia),
+    });
+    return reply.status(201).send(response);
+  };
+
+  static readonly listOcorrencias = async (
+    request: FastifyRequest<{ Params: { id: string }; Querystring: FtBolsistaOcorrenciaQueryDto }>,
+    reply: FastifyReply,
+  ) => {
+    const response = await service.listOcorrencias(request.params.id, request.query);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
+      context: makeApplicationEventContext(request), module: "ft-bolsista", resourceType: "ocorrencia",
+      filters: { ...request.query, bolsistaId: request.params.id }, returnedCount: response.ocorrencias.length,
+    });
+    return reply.status(200).send(response);
+  };
+
+  static readonly deleteOcorrencia = async (
+    request: FastifyRequest<{ Params: { id: string; ocorrenciaId: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const response = await service.deleteOcorrencia(request.params.id, request.params.ocorrenciaId);
+    await eventPublisher.publish(FT_BOLSISTA_EVENTS.deleted, {
+      context: makeApplicationEventContext(request), resourceType: "ocorrencia",
+      resourceId: request.params.ocorrenciaId, before: response.before,
+    });
+    const { before: _before, ...payload } = response;
     return reply.status(200).send(payload);
   };
 }
