@@ -17,12 +17,19 @@ export default class FtEditalVincularBolsistaUseCase {
 
   async execute(
     id: string,
-    bolsistas: Array<{ bolsista_id: string; local: string; pagador_id: string; turno_id: string }>,
+    bolsistas: Array<{
+      bolsista_id: string;
+      local: string;
+      pagador_id: string;
+      turno_id: string;
+    }>,
     dataVinculo: any,
   ) {
     if (!id) throw ftError(400, "Edital e obrigatorio");
-    if (!Array.isArray(bolsistas) || bolsistas.length === 0) throw ftError(400, "Lista de bolsistas e obrigatoria");
-    if (!dataVinculo || Number.isNaN(Date.parse(String(dataVinculo)))) throw ftError(400, "Data de vinculo invalida");
+    if (!Array.isArray(bolsistas) || bolsistas.length === 0)
+      throw ftError(400, "Lista de bolsistas e obrigatoria");
+    if (!dataVinculo || Number.isNaN(Date.parse(String(dataVinculo))))
+      throw ftError(400, "Data de vinculo invalida");
 
     const edital = await this.repository.findById(id);
     if (!edital) throw ftError(404, "Edital not found");
@@ -35,16 +42,21 @@ export default class FtEditalVincularBolsistaUseCase {
       const local = item?.local?.trim();
       const pagadorId = item?.pagador_id;
       const turnoId = item?.turno_id;
-      if (!bolsistaId || !local || !pagadorId || !turnoId) throw ftError(400, "Bolsista, local, pagador e turno sao obrigatorios");
+      if (!bolsistaId || !local || !pagadorId || !turnoId)
+        throw ftError(400, "Bolsista, local, pagador e turno sao obrigatorios");
       if (ids.has(bolsistaId)) throw ftError(400, "Bolsista duplicado no lote");
       ids.add(bolsistaId);
 
       const bolsista = await this.repository.findBolsistaById(bolsistaId);
       if (!bolsista) throw ftError(404, "Bolsista not found");
       ensureBolsistaElegivelPorIdade(bolsista, dataVinculo);
-      const vinculosDoPar = await this.repository.findVinculosByBolsistaEdital(bolsistaId, id);
-      this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar);
-      if (await this.repository.findActiveVinculoByBolsista(bolsistaId)) throw ftError(403, "Bolsista ja ativo em outro edital");
+      const vinculosDoPar = await this.repository.findVinculosByBolsistaEdital(
+        bolsistaId,
+        id,
+      );
+      this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar, dataVinculo);
+      if (await this.repository.findActiveVinculoByBolsista(bolsistaId))
+        throw ftError(403, "Bolsista ja ativo em outro edital");
 
       vinculos.push({
         bolsista,

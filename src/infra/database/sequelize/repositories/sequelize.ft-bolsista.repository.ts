@@ -7,14 +7,22 @@ import {
   FtBolsistaQueryDto,
   FtBolsistaVinculoCandidatesQueryDto,
 } from "../../../../modules/ft-bolsista/application/dto/ft-bolsista.dto.js";
-import { CANT_DUPLICATE, MAX_IDADE_VINCULO } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
+import { MAX_IDADE_VINCULO } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
 import { calcularIdadeNaData } from "../../../../modules/ft-edital/domain/services/ft-idade-policy.service.js";
 import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
 import { todayInSaoPaulo } from "../../../../core/utils/sao-paulo-date.js";
-import { resolveTurnoSnapshot } from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
+import {
+  buildLegacyEditaisFromVinculos,
+  resolveTurnoSnapshot,
+  selectCurrentVinculo,
+} from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
+import {
+  hasBlockingVinculo,
+  hasSameMonthReentry,
+} from "../../../../modules/ft-edital/domain/services/ft-vinculo-policy.service.js";
 
 export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   private readonly municipeMapper = new MunicipeMapper(
@@ -32,6 +40,11 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     if (municipe) {
       const decrypted = await this.municipeMapper.toDomain(municipe.toJSON());
       row.setDataValue("municipe", decrypted);
+    }
+    const vinculos = row?.get?.("bolsistas_edital");
+    if (Array.isArray(vinculos)) {
+      row.setDataValue("vinculo_atual", selectCurrentVinculo(vinculos));
+      row.setDataValue("edital", buildLegacyEditaisFromVinculos(vinculos));
     }
     return bolsista;
   }
@@ -130,26 +143,40 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           attributes: { exclude: ["bolsista_id"] },
         },
         {
-          model: db.Edital,
-          as: "edital",
-          attributes: ["id", "name"],
-          through: {
-            attributes: [
-              "status",
-              "local",
-              "pagador_id",
-              "turno_id",
-              "turno_nome_snapshot",
-              "turno_hora_inicio_snapshot",
-              "turno_hora_fim_snapshot",
-              "data_vinculo",
-              "expire_at",
-            ],
-          },
+          model: db.BolsistasEdital,
+          as: "bolsistas_edital",
           required: false,
+          separate: true,
+          paranoid: false,
+          attributes: [
+            "id",
+            "bolsista_id",
+            "edital_id",
+            "status",
+            "local",
+            "pagador_id",
+            "turno_id",
+            "turno_nome_snapshot",
+            "turno_hora_inicio_snapshot",
+            "turno_hora_fim_snapshot",
+            "data_vinculo",
+            "expire_at",
+            "canceled_at",
+            "concluded_at",
+            "expired_at",
+            "createdAt",
+            "updatedAt",
+            "deletedAt",
+          ],
+          include: [
+            { model: db.Edital, as: "edital", attributes: ["id", "name"] },
+          ],
+          order: [
+            ["data_vinculo", "DESC"],
+            ["createdAt", "DESC"],
+          ],
         },
       ],
-      subQuery: false,
       distinct: true,
     });
     result.rows = await this.hydrateMany(result.rows);
@@ -189,7 +216,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           }
         : {};
       const rows = await db.Bolsistas.findAll({
-        where: { "$bolsistas_edital.id$": null, ...cursorWhere },
+        where: cursorWhere,
         limit: batchSize,
         order: [
           [{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"],
@@ -209,15 +236,21 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
           {
             model: db.BolsistasEdital,
             as: "bolsistas_edital",
-            required: false,
+            separate: true,
             paranoid: false,
-            where: CANT_DUPLICATE
-              ? { [Op.or]: [{ status: "ativo" }, { edital_id: editalId }] }
-              : { status: "ativo" },
-            attributes: ["id"],
+            attributes: [
+              "id",
+              "edital_id",
+              "status",
+              "data_vinculo",
+              "expire_at",
+              "canceled_at",
+              "concluded_at",
+              "expired_at",
+              "deletedAt",
+            ],
           },
         ],
-        subQuery: false,
       });
       if (!rows.length) break;
       const hydrated = await this.hydrateMany(rows);
@@ -225,14 +258,41 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         const municipe = row.get?.("municipe") ?? row.municipe;
         const nome = String(municipe?.nome ?? municipe?.get?.("nome") ?? "");
         scanCursor = { nome, id: String(row.get?.("id") ?? row.id) };
-        const nascimento = municipe?.nascimento ?? municipe?.get?.("nascimento");
+        const vinculos = (row.get?.("bolsistas_edital") ??
+          row.bolsistas_edital ??
+          []) as any[];
+        if (
+          vinculos.some(
+            (item) =>
+              item.get?.("status") === "ativo" || item.status === "ativo",
+          )
+        ) {
+          continue;
+        }
+        const vinculosDoEdital = vinculos.filter(
+          (item) =>
+            String(item.get?.("edital_id") ?? item.edital_id) ===
+            String(editalId),
+        );
+        if (
+          hasBlockingVinculo(vinculosDoEdital) ||
+          hasSameMonthReentry(vinculosDoEdital, referenceDate)
+        ) {
+          continue;
+        }
+        const nascimento =
+          municipe?.nascimento ?? municipe?.get?.("nascimento");
         if (!nascimento) continue;
         try {
-          if (calcularIdadeNaData(nascimento, referenceDate) <= MAX_IDADE_VINCULO) {
+          if (
+            calcularIdadeNaData(nascimento, referenceDate) <= MAX_IDADE_VINCULO
+          ) {
             eligible.push(row);
             if (eligible.length > limit) break;
           }
-        } catch { /* dado legado inválido não é elegível */ }
+        } catch {
+          /* dado legado inválido não é elegível */
+        }
       }
       if (eligible.length > limit || rows.length < batchSize) break;
     }
@@ -243,12 +303,15 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     return {
       rows: selected,
       hasMore,
-      nextCursor: hasMore && last
-        ? this.encodeCandidateCursor({
-            nome: String(lastMunicipe?.nome ?? lastMunicipe?.get?.("nome") ?? ""),
-            id: String(last.get?.("id") ?? last.id),
-          })
-        : null,
+      nextCursor:
+        hasMore && last
+          ? this.encodeCandidateCursor({
+              nome: String(
+                lastMunicipe?.nome ?? lastMunicipe?.get?.("nome") ?? "",
+              ),
+              id: String(last.get?.("id") ?? last.id),
+            })
+          : null,
     };
   }
 
@@ -259,8 +322,11 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   private decodeCandidateCursor(value?: string) {
     if (!value) return null;
     try {
-      const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-      if (typeof parsed?.nome !== "string" || typeof parsed?.id !== "string") throw new Error();
+      const parsed = JSON.parse(
+        Buffer.from(value, "base64url").toString("utf8"),
+      );
+      if (typeof parsed?.nome !== "string" || typeof parsed?.id !== "string")
+        throw new Error();
       return { nome: parsed.nome, id: parsed.id };
     } catch {
       throw ftError(400, "Cursor de candidatos invalido");
@@ -402,10 +468,11 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     });
     for (const row of rows) {
       const turno = resolveTurnoSnapshot(row.toJSON());
-      if (turno.hora_inicio && turno.hora_fim) row.setDataValue("turno", {
-        ...(row.get("turno") as any)?.toJSON?.(),
-        ...turno,
-      });
+      if (turno.hora_inicio && turno.hora_fim)
+        row.setDataValue("turno", {
+          ...(row.get("turno") as any)?.toJSON?.(),
+          ...turno,
+        });
     }
     return rows;
   }

@@ -325,9 +325,13 @@ export class FtBolsistaService {
       throw ftError(404, "Edital not found");
     }
 
-    const vinculo = await this.repository.findVinculo(bolsistaId, edital_id);
+    const vinculo = await this.repository.findVinculo(
+      bolsistaId,
+      edital_id,
+      "ativo",
+    );
     if (!vinculo) {
-      throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
+      throw ftError(404, "Vinculo ativo entre bolsista e edital nao encontrado");
     }
 
     const faltaExistente =

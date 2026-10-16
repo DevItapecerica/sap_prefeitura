@@ -4,6 +4,9 @@ import {
   FtRelatorioBolsista,
   FtRelatorioVinculo,
 } from "../entities/ft-relatorio.entity.js";
+import { DESCONTAR_FALTA } from "../../../ft-edital/domain/constants/ft-vinculo.constants.js";
+import { hasOverlappingVinculos } from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
+import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 
 export type FtRelatorioBolsistaRow = {
   bco?: string;
@@ -39,6 +42,8 @@ export type FtRelatorioPagamento = {
 };
 
 export class FtRelatorioPagamentoService {
+  constructor(private readonly descontarFalta = DESCONTAR_FALTA) {}
+
   execute(
     bolsistas: FtRelatorioBolsista[],
     edital: FtEdital,
@@ -51,6 +56,14 @@ export class FtRelatorioPagamentoService {
     const valorBruto = Number(edital.valor_bolsa);
     const valorDiario = diasUteis > 0 ? valorBruto / diasUteis : 0;
     const grouped: Record<string, FtRelatorioBolsistaRow[]> = {};
+    for (const item of bolsistas) {
+      if (hasOverlappingVinculos(item.vinculos)) {
+        throw ftError(
+          409,
+          "Existem vinculos sobrepostos para o bolsista no periodo informado",
+        );
+      }
+    }
     const bolsistasPorPagador = bolsistas.flatMap((item) => {
       if (item.vinculos.length === 0) return [item];
       const grupos = new Map<string, FtRelatorioVinculo[]>();
@@ -82,8 +95,9 @@ export class FtRelatorioPagamentoService {
         periodo,
       );
       const diasSemVinculo = Math.max(0, diasUteis - diasTrabalhados);
-      // As faltas permanecem informativas e não compõem o desconto financeiro.
-      const desconto = Math.min(valorBruto, diasSemVinculo * valorDiario);
+      const diasDescontados =
+        diasSemVinculo + (this.descontarFalta ? faltas : 0);
+      const desconto = Math.min(valorBruto, diasDescontados * valorDiario);
       const valorLiquido = Math.max(0, valorBruto - desconto);
 
       if (!grouped[pagador]) {

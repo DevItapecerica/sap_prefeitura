@@ -4,7 +4,7 @@ import { ftError } from "../utils/ft-error.js";
 import {
   getVinculoOperationalEnd,
   resolveTurnoSnapshot,
-  selectLatestVinculoForPeriod,
+  selectVinculosForPeriod,
 } from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
 
 type PdfGateway = Pick<RenderEspelhoPontoPdfUseCase, "execute">;
@@ -15,7 +15,12 @@ export class GerarEspelhoPontoBolsistaUseCase {
     private readonly pdfGateway: PdfGateway,
   ) {}
 
-  async execute(bolsistaId: string, editalId: string, mes: string, requestId?: string) {
+  async execute(
+    bolsistaId: string,
+    editalId: string,
+    mes: string,
+    requestId?: string,
+  ) {
     const periodo = this.parseMonth(mes);
     const bolsista = await this.repository.findById(bolsistaId);
     if (!bolsista) throw ftError(404, "Bolsista not found");
@@ -23,17 +28,25 @@ export class GerarEspelhoPontoBolsistaUseCase {
     const edital = await this.repository.findEditalById(editalId);
     if (!edital) throw ftError(404, "Edital not found");
 
-    const vinculos = (await this.repository.findHistoricoByBolsistaId(bolsistaId))
+    const vinculos = (
+      await this.repository.findHistoricoByBolsistaId(bolsistaId)
+    )
       .map((item: any) => this.plain(item))
       .filter((item: any) => String(item.edital_id) === editalId);
     if (!vinculos.length)
       throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
-    const vinculo = selectLatestVinculoForPeriod(
-      vinculos,
-      { inicio: periodo.inicio, fim: periodo.fim },
-    );
-    if (!vinculo)
+    const vigentes = selectVinculosForPeriod(vinculos, {
+      inicio: periodo.inicio,
+      fim: periodo.fim,
+    });
+    if (!vigentes.length)
       throw ftError(409, "Vinculo nao vigente no mes informado");
+    if (vigentes.length > 1)
+      throw ftError(
+        409,
+        "Existem multiplos vinculos vigentes no mes informado",
+      );
+    const vinculo = vigentes[0];
 
     const link = this.plain(vinculo);
     const turno = resolveTurnoSnapshot(link);
@@ -78,7 +91,9 @@ export class GerarEspelhoPontoBolsistaUseCase {
         data,
         situacao,
         horarioPrevisto:
-          inLink && weekday > 0 && weekday < 6 && turno.hora_inicio ? horarioTurno : "",
+          inLink && weekday > 0 && weekday < 6 && turno.hora_inicio
+            ? horarioTurno
+            : "",
         marcacoes: [] as string[],
         apontamentos: hasAbsence ? faltasPorDia.get(data)! : [],
       };
@@ -93,32 +108,35 @@ export class GerarEspelhoPontoBolsistaUseCase {
     ]
       .filter(Boolean)
       .join(", ");
-    return this.pdfGateway.execute({
-      name: `espelho-ponto-${municipe.nome || bolsistaId}-${mes}`,
-      servidor: {
-        matricula: String(person.id || bolsistaId),
-        nome: String(municipe.nome || ""),
-        cargo: "Bolsista",
-        unidade: String(link.local || ""),
-        horario: horarioTurno,
-        localTrabalho: String(link.local || ""),
-        endereco: address,
+    return this.pdfGateway.execute(
+      {
+        name: `espelho-ponto-${municipe.nome || bolsistaId}-${mes}`,
+        servidor: {
+          matricula: String(person.id || bolsistaId),
+          nome: String(municipe.nome || ""),
+          cargo: "Bolsista",
+          unidade: String(link.local || ""),
+          horario: horarioTurno,
+          localTrabalho: String(link.local || ""),
+          endereco: address,
+        },
+        periodo: {
+          referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
+          inicio: periodo.inicio,
+          fim: periodo.fim,
+        },
+        dias: days,
+        totais: {
+          horaExtra50: "00:00",
+          horaExtra100: "00:00",
+          adicionalNoturno: "00:00",
+          atrasoSaidaAntecipada: "00:00",
+          faltas: String(faltasPorDia.size),
+        },
+        observacoes: `Edital: ${notice.name || editalId}`,
       },
-      periodo: {
-        referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
-        inicio: periodo.inicio,
-        fim: periodo.fim,
-      },
-      dias: days,
-      totais: {
-        horaExtra50: "00:00",
-        horaExtra100: "00:00",
-        adicionalNoturno: "00:00",
-        atrasoSaidaAntecipada: "00:00",
-        faltas: String(faltasPorDia.size),
-      },
-      observacoes: `Edital: ${notice.name || editalId}`,
-    }, requestId);
+      requestId,
+    );
   }
 
   private parseMonth(value: string) {

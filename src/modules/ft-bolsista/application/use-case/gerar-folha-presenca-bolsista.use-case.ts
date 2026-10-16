@@ -4,7 +4,7 @@ import { ftError } from "../utils/ft-error.js";
 import {
   getVinculoOperationalEnd,
   resolveTurnoSnapshot,
-  selectLatestVinculoForPeriod,
+  selectVinculosForPeriod,
 } from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
 
 type PdfGateway = Pick<RenderFolhaPresencaPdfUseCase, "execute">;
@@ -15,7 +15,12 @@ export class GerarFolhaPresencaBolsistaUseCase {
     private readonly pdfGateway: PdfGateway,
   ) {}
 
-  async execute(bolsistaId: string, editalId: string, mes: string, requestId?: string) {
+  async execute(
+    bolsistaId: string,
+    editalId: string,
+    mes: string,
+    requestId?: string,
+  ) {
     const periodo = this.parseMonth(mes);
     const bolsista = await this.repository.findById(bolsistaId);
     if (!bolsista) throw ftError(404, "Bolsista not found");
@@ -23,12 +28,23 @@ export class GerarFolhaPresencaBolsistaUseCase {
     const edital = await this.repository.findEditalById(editalId);
     if (!edital) throw ftError(404, "Edital not found");
 
-    const vinculos = await this.repository.findHistoricoByBolsistaId(bolsistaId);
-    const vinculo = selectLatestVinculoForPeriod(
-      vinculos.filter((item: any) => String(item.get?.("edital_id") ?? item.edital_id) === editalId),
+    const vinculos =
+      await this.repository.findHistoricoByBolsistaId(bolsistaId);
+    const vigentes = selectVinculosForPeriod(
+      vinculos.filter(
+        (item: any) =>
+          String(item.get?.("edital_id") ?? item.edital_id) === editalId,
+      ),
       { inicio: periodo.inicio, fim: periodo.fim },
     );
-    if (!vinculo) throw ftError(409, "O vinculo nao abrange o mes selecionado");
+    if (!vigentes.length)
+      throw ftError(409, "O vinculo nao abrange o mes selecionado");
+    if (vigentes.length > 1)
+      throw ftError(
+        409,
+        "Existem multiplos vinculos vigentes no mes informado",
+      );
+    const vinculo = vigentes[0];
 
     const person = this.plain(bolsista);
     const municipe = this.plain(person.municipe);
@@ -38,34 +54,48 @@ export class GerarFolhaPresencaBolsistaUseCase {
       municipe.bairro,
       municipe.cidade,
       municipe.uf,
-    ].filter(Boolean).join(", ");
+    ]
+      .filter(Boolean)
+      .join(", ");
 
-    return this.pdfGateway.execute({
-      name: `folha-presenca-${municipe.nome || bolsistaId}-${mes}`,
-      servidor: {
-        matricula: String(person.id || bolsistaId),
-        nome: String(municipe.nome || ""),
-        cargo: "Bolsista",
-        unidade: String(vinculo.local || ""),
-        horario: this.horarioTurno(resolveTurnoSnapshot(vinculo)),
-        localTrabalho: String(vinculo.local || ""),
-        endereco: address,
+    return this.pdfGateway.execute(
+      {
+        name: `folha-presenca-${municipe.nome || bolsistaId}-${mes}`,
+        servidor: {
+          matricula: String(person.id || bolsistaId),
+          nome: String(municipe.nome || ""),
+          cargo: "Bolsista",
+          unidade: String(vinculo.local || ""),
+          horario: this.horarioTurno(resolveTurnoSnapshot(vinculo)),
+          localTrabalho: String(vinculo.local || ""),
+          endereco: address,
+        },
+        periodo: {
+          referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
+          inicio: periodo.inicio,
+          fim: periodo.fim,
+        },
+        dias: this.days(
+          periodo.inicio,
+          periodo.fim,
+          this.dateOnly(vinculo.data_vinculo),
+          this.endDate(vinculo),
+        ),
+        observacoes: "",
       },
-      periodo: {
-        referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
-        inicio: periodo.inicio,
-        fim: periodo.fim,
-      },
-      dias: this.days(periodo.inicio, periodo.fim, this.dateOnly(vinculo.data_vinculo), this.endDate(vinculo)),
-      observacoes: "",
-    }, requestId);
+      requestId,
+    );
   }
 
   private parseMonth(value: string) {
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value || "")) throw ftError(400, "Mes invalido");
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value || ""))
+      throw ftError(400, "Mes invalido");
     const [year, month] = value.split("-").map(Number);
     const last = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
-    return { inicio: `${value}-01`, fim: `${value}-${String(last).padStart(2, "0")}` };
+    return {
+      inicio: `${value}-01`,
+      fim: `${value}-${String(last).padStart(2, "0")}`,
+    };
   }
 
   private days(start: string, end: string, linkStart: string, linkEnd: string) {
@@ -96,7 +126,9 @@ export class GerarFolhaPresencaBolsistaUseCase {
 
   private dateOnly(value?: string | Date | null): string {
     if (!value) return "";
-    return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+    return value instanceof Date
+      ? value.toISOString().slice(0, 10)
+      : String(value).slice(0, 10);
   }
 
   private plain(value: any): any {

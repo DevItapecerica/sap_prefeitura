@@ -19,7 +19,7 @@ export interface FtBolsistaQueryDto {
 
 export interface FtBolsistaVinculoCandidatesQueryDto extends FtBolsistaQueryDto {
   edital_id: string;
-  data_vinculo?: string;
+  data_vinculo: string;
   cursor?: string;
 }
 

@@ -483,6 +483,7 @@ describe("FtBolsistaService", () => {
     const response = await service.getBolsistasParaVinculo({
       search: "Maria",
       edital_id: "11111111-1111-4111-8111-111111111111",
+      data_vinculo: "2026-06-09",
     });
 
     assert.equal(response.ok, true);
@@ -546,7 +547,7 @@ describe("FtBolsistaService", () => {
           data_falta: "2026-06-09",
         }),
       404,
-      "Vinculo entre bolsista e edital nao encontrado",
+      "Vinculo ativo entre bolsista e edital nao encontrado",
     );
 
     assert.equal(repository.createFaltaPayload, null);

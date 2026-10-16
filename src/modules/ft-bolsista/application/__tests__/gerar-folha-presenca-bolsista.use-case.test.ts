@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { GerarFolhaPresencaBolsistaUseCase } from "../use-case/gerar-folha-presenca-bolsista.use-case.js";
 
-test("gera folha vazia usando o vinculo mais recente do mes", async () => {
+test("gera folha vazia usando o unico vinculo vigente no mes", async () => {
   let payload: any;
   const repository = {
     findById: async () => ({ id: "b1", municipe: { nome: "Maria", rua: "Rua A", numero: "10", bairro: "Centro", cidade: "Itapecerica", uf: "SP" } }),
     findEditalById: async () => ({ id: "e1", name: "Edital 1" }),
     findHistoricoByBolsistaId: async () => [
-      { edital_id: "e1", data_vinculo: "2026-01-01", expire_at: "2026-12-31", local: "Antigo" },
+      { edital_id: "e1", data_vinculo: "2026-01-01", concluded_at: "2026-01-31", local: "Antigo" },
       { edital_id: "e1", data_vinculo: "2026-02-15", expire_at: "2026-12-31", local: "Atual" },
       { edital_id: "outro", data_vinculo: "2026-03-01", expire_at: "2026-12-31", local: "Ignorado" },
     ],

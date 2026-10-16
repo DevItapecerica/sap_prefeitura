@@ -183,6 +183,38 @@ test("não reduz o pagamento mesmo com falta em todos os dias úteis", () => {
   );
 });
 
+test("desconta faltas uteis distintas quando a configuracao esta ativa", () => {
+  const scenario = scenarios.faltasSemDesconto;
+  const relatorio = new FtRelatorioPagamentoService(true).execute(
+    scenario.bolsistas as unknown as FtRelatorioBolsista[],
+    { valor_bolsa: "1000.00", data_vencimento: "2026-12-31" } as FtEdital,
+    scenario.periodo,
+  );
+  const row = relatorio.locais[0].rows[0];
+
+  assert.equal(row.faltas, 2);
+  assert.equal(row.desconto, 90.91);
+  assert.equal(row.valor_liquido, 909.09);
+});
+
+test("rejeita vinculos sobrepostos para evitar pagamento duplicado", () => {
+  assert.throws(
+    () => new FtRelatorioPagamentoService().execute(
+      [{
+        bolsista: { nome: "Maria", cpf: "", payment_info: {} },
+        faltas: [],
+        vinculos: [
+          { data_vinculo: "2026-06-01", canceled_at: "2026-06-15" },
+          { data_vinculo: "2026-06-15", expire_at: "2026-12-31" },
+        ],
+      }] as unknown as FtRelatorioBolsista[],
+      { valor_bolsa: "1000.00", data_vencimento: "2026-12-31" } as FtEdital,
+      { data_inicio: "2026-06-01", data_fim: "2026-06-30" },
+    ),
+    (error: any) => error.statusCode === 409,
+  );
+});
+
 test("separa vinculos historicos por pagador e preserva o local de trabalho", () => {
   const relatorio = new FtRelatorioPagamentoService().execute(
     [

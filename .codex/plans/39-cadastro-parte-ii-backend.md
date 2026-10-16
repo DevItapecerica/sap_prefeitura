@@ -25,3 +25,12 @@
 - Criar ocorrências por `bolsista_edital_id`, validando a propriedade do vínculo.
 - Substituir a listagem integral de candidatos por cursor opaco e limite máximo de 50.
 - Padronizar UUIDs das migrations, reexecução parcial, limites de entrada e datas de São Paulo.
+
+## Retorno mensal, pagamento e faltas
+
+- Liberar novo vínculo histórico com `CANT_DUPLICATE = false`, mantendo bloqueio de qualquer vínculo ativo.
+- Bloquear retorno antes do mês seguinte com `CANT_REENTER_SAME_MONTH = true`, inclusive em candidatos e validação transacional.
+- Tornar `data_vinculo` obrigatória nos candidatos e considerar históricos excluídos logicamente.
+- Entregar todas as janelas válidas ao relatório, rejeitar sobreposição e preservar pagador, local e turno de cada período.
+- Controlar o desconto de faltas por `DESCONTAR_FALTA = false`, com suporte testado ao modo `true`.
+- Lançar novas faltas somente contra vínculo ativo e dentro de sua vigência.
