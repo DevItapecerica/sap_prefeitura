@@ -58,4 +58,43 @@ describe("cadastro parte II no bolsista", () => {
       (error: any) => error.statusCode === 404,
     );
   });
+
+  it("filtra aniversarios invalidos e aceita objetos simples sem vinculo", async () => {
+    const currentMonth = new Date().getMonth() + 1;
+    const month = String(currentMonth).padStart(2, "0");
+    const repository = {
+      findAniversariantesAtivos: async () => [
+        { id: "b2", municipe: { nome: "Bruna", nascimento: `1990-${month}-10` }, bolsistas_edital: [] },
+        { id: "b1", municipe: { nome: "Ana", nascimento: `1995-${month}-10` } },
+        { id: "b3", municipe: { nome: "Sem data", nascimento: null } },
+      ],
+    };
+
+    const result = await new FtBolsistaService(repository as any).getAniversariantes();
+
+    assert.equal(result.mes, currentMonth);
+    assert.deepEqual(result.aniversariantes.map((item) => item.nome), ["Ana", "Bruna"]);
+    assert.equal(result.aniversariantes[0].edital, null);
+  });
+
+  it("rejeita ocorrencia para bolsista ausente e remocao inexistente", async () => {
+    const missingRepository = {
+      findById: async () => null,
+      findOcorrenciaById: async () => null,
+    };
+    const service = new FtBolsistaService(missingRepository as any);
+
+    await assert.rejects(
+      () => service.createOcorrencia("b1", { bolsista_edital_id: "v1", data_ocorrencia: "2026-10-15", descricao: "Teste" }, 1),
+      (error: any) => error.statusCode === 404,
+    );
+    await assert.rejects(
+      () => service.listOcorrencias("b1"),
+      (error: any) => error.statusCode === 404,
+    );
+    await assert.rejects(
+      () => service.deleteOcorrencia("b1", "o1"),
+      (error: any) => error.statusCode === 404,
+    );
+  });
 });

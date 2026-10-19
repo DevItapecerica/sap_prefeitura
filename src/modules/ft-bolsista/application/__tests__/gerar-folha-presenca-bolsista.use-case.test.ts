@@ -104,3 +104,57 @@ test("marca como fora do vinculo as datas anteriores e posteriores ao periodo", 
   assert.equal(payload.dias[9].situacao, "Normal");
   assert.equal(payload.dias[20].situacao, "Fora do vínculo");
 });
+
+test("rejeita vinculos sobrepostos e mes vazio", async () => {
+  const link = { edital_id: "e1", data_vinculo: "2026-06-01", expire_at: "2026-06-30" };
+  const repository = {
+    findById: async () => ({ id: "b1", municipe: {} }),
+    findEditalById: async () => ({ id: "e1" }),
+    findHistoricoByBolsistaId: async () => [link, { ...link }],
+  };
+  const useCase = new GerarFolhaPresencaBolsistaUseCase(repository as any, {} as any);
+
+  await assert.rejects(
+    () => useCase.execute("b1", "e1", "2026-06"),
+    (error: any) => error.statusCode === 409 && /multiplos/.test(error.message),
+  );
+  await assert.rejects(
+    () => useCase.execute("b1", "e1", undefined as any),
+    (error: any) => error.statusCode === 400,
+  );
+});
+
+test("aceita modelos Sequelize e preserva snapshot completo do turno", async () => {
+  let payload: any;
+  const vinculoData = {
+    edital_id: "e1",
+    data_vinculo: new Date("2026-06-01T00:00:00.000Z"),
+    expire_at: null,
+    local: "Paço",
+    turno_nome_snapshot: "Manhã",
+    turno_hora_inicio_snapshot: "07:30:00",
+    turno_hora_fim_snapshot: "13:30:00",
+  };
+  const vinculo = {
+    ...vinculoData,
+    get: (key: string) => vinculoData[key as keyof typeof vinculoData],
+    toJSON: () => vinculoData,
+  };
+  const bolsistaData = { id: "b1", municipe: { nome: "Maria" } };
+  const repository = {
+    findById: async () => testModel(bolsistaData),
+    findEditalById: async () => ({ id: "e1" }),
+    findHistoricoByBolsistaId: async () => [vinculo],
+  };
+  const pdf = { execute: async (data: any) => { payload = data; return {}; } };
+
+  await new GerarFolhaPresencaBolsistaUseCase(repository as any, pdf as any)
+    .execute("b1", "e1", "2026-06");
+
+  assert.equal(payload.servidor.horario, "07:30 13:30");
+  assert.equal(payload.servidor.matricula, "b1");
+});
+
+function testModel(value: any) {
+  return { toJSON: () => value };
+}

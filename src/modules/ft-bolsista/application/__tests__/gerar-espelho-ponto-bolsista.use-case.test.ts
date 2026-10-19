@@ -48,3 +48,66 @@ test("seleciona o vinculo que cobre o mes e preserva o snapshot do turno", async
   await new GerarEspelhoPontoBolsistaUseCase(repository as any, gateway as any).execute("b1", "e1", "2026-05");
   assert.equal(sent.servidor.horario, "08:00 14:00");
 });
+
+test("valida edital, existencia do vinculo e sobreposicao no mes", async () => {
+  const gateway = { execute: async () => ({}) } as any;
+  await assert.rejects(
+    () => new GerarEspelhoPontoBolsistaUseCase(
+      { ...baseRepository, findEditalById: async () => null } as any,
+      gateway,
+    ).execute("b1", "e1", "2026-05"),
+    (error: any) => error.statusCode === 404,
+  );
+  await assert.rejects(
+    () => new GerarEspelhoPontoBolsistaUseCase(
+      { ...baseRepository, findHistoricoByBolsistaId: async () => [] } as any,
+      gateway,
+    ).execute("b1", "e1", "2026-05"),
+    (error: any) => error.statusCode === 404,
+  );
+  const overlapping = model({ edital_id: "e1", data_vinculo: "2026-05-01", expire_at: "2026-05-31" });
+  await assert.rejects(
+    () => new GerarEspelhoPontoBolsistaUseCase(
+      { ...baseRepository, findHistoricoByBolsistaId: async () => [overlapping, overlapping] } as any,
+      gateway,
+    ).execute("b1", "e1", "2026-05"),
+    (error: any) => error.statusCode === 409 && /multiplos/.test(error.message),
+  );
+});
+
+test("aplica fallbacks de identificacao, edital, turno e faltas sem data", async () => {
+  let sent: any;
+  const repository = {
+    ...baseRepository,
+    findById: async () => ({ municipe: { nome: "" } }),
+    findEditalById: async () => ({}),
+    findHistoricoByBolsistaId: async () => [{
+      edital_id: "e1",
+      data_vinculo: new Date("2026-05-01T00:00:00.000Z"),
+      expire_at: "2026-05-31",
+      turno: null,
+    }],
+    findFaltasByBolsistaPeriodo: async () => [
+      { data_falta: null, observacao: "Ignorada" },
+      { data_falta: "2026-05-11", observacao: null },
+    ],
+  };
+  const gateway = { execute: async (data: any) => { sent = data; return {}; } };
+
+  await new GerarEspelhoPontoBolsistaUseCase(repository as any, gateway as any)
+    .execute("b1", "e1", "2026-05");
+
+  assert.match(sent.name, /b1/);
+  assert.equal(sent.servidor.matricula, "b1");
+  assert.equal(sent.servidor.horario, "Não informado");
+  assert.equal(sent.observacoes, "Edital: e1");
+  assert.deepEqual(sent.dias.find((day: any) => day.data === "2026-05-11").apontamentos, []);
+});
+
+test("rejeita mes vazio", async () => {
+  await assert.rejects(
+    () => new GerarEspelhoPontoBolsistaUseCase(baseRepository, {} as any)
+      .execute("b1", "e1", undefined as any),
+    (error: any) => error.statusCode === 400,
+  );
+});
