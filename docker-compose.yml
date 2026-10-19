@@ -55,8 +55,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       METRICS_TOKEN: ${METRICS_TOKEN}
       # TRUSTED_PROXIES: ${TRUSTED_PROXIES:-loopback,linklocal,uniquelocal}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       - db
     networks:
