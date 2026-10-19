@@ -1,6 +1,11 @@
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import RenderEspelhoPontoPdfUseCase from "../../../espelho-ponto/application/use-case/render-espelho-ponto-pdf.use-case.js";
 import { ftError } from "../utils/ft-error.js";
+import {
+  getVinculoOperationalEnd,
+  resolveTurnoSnapshot,
+  selectVinculosForPeriod,
+} from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
 
 type PdfGateway = Pick<RenderEspelhoPontoPdfUseCase, "execute">;
 
@@ -10,7 +15,12 @@ export class GerarEspelhoPontoBolsistaUseCase {
     private readonly pdfGateway: PdfGateway,
   ) {}
 
-  async execute(bolsistaId: string, editalId: string, mes: string, requestId?: string) {
+  async execute(
+    bolsistaId: string,
+    editalId: string,
+    mes: string,
+    requestId?: string,
+  ) {
     const periodo = this.parseMonth(mes);
     const bolsista = await this.repository.findById(bolsistaId);
     if (!bolsista) throw ftError(404, "Bolsista not found");
@@ -18,24 +28,31 @@ export class GerarEspelhoPontoBolsistaUseCase {
     const edital = await this.repository.findEditalById(editalId);
     if (!edital) throw ftError(404, "Edital not found");
 
-    const vinculo = await this.repository.findVinculo(bolsistaId, editalId);
-    if (!vinculo)
+    const vinculos = (
+      await this.repository.findHistoricoByBolsistaId(bolsistaId)
+    )
+      .map((item: any) => this.plain(item))
+      .filter((item: any) => String(item.edital_id) === editalId);
+    if (!vinculos.length)
       throw ftError(404, "Vinculo entre bolsista e edital nao encontrado");
+    const vigentes = selectVinculosForPeriod(vinculos, {
+      inicio: periodo.inicio,
+      fim: periodo.fim,
+    });
+    if (!vigentes.length)
+      throw ftError(409, "Vinculo nao vigente no mes informado");
+    if (vigentes.length > 1)
+      throw ftError(
+        409,
+        "Existem multiplos vinculos vigentes no mes informado",
+      );
+    const vinculo = vigentes[0];
 
     const link = this.plain(vinculo);
+    const turno = resolveTurnoSnapshot(link);
+    const horarioTurno = this.horarioTurno(turno);
     const inicioVinculo = this.dateOnly(link.data_vinculo);
-    const fimVinculo = this.dateOnly(
-      link.canceled_at ||
-        link.concluded_at ||
-        link.expired_at ||
-        link.expire_at,
-    );
-    if (
-      inicioVinculo > periodo.fim ||
-      (fimVinculo && fimVinculo < periodo.inicio)
-    ) {
-      throw ftError(409, "O vinculo nao abrange o mes selecionado");
-    }
+    const fimVinculo = getVinculoOperationalEnd(link);
 
     const faltas = await this.repository.findFaltasByBolsistaPeriodo(
       bolsistaId,
@@ -74,7 +91,9 @@ export class GerarEspelhoPontoBolsistaUseCase {
         data,
         situacao,
         horarioPrevisto:
-          inLink && weekday > 0 && weekday < 6 ? "07:00 16:00" : "",
+          inLink && weekday > 0 && weekday < 6 && turno.hora_inicio
+            ? horarioTurno
+            : "",
         marcacoes: [] as string[],
         apontamentos: hasAbsence ? faltasPorDia.get(data)! : [],
       };
@@ -89,32 +108,35 @@ export class GerarEspelhoPontoBolsistaUseCase {
     ]
       .filter(Boolean)
       .join(", ");
-    return this.pdfGateway.execute({
-      name: `espelho-ponto-${municipe.nome || bolsistaId}-${mes}`,
-      servidor: {
-        matricula: String(person.id || bolsistaId),
-        nome: String(municipe.nome || ""),
-        cargo: "Bolsista",
-        unidade: String(link.local || ""),
-        horario: "07:00 16:00",
-        localTrabalho: String(link.local || ""),
-        endereco: address,
+    return this.pdfGateway.execute(
+      {
+        name: `espelho-ponto-${municipe.nome || bolsistaId}-${mes}`,
+        servidor: {
+          matricula: String(person.id || bolsistaId),
+          nome: String(municipe.nome || ""),
+          cargo: "Bolsista",
+          unidade: String(link.local || ""),
+          horario: horarioTurno,
+          localTrabalho: String(link.local || ""),
+          endereco: address,
+        },
+        periodo: {
+          referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
+          inicio: periodo.inicio,
+          fim: periodo.fim,
+        },
+        dias: days,
+        totais: {
+          horaExtra50: "00:00",
+          horaExtra100: "00:00",
+          adicionalNoturno: "00:00",
+          atrasoSaidaAntecipada: "00:00",
+          faltas: String(faltasPorDia.size),
+        },
+        observacoes: `Edital: ${notice.name || editalId}`,
       },
-      periodo: {
-        referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
-        inicio: periodo.inicio,
-        fim: periodo.fim,
-      },
-      dias: days,
-      totais: {
-        horaExtra50: "00:00",
-        horaExtra100: "00:00",
-        adicionalNoturno: "00:00",
-        atrasoSaidaAntecipada: "00:00",
-        faltas: String(faltasPorDia.size),
-      },
-      observacoes: `Edital: ${notice.name || editalId}`,
-    }, requestId);
+      requestId,
+    );
   }
 
   private parseMonth(value: string) {
@@ -148,5 +170,11 @@ export class GerarEspelhoPontoBolsistaUseCase {
 
   private plain(value: any): any {
     return value?.toJSON?.() ?? value ?? {};
+  }
+
+  private horarioTurno(turno: any): string {
+    const data = this.plain(turno);
+    if (!data.hora_inicio || !data.hora_fim) return "Não informado";
+    return `${String(data.hora_inicio).slice(0, 5)} ${String(data.hora_fim).slice(0, 5)}`;
   }
 }

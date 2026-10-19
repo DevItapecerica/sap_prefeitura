@@ -6,7 +6,7 @@ export const FT_BOLSISTA_EVENTS = {
   deleted: "FT_BOLSISTA_RESOURCE_DELETED",
 } as const;
 
-export type FtBolsistaResource = "bolsista" | "vinculo" | "falta";
+export type FtBolsistaResource = "bolsista" | "vinculo" | "falta" | "ocorrencia";
 export interface FtBolsistaCreatedEvent {
   context: ApplicationEventContext;
   resourceType: FtBolsistaResource;

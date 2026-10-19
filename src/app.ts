@@ -15,6 +15,7 @@ import FtRelatorioModule from "./modules/ft-relatorio/index.js";
 import AuditModule from "./modules/audit/index.js";
 import EspelhoPontoModule from "./modules/espelho-ponto/index.js";
 import PagadorModule from "./modules/ft-pagador/index.js";
+import TurnoModule from "./modules/ft-turno/index.js";
 
 const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   fastify,
@@ -47,6 +48,9 @@ const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
 
   await fastify.register(PagadorModule);
   fastify.log.info("FTPagador Module Registrado");
+
+  await fastify.register(TurnoModule);
+  fastify.log.info("FTTurno Module Registrado");
 
   await fastify.register(FtRelatorioModule, { runtimeWorkers });
   fastify.log.info("FTRelatorio Module Registrado");

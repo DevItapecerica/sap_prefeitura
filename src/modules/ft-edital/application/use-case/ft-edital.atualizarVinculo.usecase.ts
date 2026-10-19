@@ -12,8 +12,9 @@ export default class FtEditalAtualizarVinculoUseCase {
   async execute(editalId: string, bolsistaId: string, data: FtAtualizarVinculoDto) {
     const local = data?.local?.trim();
     const pagadorId = data?.pagador_id;
-    if (!editalId || !bolsistaId || !local || !pagadorId) {
-      throw ftError(400, "Edital, bolsista, local e pagador sao obrigatorios");
+    const turnoId = data?.turno_id;
+    if (!editalId || !bolsistaId || !local || !pagadorId || !turnoId) {
+      throw ftError(400, "Edital, bolsista, local, pagador e turno sao obrigatorios");
     }
 
     const edital = await this.repository.findById(editalId);
@@ -26,6 +27,7 @@ export default class FtEditalAtualizarVinculoUseCase {
     const result = await this.repository.updateActiveVinculo(editalId, bolsistaId, {
       local,
       pagador_id: pagadorId,
+      turno_id: turnoId,
     });
     if (!result) throw ftError(404, "Vinculo ativo nao encontrado");
     return result;

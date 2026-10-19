@@ -13,9 +13,18 @@ import {
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
+import {
+  hasOverlappingVinculos,
+  resolveTurnoSnapshot,
+  selectVinculosForPeriod,
+} from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
+import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
 
 export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
-  private readonly municipeMapper = new MunicipeMapper(new AesCryptService(), new Sha256CryptService());
+  private readonly municipeMapper = new MunicipeMapper(
+    new AesCryptService(),
+    new Sha256CryptService(),
+  );
   async findEditalById(id: string) {
     const edital = await db.Edital.findByPk(id);
 
@@ -61,18 +70,36 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
             "status",
             "local",
             "pagador_id",
+            "turno_id",
+            "turno_nome_snapshot",
+            "turno_hora_inicio_snapshot",
+            "turno_hora_fim_snapshot",
             "data_vinculo",
             "expire_at",
             "canceled_at",
             "concluded_at",
             "expired_at",
           ],
-          include: [{
-            model: db.Pagador,
-            as: "pagador",
-            paranoid: false,
-            attributes: ["uuid", "nome", "quantidade", "deletedAt"],
-          }],
+          include: [
+            {
+              model: db.Pagador,
+              as: "pagador",
+              paranoid: false,
+              attributes: ["uuid", "nome", "quantidade", "deletedAt"],
+            },
+            {
+              model: db.Turno,
+              as: "turno",
+              paranoid: false,
+              attributes: [
+                "uuid",
+                "nome",
+                "hora_inicio",
+                "hora_fim",
+                "deletedAt",
+              ],
+            },
+          ],
         },
         {
           model: db.BolsistaFalta,
@@ -91,12 +118,14 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     });
 
     const mapped = await Promise.all(
-      bolsistas.map((bolsista: any) => this.toFtRelatorioBolsista(bolsista, periodo)),
+      bolsistas.map((bolsista: any) =>
+        this.toFtRelatorioBolsista(bolsista, periodo),
+      ),
     );
     return mapped.filter(
-        (bolsista: FtRelatorioBolsista | null): bolsista is FtRelatorioBolsista =>
-          Boolean(bolsista),
-      );
+      (bolsista: FtRelatorioBolsista | null): bolsista is FtRelatorioBolsista =>
+        Boolean(bolsista),
+    );
   }
 
   private toFtEdital(model: any): FtEdital {
@@ -124,9 +153,17 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     const paymentInfo = bolsista.payment_info
       ? this.toFtPaymentInfo(bolsista.payment_info)
       : undefined;
-    const vinculos = (bolsista.bolsistas_edital || [])
-      .filter((vinculo: any) => this.vinculoIntersectsPeriod(vinculo, periodo))
-      .map((vinculo: any) => this.toFtRelatorioVinculo(vinculo));
+    const selected = selectVinculosForPeriod(bolsista.bolsistas_edital || [], {
+      inicio: periodo.data_inicio,
+      fim: periodo.data_fim,
+    });
+    if (hasOverlappingVinculos(selected)) {
+      throw ftError(
+        409,
+        "Existem vinculos sobrepostos para o bolsista no periodo informado",
+      );
+    }
+    const vinculos = selected.map((item) => this.toFtRelatorioVinculo(item));
 
     if (vinculos.length === 0) {
       return null;
@@ -143,13 +180,16 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
         bolsista.updatedAt,
         bolsista.deletedAt,
       ),
-      (bolsista.faltas || []).map((falta: any) => this.toFtBolsistaFalta(falta)),
+      (bolsista.faltas || []).map((falta: any) =>
+        this.toFtBolsistaFalta(falta),
+      ),
       vinculos,
     );
   }
 
   private toFtRelatorioVinculo(model: any): FtRelatorioVinculo {
     const vinculo = this.toPlain(model);
+    const turnoSnapshot = resolveTurnoSnapshot(vinculo);
 
     return new FtRelatorioVinculo(
       vinculo.status,
@@ -162,31 +202,14 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
       vinculo.local,
       vinculo.pagador_id,
       vinculo.pagador ?? null,
+      vinculo.turno_id,
+      turnoSnapshot.hora_inicio
+        ? { ...(vinculo.turno ?? {}), ...turnoSnapshot }
+        : null,
+      vinculo.turno_nome_snapshot,
+      vinculo.turno_hora_inicio_snapshot,
+      vinculo.turno_hora_fim_snapshot,
     );
-  }
-
-  private vinculoIntersectsPeriod(
-    vinculo: any,
-    periodo: FtRelatorioPeriodo,
-  ): boolean {
-    const dataVinculo = this.toDateOnly(vinculo.data_vinculo);
-    const fimOperacional = this.getOperationalEndDate(vinculo);
-
-    if (dataVinculo > periodo.data_fim) {
-      return false;
-    }
-
-    return !fimOperacional || fimOperacional >= periodo.data_inicio;
-  }
-
-  private getOperationalEndDate(vinculo: any): string | null {
-    const value =
-      vinculo.canceled_at ||
-      vinculo.concluded_at ||
-      vinculo.expired_at ||
-      vinculo.expire_at;
-
-    return value ? this.toDateOnly(value) : null;
   }
 
   private toFtPaymentInfo(model: any): FtPaymentInfo {

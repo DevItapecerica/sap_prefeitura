@@ -19,6 +19,21 @@ export interface FtBolsistaQueryDto {
 
 export interface FtBolsistaVinculoCandidatesQueryDto extends FtBolsistaQueryDto {
   edital_id: string;
+  data_vinculo: string;
+  cursor?: string;
+}
+
+export interface FtBolsistaOcorrenciaDto {
+  bolsista_edital_id: string;
+  data_ocorrencia: string;
+  descricao: string;
+}
+
+export interface FtBolsistaOcorrenciaQueryDto {
+  bolsista_edital_id?: string;
+  edital_id?: string;
+  page?: string | number;
+  limit?: string | number;
 }
 
 export interface FtBolsistaFaltaDto {

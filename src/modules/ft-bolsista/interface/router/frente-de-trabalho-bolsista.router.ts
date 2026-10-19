@@ -37,6 +37,35 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
       dig_conta: { type: "string" },
     },
   };
+  const vinculoAtualSchema = {
+    anyOf: [
+      {
+        type: "object",
+        additionalProperties: true,
+        required: ["id", "edital_id", "status", "local", "data_vinculo"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          edital_id: { type: "string", format: "uuid" },
+          status: {
+            type: "string",
+            enum: ["ativo", "inativo", "concluido", "cancelado", "expirado"],
+          },
+          local: { type: "string" },
+          data_vinculo: { type: "string" },
+          expire_at: { anyOf: [{ type: "string" }, { type: "null" }] },
+          edital: {
+            type: "object",
+            additionalProperties: true,
+            properties: {
+              id: { type: "string", format: "uuid" },
+              name: { type: "string" },
+            },
+          },
+        },
+      },
+      { type: "null" },
+    ],
+  };
   const bolsistaSchema = {
     type: "object",
     additionalProperties: true,
@@ -62,6 +91,8 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         },
       },
       payment_info: paymentInfoSchema,
+      vinculo_atual: vinculoAtualSchema,
+      bolsistas_edital: { type: "array", items: vinculoAtualSchema.anyOf[0] },
       createdAt: { type: "string" },
       updatedAt: { type: "string" },
     },
@@ -113,11 +144,30 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
       },
     },
   };
+  const ocorrenciaSchema = {
+    type: "object",
+    additionalProperties: true,
+    properties: {
+      id: { type: "string", format: "uuid" },
+      bolsista_edital_id: { type: "string", format: "uuid" },
+      data_ocorrencia: { type: "string", format: "date" },
+      descricao: { type: "string" },
+      author_id: { type: "integer" },
+      vinculo: { type: "object", additionalProperties: true },
+      author: { type: "object", additionalProperties: true },
+    },
+  };
 
   fastify.route({
     method: "GET",
     url: "/",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -149,15 +199,37 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id/espelho-ponto",
-    config: { audit: { failureAction: "EXPORT", module: "ft-bolsista", resourceType: "espelho_ponto", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "EXPORT",
+        module: "ft-bolsista",
+        resourceType: "espelho_ponto",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
-      tags: tag, security, summary: "Gerar espelho de ponto mensal do bolsista",
+      tags: tag,
+      security,
+      summary: "Gerar espelho de ponto mensal do bolsista",
       params: uuidParam,
       querystring: {
-        type: "object", additionalProperties: false, required: ["edital_id", "mes"],
-        properties: { edital_id: { type: "string", format: "uuid" }, mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } },
+        type: "object",
+        additionalProperties: false,
+        required: ["edital_id", "mes"],
+        properties: {
+          edital_id: { type: "string", format: "uuid" },
+          mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" },
+        },
       },
-      response: { 200: { description: "Espelho de ponto em PDF", content: { "application/pdf": { schema: { type: "string", format: "binary" } } } }, ...errorResponseSchema },
+      response: {
+        200: {
+          description: "Espelho de ponto em PDF",
+          content: {
+            "application/pdf": { schema: { type: "string", format: "binary" } },
+          },
+        },
+        ...errorResponseSchema,
+      },
     },
     handler: FrenteTrabalhoBolsistaController.gerarEspelhoPonto,
   });
@@ -165,7 +237,13 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "POST",
     url: "/",
-    config: { audit: { failureAction: "CREATE", module: "ft-bolsista", resourceType: "bolsista" } },
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -190,19 +268,26 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/vinculo-candidates",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+      },
+    },
     schema: {
       tags: tag,
       security,
       summary: "Listar bolsistas elegiveis para vinculo",
       querystring: {
         type: "object",
-        required: ["edital_id"],
+        required: ["edital_id", "data_vinculo"],
         properties: {
-          page: { type: "string" },
-          limit: { type: "string" },
+          limit: { type: "string", pattern: "^(?:[1-9]|[1-4][0-9]|50)$" },
           search: { type: "string" },
           edital_id: { type: "string", format: "uuid" },
+          data_vinculo: { type: "string", format: "date" },
+          cursor: { type: "string", maxLength: 1024 },
         },
       },
       response: {
@@ -211,7 +296,9 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
           properties: {
             message: { type: "string" },
             ok: { type: "boolean" },
-            count: { type: "number" },
+            returned_count: { type: "number" },
+            has_more: { type: "boolean" },
+            next_cursor: { anyOf: [{ type: "string" }, { type: "null" }] },
             bolsistas: { type: "array", items: bolsistaSchema },
           },
         },
@@ -223,8 +310,50 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
 
   fastify.route({
     method: "GET",
+    url: "/aniversariantes",
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "aniversariante",
+      },
+    },
+    schema: {
+      tags: tag,
+      security,
+      summary: "Listar aniversariantes ativos do mes",
+      querystring: {
+        type: "object",
+        properties: { mes: { type: "string", pattern: "^(?:[1-9]|1[0-2])$" } },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            aniversariantes: {
+              type: "array",
+              items: { type: "object", additionalProperties: true },
+            },
+            count: { type: "number" },
+            mes: { type: "number" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FrenteTrabalhoBolsistaController.getAniversariantes,
+  });
+
+  fastify.route({
+    method: "GET",
     url: "/toexpire",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -250,7 +379,13 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/toExpire",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "bolsista" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+      },
+    },
     schema: { hide: true },
     handler: FrenteTrabalhoBolsistaController.getToExpire,
   });
@@ -258,7 +393,13 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "PUT",
     url: "/prorrogate",
-    config: { audit: { failureAction: "UPDATE", module: "ft-bolsista", resourceType: "vinculo" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-bolsista",
+        resourceType: "vinculo",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -294,7 +435,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/edital/:id",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "edital_bolsista", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "edital_bolsista",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -317,7 +465,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id/historico",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "historico_bolsista", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "historico_bolsista",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -344,7 +499,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id",
-    config: { audit: { failureAction: "VIEW", module: "ft-bolsista", resourceType: "bolsista", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -367,7 +529,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "PUT",
     url: "/:id",
-    config: { audit: { failureAction: "UPDATE", module: "ft-bolsista", resourceType: "bolsista", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -391,7 +560,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "DELETE",
     url: "/:id",
-    config: { audit: { failureAction: "DELETE", module: "ft-bolsista", resourceType: "bolsista", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "DELETE",
+        module: "ft-bolsista",
+        resourceType: "bolsista",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -411,7 +587,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "PUT",
     url: "/:bolsista/edital/:edital",
-    config: { audit: { failureAction: "UPDATE", module: "ft-bolsista", resourceType: "vinculo", resourceIdParam: "bolsista" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-bolsista",
+        resourceType: "vinculo",
+        resourceIdParam: "bolsista",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -446,7 +629,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "POST",
     url: "/:id/faltas",
-    config: { audit: { failureAction: "CREATE", module: "ft-bolsista", resourceType: "falta", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-bolsista",
+        resourceType: "falta",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -479,7 +669,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "GET",
     url: "/:id/faltas",
-    config: { audit: { failureAction: "LIST", module: "ft-bolsista", resourceType: "falta", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "falta",
+        resourceIdParam: "id",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -514,7 +711,14 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
   fastify.route({
     method: "DELETE",
     url: "/:id/faltas/:faltaId",
-    config: { audit: { failureAction: "DELETE", module: "ft-bolsista", resourceType: "falta", resourceIdParam: "faltaId" } },
+    config: {
+      audit: {
+        failureAction: "DELETE",
+        module: "ft-bolsista",
+        resourceType: "falta",
+        resourceIdParam: "faltaId",
+      },
+    },
     schema: {
       tags: tag,
       security,
@@ -539,5 +743,126 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
       },
     },
     handler: FrenteTrabalhoBolsistaController.deleteFalta,
+  });
+
+  fastify.route({
+    method: "POST",
+    url: "/:id/ocorrencias",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-bolsista",
+        resourceType: "ocorrencia",
+        resourceIdParam: "id",
+      },
+    },
+    schema: {
+      tags: tag,
+      security,
+      summary: "Registrar ocorrencia no historico do bolsista",
+      params: uuidParam,
+      body: {
+        type: "object",
+        additionalProperties: false,
+        required: ["bolsista_edital_id", "data_ocorrencia", "descricao"],
+        properties: {
+          bolsista_edital_id: { type: "string", format: "uuid" },
+          data_ocorrencia: { type: "string", format: "date" },
+          descricao: {
+            type: "string",
+            minLength: 1,
+            maxLength: 2000,
+            pattern: "\\S",
+          },
+        },
+      },
+      response: {
+        201: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            ocorrencia: ocorrenciaSchema,
+            ok: { type: "boolean" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FrenteTrabalhoBolsistaController.createOcorrencia,
+  });
+
+  fastify.route({
+    method: "GET",
+    url: "/:id/ocorrencias",
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "ft-bolsista",
+        resourceType: "ocorrencia",
+        resourceIdParam: "id",
+      },
+    },
+    schema: {
+      tags: tag,
+      security,
+      summary: "Listar ocorrencias do bolsista",
+      params: uuidParam,
+      querystring: {
+        type: "object",
+        properties: {
+          bolsista_edital_id: { type: "string", format: "uuid" },
+          edital_id: { type: "string", format: "uuid" },
+          page: { type: "string", pattern: "^\\d+$" },
+          limit: { type: "string", pattern: "^(?:[1-9]|[1-9]\\d|100)$" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            ocorrencias: { type: "array", items: ocorrenciaSchema },
+            count: { type: "number" },
+            ok: { type: "boolean" },
+          },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FrenteTrabalhoBolsistaController.listOcorrencias,
+  });
+
+  fastify.route({
+    method: "DELETE",
+    url: "/:id/ocorrencias/:ocorrenciaId",
+    config: {
+      audit: {
+        failureAction: "DELETE",
+        module: "ft-bolsista",
+        resourceType: "ocorrencia",
+        resourceIdParam: "ocorrenciaId",
+      },
+    },
+    schema: {
+      tags: tag,
+      security,
+      summary: "Remover ocorrencia do bolsista",
+      params: {
+        type: "object",
+        required: ["id", "ocorrenciaId"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          ocorrenciaId: { type: "string", format: "uuid" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: { message: { type: "string" }, ok: { type: "boolean" } },
+        },
+        ...errorResponseSchema,
+      },
+    },
+    handler: FrenteTrabalhoBolsistaController.deleteOcorrencia,
   });
 };

@@ -183,12 +183,13 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
             minItems: 1,
             items: {
               type: "object",
-              required: ["bolsista_id", "local", "pagador_id"],
+              required: ["bolsista_id", "local", "pagador_id", "turno_id"],
               additionalProperties: false,
               properties: {
                 bolsista_id: { type: "string", format: "uuid" },
                 local: { type: "string", minLength: 1, pattern: "\\S" },
                 pagador_id: { type: "string", format: "uuid" },
+                turno_id: { type: "string", format: "uuid" },
               },
             },
           },
@@ -257,10 +258,11 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
       body: {
         type: "object",
         additionalProperties: false,
-        required: ["local", "pagador_id"],
+        required: ["local", "pagador_id", "turno_id"],
         properties: {
           local: { type: "string", minLength: 1, pattern: "\\S" },
           pagador_id: { type: "string", format: "uuid" },
+          turno_id: { type: "string", format: "uuid" },
         },
       },
       response: {

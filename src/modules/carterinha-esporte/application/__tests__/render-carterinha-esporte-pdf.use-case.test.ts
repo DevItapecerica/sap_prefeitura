@@ -118,3 +118,64 @@ test("RenderCarterinhaEsportePdfUseCase envia observacao e validade do exame ao 
   assert.equal(capturedPayload.entityData.foto, FOTO_FIXTURE);
   assert.equal(capturedConfig.headers["X-Request-Id"], requestId);
 });
+
+test("RenderCarterinhaEsportePdfUseCase valida uuid, carteirinha e municipe", async () => {
+  const carterinhaRepository = new FakeCarterinhaRepository();
+  const municipeRepository = new FakeMunicipeRepository();
+  const useCase = new RenderCarterinhaEsportePdfUseCase(
+    carterinhaRepository,
+    municipeRepository,
+    "http://pdf.local",
+  );
+
+  await assert.rejects(() => useCase.execute(""), (error: any) => error.statusCode === 400);
+
+  carterinhaRepository.carterinha = null as any;
+  await assert.rejects(() => useCase.execute("cart-1"), (error: any) => error.statusCode === 404);
+
+  carterinhaRepository.carterinha = new FakeCarterinhaRepository().carterinha;
+  municipeRepository.municipe = null as any;
+  await assert.rejects(() => useCase.execute("cart-1"), (error: any) => error.statusCode === 404);
+});
+
+test("RenderCarterinhaEsportePdfUseCase usa valores opcionais e headers padrao", async () => {
+  let capturedPayload: any;
+  let capturedConfig: any;
+  const carterinhaRepository = new FakeCarterinhaRepository();
+  carterinhaRepository.carterinha.observacao = "";
+  carterinhaRepository.carterinha.validade_exame = null;
+  carterinhaRepository.carterinha.foto = null;
+  const httpClient = {
+    post: async (url: string, payload: any, config: any) => {
+      capturedPayload = payload;
+      capturedConfig = config;
+      assert.equal(url, "http://pdf.local/api/v1/carterinhas/esporte/render");
+      return {
+        data: Buffer.from("%PDF-1.4"),
+        headers: {
+          "content-type": undefined,
+          "content-disposition": null,
+          "content-length": ["8", "bytes"],
+        },
+      };
+    },
+  };
+  const useCase = new RenderCarterinhaEsportePdfUseCase(
+    carterinhaRepository,
+    new FakeMunicipeRepository(),
+    "http://pdf.local/api/v1/",
+    undefined,
+    undefined,
+    httpClient as any,
+  );
+
+  const response = await useCase.execute("cart-1");
+
+  assert.equal(capturedPayload.entityData.obs, "sem observacoes");
+  assert.equal(capturedPayload.entityData.exame, "");
+  assert.equal(capturedPayload.entityData.foto, null);
+  assert.equal(capturedConfig.headers, undefined);
+  assert.equal(response.contentType, "application/pdf");
+  assert.match(response.contentDisposition, /carteirinha-esporte-maria-silva\.pdf/);
+  assert.equal(response.contentLength, "8, bytes");
+});

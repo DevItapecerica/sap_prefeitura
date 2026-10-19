@@ -28,6 +28,8 @@ import { makeFtBolsistaEventSubscriber } from "../ft-bolsista/factories/ft-bolsi
 import { registerFtBolsistaAuditHandlers } from "./events/on-ft-bolsista-events.js";
 import { makePagadorEventSubscriber } from "../ft-pagador/pagador.factory.js";
 import { registerPagadorAuditHandlers } from "./events/on-pagador-events.js";
+import { makeTurnoEventSubscriber } from "../ft-turno/turno.factory.js";
+import { registerTurnoAuditHandlers } from "./events/on-turno-events.js";
 
 const AuditModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   fastify,
@@ -102,6 +104,9 @@ const AuditModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   const unregisterPagadorAuditHandlers = registerPagadorAuditHandlers(
     makePagadorEventSubscriber(), auditService, fastify.log,
   );
+  const unregisterTurnoAuditHandlers = registerTurnoAuditHandlers(
+    makeTurnoEventSubscriber(), auditService, fastify.log,
+  );
 
   const worker =
     options.runtimeWorkers === false
@@ -121,6 +126,7 @@ const AuditModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
     unregisterFtEditalAuditHandlers();
     unregisterFtBolsistaAuditHandlers();
     unregisterPagadorAuditHandlers();
+    unregisterTurnoAuditHandlers();
     worker.stop();
   });
   await fastify.register(AuditRoutes, { prefix: "/audit" });

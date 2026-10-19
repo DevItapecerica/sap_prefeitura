@@ -1,4 +1,6 @@
 import AppError from "../../../../core/appError.js";
+import { todayInSaoPaulo } from "../../../../core/utils/sao-paulo-date.js";
+import { getVinculoOperationalEnd } from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
 
 const ftError = (statusCode: number, message: string) =>
   new AppError(message, statusCode, "FT_MS");
@@ -7,13 +9,14 @@ const getValue = (target: any, key: string) =>
   typeof target?.get === "function" ? target.get(key) : target?.[key];
 
 const toDateOnly = (value: string | Date) => {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const normalized = String(value).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return null;
+  const parsed = new Date(`${normalized}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== normalized
+    ? null
+    : normalized;
 };
 
 export class FtFaltaPolicyService {
@@ -41,10 +44,9 @@ export class FtFaltaPolicyService {
     }
 
     const faltaDate = toDateOnly(data_falta);
-    const hoje = toDateOnly(new Date());
+    const hoje = todayInSaoPaulo();
     const dataVinculo = toDateOnly(getValue(vinculo, "data_vinculo"));
-    const expireAtValue = getValue(vinculo, "expire_at");
-    const expireAt = expireAtValue ? toDateOnly(expireAtValue) : null;
+    const operationalEnd = getVinculoOperationalEnd(vinculo) || null;
 
     if (faltaDate === null || hoje === null) {
       throw ftError(400, "Data da falta invalida");
@@ -58,7 +60,7 @@ export class FtFaltaPolicyService {
       throw ftError(400, "Data da falta fora do periodo do vinculo");
     }
 
-    if (expireAt !== null && faltaDate > expireAt) {
+    if (operationalEnd !== null && faltaDate > operationalEnd) {
       throw ftError(400, "Data da falta fora do periodo do vinculo");
     }
   }
