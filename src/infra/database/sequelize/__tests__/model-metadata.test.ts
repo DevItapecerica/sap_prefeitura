@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DataTypes, Sequelize } from "sequelize";
 import permissionModel from "../models/permission.model.js";
+import permissionActionModel from "../models/permission-action.model.js";
+import rolePermissionModel from "../models/role-permission.model.js";
 import rolesModel from "../models/roles.model.js";
 import serviceVisibilityModel from "../models/service-visibility.model.js";
 import serviceModel from "../models/service.model.js";
@@ -21,6 +23,8 @@ test("access models expose the database relationships", async () => {
   const models: any = {};
   for (const defineModel of [
     permissionModel,
+    permissionActionModel,
+    rolePermissionModel,
     rolesModel,
     serviceVisibilityModel,
     serviceModel,
@@ -36,6 +40,25 @@ test("access models expose the database relationships", async () => {
     model.associate?.(models);
   }
 
+  assert.ok(models.ServiceModel.options.indexes.some((i: any) => i.unique && JSON.stringify(i.fields) === JSON.stringify(['id', 'module_key'])));
+  assert.equal(models.PermissionActionModel.rawAttributes.id.primaryKey, true);
+  assert.equal(models.PermissionActionModel.rawAttributes.service_id.allowNull, false);
+  assert.equal(models.PermissionActionModel.getTableName(), 'permission_actions');
+  assert.equal(models.RolePermissionsModel.getTableName(), 'role_permissions');
+  for (const field of ['role_id', 'permission_action_id']) {
+    assert.equal(models.RolePermissionsModel.rawAttributes[field].onDelete, 'RESTRICT');
+    assert.equal(models.RolePermissionsModel.rawAttributes[field].onUpdate, 'CASCADE');
+    assert.equal(models.RolePermissionsModel.rawAttributes[field].allowNull, false);
+  }
+  assert.equal(models.PermissionActionModel.options.paranoid, false);
+  assert.equal(models.RolePermissionsModel.options.paranoid, false);
+  assert.equal(models.PermissionActionModel.rawAttributes.module_key.allowNull, false);
+  assert.equal(models.ServiceModel.rawAttributes.module_key.allowNull, false);
+  assert.equal(models.RolePermissionsModel.rawAttributes.allowed.defaultValue, false);
+  assert.equal(models.RolePermissionsModel.associations.role.target, models.RolesModel);
+  assert.equal(models.RolePermissionsModel.associations.permissionAction.target, models.PermissionActionModel);
+  assert.equal(models.ServiceModel.associations.permissionActions.target, models.PermissionActionModel);
+  assert.equal(models.RolesModel.associations.rolePermissions.target, models.RolePermissionsModel);
   assert.equal(models.UserModel.associations.setor.target, models.SetorModel);
   assert.equal(models.UserModel.associations.role.target, models.RolesModel);
   assert.equal(models.UserModel.associations.sessions.target, models.UserSessionModel);

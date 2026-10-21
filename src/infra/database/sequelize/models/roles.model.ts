@@ -36,6 +36,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   );
 
   (Roles as any).associate = (models: any) => {
+    Roles.hasMany(models.RolePermissionsModel, { foreignKey: 'role_id', as: 'rolePermissions', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
     Roles.hasMany(models.UserModel, {
       foreignKey: "role_id",
       as: "users",

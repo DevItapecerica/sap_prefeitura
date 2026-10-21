@@ -381,6 +381,11 @@ export default {
       const unique: SeedRecord[] = [];
 
       for (const item of data) {
+        // Defaults may have inserted the same relation under another surrogate ID.
+        // Preserve configured visibility, including false; never insert a duplicate pair.
+        if (table === "service_visibilities" && await queryInterface.rawSelect(table, {
+          where: { setor_id: item.setor_id, service_id: item.service_id },
+        }, "id")) continue;
         const isUnique = await queryInterface.rawSelect(
           table,
           {
