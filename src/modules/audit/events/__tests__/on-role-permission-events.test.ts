@@ -80,3 +80,17 @@ test("failed role and permission audit remains best-effort", async () => {
   await permissionEvents.updated?.({ context: context("failed-permission"), before: permission, after: permission });
   assert.equal(errors, 2);
 });
+
+test("role action permission audit identifies target role and authenticated actor", async () => {
+ const events = new FakePermissionSubscriber();
+ const records: RecordAuditDto[] = [];
+ const unregister = registerPermissionAuditHandlers(events, {record: async input => {records.push(input);}}, {error() {}} as any);
+ try {
+  await events.updated?.({context: context("role-actions"), before: {id:2,role_id:2,permissions:[{permission_action_id:50,allowed:false}]},after:{id:2,role_id:2,permissions:[{permission_action_id:50,allowed:true}]}});
+  assert.equal(records.length,1);
+  assert.equal(records[0].resourceType,"role_permission");
+  assert.equal(records[0].resourceId,"2");
+  assert.equal((records[0].after as any).role_id,2);
+  assert.equal(records[0].actor?.userId,context("role-actions").actor?.id);
+ } finally {unregister();}
+});

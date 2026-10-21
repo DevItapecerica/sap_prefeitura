@@ -16,7 +16,6 @@ test("UpdateServiceUseCase returns complete before and after aggregates", async 
   const result = await new UpdateServiceUseCase(fakes.aggregate).execute(
     6,
     servicePayload,
-    [{ id: 1, role_id: 1, service_id: 6, read: true, write: true, edit: false, del: false }],
     [{ id: 2, setor_id: 2, service_id: 6, visibility: true }],
   );
 
@@ -24,7 +23,7 @@ test("UpdateServiceUseCase returns complete before and after aggregates", async 
   assert.equal(result.before.permissions[0].write, false);
   assert.equal(result.before.visibility[1].visibility, false);
   assert.equal(result.after.services.name, "FT Atualizado");
-  assert.equal(result.after.permissions[0].write, true);
+  assert.equal(result.after.permissions[0].write, false);
   assert.equal(result.after.visibility[1].visibility, true);
 });
 
@@ -46,14 +45,6 @@ test("UpdateServiceUseCase validates all links before writing", async () => {
 
   await assert.rejects(
     () => useCase.execute(6, servicePayload, [
-      { id: 1, role_id: 1, service_id: 99, read: true, write: true, edit: false, del: false },
-    ]),
-    (error: AppError) => error.code === "PERMISSION_NOT_FOUND",
-  );
-  assert.deepEqual(fakes.services.writes, []);
-
-  await assert.rejects(
-    () => useCase.execute(6, servicePayload, [], [
       { id: 2, setor_id: 99, service_id: 6, visibility: true },
     ]),
     (error: AppError) => error.code === "VISIBILITY_NOT_FOUND",

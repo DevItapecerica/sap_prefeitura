@@ -4,7 +4,6 @@ import { ServiceListResult } from "../../../../modules/services/domain/repositor
 import { ServiceQuery } from "../../../../modules/services/domain/repository/service-query.js";
 import {
   ServicesRepository,
-  ServiceWriteData,
 } from "../../../../modules/services/domain/repository/services.repository.js";
 import { Services } from "../../../../modules/services/domain/entity/Services.js";
 
@@ -49,10 +48,6 @@ export class SequelizeServicesRepository implements ServicesRepository {
     if (!data) return null;
 
     return this.toEntity(data);
-  }
-  async createServices(service: ServiceWriteData): Promise<Services> {
-    const created = await this.model.create(service);
-    return this.toEntity(created);
   }
 
   // 🔥 mapper (ESSENCIAL)

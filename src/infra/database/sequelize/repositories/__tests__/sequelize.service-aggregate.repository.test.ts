@@ -99,9 +99,6 @@ const makeDatabase = (description: string | null = "Frente de Trabalho") => {
 
 const update = {
   service: { name: "FT atualizado", description: "Atualizado", url: "/ft" },
-  permissions: [
-    { id: 1, service_id: 6, role_id: 1, read: true, write: true, edit: false, del: false },
-  ],
   visibility: [
     { id: 1, service_id: 6, setor_id: 1, visibility: true },
   ],
@@ -112,11 +109,11 @@ test("service aggregate repository updates atomically and returns snapshots", as
   const result = await fake.repository.update(6, update);
 
   assert.equal(result.before.services.name, "FT");
-  assert.equal(result.before.permissions[0].write, false);
+  assert.deepEqual(result.before.permissions, []);
   assert.equal(result.after.services.name, "FT atualizado");
-  assert.equal(result.after.permissions[0].write, true);
+  assert.deepEqual(result.after.permissions, []);
   assert.equal(result.after.visibility[0].visibility, true);
-  assert.ok(fake.lockCalls.slice(0, 3).every((options: any) => options.lock === "UPDATE"));
+  assert.ok(fake.lockCalls.slice(0, 2).every((options: any) => options.lock === "UPDATE"));
 });
 
 test("service aggregate repository preserves plain-text descriptions", async () => {
@@ -160,12 +157,6 @@ test("service aggregate repository rolls back permission and visibility failures
   await assert.rejects(() => serviceFailure.repository.update(6, update));
   assert.equal(serviceFailure.service.state.name, "FT");
 
-  const permissionFailure = makeDatabase();
-  permissionFailure.failPermission();
-  await assert.rejects(() => permissionFailure.repository.update(6, update));
-  assert.equal(permissionFailure.service.state.name, "FT");
-  assert.equal(permissionFailure.permissions[0].state.write, false);
-
   const visibilityFailure = makeDatabase();
   visibilityFailure.failVisibility();
   await assert.rejects(() => visibilityFailure.repository.update(6, update));
@@ -174,10 +165,9 @@ test("service aggregate repository rolls back permission and visibility failures
   assert.equal(visibilityFailure.visibilities[0].state.visibility, false);
 });
 
-test("service aggregate repository soft deletes inside its local transaction", async () => {
-  const fake = makeDatabase();
-  const result = await fake.repository.delete(6);
-  assert.equal(result.before.services.id, 6);
-  assert.equal(result.after, null);
-  assert.ok(fake.service.state.deletedAt instanceof Date);
+test("service aggregate refuses legacy grant writes without touching preserved data", async () => {
+ const fake = makeDatabase();
+ await assert.rejects(fake.repository.update(6, {...update, permissions: []} as any));
+ assert.equal(fake.service.state.name, "FT");
+ assert.equal(fake.permissions[0].state.write, false);
 });

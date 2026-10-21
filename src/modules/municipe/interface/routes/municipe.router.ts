@@ -1,20 +1,15 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
-import municipeController from "../controller/municipe.controller.js";
+import type municipeControllerType from "../controller/municipe.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
 
 const MUNICIPE_SERVICE_ID = 9;
 
-const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
+const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeControllerType}> = async (fastify, options) => {
+  const municipeController = options.controller ?? (await import("../controller/municipe.controller.js")).default;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      MUNICIPE_SERVICE_ID,
-      request.method,
-    );
-  });
+  const allow = requirePermission("municipes");
+
 
   const municipeSchema = {
     type: "object",
@@ -130,6 +125,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
         },
       },
     },
+    preHandler: allow("consultar_municipe"),
     handler: municipeController.getMunicipe,
   });
 
@@ -160,6 +156,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
         },
       },
     },
+    preHandler: allow("consultar_municipe"),
     handler: municipeController.getMunicipeById,
   });
 
@@ -185,6 +182,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
         },
       },
     },
+    preHandler: allow("cadastrar_municipe"),
     handler: municipeController.postMunicipe,
   });
 
@@ -217,6 +215,7 @@ const MunicipeRouter: FastifyPluginAsync = async (fastify) => {
         },
       },
     },
+    preHandler: allow("editar_municipe"),
     handler: municipeController.updateMunicipe,
   });
 };

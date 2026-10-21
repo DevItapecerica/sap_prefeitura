@@ -1,9 +1,8 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
-import modalidadeFactory from "../../factories/modalidade.factory.js";
-import ModalidadeController from "../controller/modalidade.controller.js";
+import type ModalidadeControllerType from "../controller/modalidade.controller.js";
 
 const ESPORTE_SERVICE_ID = 10;
 
@@ -18,19 +17,12 @@ const modalidadeSchema = {
   },
 };
 
-export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
-  const modalidadeService = modalidadeFactory(fastify.log);
-  const modalidadeController = new ModalidadeController(modalidadeService);
+export const ModalidadeRouter: FastifyPluginAsync<{controller?: ModalidadeControllerType}> = async (fastify, options) => {
+  const modalidadeController = options.controller ?? new (await import("../controller/modalidade.controller.js")).default((await import("../../factories/modalidade.factory.js")).default(fastify.log));
 
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      ESPORTE_SERVICE_ID,
-      request.method,
-    );
-  });
+  const allow = requirePermission("esporte");
+
 
   fastify.route({
     method: "GET",
@@ -61,6 +53,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_modalidade"),
     handler: modalidadeController.findAll,
   });
 
@@ -88,6 +81,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_modalidade"),
     handler: modalidadeController.findOne,
   });
 
@@ -117,6 +111,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("cadastrar_modalidade"),
     handler: modalidadeController.create,
   });
 
@@ -150,6 +145,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("editar_modalidade"),
     handler: modalidadeController.update,
   });
 
@@ -180,6 +176,7 @@ export const ModalidadeRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("excluir_modalidade"),
     handler: modalidadeController.delete,
   });
 };

@@ -16,6 +16,7 @@ const makeDatabase = () => {
     new FakeRow({ id: 10, role_id: 2, service_id: 6, read: true, write: false, edit: false, del: false }),
   ];
   let hasUser = false;
+  let hasGrants = false;
   let failPermissionDelete = false;
   let failRoleDelete = false;
   const lockCalls: unknown[] = [];
@@ -33,6 +34,7 @@ const makeDatabase = () => {
         return hasUser ? new FakeRow({ id: 7 }) : null;
       },
     },
+    RolePermissionsModel: {findOne: async () => hasGrants ? new FakeRow({id:1}) : null},
     PermissionsModel: {
       findAll: async (options: object) => { lockCalls.push(options); return permissionRows; },
       destroy: async () => {
@@ -67,20 +69,21 @@ const makeDatabase = () => {
     permissions: () => permissionRows,
     lockCalls,
     setUser: () => { hasUser = true; },
+    setGrants: () => { hasGrants = true; },
     failPermissions: () => { failPermissionDelete = true; },
     failRole: () => { failRoleDelete = true; },
   };
 };
 
-test("roles repository deletes permissions and role atomically", async () => {
+test("roles repository never deletes legacy permissions while deleting an unreferenced role", async () => {
   const fake = makeDatabase();
   const result = await fake.repository.deleteWithPermissions(2);
   assert.equal(result.status, "deleted");
   if (result.status === "deleted") {
     assert.equal(result.before.role.name, "Gestor");
-    assert.equal(result.before.permissions.length, 1);
+    assert.equal(result.before.permissions.length, 0);
   }
-  assert.equal(fake.permissions().length, 0);
+  assert.equal(fake.permissions().length, 1);
   assert.equal(fake.role.deleted, true);
   assert.ok(fake.lockCalls.every((options: any) => options.lock === "UPDATE"));
 });
@@ -96,8 +99,8 @@ test("roles repository blocks deletion when the role has users", async () => {
 
 test("roles repository rolls back failures while deleting the aggregate", async () => {
   const permissionFailure = makeDatabase();
-  permissionFailure.failPermissions();
-  await assert.rejects(() => permissionFailure.repository.deleteWithPermissions(2));
+  permissionFailure.setGrants();
+  assert.deepEqual(await permissionFailure.repository.deleteWithPermissions(2), {status: "in_use"});
   assert.equal(permissionFailure.permissions().length, 1);
   assert.equal(permissionFailure.role.deleted, false);
 

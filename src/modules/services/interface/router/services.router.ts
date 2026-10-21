@@ -1,28 +1,25 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
+import AppError from "../../../../core/appError.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import ServicesController from "../controller/services.controller.js";
-import { createServiceSchema } from "../schemas/create-service.schema.js";
-import { deleteServiceSchema } from "../schemas/delete-service.schema.js";
+import type ServicesControllerType from "../controller/services.controller.js";
 import { getServiceByIdSchema } from "../schemas/get-service-by-id.schema.js";
 import { listServicesSchema } from "../schemas/list-services.schema.js";
 import { listVisibleServicesSchema } from "../schemas/list-visible-services.schema.js";
 import { updateServiceSchema } from "../schemas/update-service.schema.js";
 
-const authorizeService = async (request: FastifyRequest) => {
-  const authorization = authorizationFactory(request.log);
-  await authorization.authorize(Number(request.user.id), 3, request.method);
-};
 
-const serviceRouter: FastifyPluginAsync = async (fastify) => {
+const serviceRouter: FastifyPluginAsync<{controller?: typeof ServicesControllerType}> = async (fastify, options) => {
+  const ServicesController = options.controller ?? (await import("../controller/services.controller.js")).default;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  const allow = requirePermission("servicos");
 
   fastify.route({
     method: "GET",
     url: "/",
     config: { audit: { failureAction: "LIST", module: "services", resourceType: "service" } },
     schema: listServicesSchema,
-    preHandler: authorizeService,
+    preHandler: allow("consultar_servico"),
     handler: ServicesController.getService,
   });
 
@@ -39,36 +36,26 @@ const serviceRouter: FastifyPluginAsync = async (fastify) => {
     url: "/:id",
     config: { audit: { failureAction: "VIEW", module: "services", resourceType: "service", resourceIdParam: "id" } },
     schema: getServiceByIdSchema,
-    preHandler: authorizeService,
+    preHandler: allow("consultar_servico"),
     handler: ServicesController.getOneService,
   });
 
-  fastify.route({
-    method: "POST",
-    url: "/",
-    config: { audit: { failureAction: "CREATE", module: "services", resourceType: "service" } },
-    schema: createServiceSchema,
-    preHandler: authorizeService,
-    handler: ServicesController.createService,
-  });
 
   fastify.route({
     method: "PUT",
     url: "/:id",
     config: { audit: { failureAction: "UPDATE", module: "services", resourceType: "service", resourceIdParam: "id" } },
     schema: updateServiceSchema,
-    preHandler: authorizeService,
+    preValidation: async request => {
+      const body = request.body as any;
+      if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(key => !["service", "visibility"].includes(key)) ||
+        (body.service && Object.keys(body.service).some(key => !["name","description","url","tag"].includes(key))))
+        throw new AppError("Invalid service metadata request",400,"VALIDATION_ERROR");
+    },
+    preHandler: allow("editar_servico"),
     handler: ServicesController.updateService,
   });
 
-  fastify.route({
-    method: "DELETE",
-    url: "/:id",
-    config: { audit: { failureAction: "DELETE", module: "services", resourceType: "service", resourceIdParam: "id" } },
-    schema: deleteServiceSchema,
-    preHandler: authorizeService,
-    handler: ServicesController.deleteService,
-  });
 };
 
 export default serviceRouter;

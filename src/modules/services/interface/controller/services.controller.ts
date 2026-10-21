@@ -3,14 +3,9 @@ import { makeApplicationEventContext } from "../../../../infra/http/fastify/appl
 import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
 import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
 import { SERVICE_EVENTS } from "../../application/events/service.events.js";
-import { CreateServiceDto } from "../../application/dto/create-service.dto.js";
 import { ListServicesDto } from "../../application/dto/list-services.dto.js";
-import { ServicePermissionDto } from "../../application/dto/service-permission.dto.js";
-import { ServiceVisibilityDto } from "../../application/dto/service-visibility.dto.js";
 import { UpdateServiceDto } from "../../application/dto/update-service.dto.js";
 import {
-  makeCreateServiceUseCase,
-  makeDeleteServiceUseCase,
   makeGetServiceByIdUseCase,
   makeListServicesUseCase,
   makeListVisibleServicesUseCase,
@@ -58,7 +53,6 @@ export default class ServicesController {
     return reply.status(200).send({
       message: "serviços recuperados com sucesso",
       services: response.services,
-      permissions: response.permissions,
       visibility: response.visibility,
       ok: true,
     });
@@ -68,28 +62,10 @@ export default class ServicesController {
     request: FastifyRequest,
     reply: FastifyReply,
   ) => {
-    const user = request.user;
-    if (user.setor_id === null) {
-      return reply.status(403).send({
-        message: "Usuário sem setor associado",
-        ok: false,
-      });
-    }
-
-    const services = await makeListVisibleServicesUseCase().execute(
-      user.setor_id,
-      user.role_id,
-    );
+    const services = await makeListVisibleServicesUseCase().execute(Number(request.user.id));
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
-      context: makeApplicationEventContext(request),
-      module: "service",
-      resourceType: "service",
-      filters: {
-        setorId: user.setor_id,
-        roleId: user.role_id,
-        visible: true,
-      },
-      returnedCount: services.length,
+      context: makeApplicationEventContext(request), module: "service", resourceType: "service",
+      filters: {visible: true}, returnedCount: services.length,
     });
     return reply.status(200).send({
       message: "serviços recuperados com sucesso",
@@ -98,21 +74,6 @@ export default class ServicesController {
     });
   };
 
-  static readonly createService = async (
-    request: FastifyRequest<{ Body: { service: CreateServiceDto } }>,
-    reply: FastifyReply,
-  ) => {
-    const service = await makeCreateServiceUseCase().execute(
-      request.body.service,
-    );
-
-    await serviceEventPublisher.publish(SERVICE_EVENTS.created, {
-      context: makeApplicationEventContext(request),
-      service,
-    });
-
-    return reply.status(201).send({ service, ok: true });
-  };
 
   static readonly updateService = async (
     request: FastifyRequest<{
@@ -124,7 +85,6 @@ export default class ServicesController {
     const { before, after } = await makeUpdateServiceUseCase().execute(
       Number(request.params.id),
       request.body.service,
-      request.body.permissions,
       request.body.visibility,
     );
 
@@ -137,19 +97,4 @@ export default class ServicesController {
     return reply.status(204).send();
   };
 
-  static readonly deleteService = async (
-    request: FastifyRequest<{ Params: { id: number } }>,
-    reply: FastifyReply,
-  ) => {
-    const { before } = await makeDeleteServiceUseCase().execute(
-      Number(request.params.id),
-    );
-
-    await serviceEventPublisher.publish(SERVICE_EVENTS.deleted, {
-      context: makeApplicationEventContext(request),
-      before,
-    });
-
-    return reply.status(204).send();
-  };
 }

@@ -1,5 +1,4 @@
-import { Model, Op } from "sequelize";
-import { Permissions } from "../../../../modules/permission/domain/entity/Permission.js";
+import { ForeignKeyConstraintError, Model, Op } from "sequelize";
 import { Roles } from "../../../../modules/roles/domain/entity/Role.js";
 import { RoleListResult } from "../../../../modules/roles/domain/repository/role-list-result.js";
 import { RoleQuery } from "../../../../modules/roles/domain/repository/role-query.js";
@@ -17,7 +16,7 @@ export class SequelizeRolesRepository implements RolesRepository {
 
   constructor(private readonly database: typeof db = db) {
     this.roles = database.RolesModel;
-    this.permissions = database.PermissionsModel;
+    this.permissions = database.RolePermissionsModel;
     this.users = database.UserModel;
   }
 
@@ -70,24 +69,11 @@ export class SequelizeRolesRepository implements RolesRepository {
       });
       if (user) return { status: "in_use" };
 
-      const permissionRows = await this.permissions.findAll({
-        where: { role_id: id },
-        transaction,
-        lock,
-      });
-      const before = {
-        role: this.toRole(role),
-        permissions: permissionRows.map((permission: Model) =>
-          this.toPermission(permission),
-        ),
-      };
-
-      await this.permissions.destroy({
-        where: { role_id: id },
-        force: true,
-        transaction,
-      });
-      await role.destroy({ transaction });
+      const grant = await this.permissions.findOne({where: {role_id: id}, transaction, lock});
+      if (grant) return {status: "in_use"};
+      const before = {role: this.toRole(role), permissions: []};
+      try { await role.destroy({transaction}); }
+      catch (error) { if (error instanceof ForeignKeyConstraintError) return {status: "in_use"}; throw error; }
       return { status: "deleted", before };
     });
   }
@@ -96,15 +82,4 @@ export class SequelizeRolesRepository implements RolesRepository {
     return new Roles(Number(row.get("id")), String(row.get("name")));
   }
 
-  private toPermission(row: Model): Permissions {
-    return new Permissions(
-      Number(row.get("service_id")),
-      Number(row.get("role_id")),
-      Boolean(row.get("read")),
-      Boolean(row.get("write")),
-      Boolean(row.get("edit")),
-      Boolean(row.get("del")),
-      Number(row.get("id")),
-    );
-  }
 }

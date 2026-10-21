@@ -1,8 +1,8 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
-import { FtRelatorioController } from "../controller/ft-relatorio.controller.js";
+import type { FtRelatorioController as FtRelatorioControllerType } from "../controller/ft-relatorio.controller.js";
 
 const relatorioTags = ["Frente de Trabalho - Relatorio"];
 const jwtSecurity = [{ JWTToken: [] }];
@@ -44,27 +44,24 @@ const arquivoSchema = {
   },
 };
 
-export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
+export const FtRelatorioRouter: FastifyPluginAsync<{controller?: typeof FtRelatorioControllerType}> = async (fastify, options) => {
+  const FtRelatorioController = options.controller ?? (await import("../controller/ft-relatorio.controller.js")).FtRelatorioController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      6,
-      request.method,
-    );
-  });
+  const allow = requirePermission("ft");
+
 
   const registerCsvRoute = ({
     url,
     summary,
     querystring,
     handler,
+    action,
   }: {
     url: string;
     summary: string;
     querystring: object;
     handler: any;
+    action: string;
   }) => {
     fastify.route({
       method: "GET",
@@ -85,6 +82,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
         querystring,
         response: csvResponseSchema,
       },
+      preHandler: allow(action),
       handler,
     });
   };
@@ -93,6 +91,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     url: "/edital/:id",
     summary: "Gerar relatorio CSV do edital",
     querystring: periodoQuerySchema,
+    action: "gerar_relatorio_edital",
     handler: FtRelatorioController.gerarRelatorioEdital,
   });
 
@@ -100,6 +99,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     url: "/edital/:id/faltas",
     summary: "Gerar relatorio mensal de faltas do edital",
     querystring: monthQuerySchema,
+    action: "gerar_relatorio_faltas",
     handler: FtRelatorioController.gerarRelatorioFaltasEdital,
   });
 
@@ -107,6 +107,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     url: "/edital/:id/presenca",
     summary: "Gerar lista mensal de presenca do edital",
     querystring: monthQuerySchema,
+    action: "gerar_lista_presenca",
     handler: FtRelatorioController.gerarListaPresencaEdital,
   });
 
@@ -116,6 +117,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     schema: { tags: relatorioTags, security: jwtSecurity, summary: "Solicitar espelhos de ponto em lote", params: editalIdParamsSchema,
       body: { type: "object", additionalProperties: false, required: ["mes"], properties: { mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } } },
       response: { 202: { type: "object", properties: { arquivo: arquivoSchema } }, ...errorResponseSchema } },
+    preHandler: allow("solicitar_espelhos_ponto"),
     handler: FtRelatorioController.solicitarEspelhosPonto,
   });
 
@@ -125,6 +127,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     schema: { tags: relatorioTags, security: jwtSecurity, summary: "Solicitar folhas de presenca em lote", params: editalIdParamsSchema,
       body: { type: "object", additionalProperties: false, required: ["mes"], properties: { mes: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } } },
       response: { 202: { type: "object", properties: { arquivo: arquivoSchema } }, ...errorResponseSchema } },
+    preHandler: allow("solicitar_folhas_presenca"),
     handler: FtRelatorioController.solicitarFolhasPresenca,
   });
 
@@ -134,6 +137,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     schema: { tags: relatorioTags, security: jwtSecurity, summary: "Listar downloads de relatorios",
       querystring: { type: "object", additionalProperties: false, properties: { page: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 100 } } },
       response: { 200: { type: "object", properties: { arquivos: { type: "array", items: arquivoSchema }, count: { type: "number" }, page: { type: "number" }, limit: { type: "number" } } }, ...errorResponseSchema } },
+    preHandler: allow("consultar_downloads"),
     handler: FtRelatorioController.listarDownloads,
   });
 
@@ -142,6 +146,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     config: { audit: { failureAction: "EXPORT", module: "ft-relatorio", resourceType: "arquivo_espelhos_ponto", resourceIdParam: "id" } },
     schema: { tags: relatorioTags, security: jwtSecurity, summary: "Baixar arquivo de relatorios", params: downloadIdParamsSchema,
       response: { 200: { description: "Arquivo ZIP", content: { "application/zip": { schema: { type: "string", format: "binary" } } } }, ...errorResponseSchema } },
+    preHandler: allow("baixar_relatorio"),
     handler: FtRelatorioController.baixarArquivo,
   });
 
@@ -150,6 +155,7 @@ export const FtRelatorioRouter: FastifyPluginAsync = async (fastify) => {
     config: { audit: { failureAction: "UPDATE", module: "ft-relatorio", resourceType: "lote_espelho_ponto", resourceIdParam: "id" } },
     schema: { tags: relatorioTags, security: jwtSecurity, summary: "Tentar novamente lote com erro", params: downloadIdParamsSchema,
       response: { 202: { type: "object", properties: { arquivo: arquivoSchema } }, ...errorResponseSchema } },
+    preHandler: allow("reprocessar_relatorio"),
     handler: FtRelatorioController.retryDownload,
   });
 };

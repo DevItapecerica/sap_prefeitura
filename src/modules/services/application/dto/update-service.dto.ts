@@ -1,4 +1,3 @@
-import { ServicePermissionDto } from "./service-permission.dto.js";
 import { ServiceVisibilityDto } from "./service-visibility.dto.js";
 
 export interface ServiceDto {
@@ -9,6 +8,5 @@ export interface ServiceDto {
 }
 export interface UpdateServiceDto {
   service: ServiceDto;
-  permissions?: ServicePermissionDto[];
   visibility?: ServiceVisibilityDto[];
 }
