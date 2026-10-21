@@ -1,5 +1,9 @@
 # SAP Prefeitura
 
+## Permissões por módulo/ação
+
+A evolução para concessões por role, os contratos administrativos e o procedimento de migração/validação estão em [docs/permissions.md](docs/permissions.md). Diferenciação de acesso é feita criando/configurando outra role; não há exceções individuais.
+
 Ecossistema web formado pela API principal, pelo frontend React e pelo serviço de geração de PDFs. O ambiente integrado usa MariaDB e pode ser iniciado pela raiz com Docker Compose.
 
 ## Componentes
