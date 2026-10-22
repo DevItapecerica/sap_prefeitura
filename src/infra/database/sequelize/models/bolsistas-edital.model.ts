@@ -1,9 +1,14 @@
 import { DataTypes, Sequelize } from "sequelize";
+import { exceptionColumns } from './ft-excecao.schema.js';
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const BolsistasEdital = sequelize.define(
     "BolsistasEdital",
     {
+      ...exceptionColumns,
+      inscricao_id: { type: dataTypes.UUID, allowNull: true },
+      local_id: { type: dataTypes.UUID, allowNull: true },
+      ativado_em: { type: dataTypes.DATE, allowNull: true },
       id: {
         type: dataTypes.UUID,
         defaultValue: dataTypes.UUIDV4,
@@ -62,6 +67,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       },
       status: {
         type: dataTypes.ENUM(
+          "convocado",
           "ativo",
           "inativo",
           "concluido",
@@ -69,7 +75,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
           "expirado",
         ),
         allowNull: false,
-        defaultValue: "ativo",
+        defaultValue: "convocado",
       },
       expire_at: {
         type: dataTypes.DATE,

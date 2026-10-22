@@ -49,12 +49,12 @@ export default class FtEditalVincularBolsistaUseCase {
 
       const bolsista = await this.repository.findBolsistaById(bolsistaId);
       if (!bolsista) throw ftError(404, "Bolsista not found");
-      ensureBolsistaElegivelPorIdade(bolsista, dataVinculo);
+      ensureBolsistaElegivelPorIdade(bolsista, dataVinculo, edital);
       const vinculosDoPar = await this.repository.findVinculosByBolsistaEdital(
         bolsistaId,
         id,
       );
-      this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar, dataVinculo);
+      this.vinculoPolicy.ensureCanCreateVinculo(vinculosDoPar, dataVinculo, edital);
       if (await this.repository.findActiveVinculoByBolsista(bolsistaId))
         throw ftError(403, "Bolsista ja ativo em outro edital");
 

@@ -2,11 +2,11 @@ import { DataTypes, Sequelize } from "sequelize";
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const Pagador = sequelize.define("Pagador", {
+    edital_id: { type: dataTypes.UUID, allowNull: true },
     uuid: { type: dataTypes.UUID, defaultValue: dataTypes.UUIDV4, primaryKey: true },
     nome: {
       type: dataTypes.STRING,
       allowNull: false,
-      unique: true,
       set(value: string) { this.setDataValue("nome", value.trim().replace(/\s+/g, " ")); },
     },
     quantidade: { type: dataTypes.INTEGER.UNSIGNED, allowNull: false, validate: { min: 0 } },

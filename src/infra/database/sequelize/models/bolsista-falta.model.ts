@@ -4,6 +4,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const BolsistaFalta = sequelize.define(
     "BolsistaFalta",
     {
+      bolsista_edital_id: { type: dataTypes.UUID, allowNull: true },
       id: {
         type: dataTypes.UUID,
         defaultValue: dataTypes.UUIDV4,

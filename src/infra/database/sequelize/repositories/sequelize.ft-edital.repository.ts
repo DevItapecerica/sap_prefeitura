@@ -280,6 +280,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         ensureBolsistaElegivelPorIdade(
           lockedBolsista,
           item.data_vinculo as string | Date,
+          edital,
         );
 
         const vinculosDoPar = await db.BolsistasEdital.findAll({
@@ -291,6 +292,7 @@ export class SequelizeFtEditalRepository implements FtEditalRepository {
         this.vinculoPolicy.ensureCanCreateVinculo(
           vinculosDoPar,
           item.data_vinculo,
+          edital,
         );
 
         const vinculoAtivo = await db.BolsistasEdital.findOne({

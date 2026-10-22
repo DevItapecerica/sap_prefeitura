@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { FtEditalRouter } from "./interface/router/ft-edital.router.js";
+import { EditalWorkflowRouter } from "./interface/router/edital-workflow.router.js";
 import schedulerIndex from "./scheduler/schedulerIndex.js";
 
 const FtEditalModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
@@ -11,7 +11,7 @@ const FtEditalModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
     fastify.log.info("Scheduler Registrado");
   }
 
-  await fastify.register(FtEditalRouter, {
+  await fastify.register(EditalWorkflowRouter, {
     prefix: "/frente-de-trabalho/edital",
   });
 };

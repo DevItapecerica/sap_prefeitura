@@ -57,12 +57,12 @@ describe("politica de idade do vinculo", () => {
   it("calcula idade completa e permite ate 65 anos", () => {
     assert.equal(calcularIdadeNaData("1961-10-16", "2026-10-15"), 64);
     assert.equal(calcularIdadeNaData("1961-10-15", "2026-10-15"), 65);
-    assert.doesNotThrow(() => ensureBolsistaElegivelPorIdade({ municipe: { nascimento: "1961-10-15" } }, "2026-10-15"));
+    assert.doesNotThrow(() => ensureBolsistaElegivelPorIdade({ municipe: { nascimento: "1961-10-15" } }, "2026-10-15", { idade_maxima: 65 }));
   });
 
   it("rejeita idade superior, nascimento ausente e data invalida", () => {
-    assert.throws(() => ensureBolsistaElegivelPorIdade({ municipe: { nascimento: "1960-10-15" } }, "2026-10-15"), (error: any) => error.statusCode === 403);
-    assert.throws(() => ensureBolsistaElegivelPorIdade({ municipe: {} }, "2026-10-15"), (error: any) => error.statusCode === 422);
+    assert.throws(() => ensureBolsistaElegivelPorIdade({ municipe: { nascimento: "1960-10-15" } }, "2026-10-15", { idade_maxima: 65 }), (error: any) => error.statusCode === 403);
+    assert.throws(() => ensureBolsistaElegivelPorIdade({ municipe: {} }, "2026-10-15", { idade_maxima: 65 }), (error: any) => error.statusCode === 422);
     assert.throws(() => calcularIdadeNaData("invalida", "2026-10-15"), (error: any) => error.statusCode === 422);
   });
 });

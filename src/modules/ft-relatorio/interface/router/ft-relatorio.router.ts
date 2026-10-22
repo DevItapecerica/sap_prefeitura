@@ -135,7 +135,7 @@ export const FtRelatorioRouter: FastifyPluginAsync<{controller?: typeof FtRelato
     method: "GET", url: "/downloads",
     config: { audit: { failureAction: "LIST", module: "ft-relatorio", resourceType: "lote_espelho_ponto" } },
     schema: { tags: relatorioTags, security: jwtSecurity, summary: "Listar downloads de relatorios",
-      querystring: { type: "object", additionalProperties: false, properties: { page: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 100 } } },
+      querystring: { type: "object", additionalProperties: false, properties: { edital_id: { type: 'string', format: 'uuid' }, page: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 100 } } },
       response: { 200: { type: "object", properties: { arquivos: { type: "array", items: arquivoSchema }, count: { type: "number" }, page: { type: "number" }, limit: { type: "number" } } }, ...errorResponseSchema } },
     preHandler: allow("consultar_downloads"),
     handler: FtRelatorioController.listarDownloads,

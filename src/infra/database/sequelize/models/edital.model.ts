@@ -1,9 +1,11 @@
 import { DataTypes, Sequelize } from "sequelize";
+import { editalColumns } from './ft-edital.schema.js';
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const Edital = sequelize.define(
     "Edital",
     {
+      ...editalColumns,
       id: {
         type: dataTypes.UUID,
         defaultValue: dataTypes.UUIDV4,

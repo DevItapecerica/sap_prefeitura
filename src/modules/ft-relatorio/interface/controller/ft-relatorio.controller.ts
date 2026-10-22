@@ -48,9 +48,9 @@ export class FtRelatorioController {
   };
 
   static listarDownloads = async (
-    request: FastifyRequest<{ Querystring: { page?: number; limit?: number } }>,
+    request: FastifyRequest<{ Querystring: { page?: number; limit?: number; edital_id?: string } }>,
     reply: FastifyReply,
-  ) => reply.status(200).send(await arquivoService.list(request.query.page, request.query.limit));
+  ) => reply.status(200).send(await arquivoService.list(request.query.page, request.query.limit, request.query.edital_id));
 
   static retryDownload = async (
     request: FastifyRequest<{ Params: { id: string } }>,
