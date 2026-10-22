@@ -92,6 +92,7 @@ const publishAuditFailure = async (
       filters: request.query,
       requestedChanges:
         MUTATION_METHODS.has(request.method) &&
+        !audit.omitRequestedChanges &&
         audit.failureAction !== "LOGIN_FAILED"
           ? request.body
           : undefined,
@@ -111,7 +112,7 @@ const publishAuditFailure = async (
 const ErrorHook: FastifyPluginAsync = async (fastify) => {
   fastify.setErrorHandler(async (error, request, reply) => {
     request.log.error({
-      err: error,
+      err: request.routeOptions.config.audit?.omitRequestedChanges ? { statusCode: normalizeError(error).statusCode, code: normalizeError(error).code } : error,
       route: request.url,
       userId: request.user?.id,
     });

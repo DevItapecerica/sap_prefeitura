@@ -22,6 +22,7 @@ test("todas as rotas de negócio declaram metadata de falha de auditoria", () =>
     const routeDeclarations =
       (source.match(/method:\s*"(?:GET|POST|PUT|PATCH|DELETE)"/g) ?? [])
         .length +
+      (source.match(/fastify\.route\(\{ method, url,/g) ?? []).length +
       (source.match(/fastify\.(?:get|post|put|patch|delete)(?:<|\()/g) ?? [])
         .length;
     const auditDeclarations = (source.match(/audit:\s*\{/g) ?? []).length;
