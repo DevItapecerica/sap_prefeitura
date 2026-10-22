@@ -15,6 +15,7 @@ export interface ServiceDB extends Model<
 > {
   id: CreationOptional<number>;
   name: string;
+  module_key: string;
   description: string | null;
   tag: string;
   url: string;
@@ -33,6 +34,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
         allowNull: false,
         primaryKey: true,
       },
+      module_key: { type: DataTypes.STRING(64), allowNull: false, unique: 'uq_services_module_key', validate: { is: /^[a-z][a-z0-9_]*$/ } },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -67,10 +69,12 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
       tableName: "services",
       timestamps: true,
       paranoid: true,
+      indexes: [{ name: 'uq_services_id_module_key', unique: true, fields: ['id', 'module_key'] }],
     },
   );
 
   (ServiceDB as any).associate = (models: any) => {
+    ServiceDB.hasMany(models.PermissionActionModel, { foreignKey: 'service_id', as: 'permissionActions', constraints: false });
     ServiceDB.hasMany(models.PermissionsModel, {
       foreignKey: "service_id",
       as: "permissions",

@@ -1,23 +1,20 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../acess-controll/factories/makeAuthorization.js";
-import { AuditController } from "./audit.controller.js";
+import { requirePermission } from "../../acess-controll/interface/require-permission.js";
+import type { AuditController as AuditControllerType } from "./audit.controller.js";
 import { AuditQueryDto } from "../application/dto/audit.dto.js";
 
 export const AUDIT_SERVICE_ID = 11;
 
-export const AuditRoutes: FastifyPluginAsync = async (fastify) => {
+export const AuditRoutes: FastifyPluginAsync<{controller?: typeof AuditControllerType}> = async (fastify, options) => {
+  const AuditController = options.controller ?? (await import("./audit.controller.js")).AuditController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  const allow = requirePermission("auditoria");
   fastify.get<{ Querystring: AuditQueryDto }>(
     "/",
     {
       config: { audit: { failureAction: "LIST", module: "audit", resourceType: "audit" } },
-      preHandler: async (request: FastifyRequest) =>
-        authorizationFactory(request.log).authorize(
-          Number(request.user.id),
-          AUDIT_SERVICE_ID,
-          "GET",
-        ),
+      preHandler: allow("consultar_auditoria"),
     },
     AuditController.list,
   );
@@ -25,12 +22,7 @@ export const AuditRoutes: FastifyPluginAsync = async (fastify) => {
     "/:id",
     {
       config: { audit: { failureAction: "VIEW", module: "audit", resourceType: "audit", resourceIdParam: "id" } },
-      preHandler: async (request: FastifyRequest) =>
-        authorizationFactory(request.log).authorize(
-          Number(request.user.id),
-          AUDIT_SERVICE_ID,
-          "GET",
-        ),
+      preHandler: allow("consultar_auditoria"),
     },
     AuditController.detail,
   );
@@ -38,12 +30,7 @@ export const AuditRoutes: FastifyPluginAsync = async (fastify) => {
     "/export",
     {
       config: { audit: { failureAction: "EXPORT", module: "audit", resourceType: "audit" } },
-      preHandler: async (request: FastifyRequest) =>
-        authorizationFactory(request.log).authorize(
-          Number(request.user.id),
-          AUDIT_SERVICE_ID,
-          "POST",
-        ),
+      preHandler: allow("exportar_auditoria"),
     },
     AuditController.export,
   );

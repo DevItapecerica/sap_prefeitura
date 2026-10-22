@@ -1,5 +1,4 @@
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
-import { permissionsArraySchema } from "./permission-resource.schema.js";
 import { serviceResourceSchema } from "./service-resource.schema.js";
 import { visibilityArraySchema } from "./visibility-resource.schema.js";
 
@@ -20,7 +19,6 @@ export const getServiceByIdSchema = {
         message: { type: "string" },
         services: serviceResourceSchema,
         visibility: visibilityArraySchema,
-        permissions: permissionsArraySchema,
         ok: { type: "boolean", example: true },
       },
     },

@@ -103,8 +103,6 @@ const makeUseCase = () => {
     useCase: new ServiceAccessDefaultsUseCase(
       servicesRepository as any,
       visibilityRepository as any,
-      rolesRepository as any,
-      permissionRepository as any,
       setorRepository as any,
     ),
     visibilityRepository,
@@ -130,15 +128,7 @@ test("ServiceAccessDefaultsUseCase cria defaults faltantes para servico", async 
     (visibility) => visibility.setor_id === 2 && visibility.service_id === 10,
   );
 
-  assert.deepEqual(
-    {
-      read: adminPermission?.read,
-      write: adminPermission?.write,
-      edit: adminPermission?.edit,
-      del: adminPermission?.del,
-    },
-    { read: true, write: true, edit: true, del: true },
-  );
+  assert.equal(adminPermission, undefined);
   assert.equal(existingTecnicoPermission?.read, true);
   assert.equal(existingTecnicoPermission?.write, false);
   assert.equal(setorOneVisibility?.visibility, true);
@@ -158,7 +148,7 @@ test("ServiceAccessDefaultsUseCase cria defaults para role e setor novos", async
     (visibility) => visibility.setor_id === 3,
   );
 
-  assert.equal(gestorPermissions.length, 2);
+  assert.equal(gestorPermissions.length, 0);
   assert.ok(
     gestorPermissions.every(
       (permission) =>
@@ -182,6 +172,6 @@ test("ServiceAccessDefaultsUseCase reconcilia defaults de forma idempotente", as
 
   assert.equal(permissionRepository.permissions.length, permissionCount);
   assert.equal(visibilityRepository.visibilities.length, visibilityCount);
-  assert.equal(permissionCount, 4);
+  assert.equal(permissionCount, 1);
   assert.equal(visibilityCount, 4);
 });

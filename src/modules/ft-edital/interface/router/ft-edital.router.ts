@@ -1,19 +1,14 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
-import { FtEditalController } from "../controller/ft-edital.controller.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
+import type { FtEditalController as FtEditalControllerType } from "../controller/ft-edital.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
-export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
+export const FtEditalRouter: FastifyPluginAsync<{controller?: typeof FtEditalControllerType}> = async (fastify, options) => {
+  const FtEditalController = options.controller ?? (await import("../controller/ft-edital.controller.js")).FtEditalController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      6,
-      request.method,
-    );
-  });
+  const allow = requirePermission("ft");
+
 
   const tag = ["Frente de Trabalho - Edital"];
   const security = [{ JWTToken: [] }];
@@ -114,6 +109,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_edital"),
     handler: FtEditalController.getEdital,
   });
 
@@ -137,6 +133,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("cadastrar_edital"),
     handler: FtEditalController.postEdital,
   });
 
@@ -162,6 +159,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_vinculos"),
     handler: FtEditalController.getAllEditalWithBolsista,
   });
 
@@ -204,6 +202,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("vincular_bolsista"),
     handler: FtEditalController.vincularBolsista,
   });
 
@@ -236,6 +235,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_vinculos"),
     handler: FtEditalController.getEditalWithBolsista,
   });
 
@@ -276,6 +276,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("editar_vinculo"),
     handler: FtEditalController.atualizarVinculo,
   });
 
@@ -303,6 +304,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("gerar_relatorio_edital"),
     handler: FtEditalController.getRelatory,
   });
 
@@ -326,6 +328,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_edital"),
     handler: FtEditalController.getEditalById,
   });
 
@@ -350,6 +353,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("editar_edital"),
     handler: FtEditalController.updateEdital,
   });
 
@@ -370,6 +374,7 @@ export const FtEditalRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("excluir_edital"),
     handler: FtEditalController.deleteEdital,
   });
 };

@@ -7,10 +7,12 @@ export const PERMISSION_EVENTS = {
 
 export interface PermissionUpdatedEvent {
   context: ApplicationEventContext;
-  before: Permissions;
-  after: Permissions;
+  before: Permissions | RolePermissionAuditSnapshot;
+  after: Permissions | RolePermissionAuditSnapshot;
 }
 
 export interface PermissionEventMap {
   [PERMISSION_EVENTS.updated]: PermissionUpdatedEvent;
 }
+
+export interface RolePermissionAuditSnapshot {id: number; role_id: number; permissions: {permission_action_id: number; allowed: boolean}[]}

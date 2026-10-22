@@ -1,131 +1,27 @@
 import AppError from "../../../core/appError.js";
-import { PermissionRepository } from "../../permission/domain/repository/permission.repository.js";
-import { RolesRepository } from "../../roles/domain/repository/roles.repository.js";
-import {
-  ServicesRepository,
-} from "../../services/domain/repository/services.repository.js";
-import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
-import UserRepository from "../../user/domain/repository/user.repository.js";
-
-export class AuthorizationUseCase {
-  constructor(
-    private readonly serviceRepo: ServicesRepository,
-    private readonly serviceVisibilityRepository: ServiceVisibilityRepository,
-    private readonly rolesRepo: RolesRepository,
-    private readonly permissionRepo: PermissionRepository,
-    private readonly userRepo: UserRepository,
-    private readonly logger: any,
-  ) {}
-
-  authorize = async (
-    userId: number,
-    service: number,
-    methode: string,
-  ) => {
-    this.logger.info("Authorizing user");
-    const methodes = ["GET", "POST", "PUT", "DELETE"];
-
-    this.logger.info("Validating method");
-    if (!methodes.includes(methode)) {
-      throw new AppError("Method not allowed", 405, "METHOD_NOT_ALLOWED");
-    }
-
-    const user = await this.userRepo.getUserById(userId);
-    const serviceData = await this.serviceRepo.getOneServices(service);
-
-    this.logger.info("Validating user");
-    if (!user) {
-      throw new AppError("User not found", 404, "USER_NOT_FOUND");
-    }
-    this.logger.info("Validating service");
-    if (!serviceData) {
-      throw new AppError("Service not found", 404, "SERVICE_NOT_FOUND");
-    }
-
-    if (user.setor_id === null) {
-      throw new AppError(
-        "User has no associated setor",
-        403,
-        "USER_WITHOUT_SETOR",
-      );
-    }
-
-    const visibility =
-      await this.serviceVisibilityRepository.findVisibilityByServiceAndSetor(
-        user.setor_id,
-        service,
-      );
-
-    this.logger.info("Validating visibility");
-    if (!visibility || !visibility.visibility) {
-      throw new AppError(
-        "You don't have the right to access this service",
-        403,
-        "SERVICE_NOT_FOUND",
-      );
-    }
-
-    const role = await this.rolesRepo.findById(user.role_id);
-    this.logger.info("Validating role");
-    if (!role) {
-      throw new AppError("Role not found", 404, "ROLE_NOT_FOUND");
-    }
-
-    const permissions = await this.permissionRepo.findByRoleAndService(
-      user.role_id,
-      service,
-    );
-    this.logger.info("Validating permissions");
-    if (!permissions) {
-      throw new AppError("Permission not found", 404, "PERMISSION_NOT_FOUND");
-    }
-    this.logger.info("Validating permissions do método");
-
-    switch (methode) {
-      case "GET":
-        if (!permissions?.read) {
-          throw new AppError(
-            "You don't have the right to read this service",
-            403,
-            "NOT_PERMITTED",
-          );
-        }
-        break;
-
-      case "POST":
-        if (!permissions?.write) {
-          throw new AppError(
-            "You don't have the right to create this service",
-            403,
-            "NOT_PERMITTED",
-          );
-        }
-        break;
-
-      case "PUT":
-        if (!permissions?.edit) {
-          throw new AppError(
-            "You don't have the right to edit this service",
-            403,
-            "NOT_PERMITTED",
-          );
-        }
-        break;
-
-      case "DELETE":
-        if (!permissions?.del) {
-          throw new AppError(
-            "You don't have the right to delete this service",
-            403,
-            "NOT_PERMITTED",
-          );
-        }
-        break;
-
-      default:
-        throw new AppError("Method not allowed", 405, "METHOD_NOT_ALLOWED");
-    }
-
-    this.logger.info("User authorized");
-  };
+import { PERMISSION_CATALOG } from "../domain/permission-catalog.js";
+export interface AuthorizationRepository {
+  user(id: number): Promise<{role_id: number; setor_id: number | null} | null>;
+  roleExists(id: number): Promise<boolean>;
+  service(module: string): Promise<{id: number; module: string} | null>;
+  visible(setorId: number, serviceId: number): Promise<boolean>;
+  actions(roleId: number, serviceId: number): Promise<string[]>;
+}
+export interface PermissionAuthorizer {
+  authorize(userId: number, module: string, action: string): Promise<void>;
+}
+export class AuthorizationUseCase implements PermissionAuthorizer {
+  constructor(private readonly repository: AuthorizationRepository) {}
+  async authorize(userId: number, module: string, action: string): Promise<void> {
+    if (!PERMISSION_CATALOG.some(item => item.module === module && item.action === action))
+      throw new AppError("Unknown permission configuration", 500, "PERMISSION_CONFIGURATION_ERROR");
+    const user = await this.repository.user(userId);
+    if (!user) throw new AppError("Unauthenticated user", 401, "UNAUTHENTICATED");
+    const deny = () => { throw new AppError("Not permitted", 403, "NOT_PERMITTED"); };
+    if (user.setor_id == null || !await this.repository.roleExists(user.role_id)) return deny();
+    const service = await this.repository.service(module);
+    if (!service || !await this.repository.visible(user.setor_id, service.id)) return deny();
+    const actions = await this.repository.actions(user.role_id, service.id);
+    if (!actions.includes("acessar") || !actions.includes(action)) return deny();
+  }
 }

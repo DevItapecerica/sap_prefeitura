@@ -1,4 +1,12 @@
-# SAP Prefeitura
+# SAP Prefeitura — API principal
+
+API modular em Node.js 22, TypeScript, Fastify 5 e Sequelize/MariaDB. Registra autenticação, usuários, setores, roles, serviços, permissões, munícipes, Esporte, Frente de Trabalho e auditoria. A visão do ecossistema está no [README principal](../README.md).
+
+Os comandos de Compose e os caminhos de componentes nas seções abaixo são relativos à raiz do workspace (`sap`), um nível acima deste diretório.
+
+## Permissões por módulo/ação
+
+A evolução para concessões por role, os contratos administrativos e o procedimento de migração/validação estão em [docs/permissions.md](docs/permissions.md). Diferenciação de acesso é feita criando/configurando outra role; não há exceções individuais.
 
 Ecossistema web formado pela API principal, pelo frontend React e pelo serviço de geração de PDFs. O ambiente integrado usa MariaDB e pode ser iniciado pela raiz com Docker Compose.
 
@@ -43,7 +51,7 @@ Para encerrar sem apagar dados:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 ```
 
-O volume `sap-prefeitura_db_data` é persistente. Não use `down --volumes` em ambientes com dados que devam ser preservados.
+Os volumes `sap-prefeitura_db_data` (banco) e `sap-prefeitura_ft_report_data` (ZIPs de relatórios) são persistentes. Não use `down --volumes` em ambientes com dados que devam ser preservados.
 
 ## Variáveis de ambiente
 
@@ -59,10 +67,14 @@ Nunca versione `.env` ou credenciais reais. Em produção, use segredos longos e
 
 Instale as dependências em cada projeto:
 
-```bash
-cd sap_prefeitura && npm ci
-cd ../api_PDF && npm ci
-cd ../front_prefeitura && npm ci
+```powershell
+cd sap_prefeitura
+npm ci
+cd ../api_PDF
+npm ci
+cd ../front_prefeitura
+npm ci
+cd ..
 ```
 
 Crie um `.env` a partir do exemplo de cada diretório. Com MariaDB disponível e as URLs apontando para `localhost`, execute em terminais separados:
@@ -82,7 +94,7 @@ cd front_prefeitura
 npm run dev
 ```
 
-O servidor Vite informa sua porta ao iniciar; por padrão, costuma usar `5173`.
+O Vite usa a porta fixa `5173`; o proxy encaminha `/api/*` para `http://localhost:3000/api/v2/*`.
 
 ## Banco, migrations e seeds
 
@@ -102,9 +114,21 @@ npm run seed:undo
 
 Toda alteração de banco deve possuir migration reversível e teste correspondente. Não apague volumes ou migrations para contornar falhas.
 
-## Relatórios de espelho de ponto em lote
+Em bases existentes, aplique somente os seeds necessários à atualização. A migração de permissões pode recusar rollback que perderia concessões granulares; consulte [docs/permissions.md](docs/permissions.md) antes de reverter.
 
-A Frente de Trabalho pode solicitar a geração assíncrona dos espelhos de ponto de todos os bolsistas vinculados a um edital no mês informado. A API principal consulta os dados, solicita cada PDF à `api_PDF`, cria um ZIP e o disponibiliza na aba **Downloads** do frontend.
+## Modelo da Frente de Trabalho
+
+- Bolsistas referenciam `municipes` por `municipe_uuid`; dados pessoais vêm do munícipe e dados bancários ficam em `payment_info`.
+- Vínculos com edital concentram datas, estado, local de trabalho, pagador e turno. O turno possui snapshot para preservar nome e horários históricos.
+- Novos vínculos exigem turno ativo e nascimento cadastrado; idade acima de 65 anos impede a inclusão. Vínculos legados podem permanecer sem turno.
+- O retorno ao mesmo edital é permitido a partir do mês seguinte ao encerramento anterior, sem vínculo ativo simultâneo nesse edital.
+- Ocorrências pertencem ao vínculo histórico. Faltas são informativas por padrão (`DESCONTAR_FALTA = false`); relatórios consideram as janelas dos vínculos no período solicitado.
+
+Consulte os planos de [migração para munícipes](../codex/plans/37-migracao-para-municipes.md), [cadastro parte II](../codex/plans/39-cadastro-parte-ii.md) e [pagadores](../codex/plans/pagadores-crud-e-vinculo.md).
+
+## Relatórios em lote
+
+A Frente de Trabalho pode solicitar a geração assíncrona de espelhos de ponto ou folhas de presença dos bolsistas vinculados a um edital no mês informado. A API principal consulta os dados, solicita cada PDF à `api_PDF`, cria um ZIP e o disponibiliza na aba **Downloads** do frontend. O campo `tipo` distingue `espelhos_ponto` e `folhas_presenca`.
 
 ### Fila e worker
 
@@ -122,26 +146,29 @@ aguardando -> processando -> concluido -> excluido
 - Lotes presos em `processando` por mais de 30 minutos voltam para `aguardando`.
 - Se parte dos PDFs falhar, o ZIP é concluído com os arquivos gerados e um `falhas.csv`.
 - Se nenhum PDF for gerado, o lote termina como `erro` e pode ser reenviado.
-- O ZIP é removido depois do primeiro download concluído ou após sete dias sem download; o registro permanece como `excluido` para histórico.
+- O ZIP é removido depois do primeiro download concluído. Lotes concluídos há mais de sete dias são removidos na limpeza periódica, executada a cada 24 horas; o registro permanece como `excluido` para histórico.
 
 `runtimeWorkers` é uma opção interna do registro da aplicação. Workers e schedulers iniciam por padrão; passar `runtimeWorkers: false` impede a criação de timers e tarefas em segundo plano, principalmente em testes. Essa opção não é uma variável de ambiente nem desativa as rotas HTTP.
 
 ### Armazenamento
 
-`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória. O Compose usa `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
+`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória e deve ser acrescentada ao ambiente caso não esteja no exemplo copiado. O Compose já define `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
 
 Na execução nativa em desenvolvimento, a ausência da variável usa `sap_prefeitura/storage/ft-reports`. O diretório deve ser gravável pelo usuário da aplicação. Com múltiplas instâncias, todas precisam compartilhar o mesmo volume; armazenamento local isolado não permite que outra instância entregue o arquivo.
 
 ### Rotas protegidas
 
-| Método e rota | Finalidade |
-| --- | --- |
-| `POST /api/v2/frente-de-trabalho/relatorio/edital/:id/espelhos-ponto` | Cria o lote mensal e retorna `202`. |
-| `GET /api/v2/frente-de-trabalho/relatorio/downloads` | Lista lotes ainda não excluídos. |
-| `GET /api/v2/frente-de-trabalho/relatorio/downloads/:id` | Baixa uma vez o ZIP concluído. |
-| `POST /api/v2/frente-de-trabalho/relatorio/downloads/:id/retry` | Recoloca um lote com erro em `aguardando`. |
+Prefixo de todas as rotas abaixo: `/api/v2/frente-de-trabalho/relatorio`.
 
-Todas as rotas exigem JWT e autorização no serviço Frente de Trabalho. A listagem é compartilhada entre todos os usuários autorizados nesse serviço.
+| Método e rota | Finalidade | Ação no módulo `ft` |
+| --- | --- | --- |
+| `POST /edital/:id/espelhos-ponto` | Cria o lote de espelhos e retorna `202`. | `solicitar_espelhos_ponto` |
+| `POST /edital/:id/folhas-presenca` | Cria o lote de folhas e retorna `202`. | `solicitar_folhas_presenca` |
+| `GET /downloads` | Lista lotes ainda não excluídos, com `page` e `limit`. | `consultar_downloads` |
+| `GET /downloads/:id` | Baixa uma vez o ZIP concluído. | `baixar_relatorio` |
+| `POST /downloads/:id/retry` | Recoloca um lote com erro em `aguardando`. | `reprocessar_relatorio` |
+
+As solicitações de lote recebem `{ "mes": "2026-10" }` e respondem com `{ "arquivo": ... }`. Todas as rotas exigem JWT, `ft:acessar`, visibilidade do serviço para o setor e a ação específica. A listagem é compartilhada entre usuários com `ft:consultar_downloads`, sem filtro por solicitante.
 
 ### Recuperação e limitação atual
 
@@ -157,7 +184,9 @@ API principal:
 cd sap_prefeitura
 npm run check
 npm test
+npm run test:coverage
 npm run build
+npm run openapi:generate
 ```
 
 API PDF:
@@ -165,6 +194,7 @@ API PDF:
 ```bash
 cd api_PDF
 npm test
+npm run test:coverage
 npm run build
 ```
 
@@ -172,11 +202,17 @@ Frontend:
 
 ```bash
 cd front_prefeitura
+npm run typecheck
 npm run lint
+npm test
+npm run test:coverage
 npm run build
+npm run bundle:check
 ```
 
-O workflow `.github/workflows/quality.yml` executa esses grupos em jobs independentes para push e pull request.
+Execute cada grupo a partir da raiz do workspace, em terminais separados. O workflow `.github/workflows/quality.yml` não está presente nesta cópia; valide localmente sem presumir execução em CI.
+
+O contrato SAP canônico é `sap_prefeitura/contracts/sap.openapi.json`, relativo à raiz do workspace. Depois de atualizar os contratos das APIs, execute `npm run contracts:generate` no frontend. Os harnesses de banco e runtime de permissões exigem banco descartável e opt-in explícito; a preparação está em [docs/permissions.md](docs/permissions.md).
 
 ## Autenticação e segurança
 
@@ -186,7 +222,7 @@ O workflow `.github/workflows/quality.yml` executa esses grupos em jobs independ
 - Rate limits específicos protegem autenticação e rotas públicas.
 - Swagger e recursos de desenvolvimento não ficam disponíveis em produção.
 
-Consulte `sap_prefeitura/SECURITY_AUDIT.md` para a auditoria atualizada.
+Consulte a [auditoria de segurança](SECURITY_AUDIT.md) e o [guia de permissões](docs/permissions.md). `/metrics` exige `Authorization: Bearer <METRICS_TOKEN>` e retorna `503` sem configuração ou `401` para token ausente/incorreto. As APIs propagam `X-Request-Id`; use o identificador para correlacionar falhas. A coleta Prometheus/Grafana está descrita no [guia de monitoramento](../monitoring/README.md).
 
 ## Diagnóstico
 
@@ -205,12 +241,13 @@ curl http://localhost:3002/ready
 ```
 
 - Se `db` não ficar saudável, revise as quatro variáveis `DATABASE_*` e os logs do MariaDB.
-- Se `/health` responder e `/ready` falhar, alguma dependência essencial está indisponível.
+- Na API principal, se `/health` responder e `/ready` falhar, verifique as dependências. Na API PDF, `/ready` atualmente retorna estado estático.
 - Se o frontend não alcançar a API, confirme que o serviço Compose se chama `sap` e que o proxy recebe requisições sob `/api/`.
 - Se a API principal não iniciar, confirme migrations, `DATABASE_URL`, `SECRET_KEY` e as credenciais de bootstrap.
 
 ## Documentação do trabalho
 
-- `codex/kamban.md`: quadro técnico, dependências, critérios e resultados das melhorias.
-- `sap_prefeitura/SECURITY_AUDIT.md`: controles e riscos de segurança.
-- READMEs dentro de cada aplicação: detalhes específicos de seus módulos.
+- [Planos técnicos](../codex/plans/): escopos e critérios das mudanças.
+- [Quadro de protocolo](../codex/protocolo/kamban.md) e [runbook operacional](../codex/protocolo/runbook.md).
+- [Auditoria de segurança](SECURITY_AUDIT.md) e [permissões](docs/permissions.md).
+- [Frontend](../front_prefeitura/README.md) e [API PDF](../api_PDF/README.md).

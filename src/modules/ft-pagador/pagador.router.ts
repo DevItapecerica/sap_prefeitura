@@ -1,8 +1,8 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import errorResponseSchema from "../../core/schema/errorSchema.js";
 import AuthMiddleware from "../auth/auth.middleware.js";
-import { authorizationFactory } from "../acess-controll/factories/makeAuthorization.js";
-import { PagadorController } from "./pagador.controller.js";
+import { requirePermission } from "../acess-controll/interface/require-permission.js";
+import type { PagadorController as PagadorControllerType } from "./pagador.controller.js";
 
 const resource = {
   type: "object",
@@ -54,15 +54,11 @@ const capacityResource = {
   },
 };
 
-export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
+export const PagadorRouter: FastifyPluginAsync<{controller?: typeof PagadorControllerType}> = async (fastify, options) => {
+  const PagadorController = options.controller ?? (await import("./pagador.controller.js")).PagadorController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) =>
-    authorizationFactory(request.log).authorize(
-      Number(request.user.id),
-      6,
-      request.method,
-    ),
-  );
+  const allow = requirePermission("ft");
+
   fastify.route({
     method: "GET",
     url: "/",
@@ -94,6 +90,7 @@ export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_pagador"),
     handler: PagadorController.list,
   });
   fastify.route({
@@ -123,6 +120,7 @@ export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_pagador"),
     handler: PagadorController.capacity,
   });
   fastify.route({
@@ -144,6 +142,7 @@ export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_pagador"),
     handler: PagadorController.get,
   });
   fastify.route({
@@ -164,6 +163,7 @@ export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("cadastrar_pagador"),
     handler: PagadorController.create,
   });
   fastify.route({
@@ -186,6 +186,7 @@ export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("editar_pagador"),
     handler: PagadorController.update,
   });
   fastify.route({
@@ -204,6 +205,7 @@ export const PagadorRouter: FastifyPluginAsync = async (fastify) => {
       params: id,
       response: { 204: { type: "null" }, ...errorResponseSchema },
     },
+    preHandler: allow("excluir_pagador"),
     handler: PagadorController.delete,
   });
 };

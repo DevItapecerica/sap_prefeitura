@@ -143,18 +143,6 @@ export class FakeServiceAggregateRepository {
     const before = await this.findById(id);
     if (!before) throw new ServiceAggregateError("SERVICE_NOT_FOUND");
 
-    const permissionIds = new Set<number>();
-    for (const item of input.permissions ?? []) {
-      const stored = before.permissions.find((permission) => permission.id === item.id);
-      if (
-        permissionIds.has(item.id) ||
-        !stored ||
-        stored.service_id !== id ||
-        stored.role_id !== item.role_id ||
-        item.service_id !== id
-      ) throw new ServiceAggregateError("PERMISSION_NOT_FOUND");
-      permissionIds.add(item.id);
-    }
     const visibilityIds = new Set<number>();
     for (const item of input.visibility ?? []) {
       const stored = before.visibility.find((visibility) => visibility.id === item.id);
@@ -172,9 +160,6 @@ export class FakeServiceAggregateRepository {
       ...input.service,
       tag: input.service.tag ?? before.services.tag,
     });
-    for (const item of input.permissions ?? []) {
-      await this.permissions.updatePermissions(item.id, item);
-    }
     for (const item of input.visibility ?? []) {
       await this.visibility.updateServiceVisibility(item.id, item.visibility);
     }

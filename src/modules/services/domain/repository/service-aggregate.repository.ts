@@ -15,15 +15,6 @@ export interface ServiceAggregateUpdate {
     tag?: string;
     url: string;
   };
-  permissions?: Array<{
-    id: number;
-    role_id: number;
-    service_id: number;
-    read: boolean;
-    write: boolean;
-    edit: boolean;
-    del: boolean;
-  }>;
   visibility?: Array<{
     id: number;
     setor_id: number;
@@ -50,7 +41,4 @@ export interface ServiceAggregateRepository {
     id: number,
     input: ServiceAggregateUpdate,
   ): Promise<{ before: ServiceAggregate; after: ServiceAggregate }>;
-  delete(
-    id: number,
-  ): Promise<{ before: ServiceAggregate; after: null }>;
 }

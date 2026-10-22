@@ -1,12 +1,12 @@
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
-import { permissionsArraySchema } from "./permission-resource.schema.js";
 import { serviceResourceSchema } from "./service-resource.schema.js";
 
 const visibleServiceSchema = {
   ...serviceResourceSchema,
   properties: {
     ...serviceResourceSchema.properties,
-    permissions: permissionsArraySchema,
+    module: {type: "string"},
+    actions: {type: "array", items: {type: "string"}},
   },
 };
 

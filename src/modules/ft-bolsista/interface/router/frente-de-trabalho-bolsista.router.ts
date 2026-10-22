@@ -1,21 +1,14 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
-import { FrenteTrabalhoBolsistaController } from "../controller/frente-de-trabalho-bolsista.controller.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
+import type { FrenteTrabalhoBolsistaController as FrenteTrabalhoBolsistaControllerType } from "../controller/frente-de-trabalho-bolsista.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
-export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
-  fastify,
-) => {
+export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync<{controller?: typeof FrenteTrabalhoBolsistaControllerType}> = async (fastify, options) => {
+  const FrenteTrabalhoBolsistaController = options.controller ?? (await import("../controller/frente-de-trabalho-bolsista.controller.js")).FrenteTrabalhoBolsistaController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      6,
-      request.method,
-    );
-  });
+  const allow = requirePermission("ft");
+
 
   const tag = ["Frente de Trabalho - Bolsista"];
   const security = [{ JWTToken: [] }];
@@ -193,6 +186,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_bolsista"),
     handler: FrenteTrabalhoBolsistaController.getBolsistas,
   });
 
@@ -231,6 +225,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("gerar_espelho_ponto"),
     handler: FrenteTrabalhoBolsistaController.gerarEspelhoPonto,
   });
 
@@ -262,6 +257,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("cadastrar_bolsista"),
     handler: FrenteTrabalhoBolsistaController.createBolsista,
   });
 
@@ -305,6 +301,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_candidatos_vinculo"),
     handler: FrenteTrabalhoBolsistaController.getBolsistasParaVinculo,
   });
 
@@ -341,6 +338,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_aniversariantes"),
     handler: FrenteTrabalhoBolsistaController.getAniversariantes,
   });
 
@@ -373,6 +371,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_vinculos_a_vencer"),
     handler: FrenteTrabalhoBolsistaController.getToExpire,
   });
 
@@ -387,6 +386,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
       },
     },
     schema: { hide: true },
+    preHandler: allow("consultar_vinculos_a_vencer"),
     handler: FrenteTrabalhoBolsistaController.getToExpire,
   });
 
@@ -429,6 +429,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("prorrogar_vinculo"),
     handler: FrenteTrabalhoBolsistaController.prorrogate,
   });
 
@@ -459,6 +460,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_vinculos"),
     handler: FrenteTrabalhoBolsistaController.getBolsistaEdital,
   });
 
@@ -493,6 +495,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_historico_bolsista"),
     handler: FrenteTrabalhoBolsistaController.getHistoricoBolsista,
   });
 
@@ -523,6 +526,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_bolsista"),
     handler: FrenteTrabalhoBolsistaController.getOneBolsista,
   });
 
@@ -554,6 +558,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("editar_bolsista"),
     handler: FrenteTrabalhoBolsistaController.updateBolsista,
   });
 
@@ -581,6 +586,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("excluir_bolsista"),
     handler: FrenteTrabalhoBolsistaController.deleteBolsista,
   });
 
@@ -623,6 +629,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("remover_bolsista"),
     handler: FrenteTrabalhoBolsistaController.cancelBolsistaEdital,
   });
 
@@ -663,6 +670,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("registrar_falta"),
     handler: FrenteTrabalhoBolsistaController.createFalta,
   });
 
@@ -705,6 +713,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_faltas"),
     handler: FrenteTrabalhoBolsistaController.listFaltas,
   });
 
@@ -742,6 +751,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("excluir_falta"),
     handler: FrenteTrabalhoBolsistaController.deleteFalta,
   });
 
@@ -788,6 +798,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("registrar_ocorrencia"),
     handler: FrenteTrabalhoBolsistaController.createOcorrencia,
   });
 
@@ -829,6 +840,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_ocorrencias"),
     handler: FrenteTrabalhoBolsistaController.listOcorrencias,
   });
 
@@ -863,6 +875,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync = async (
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("excluir_ocorrencia"),
     handler: FrenteTrabalhoBolsistaController.deleteOcorrencia,
   });
 };

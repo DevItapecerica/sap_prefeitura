@@ -19,7 +19,7 @@ export const registerPermissionAuditHandlers = (
     recordAuditEvent(
       event,
       {
-        ...makeAuditBaseRecord(event, "permission", "permission"),
+        ...makeAuditBaseRecord(event, "permission", "permissions" in event.after ? "role_permission" : "permission"),
         action: "UPDATE",
         resourceId: String(event.after.id),
         before: event.before,

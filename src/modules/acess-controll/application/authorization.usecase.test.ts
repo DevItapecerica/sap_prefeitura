@@ -1,68 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
 import AppError from "../../../core/appError.js";
-import { AuthorizationUseCase } from "./authorization.usecase.js";
-
-type Permission = { read: boolean; write: boolean; edit: boolean; del: boolean };
-
-const makeSubject = ({
-  permission = { read: true, write: true, edit: true, del: true },
-  serviceExists = true,
-  visible = true,
-}: {
-  permission?: Permission | null;
-  serviceExists?: boolean;
-  visible?: boolean;
-} = {}) =>
-  new AuthorizationUseCase(
-    { getOneServices: async () => (serviceExists ? { id: 6 } : null) } as never,
-    {
-      findVisibilityByServiceAndSetor: async () => ({ visibility: visible }),
-    } as never,
-    { findById: async () => ({ id: 2 }) } as never,
-    { findByRoleAndService: async () => permission } as never,
-    {
-      getUserById: async () => ({ id: 10, setor_id: 3, role_id: 2 }),
-    } as never,
-    { info: () => undefined },
-  );
-
-const expectStatus = async (operation: Promise<unknown>, status: number) => {
-  await assert.rejects(operation, (error: unknown) => {
-    assert.ok(error instanceof AppError);
-    assert.equal(error.statusCode, status);
-    return true;
-  });
-};
-
-test("authorization applies the method x permission matrix", async () => {
-  const matrix = [
-    ["GET", "read"],
-    ["POST", "write"],
-    ["PUT", "edit"],
-    ["DELETE", "del"],
-  ] as const;
-
-  for (const [method, field] of matrix) {
-    const allowed = { read: false, write: false, edit: false, del: false };
-    allowed[field] = true;
-    await makeSubject({ permission: allowed }).authorize(10, 6, method);
-
-    allowed[field] = false;
-    await expectStatus(
-      makeSubject({ permission: allowed }).authorize(10, 6, method),
-      403,
-    );
-  }
+import { AuthorizationUseCase, AuthorizationRepository } from "./authorization.usecase.js";
+const make = (overrides: Partial<AuthorizationRepository> = {}) => new AuthorizationUseCase({
+ user: async () => ({role_id: 1, setor_id: 2}), roleExists: async () => true,
+ service: async () => ({id: 6, module: "ft"}), visible: async () => true,
+ actions: async () => ["acessar", "remover_bolsista"], ...overrides,
 });
-
-test("authorization denies invisible, unknown and unconfigured services", async () => {
-  await expectStatus(makeSubject({ visible: false }).authorize(10, 6, "GET"), 403);
-  await expectStatus(makeSubject({ serviceExists: false }).authorize(10, 999, "GET"), 404);
-  await expectStatus(makeSubject({ permission: null }).authorize(10, 6, "GET"), 404);
+const status = (expected: number) => (error: unknown) => error instanceof AppError && error.statusCode === expected;
+test("denies missing, false grants and deleted/invisible services without admin bypass", async () => {
+ for (const overrides of [
+  {roleExists: async () => false}, {service: async () => null}, {visible: async () => false},
+  {actions: async () => []}, {actions: async () => ["remover_bolsista"]},
+  {user: async () => ({role_id: 1, setor_id: null})},
+ ]) await assert.rejects(make(overrides).authorize(1,"ft","remover_bolsista"),status(403));
 });
-
-test("authorization rejects methods outside the explicit matrix", async () => {
-  await expectStatus(makeSubject().authorize(10, 6, "PATCH"), 405);
+test("deleted actor returns 401 and unknown code action is configuration error", async () => {
+ await assert.rejects(make({user: async () => null}).authorize(1,"ft","remover_bolsista"),status(401));
+ await assert.rejects(make().authorize(1,"ft","GET"),status(500));
+ await assert.rejects(make().authorize(1,"unknown","acessar"),status(500));
 });

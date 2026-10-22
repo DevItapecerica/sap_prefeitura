@@ -1,19 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ServicesVisiblesService } from "../../domain/services/services-visibles.service.js";
 import { ListVisibleServicesUseCase } from "../use-case/list-visible-services.use-case.js";
-import { makeServiceFakes } from "./service-use-case.helpers.js";
-
-test("ListVisibleServicesUseCase intersects visibility and read permission", async () => {
-  const fakes = makeServiceFakes();
-  const result = await new ListVisibleServicesUseCase(
-    fakes.services as any,
-    fakes.visibility as any,
-    fakes.permissions as any,
-    new ServicesVisiblesService(),
-  ).execute(1, 1);
-
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 6);
-  assert.equal(result[0].permissions.length, 1);
+test("visible services resolve current identity by userId, never JWT role/setor claims", async () => {
+ let userId: number | undefined;
+ const expected = [{id: 6, module: "ft", actions: ["acessar", "consultar_bolsista"]}];
+ const useCase = new ListVisibleServicesUseCase({visibleServices: async id => {userId = id; return expected;}});
+ assert.deepEqual(await useCase.execute(10),expected);
+ assert.equal(userId,10);
+ assert.ok(!("permissions" in expected[0]));
 });

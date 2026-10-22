@@ -1,5 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { writeSapOpenApi } from "./openapi-output.js";
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 
@@ -40,11 +39,5 @@ for (const [path, operations] of Object.entries(document.paths || {})) {
   }
 }
 
-const outputDirectory = resolve(process.cwd(), "..", "contracts");
-await mkdir(outputDirectory, { recursive: true });
-await writeFile(
-  resolve(outputDirectory, "sap.openapi.json"),
-  `${JSON.stringify(sortObject(document), null, 2)}\n`,
-  "utf8",
-);
+await writeSapOpenApi(sortObject(document));
 await app.close();

@@ -1,8 +1,7 @@
 import { FastifyPluginAsync, FastifyRequest } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
-import { authorizationFactory } from "../../../acess-controll/factories/makeAuthorization.js";
-import atletaFactory from "../../factories/atleta.factory.js";
-import AtletaController from "../controller/atleta.controller.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
+import type AtletaControllerType from "../controller/atleta.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
 const ESPORTE_SERVICE_ID = 10;
@@ -67,19 +66,12 @@ const carterinhaSchema = {
   },
 };
 
-export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
-  const atletaService = atletaFactory(fastify.log);
-  const atletaController = new AtletaController(atletaService);
+export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType}> = async (fastify, options) => {
+  const atletaController = options.controller ?? new (await import("../controller/atleta.controller.js")).default((await import("../../factories/atleta.factory.js")).default(fastify.log));
 
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
-  fastify.addHook("preHandler", async (request: FastifyRequest) => {
-    const verifyAuthorization = authorizationFactory(request.log);
-    await verifyAuthorization.authorize(
-      Number(request.user.id),
-      ESPORTE_SERVICE_ID,
-      request.method,
-    );
-  });
+  const allow = requirePermission("esporte");
+
 
   fastify.route({
     method: "GET",
@@ -112,6 +104,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_atleta"),
     handler: atletaController.findAll,
   });
 
@@ -144,6 +137,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_carteirinha"),
     handler: atletaController.findCarteirinhas,
   });
 
@@ -171,6 +165,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_atleta"),
     handler: atletaController.findOne,
   });
 
@@ -208,6 +203,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("consultar_carteirinha"),
     handler: atletaController.findCarteirinhasByAtleta,
   });
 
@@ -238,6 +234,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("gerar_pdf_carteirinha"),
     handler: atletaController.getCarteirinhaPdf,
   });
 
@@ -268,6 +265,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("cadastrar_atleta"),
     handler: atletaController.create,
   });
 
@@ -301,6 +299,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("editar_atleta"),
     handler: atletaController.update,
   });
 
@@ -331,6 +330,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("excluir_atleta"),
     handler: atletaController.delete,
   });
 
@@ -366,6 +366,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("vincular_modalidade"),
     handler: atletaController.addModalidade,
   });
 
@@ -399,6 +400,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("remover_modalidade"),
     handler: atletaController.removeModalidade,
   });
 
@@ -441,6 +443,7 @@ export const AtletaRouter: FastifyPluginAsync = async (fastify) => {
         ...errorResponseSchema,
       },
     },
+    preHandler: allow("emitir_carteirinha"),
     handler: atletaController.createCarteirinha,
   });
 };
