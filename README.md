@@ -2,6 +2,12 @@
 
 API modular em Node.js 22, TypeScript, Fastify 5 e Sequelize/MariaDB. Registra autenticação, usuários, setores, roles, serviços, permissões, munícipes, Esporte, Frente de Trabalho e auditoria. A visão do ecossistema está no [README principal](../README.md).
 
+## FT centrada no edital
+
+O fluxo de FT passa a ser **inscrição → convocação com reserva → ativação manual com pagamento**. Editais concentram suas configurações e listas de participantes. Esta versão exige instalação em base FT vazia e não converte os editais anteriores. A migration recusa bases FT populadas; nenhuma rotina apaga o banco automaticamente.
+
+Consulte [docs/ft-edital-workflow.md](docs/ft-edital-workflow.md) para campos, permissões, contratos, restrições de alteração, implantação e integração real com banco descartável. O plano do backend fica em [codex/plans/ft-centrada-no-edital.md](codex/plans/ft-centrada-no-edital.md).
+
 Os comandos de Compose e os caminhos de componentes nas seções abaixo são relativos à raiz do workspace (`sap`), um nível acima deste diretório.
 
 ## Permissões por módulo/ação
@@ -120,8 +126,8 @@ Em bases existentes, aplique somente os seeds necessários à atualização. A m
 
 - Bolsistas referenciam `municipes` por `municipe_uuid`; dados pessoais vêm do munícipe e dados bancários ficam em `payment_info`.
 - Vínculos com edital concentram datas, estado, local de trabalho, pagador e turno. O turno possui snapshot para preservar nome e horários históricos.
-- Novos vínculos exigem turno ativo e nascimento cadastrado; idade acima de 65 anos impede a inclusão. Vínculos legados podem permanecer sem turno.
-- O retorno ao mesmo edital é permitido a partir do mês seguinte ao encerramento anterior, sem vínculo ativo simultâneo nesse edital.
+- Inscrição exige nascimento cadastrado, idade de 18 anos até o limite inclusivo informado no edital e as declarações de elegibilidade. Banco é exigido somente na ativação. Convocação reserva vaga, pagador, local, turno e início.
+- Retorno ao mesmo edital depende do parâmetro e respeita o mês seguinte ao encerramento. Participação anterior em outros editais tem parâmetro próprio; nunca se permite convocação/atividade simultânea.
 - Ocorrências pertencem ao vínculo histórico. Faltas são informativas por padrão (`DESCONTAR_FALTA = false`); relatórios consideram as janelas dos vínculos no período solicitado.
 
 Consulte os planos de [migração para munícipes](../codex/plans/37-migracao-para-municipes.md), [cadastro parte II](../codex/plans/39-cadastro-parte-ii.md) e [pagadores](../codex/plans/pagadores-crud-e-vinculo.md).
@@ -251,3 +257,32 @@ curl http://localhost:3002/ready
 - [Quadro de protocolo](../codex/protocolo/kamban.md) e [runbook operacional](../codex/protocolo/runbook.md).
 - [Auditoria de segurança](SECURITY_AUDIT.md) e [permissões](docs/permissions.md).
 - [Frontend](../front_prefeitura/README.md) e [API PDF](../api_PDF/README.md).
+
+
+## Extensão: idade máxima por edital e exceções — 2026-10-22
+
+- [x] `idade_maxima` inteira, obrigatória na criação, sem valor padrão e inclusiva. Idade mínima mantida em 18 anos; nascimento vem do munícipe. Referência: data da inscrição e início da convocação/ativação.
+- [x] Editais existentes preservados com limite nulo, bloqueando novas inscrições, convocações e ativações até o preenchimento explícito. O primeiro preenchimento é permitido mesmo após convocação; alterações posteriores ficam bloqueadas após a primeira convocação.
+- [x] Rotas `POST /:id/inscricoes/excecao` e `POST /:id/inscricoes/:inscricaoId/convocar-excecao`, com permissões independentes `cadastrar_inscricao_excecao` e `convocar_inscrito_excecao`. Justificativa obrigatória de 3–1000 caracteres.
+- [x] Autor, data e justificativa persistidos por etapa e em evento transacional. Só a convocação excepcional autoriza sua ativação posterior quanto ao máximo etário e histórico/retorno. O cadastro excepcional não autoriza convocação comum.
+- [x] Exceção libera máximo etário, histórico em outros editais e retorno ao mesmo edital, inclusive no mesmo mês. Inscrição excepcional admite somente após o prazo final; nunca antes da abertura.
+- [x] Mantidos: edital aberto/vigente, declarações, residência, idade mínima, inscrição única por pessoa/edital, bloqueio de convocação/atividade simultânea, vagas/capacidade e banco na ativação. Encaixe continua liberando apenas o prazo final.
+- [x] Migração incremental `20261022130000-ft-idade-excecoes` e seed idempotente `20261022131000-ft-exception-permissions`, sem concessões automáticas. Rollback recusa perder limites ou autorizações existentes.
+- [x] Interface PrimeReact com limite editável, erro vermelho e Confirmar desabilitado para idade/nascimento inválidos, seleção preservada ao buscar/paginar e botões de exceção por permissão. Limite já configurado fica desabilitado após convocação.
+- [x] Removidas as constantes globais de idade, duplicidade e retorno; consumidores usam a política do edital. `DESCONTAR_FALTA = false` permanece global.
+- [x] OpenAPI/tipos gerados e READMEs atualizados. Testes unitários, autorização HTTP, seed e integração SQL cobrem as regras; Chromium cobre desktop/mobile e o fluxo real de inscrição, exceção, convocação e ativação bancária.
+
+Validação SQL e HTTP feita em instância MariaDB 11.8.2 isolada, loopback:33318, schemas descartáveis com sufixo `_ft_test`; nenhuma migration/seed aplicada à base corrente. Compatibilidade do ambiente alvo Node 22/MariaDB 10.11 ainda deve ser conferida na implantação.
+
+### Ajuste de abertura e local de trabalho — 2026-10-22
+
+O edital pode ser aberto sem cadastrar pagadores, turnos ou locais previamente. Na convocação comum ou excepcional e na alteração da reserva, pagador e turno permanecem selecionáveis e o local é texto livre obrigatório, de até 255 caracteres. A API recebe `local` em vez de `local_id`; o texto é preservado na participação e nos relatórios. Locais antigos são preservados, sem necessidade de migration para esta alteração. As capacidades de pagador e as vagas do edital continuam verificadas na convocação e na ativação.
+
+
+## Prorrogação pelo período do edital — 2026-10-23
+
+A prorrogação usa integralmente prorrogacao_meses do edital, contando do término atual da participação. O novo término é a menor data entre esse cálculo e o último dia de vigência do edital; o ajuste para fim de mês e o horário de Brasília são preservados. Exemplo: término em 31/10 e período de 3 meses, com edital até 31/12, resulta em 31/12.
+
+POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não escolhe meses nem a data final; campos adicionais são rejeitados. A interface apenas confirma o período cadastrado e informa o limite final. O campo do edital passa a se chamar “Período de prorrogação (meses)”.
+
+Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.

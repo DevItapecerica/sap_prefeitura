@@ -210,6 +210,7 @@ test("pagina candidatos elegiveis com cursor opaco", async () => {
       bolsistas_edital: vinculos,
     });
   const rows = [candidate("b1", "Ana"), candidate("b2", "Bia")];
+  const restoreEdital = patchMethod(db.Edital, 'findByPk', async () => model({ id: 'e1', idade_maxima: 65, permitir_retorno: true, permitir_participacao_anterior: true }));
   let calls = 0;
   const restore = patchMethod(db.Bolsistas, "findAll", async () => calls++ === 0 ? rows : []);
 
@@ -240,6 +241,7 @@ test("pagina candidatos elegiveis com cursor opaco", async () => {
     assert.equal(second.rows.length, 0);
     assert.equal(second.nextCursor, null);
   } finally {
+    restoreEdital();
     restore();
   }
 });
@@ -260,13 +262,14 @@ test("ignora candidatos inelegiveis e aceita somente quem atende as politicas", 
   });
   const rows = [
     candidate("ativo", "1990-01-01", [model({ edital_id: "outro", status: "ativo" })]),
-    candidate("retorno-mesmo-mes", "1990-01-01", [model({ edital_id: "e1", status: "cancelado", canceled_at: "2026-10-02" })]),
+    candidate("retorno-mesmo-mes", "1990-01-01", [model({ edital_id: "e1", status: "cancelado", ativado_em: '2026-09-01', canceled_at: "2026-10-02" })]),
     candidate("sem-nascimento", null),
     candidate("data-invalida", "invalida"),
     candidate("idade-excedida", "1950-01-01"),
     candidate("elegivel", "1990-01-01"),
   ];
   const restore = patchMethod(db.Bolsistas, "findAll", async () => rows);
+  const restoreEdital = patchMethod(db.Edital, 'findByPk', async () => model({ id: 'e1', idade_maxima: 65, permitir_retorno: true, permitir_participacao_anterior: true }));
 
   try {
     const result = await repository.findAndCountVinculoCandidates({
@@ -278,6 +281,7 @@ test("ignora candidatos inelegiveis e aceita somente quem atende as politicas", 
     assert.equal(result.hasMore, false);
     assert.equal(result.nextCursor, null);
   } finally {
+    restoreEdital();
     restore();
   }
 });

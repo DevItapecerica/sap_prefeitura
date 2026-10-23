@@ -25,7 +25,8 @@ const matrix = {
   esporte: { read: ['acessar', 'consultar_atleta', 'consultar_carteirinha', 'gerar_pdf_carteirinha', 'consultar_modalidade'], write: ['cadastrar_atleta', 'vincular_modalidade', 'emitir_carteirinha', 'cadastrar_modalidade'], edit: ['editar_atleta', 'editar_modalidade'], del: ['excluir_atleta', 'remover_modalidade', 'excluir_modalidade'] },
   auditoria: { read: ['acessar', 'consultar_auditoria'], write: ['exportar_auditoria'], edit: [], del: [] },
 } as const;
-export type PermissionActionName = typeof matrix[PermissionModule][LegacyFlag][number];
+export const FT_WORKFLOW_ACTIONS = ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao', 'consultar_inscricoes', 'cadastrar_inscricao', 'encaixar_inscricao', 'alterar_janela_inscricoes', 'convocar_inscrito', 'ativar_participacao', 'cancelar_participacao', 'encerrar_edital', 'consultar_configuracao_edital', 'editar_configuracao_edital', 'gerar_folha_presenca'] as const;
+export type PermissionActionName = typeof matrix[PermissionModule][LegacyFlag][number] | typeof FT_WORKFLOW_ACTIONS[number];
 export interface CatalogEntry {
   readonly module: PermissionModule;
   readonly action: PermissionActionName;
@@ -33,12 +34,12 @@ export interface CatalogEntry {
   readonly serviceId: number;
 }
 export const PERMISSION_CATALOG: readonly CatalogEntry[] = Object.freeze(
-  (Object.keys(matrix) as PermissionModule[]).flatMap(module =>
+  [...(Object.keys(matrix) as PermissionModule[]).flatMap(module =>
     (Object.keys(matrix[module]) as LegacyFlag[]).flatMap(legacyFlag =>
       matrix[module][legacyFlag].map(action => {
         permissionKey(module, action);
         return Object.freeze({ module, action, legacyFlag, serviceId: MODULE_SERVICE_IDS[module] });
       }),
     ),
-  ),
+  ), ...FT_WORKFLOW_ACTIONS.map(action => Object.freeze({ module: 'ft' as const, action, legacyFlag: null, serviceId: 6 }))],
 );

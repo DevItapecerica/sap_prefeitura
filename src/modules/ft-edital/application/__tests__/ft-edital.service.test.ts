@@ -63,6 +63,7 @@ class FakeFtEditalRepository implements FtEditalRepository {
   private edital = new FakeModel({
     id: "edital-1",
     name: "Edital 1",
+    idade_maxima: 65, permitir_retorno: true, permitir_participacao_anterior: true,
     data_publicacao: new Date("2026-01-01"),
     data_vencimento: new Date("2026-12-31"),
     dia_pagamento: 10,
@@ -365,80 +366,30 @@ describe("FtEditalService", () => {
     await assertAppError(
       () => vincularBolsista.execute("edital-1", [{ bolsista_id: "bolsista-1", local: "Secretaria", pagador_id: PAGADOR_ID, turno_id: TURNO_ID }], "2026-06-09"),
       409,
-      "Bolsista ja vinculado a este edital",
+      "Pessoa ja convocada ou ativa",
     );
 
     assert.equal(repository.vincularBolsistasCalled, false);
   });
 
-  it("permite historico nao ativo quando CANT_DUPLICATE esta desativada", () => {
-    const policy = new FtVinculoPolicyService(false);
-
-    for (const status of ["inativo", "cancelado", "concluido", "expirado"]) {
-      assert.doesNotThrow(() => policy.ensureCanCreateVinculo([{ status }]));
-    }
+  it('permite historico sem ativacao anterior', () => {
+    const policy = new FtVinculoPolicyService();
+    for (const status of ['inativo', 'cancelado', 'concluido', 'expirado']) assert.doesNotThrow(() => policy.ensureCanCreateVinculo([{ status }], '2026-06-30', { id: 'e1' }));
   });
-
-  it("bloqueia historico ativo quando CANT_DUPLICATE esta desativada", () => {
-    const policy = new FtVinculoPolicyService(false);
-
-    assert.throws(
-      () => policy.ensureCanCreateVinculo([{ status: "ativo" }]),
-      (error) =>
-        error instanceof AppError &&
-        error.statusCode === 409 &&
-        error.message.includes("Bolsista ja vinculado a este edital"),
-    );
+  it('bloqueia historico ativo conforme politica central', () => {
+    assert.throws(() => new FtVinculoPolicyService().ensureCanCreateVinculo([{ status: 'ativo' }], '2026-06-30', { id: 'e1' }), /ja convocada ou ativa/);
   });
-
-  it("considera historico excluido logicamente quando CANT_DUPLICATE esta ativa", () => {
-    const policy = new FtVinculoPolicyService(true);
-
-    assert.throws(
-      () =>
-        policy.ensureCanCreateVinculo([
-          { status: "cancelado", deletedAt: new Date("2026-01-01") },
-        ]),
-      (error) => error instanceof AppError && error.statusCode === 409,
-    );
+  it('considera historico excluido logicamente ao proibir participacao anterior', () => {
+    assert.throws(() => new FtVinculoPolicyService().ensureCanCreateVinculo([{ edital_id: 'e2', status: 'cancelado', ativado_em: '2026-01-01', deletedAt: '2026-02-01' }], '2026-06-30', { id: 'e1', permitir_participacao_anterior: false }), /anteriormente/);
   });
-
-  it("bloqueia retorno no mesmo mes do encerramento", () => {
-    const policy = new FtVinculoPolicyService(false, true);
-    const encerramentos = [
-      { status: "cancelado", canceled_at: "2026-06-15" },
-      { status: "concluido", concluded_at: "2026-06-15" },
-      { status: "expirado", expired_at: "2026-06-15" },
-      { status: "inativo", expire_at: "2026-06-15", deletedAt: "2026-06-16" },
-    ];
-
-    for (const vinculo of encerramentos) {
-      assert.throws(
-        () => policy.ensureCanCreateVinculo([vinculo], "2026-06-30"),
-        (error) =>
-          error instanceof AppError &&
-          error.statusCode === 409 &&
-          error.message.includes("mes seguinte"),
-      );
-    }
+  it('bloqueia retorno no mesmo mes do encerramento', () => {
+    for (const end of [{ canceled_at: '2026-06-15' }, { concluded_at: '2026-06-15' }, { expired_at: '2026-06-15' }, { expire_at: '2026-06-15' }]) assert.throws(() => new FtVinculoPolicyService().ensureCanCreateVinculo([{ edital_id: 'e1', status: 'cancelado', ativado_em: '2026-01-01', ...end }], '2026-06-30', { id: 'e1', permitir_retorno: true }), /mes seguinte/);
   });
-
-  it("permite retorno no primeiro dia do mes seguinte", () => {
-    const policy = new FtVinculoPolicyService(false, true);
-
-    assert.doesNotThrow(() => policy.ensureCanCreateVinculo(
-      [{ status: "cancelado", canceled_at: "2026-06-30" }],
-      "2026-07-01",
-    ));
+  it('permite retorno no primeiro dia do mes seguinte', () => {
+    assert.doesNotThrow(() => new FtVinculoPolicyService().ensureCanCreateVinculo([{ edital_id: 'e1', status: 'cancelado', ativado_em: '2026-01-01', canceled_at: '2026-06-30' }], '2026-07-01', { id: 'e1', permitir_retorno: true }));
   });
-
-  it("permite retorno no mesmo mes quando a restricao esta desativada", () => {
-    const policy = new FtVinculoPolicyService(false, false);
-
-    assert.doesNotThrow(() => policy.ensureCanCreateVinculo(
-      [{ status: "cancelado", canceled_at: "2026-06-15" }],
-      "2026-06-20",
-    ));
+  it('permite nova tentativa no mesmo mes quando nao houve ativacao', () => {
+    assert.doesNotThrow(() => new FtVinculoPolicyService().ensureCanCreateVinculo([{ edital_id: 'e1', status: 'cancelado', canceled_at: '2026-06-15' }], '2026-06-20', { id: 'e1', permitir_retorno: false }));
   });
 
   it("rejeita edital inativo ao vincular", async () => {

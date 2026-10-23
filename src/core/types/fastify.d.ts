@@ -6,6 +6,7 @@ export interface AuditRouteMetadata {
   module: string;
   resourceType: string;
   resourceIdParam?: string;
+  omitRequestedChanges?: boolean;
 }
 
 declare module "fastify" {

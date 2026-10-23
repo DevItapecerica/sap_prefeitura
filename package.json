@@ -16,6 +16,7 @@
     "test:permissions:db": "tsx scripts/test-action-permissions-mariadb.ts",
     "test:permissions:runtime": "tsx scripts/test-action-permissions-runtime.ts",
     "test:permissions:safety": "node --import tsx --test scripts/test-action-permissions-mariadb.test.ts",
+    "test:ft:db": "tsx scripts/test-ft-workflow.ts",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "test:coverage": "c8 --check-coverage --lines 90 --statements 90 --functions 94 --branches 90 --reporter=text --reporter=lcov --reporter=json-summary node --import tsx --test \"src/**/*.test.ts\"",
     "test:unit": "node --import tsx --test \"src/**/*.test.ts\"",

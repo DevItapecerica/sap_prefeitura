@@ -1,3 +1,4 @@
+import { requireAgeLimit, validateHistory } from '../../../../modules/ft-edital/domain/services/edital-workflow.policy.js';
 import { Op } from "sequelize";
 import db from "../index.js";
 import { FtBolsistaRepository } from "../../../../modules/ft-bolsista/domain/repositories/ft-bolsista.repository.js";
@@ -7,7 +8,6 @@ import {
   FtBolsistaQueryDto,
   FtBolsistaVinculoCandidatesQueryDto,
 } from "../../../../modules/ft-bolsista/application/dto/ft-bolsista.dto.js";
-import { MAX_IDADE_VINCULO } from "../../../../modules/ft-edital/domain/constants/ft-vinculo.constants.js";
 import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
 import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
 import { MunicipeMapper } from "../../../../modules/municipe/application/mapper/municipe.mapper.js";
@@ -19,10 +19,6 @@ import {
   resolveTurnoSnapshot,
   selectCurrentVinculo,
 } from "../../../../modules/ft-edital/domain/services/ft-vinculo-period.service.js";
-import {
-  hasBlockingVinculo,
-  hasSameMonthReentry,
-} from "../../../../modules/ft-edital/domain/services/ft-vinculo-policy.service.js";
 
 export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
   private readonly municipeMapper = new MunicipeMapper(
@@ -196,6 +192,10 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
       throw ftError(400, "Limite deve ser um inteiro entre 1 e 50");
     }
     const search = String(rawSearch).trim();
+    const edital = await db.Edital.findByPk(editalId);
+    if (!edital) throw ftError(404, 'Edital nao encontrado');
+    const config = edital.toJSON();
+    requireAgeLimit(config);
     const referenceDate = query.data_vinculo || todayInSaoPaulo();
     let scanCursor = this.decodeCandidateCursor(query.cursor);
     const eligible: any[] = [];
@@ -241,6 +241,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
             attributes: [
               "id",
               "edital_id",
+              "ativado_em",
               "status",
               "data_vinculo",
               "expire_at",
@@ -269,24 +270,14 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         ) {
           continue;
         }
-        const vinculosDoEdital = vinculos.filter(
-          (item) =>
-            String(item.get?.("edital_id") ?? item.edital_id) ===
-            String(editalId),
-        );
-        if (
-          hasBlockingVinculo(vinculosDoEdital) ||
-          hasSameMonthReentry(vinculosDoEdital, referenceDate)
-        ) {
-          continue;
-        }
         const nascimento =
           municipe?.nascimento ?? municipe?.get?.("nascimento");
         if (!nascimento) continue;
         try {
           if (
-            calcularIdadeNaData(nascimento, referenceDate) <= MAX_IDADE_VINCULO
+            calcularIdadeNaData(nascimento, referenceDate) <= Number(config.idade_maxima) && calcularIdadeNaData(nascimento, referenceDate) >= 18
           ) {
+            validateHistory(config, vinculos.map(v => v.toJSON?.() ?? v), String(referenceDate).slice(0, 10));
             eligible.push(row);
             if (eligible.length > limit) break;
           }
@@ -419,6 +410,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         "bolsista_id",
         "edital_id",
         "status",
+        "ativado_em",
         "data_vinculo",
         "expire_at",
         "canceled_at",

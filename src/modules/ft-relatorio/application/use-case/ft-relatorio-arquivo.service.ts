@@ -34,10 +34,10 @@ export class FtRelatorioArquivoService {
     return this.present(created);
   }
 
-  async list(pageValue: unknown, limitValue: unknown) {
+  async list(pageValue: unknown, limitValue: unknown, editalId?: string) {
     const page = Math.max(Number(pageValue) || 0, 0);
     const limit = Math.min(Math.max(Number(limitValue) || 10, 1), 100);
-    const result = await this.files.list(page, limit);
+    const result = await this.files.list(page, limit, editalId);
     return { arquivos: result.rows.map((row) => this.present(row)), count: result.count, page, limit };
   }
 

@@ -61,6 +61,7 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
           required: true,
           where: {
             edital_id: id,
+            ativado_em: { [Op.ne]: null },
             data_vinculo: { [Op.lte]: periodo.data_fim },
           },
           attributes: [
@@ -68,6 +69,7 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
             "bolsista_id",
             "edital_id",
             "status",
+            "ativado_em",
             "local",
             "pagador_id",
             "turno_id",

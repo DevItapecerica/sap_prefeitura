@@ -14,6 +14,7 @@ const makeServer = async (
     | "CREATE"
     | "UPDATE"
     | "VIEW",
+  omitRequestedChanges = false,
 ) => {
   const app = Fastify({ logger: false });
   await app.register(ErrorHook);
@@ -23,6 +24,7 @@ const makeServer = async (
       config: {
         audit: {
           failureAction,
+          omitRequestedChanges,
           module: failureAction === "LOGIN_FAILED" ? "auth" : "test",
           resourceType:
             failureAction === "LOGIN_FAILED" ? "session" : "resource",
@@ -61,6 +63,18 @@ test("ErrorHook publica login inválido sem credencial", async () => {
     unsubscribe();
     await app.close();
   }
+});
+
+test('ErrorHook omits FT questionnaire and bank payloads on rejected mutations', async () => {
+  const events: HttpRequestFailedEvent[] = [];
+  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, event => { events.push(event); });
+  const app = await makeServer(422, 'UPDATE', true);
+  try {
+    const response = await app.inject({ method: 'POST', url: '/resource/7', payload: { respostas: { desempregado: true }, payment_info: { conta: '12345' } } });
+    assert.equal(response.statusCode, 422);
+    assert.equal(events[0].requestedChanges, undefined);
+    assert.equal(events[0].resourceId, '7');
+  } finally { unsubscribe(); await app.close(); }
 });
 
 test("ErrorHook converte 401 e 403 em acesso negado", async () => {

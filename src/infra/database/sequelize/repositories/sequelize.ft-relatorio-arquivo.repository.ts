@@ -16,9 +16,9 @@ export class SequelizeFtRelatorioArquivoRepository implements FtRelatorioArquivo
     });
     return row ? this.plain(row) : null;
   }
-  async list(page: number, limit: number) {
+  async list(page: number, limit: number, editalId?: string) {
     const result = await this.model.findAndCountAll({
-      where: { status: { [Op.ne]: "excluido" } },
+      where: { status: { [Op.ne]: "excluido" }, ...(editalId ? { edital_id: editalId } : {}) },
       include: [
         { model: db.Edital, as: "edital", attributes: ["id", "name"] },
         { model: db.UserModel, as: "solicitante", attributes: ["id", "name"] },
