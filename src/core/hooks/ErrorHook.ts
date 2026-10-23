@@ -111,13 +111,13 @@ const publishAuditFailure = async (
 
 const ErrorHook: FastifyPluginAsync = async (fastify) => {
   fastify.setErrorHandler(async (error, request, reply) => {
+    const normalized = normalizeError(error);
     request.log.error({
-      err: request.routeOptions.config.audit?.omitRequestedChanges ? { statusCode: normalizeError(error).statusCode, code: normalizeError(error).code } : error,
+      err: request.routeOptions.config.audit?.omitRequestedChanges ? normalized : error,
       route: request.url,
       userId: request.user?.id,
     });
 
-    const normalized = normalizeError(error);
     await publishAuditFailure(request, normalized);
 
     return reply.status(normalized.statusCode).send({

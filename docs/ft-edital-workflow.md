@@ -119,3 +119,10 @@ A prorrogação usa integralmente prorrogacao_meses do edital, contando do térm
 POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não escolhe meses nem a data final; campos adicionais são rejeitados. A interface apenas confirma o período cadastrado e informa o limite final. O campo do edital passa a se chamar “Período de prorrogação (meses)”.
 
 Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.
+
+
+## Declarações afirmativas na inscrição — 2026-10-23
+
+Na inscrição comum, por encaixe ou por exceção, as declarações obrigatórias começam desmarcadas: desemprego, ausência de renda, ausência de benefício da Previdência Social, vulnerabilidade atestada e aceite. Cada pendência aparece em vermelho, com mensagem acessível; Confirmar permanece desabilitado até todas serem confirmadas e a seleção/idade serem válidas. A data de residência e as justificativas continuam sujeitas às validações existentes. Vínculo familiar permanece informativo e não bloqueia a inscrição.
+
+A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
