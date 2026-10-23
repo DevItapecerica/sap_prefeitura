@@ -12,7 +12,7 @@ As novas permissões começam negadas, inclusive para roles que possuíam CRUD l
 
 ## Configuração e ciclo de vida
 
-Cadastre o edital como rascunho e configure publicação, vigência, abertura/fim das inscrições, vagas, dia de pagamento, auxílio mensal, cargas semanal/mensal independentes, duração em meses e limite adicional de uma prorrogação. Os parâmetros `permitir_participacao_anterior` e `permitir_retorno` começam false.
+Cadastre o edital como rascunho e configure publicação, vigência, abertura/fim das inscrições, vagas, dia de pagamento, auxílio mensal, cargas semanal/mensal independentes, duração em meses e período fixo de uma prorrogação. Os parâmetros `permitir_participacao_anterior` e `permitir_retorno` começam false.
 
 Pagadores e turnos pertencem ao edital; locais e benefícios têm tabelas próprias com FK para ele. Cada pagador possui capacidade. Benefícios têm nome e descrição, sem valor calculado ou controle de entregas. A abertura do edital não exige configuração prévia. Pagador e turno devem estar cadastrados ao convocar; o local de trabalho é informado como texto livre nessa etapa. Turnos devem terminar após seu horário de início; turnos que atravessam a meia-noite não são contemplados nesta versão.
 
@@ -40,7 +40,7 @@ Na convocação, selecione pagador, local, turno e data de início. Convocados e
 
 Na ativação manual, informe/confirme banco, agência/dígito e conta/dígito. É possível corrigir a data de início; o período deve caber na vigência. Preencher o banco isoladamente não muda o estado. A alocação pode ser corrigida enquanto convocado e fica bloqueada após ativar, preservando os relatórios.
 
-Uma prorrogação em meses é permitida até o adicional máximo do edital, sem ultrapassar sua vigência. O fim de mês é ajustado para o último dia válido. Retorno ao mesmo edital exige o parâmetro habilitado e só pode ocorrer a partir do mês seguinte ao encerramento anterior. Cancelamento/conclusão exigem motivo; encerramento do edital cancela reservas pendentes e conclui ativos. O scheduler também encerra editais e expira participações vencidas.
+Uma única prorrogação aplica integralmente o período em meses cadastrado no edital, contado do término atual da participação e limitado ao último dia de vigência do edital. O fim de mês é ajustado para o último dia válido. Retorno ao mesmo edital exige o parâmetro habilitado e só pode ocorrer a partir do mês seguinte ao encerramento anterior. Cancelamento/conclusão exigem motivo; encerramento do edital cancela reservas pendentes e conclui ativos. O scheduler também encerra editais e expira participações vencidas.
 
 ## HTTP e permissões
 
@@ -110,3 +110,12 @@ Validação SQL e HTTP feita em instância MariaDB 11.8.2 isolada, loopback:3331
 ### Ajuste de abertura e local de trabalho — 2026-10-22
 
 O edital pode ser aberto sem cadastrar pagadores, turnos ou locais previamente. Na convocação comum ou excepcional e na alteração da reserva, pagador e turno permanecem selecionáveis e o local é texto livre obrigatório, de até 255 caracteres. A API recebe `local` em vez de `local_id`; o texto é preservado na participação e nos relatórios. Locais antigos são preservados, sem necessidade de migration para esta alteração. As capacidades de pagador e as vagas do edital continuam verificadas na convocação e na ativação.
+
+
+## Prorrogação pelo período do edital — 2026-10-23
+
+A prorrogação usa integralmente prorrogacao_meses do edital, contando do término atual da participação. O novo término é a menor data entre esse cálculo e o último dia de vigência do edital; o ajuste para fim de mês e o horário de Brasília são preservados. Exemplo: término em 31/10 e período de 3 meses, com edital até 31/12, resulta em 31/12.
+
+POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não escolhe meses nem a data final; campos adicionais são rejeitados. A interface apenas confirma o período cadastrado e informa o limite final. O campo do edital passa a se chamar “Período de prorrogação (meses)”.
+
+Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.

@@ -113,7 +113,7 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflow
   for (const [operation, action, body] of [
     ['ativar', 'ativar_participacao', object({ data_inicio: date, payment_info: payment })],
     ['cancelar', 'cancelar_participacao', object({ motivo })], ['concluir', 'cancelar_participacao', object({ motivo })],
-    ['prorrogar', 'prorrogar_vinculo', object({ meses: integer(1, 120) })], ['alocar', 'editar_vinculo', object(allocation)],
+    ['prorrogar', 'prorrogar_vinculo', object({})], ['alocar', 'editar_vinculo', object(allocation)],
   ] as const) route('POST', '/:id/participacoes/:participacaoId/' + operation, action, body, r => service.transition(r.params.id, r.params.participacaoId, operation, r.body, actor(r)));
   for (const kind of ['faltas', 'ocorrencias'] as const) {
     const singular = kind === 'faltas' ? 'falta' : 'ocorrencia';

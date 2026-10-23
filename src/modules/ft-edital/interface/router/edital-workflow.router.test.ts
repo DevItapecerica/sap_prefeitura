@@ -28,6 +28,16 @@ test('workflow HTTP enforces permission per transition, UUID scope, bank fields 
     for (const payload of [{ data_inicio: '2026-10-22' }, { ...body, payment_info: { ...body.payment_info, conta: 123 } }, { ...body, user_id: 1 }]) assert.equal((await app.inject({ method: 'POST', url: path, payload })).statusCode, 400);
     assert.equal((await app.inject({ method: 'POST', url: path, payload: body })).statusCode, 200);
     assert.equal(calls.at(-1)[4].id, 123);
+    const extensionPath = '/edital/' + id + '/participacoes/' + id + '/prorrogar';
+    deniedAction = 'prorrogar_vinculo';
+    assert.equal((await app.inject({ method: 'POST', url: extensionPath, payload: {} })).statusCode, 403);
+    deniedAction = '';
+    const beforeExtension = calls.length;
+    for (const payload of [{ meses: 1 }, { meses: 3 }, { data_fim: '2026-12-31' }]) assert.equal((await app.inject({ method: 'POST', url: extensionPath, payload })).statusCode, 400);
+    assert.equal(calls.length, beforeExtension);
+    assert.equal((await app.inject({ method: 'POST', url: extensionPath, payload: {} })).statusCode, 200);
+    assert.equal(calls.at(-1)[2], 'prorrogar');
+    assert.deepEqual(calls.at(-1)[3], {});
     const respostas = { desempregado: true, possui_renda: false, recebe_previdencia: false, inicio_residencia: '2020-01-01', vulnerabilidade_atestada: true, beneficiario_familiar: false, aceite: true };
     const register = '/edital/' + id + '/inscricoes';
     assert.equal((await app.inject({ method: 'POST', url: register, payload: { municipe_uuid: id, respostas } })).statusCode, 200);

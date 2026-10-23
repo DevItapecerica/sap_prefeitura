@@ -22508,16 +22508,8 @@
             "application/json": {
               "schema": {
                 "additionalProperties": false,
-                "properties": {
-                  "meses": {
-                    "maximum": 120,
-                    "minimum": 1,
-                    "type": "integer"
-                  }
-                },
-                "required": [
-                  "meses"
-                ],
+                "properties": {},
+                "required": [],
                 "type": "object"
               }
             }

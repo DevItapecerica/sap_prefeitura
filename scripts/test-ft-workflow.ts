@@ -84,8 +84,9 @@ try {
     await service.record(e.id, current.id, 'faltas', { data_falta: '2026-10-22', observacao: 'Teste' }, actor);
     await service.record(e.id, current.id, 'ocorrencias', { data_ocorrencia: '2026-10-22', descricao: 'Teste sintético' }, actor);
     assert.equal((await service.records(e.id, current.id, 'ocorrencias', {})).count, 1);
-    await service.transition(e.id, current.id, 'prorrogar', { meses: 1 }, actor);
-    await assert.rejects(service.transition(e.id, current.id, 'prorrogar', { meses: 1 }, actor));
+    await service.transition(e.id, current.id, 'prorrogar', {}, actor);
+    assert.equal(new Date((await db.BolsistasEdital.findByPk(current.id)).expire_at).toISOString(), '2027-07-23T02:59:59.000Z');
+    await assert.rejects(service.transition(e.id, current.id, 'prorrogar', {}, actor));
     await assert.rejects(service.update(e.id, { ...base, valor_bolsa: 1000 }, actor));
     await service.transition(e.id, current.id, 'cancelar', { motivo: 'Fim de teste' }, actor);
     assert.equal((await service.detail(e.id)).disponiveis, 1);
@@ -145,6 +146,21 @@ try {
     await assert.rejects(service.call(e.id, inscriptions[4].id, { ...e.allocation, motivo: 'Tentativa simultanea' }, actor, true), /ja convocada ou ativa/);
     await service.transition(exceptional.id, returnCall.id, 'cancelar', { motivo: 'Fim sintético' }, actor);
     const ageMigration = (await import('../src/infra/database/sequelize/migrations/20261022130000-ft-idade-excecoes.js')).default;
+    const extensionEdital = await makeEdital({ name: 'Prorrogacao limitada', duracao_meses: 1, data_vencimento: '2026-12-31', permitir_participacao_anterior: true });
+    const extensionReg = await service.register(extensionEdital.id, { municipe_uuid: people[0].uuid, respostas: answers }, actor, false);
+    const extensionCall = await service.call(extensionEdital.id, extensionReg.id, extensionEdital.allocation, actor);
+    await service.transition(extensionEdital.id, extensionCall.id, 'ativar', { data_inicio: '2026-10-22', payment_info: bank }, actor);
+    const extensionResult = await service.transition(extensionEdital.id, extensionCall.id, 'prorrogar', {}, actor);
+    assert.equal(new Date(extensionResult.expire_at).toISOString(), '2027-01-01T02:59:59.000Z');
+    assert.equal(extensionResult.prorrogated, true);
+    await assert.rejects(service.transition(extensionEdital.id, extensionCall.id, 'prorrogar', {}, actor));
+    // Even before consuming the single extension, a participation already at the edital limit cannot extend.
+    await db.BolsistasEdital.update({ prorrogated: false }, { where: { id: extensionCall.id } });
+    const eventsBefore = await db.FtWorkflowEvento.count({ where: { recurso_id: extensionCall.id, acao: 'prorrogar' } });
+    await assert.rejects(service.transition(extensionEdital.id, extensionCall.id, 'prorrogar', {}, actor), /alcanca/);
+    assert.equal((await db.BolsistasEdital.findByPk(extensionCall.id)).prorrogated, false);
+    assert.equal(await db.FtWorkflowEvento.count({ where: { recurso_id: extensionCall.id, acao: 'prorrogar' } }), eventsBefore);
+    console.log('PASS configured extension period, edital date cap and unchanged state/audit when already at the limit');
     await assert.rejects(ageMigration.down(qi), /Rollback refused/);
     console.log('PASS age migration preserves existing edital, exception seed is idempotent, authorizations persist, concurrent exception reserves once, activation preserves authority and same-month return is allowed');
     console.log('PASS scheduler expiration and edital closure cancel reservations and conclude active participants');

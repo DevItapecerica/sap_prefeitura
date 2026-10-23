@@ -84,8 +84,8 @@ test('workflow preserves reservation on activation rollback and keeps history wh
   const record = (await service.records(e.id, called.id, 'faltas', {})).rows[0];
   await service.record(e.id, called.id, 'faltas', {}, actor, record.id);
   assert.equal((await service.records(e.id, called.id, 'faltas', {})).count, 0);
-  await service.transition(e.id, called.id, 'prorrogar', { meses: 1 }, actor);
-  await assert.rejects(service.transition(e.id, called.id, 'prorrogar', { meses: 1 }, actor));
+  await service.transition(e.id, called.id, 'prorrogar', {}, actor);
+  await assert.rejects(service.transition(e.id, called.id, 'prorrogar', {}, actor));
   await service.transition(e.id, called.id, 'cancelar', { motivo: 'Encerrado' }, actor);
   assert.equal((await service.detail(e.id)).disponiveis, 2);
   assert.equal((await service.participations(e.id, {})).count, 1);
@@ -226,4 +226,51 @@ test('opens without configuration and accepts free-text location when reserving 
   await service.transition(e.id, called.id, 'ativar', { data_inicio: data.data_inicio, payment_info: { bco: '001', ag: '1234', dig_ag: '0', conta: '1234', dig_conta: '1' } }, actor);
   assert.equal((await service.participations(e.id, {})).rows[0].local, 'Biblioteca');
   assert.equal((await service.detail(e.id)).ocupadas, 1);
+});
+
+async function activeFixture() {
+  const f = await fixture();
+  await f.service.phase(f.e.id, 'aberto', actor);
+  const registration = await f.service.register(f.e.id, { municipe_uuid: f.person.uuid, respostas: answers }, actor, false);
+  const participation = await f.service.call(f.e.id, registration.id, f.allocation, actor);
+  await f.service.transition(f.e.id, participation.id, 'ativar', { data_inicio: f.allocation.data_inicio, payment_info: { bco: '001', ag: '1234', dig_ag: '0', conta: '1234', dig_conta: '1' } }, actor);
+  return { ...f, participation };
+}
+
+for (const [current, months, editalEnd, expected] of [
+  ['2026-10-31', 3, '2028-12-31', '2027-01-31'],
+  ['2026-10-31', 3, '2026-12-31', '2026-12-31'],
+  ['2027-01-31', 1, '2028-12-31', '2027-02-28'],
+  ['2028-01-31', 1, '2028-12-31', '2028-02-29'],
+] as const) test(`extension applies edital period ${months}, from ${current}, limited to ${editalEnd}`, async () => {
+  const { db, service, e, participation } = await activeFixture();
+  await db.Edital.update({ prorrogacao_meses: months, data_vencimento: editalEnd }, { where: { id: e.id } });
+  await db.BolsistasEdital.update({ expire_at: new Date(current + 'T23:59:59-03:00') }, { where: { id: participation.id } });
+  const result = await service.transition(e.id, participation.id, 'prorrogar', {}, actor);
+  assert.equal(result.expire_at, expected + 'T23:59:59-03:00');
+  assert.equal(result.prorrogated, true);
+  await assert.rejects(service.transition(e.id, participation.id, 'prorrogar', {}, actor), /indisponivel/);
+  assert.equal(await db.FtWorkflowEvento.count({ where: { acao: 'prorrogar', recurso_id: participation.id } }), 1);
+});
+
+test('extension refuses unavailable cases without changing expiry, flag or audit events', async () => {
+  const { db, service, e, participation } = await activeFixture();
+  const end = '2026-12-31T23:59:59-03:00';
+  for (const scenario of [
+    { months: 0, status: 'ativo', current: end, editalEnd: '2028-12-31', fase: 'aberto' },
+    { months: 3, status: 'convocado', current: end, editalEnd: '2028-12-31', fase: 'aberto' },
+    { months: 3, status: 'cancelado', current: end, editalEnd: '2028-12-31', fase: 'aberto' },
+    { months: 3, status: 'ativo', current: '2026-10-21T23:59:59-03:00', editalEnd: '2028-12-31', fase: 'aberto' },
+    { months: 3, status: 'ativo', current: end, editalEnd: '2026-12-31', fase: 'aberto' },
+    { months: 3, status: 'ativo', current: end, editalEnd: '2028-12-31', fase: 'encerrado' },
+    { months: 3, status: 'ativo', current: end, editalEnd: '2026-10-21', fase: 'aberto' },
+  ]) {
+    await db.Edital.update({ prorrogacao_meses: scenario.months, data_vencimento: scenario.editalEnd, fase: scenario.fase }, { where: { id: e.id } });
+    await db.BolsistasEdital.update({ expire_at: scenario.current, status: scenario.status, prorrogated: false }, { where: { id: participation.id } });
+    await assert.rejects(service.transition(e.id, participation.id, 'prorrogar', {}, actor));
+    const row = await db.BolsistasEdital.findByPk(participation.id);
+    assert.equal(row.expire_at, scenario.current);
+    assert.equal(row.prorrogated, false);
+    assert.equal(await db.FtWorkflowEvento.count({ where: { acao: 'prorrogar', recurso_id: participation.id } }), 0);
+  }
 });

@@ -71,3 +71,14 @@ Validação desta extensão: backend com 451 testes aprovados e cobertura de lin
 O edital pode ser aberto sem cadastrar pagadores, turnos ou locais previamente. Na convocação comum ou excepcional e na alteração da reserva, pagador e turno permanecem selecionáveis e o local é texto livre obrigatório, de até 255 caracteres. A API recebe `local` em vez de `local_id`; o texto é preservado na participação e nos relatórios. Locais antigos são preservados, sem necessidade de migration para esta alteração. As capacidades de pagador e as vagas do edital continuam verificadas na convocação e na ativação.
 
 Validação antes dos commits do ajuste de local: check/build e 452 testes unitários do backend aprovados. Teste de abertura sem configuração e convocação/ativação com local livre incluído; nenhuma migration necessária.
+
+
+## Prorrogação pelo período do edital — 2026-10-23
+
+A prorrogação usa integralmente prorrogacao_meses do edital, contando do término atual da participação. O novo término é a menor data entre esse cálculo e o último dia de vigência do edital; o ajuste para fim de mês e o horário de Brasília são preservados. Exemplo: término em 31/10 e período de 3 meses, com edital até 31/12, resulta em 31/12.
+
+POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não escolhe meses nem a data final; campos adicionais são rejeitados. A interface apenas confirma o período cadastrado e informa o limite final. O campo do edital passa a se chamar “Período de prorrogação (meses)”.
+
+Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.
+
+Validação da prorrogação em 2026-10-23: check/build e suíte completa do backend (457 testes), lint/typecheck/build/orçamento e 10 testes direcionados do frontend aprovados; dois cenários Chromium com respostas sintéticas (1280px/390px) aprovados. Harness SQL executado em MariaDB 11.8.2 isolado na porta 33319, schema ft_extension_ft_test: período configurado, limite do edital e ausência de alteração/evento na recusa aprovados. Nenhuma migration/seed aplicada na base corrente.

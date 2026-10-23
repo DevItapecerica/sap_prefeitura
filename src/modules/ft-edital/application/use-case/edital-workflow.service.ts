@@ -240,10 +240,12 @@ export class EditalWorkflowService {
         await payment.update(p, { transaction: t });
         await row.update({ status: 'ativo', ativado_em: this.clock(), data_vinculo: inicio + 'T12:00:00-03:00', expire_at: participationEnd(e, inicio) + 'T23:59:59-03:00' }, { transaction: t });
       } else if (operation === 'prorrogar') {
-        if (row.status !== 'ativo' || row.prorrogated || Number(e.prorrogacao_meses) < 1 || data.meses < 1 || data.meses > e.prorrogacao_meses) throw ftError(409, 'Prorrogacao indisponivel ou acima do limite');
-        if (dateOnly(row.expire_at) < businessDate(this.clock())) throw ftError(409, 'Vinculo ja expirou');
-        const end = addMonths(dateOnly(row.expire_at), data.meses);
-        if (end > dateOnly(e.data_vencimento)) throw ftError(422, 'Prorrogacao ultrapassa a vigencia');
+        const months = Number(e.prorrogacao_meses);
+        if (row.status !== 'ativo' || row.prorrogated || !Number.isInteger(months) || months < 1) throw ftError(409, 'Prorrogacao indisponivel');
+        const currentEnd = dateOnly(row.expire_at);
+        if (currentEnd < businessDate(this.clock())) throw ftError(409, 'Vinculo ja expirou');
+        const end = [addMonths(currentEnd, months), dateOnly(e.data_vencimento)].sort()[0];
+        if (end <= currentEnd) throw ftError(409, 'Participacao ja alcanca o termino do edital');
         await row.update({ expire_at: end + 'T23:59:59-03:00', prorrogated: true }, { transaction: t });
       } else if (operation === 'alocar') {
         if (!occupied.includes(row.status)) throw ftError(409, 'Participacao encerrada');
