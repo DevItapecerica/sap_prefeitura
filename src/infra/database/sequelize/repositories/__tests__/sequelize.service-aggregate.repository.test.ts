@@ -27,7 +27,7 @@ class FakeRow {
   }
 }
 
-const makeDatabase = (description: string | null = "Frente de Trabalho") => {
+const makeDatabase = (description: string | null = "PEEAD") => {
   let failPermission = false;
   let failVisibility = false;
   let failService = false;

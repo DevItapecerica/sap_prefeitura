@@ -82,3 +82,27 @@ POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não esco
 Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.
 
 Validação da prorrogação em 2026-10-23: check/build e suíte completa do backend (457 testes), lint/typecheck/build/orçamento e 10 testes direcionados do frontend aprovados; dois cenários Chromium com respostas sintéticas (1280px/390px) aprovados. Harness SQL executado em MariaDB 11.8.2 isolado na porta 33319, schema ft_extension_ft_test: período configurado, limite do edital e ausência de alteração/evento na recusa aprovados. Nenhuma migration/seed aplicada na base corrente.
+
+### Mensagens de falha e auditoria — 2026-10-23
+
+As falhas de negócio FT_MS (4xx) exibem o motivo retornado pelo backend nos avisos, preservando o código de suporte. A lista e o detalhe de auditoria mostram errorMessage; eventos antigos sem mensagem recebem indicação explícita de ausência. Logs de rotas com payload protegido incluem a mensagem normalizada sem questionário, dados bancários ou detalhes internos de 5xx. O campo já existe na persistência e na API; nenhuma migration foi necessária. Validação: 458 testes backend, 8 testes direcionados do normalizador frontend, 2 cenários Chromium de auditoria desktop/mobile, lint/typecheck/build/orçamento aprovados.
+
+
+## Declarações afirmativas na inscrição — 2026-10-23
+
+Na inscrição comum, por encaixe ou por exceção, as declarações obrigatórias começam desmarcadas: desemprego, ausência de renda, ausência de benefício da Previdência Social, vulnerabilidade atestada e aceite. Cada pendência aparece em vermelho, com mensagem acessível; Confirmar permanece desabilitado até todas serem confirmadas e a seleção/idade serem válidas. A data de residência e as justificativas continuam sujeitas às validações existentes. Vínculo familiar permanece informativo e não bloqueia a inscrição.
+
+A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
+
+Validação das declarações em 2026-10-23: 151 testes frontend e 458 backend aprovados; lint/typecheck/build/orçamento do frontend e check do backend aprovados. Nove cenários Chromium com API sintética passaram em desktop (1280px) e mobile (390px), cobrindo inscrição comum, encaixe, exceção, pendências acessíveis e detalhe de respostas antigas. O teste real de integração foi adaptado aos novos textos, mas não foi executado nesta alteração; nenhuma migration ou seed foi aplicada.
+
+
+## Nome do programa PEEAD — 2026-10-26
+
+O programa passa a ser identificado como **PEEAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEEAD**. O nome completo permite quebra de linha em desktop/mobile.
+
+A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
+
+Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEEAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
+
+Validação PEEAD em 2026-10-26: 151 testes frontend e 459 backend aprovados; lint/typecheck/build/orçamento frontend e check/build backend aprovados. Oito cenários Chromium passaram (seis jornadas críticas e dois cenários PEEAD desktop/mobile, estes também reexecutados com saída 0). A migration foi validada em teste unitário com QueryInterface simulado, incluindo repetição, identidade por module_key e rollback sem sobrescrever nome posterior; nenhuma execução em banco real. OpenAPI regenerado com alteração somente das tags descritivas; tipos regenerados sem mudança semântica. Busca final pelo nome anterior encontrou somente a constante do rollback e sua fixture de teste.

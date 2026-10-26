@@ -13,7 +13,7 @@ const now = new Date("2026-01-01T00:00:00.000Z");
 
 export class FakeServicesRepository {
   services = new Map<number, Services>([
-    [6, new Services(6, "Frente de Trabalho", "FT", "ft", "/ft", now, now, null)],
+    [6, new Services(6, "PEEAD", "FT", "ft", "/ft", now, now, null)],
   ]);
   lastQuery?: ServiceQuery;
   writes: string[] = [];

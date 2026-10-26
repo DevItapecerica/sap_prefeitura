@@ -10,7 +10,7 @@ export const FtEditalRouter: FastifyPluginAsync<{controller?: typeof FtEditalCon
   const allow = requirePermission("ft");
 
 
-  const tag = ["Frente de Trabalho - Edital"];
+  const tag = ["PEEAD - Edital"];
   const security = [{ JWTToken: [] }];
   const uuidParam = {
     type: "object",

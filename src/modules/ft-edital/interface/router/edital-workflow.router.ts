@@ -64,7 +64,7 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflow
     const params = Object.fromEntries([...url.matchAll(/:([A-Za-z]+)/g)].map(m => [m[1], uuid]));
     fastify.route({ method, url,
       config: { audit: { failureAction: method === 'GET' ? 'VIEW' : method === 'POST' ? 'CREATE' : 'UPDATE', module: 'ft-edital', resourceType: 'edital_workflow', resourceIdParam: 'id', omitRequestedChanges: true } },
-      schema: { tags: ['Frente de Trabalho - Edital'], security: [{ JWTToken: [] }], summary: action.replaceAll('_', ' '),
+      schema: { tags: ['PEEAD - Edital'], security: [{ JWTToken: [] }], summary: action.replaceAll('_', ' '),
         ...(Object.keys(params).length ? { params: object(params) } : {}), ...(body ? { body } : {}), ...(method === 'GET' ? { querystring: query } : {}),
         response: { 200: list ? collection : itemRef, ...errorResponseSchema, 409: errorResponseSchema[400], 410: errorResponseSchema[400], 422: errorResponseSchema[400] } },
       preHandler: allow(action),
@@ -126,7 +126,7 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflow
     fastify.route<{ Params: { id: string; participacaoId: string }; Querystring: { mes: string } }>({
       method: "GET", url: '/:id/participacoes/:participacaoId/' + kind,
       config: { audit: { failureAction: 'EXPORT', module: 'ft-edital', resourceType: 'participacao_pdf', resourceIdParam: 'participacaoId' } },
-      schema: { tags: ['Frente de Trabalho - Edital'], security: [{ JWTToken: [] }], params: object({ id: uuid, participacaoId: uuid }),
+      schema: { tags: ['PEEAD - Edital'], security: [{ JWTToken: [] }], params: object({ id: uuid, participacaoId: uuid }),
         querystring: object({ mes: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])$' } }),
         response: { 200: { description: 'PDF da participacao', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } }, ...errorResponseSchema, 409: errorResponseSchema[400] } },
       preHandler: allow(kind === 'espelho-ponto' ? 'gerar_espelho_ponto' : 'gerar_folha_presenca'),

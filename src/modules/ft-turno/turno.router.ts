@@ -14,7 +14,7 @@ const body = { type: "object", additionalProperties: false, required: ["turno"],
     nome: { type: "string", minLength: 1, maxLength: 120, pattern: "\\S" }, hora_inicio: { type: "string" }, hora_fim: { type: "string" },
   },
 } } };
-const common = { tags: ["Frente de Trabalho - Turnos"], security: [{ JWTToken: [] }] };
+const common = { tags: ["PEEAD - Turnos"], security: [{ JWTToken: [] }] };
 
 export const TurnoRouter: FastifyPluginAsync<{controller?: typeof TurnoControllerType}> = async (fastify, options) => {
   const TurnoController = options.controller ?? (await import("./turno.controller.js")).TurnoController;
