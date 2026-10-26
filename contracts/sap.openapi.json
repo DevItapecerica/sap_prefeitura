@@ -26042,6 +26042,7 @@
     },
     "/api/v2/frente-de-trabalho/relatorio/edital/{id}": {
       "get": {
+        "description": "CSV separado por ponto e vírgula, sem cabeçalho, agrupamentos, totais ou linhas em branco. Nove campos, nesta ordem: Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor. Valor líquido em centavos inteiros, CPF somente números e dados bancários preservados como texto. Data DDMMAAAA: dia de pagamento do edital no mês da data inicial do período, limitado ao último dia válido do mês. Relatório sem pagamentos retorna conteúdo vazio. Campos com delimitador, aspas ou quebras de linha usam escape CSV.",
         "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id",
         "parameters": [
           {
@@ -26235,7 +26236,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "Gerar relatorio CSV do edital",
+        "summary": "Gerar CSV de pagamento do edital",
         "tags": [
           "PEEAD - Relatorio"
         ]

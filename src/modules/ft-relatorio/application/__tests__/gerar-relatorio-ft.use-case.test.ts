@@ -84,18 +84,17 @@ describe("GerarRelatorioFtUseCase", () => {
     useCase = new GerarRelatorioFtUseCase(repository);
   });
 
-  it("gera CSV agrupado pelo pagador", async () => {
+  it("gera CSV de nove campos sem cabeçalhos, grupos ou totais", async () => {
     const response = await useCase.execute("edital-1", {
       data_inicio: "2026-06-01",
       data_fim: "2026-06-30",
     });
 
     assert.equal(response.fileName, "relatorio.csv");
-    assert.match(response.csv, /Pagador: Secretaria de Esporte e Lazer/);
-    assert.match(response.csv, /Maria/);
+    assert.equal(response.csv, "001;1234;0;123456;1;Maria;100000;10062026;52998224725");
   });
 
-  it("informa faltas sem descontá-las do pagamento", async () => {
+  it("preserva o pagamento integral quando há faltas informativas", async () => {
     repository.data.faltas = [
       "2026-06-01",
       "2026-06-01",
@@ -108,8 +107,7 @@ describe("GerarRelatorioFtUseCase", () => {
       data_fim: "2026-06-30",
     });
 
-    assert.match(response.csv, /22;2;1000.00;0.00;1000.00/);
-    assert.match(response.csv, /Total do valor geral:;1000.00/);
+    assert.equal(response.csv, "001;1234;0;123456;1;Maria;100000;10062026;52998224725");
   });
 
   it("desconta apenas dias fora da janela do vínculo", async () => {
@@ -130,22 +128,7 @@ describe("GerarRelatorioFtUseCase", () => {
       data_fim: "2026-06-30",
     });
 
-    const valorBruto = Number(repository.data.edital.valor_bolsa);
-    const diasUteis = 22;
-    const diasTrabalhados = 10;
-    const descontoCalculado =
-      (diasUteis - diasTrabalhados) * (valorBruto / diasUteis);
-    const desconto = descontoCalculado.toFixed(2);
-    const valorLiquido = (valorBruto - descontoCalculado).toFixed(2);
-
-    assert.match(
-      response.csv,
-      new RegExp(`10;1;${valorBruto.toFixed(2)};${desconto};${valorLiquido}`),
-    );
-    assert.match(
-      response.csv,
-      new RegExp(`Total do valor geral:;${valorLiquido}`),
-    );
+    assert.equal(response.csv, "001;1234;0;123456;1;Maria;45455;10062026;52998224725");
   });
 
   it("rejeita período parcial", async () => {

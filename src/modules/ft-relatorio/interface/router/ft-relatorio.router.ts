@@ -53,12 +53,14 @@ export const FtRelatorioRouter: FastifyPluginAsync<{controller?: typeof FtRelato
   const registerCsvRoute = ({
     url,
     summary,
+    description,
     querystring,
     handler,
     action,
   }: {
     url: string;
     summary: string;
+    description?: string;
     querystring: object;
     handler: any;
     action: string;
@@ -78,6 +80,7 @@ export const FtRelatorioRouter: FastifyPluginAsync<{controller?: typeof FtRelato
         tags: relatorioTags,
         security: jwtSecurity,
         summary,
+        description,
         params: editalIdParamsSchema,
         querystring,
         response: csvResponseSchema,
@@ -89,7 +92,8 @@ export const FtRelatorioRouter: FastifyPluginAsync<{controller?: typeof FtRelato
 
   registerCsvRoute({
     url: "/edital/:id",
-    summary: "Gerar relatorio CSV do edital",
+    summary: "Gerar CSV de pagamento do edital",
+    description: "CSV separado por ponto e vírgula, sem cabeçalho, agrupamentos, totais ou linhas em branco. Nove campos, nesta ordem: Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor. Valor líquido em centavos inteiros, CPF somente números e dados bancários preservados como texto. Data DDMMAAAA: dia de pagamento do edital no mês da data inicial do período, limitado ao último dia válido do mês. Relatório sem pagamentos retorna conteúdo vazio. Campos com delimitador, aspas ou quebras de linha usam escape CSV.",
     querystring: periodoQuerySchema,
     action: "gerar_relatorio_edital",
     handler: FtRelatorioController.gerarRelatorioEdital,
