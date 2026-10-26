@@ -95,3 +95,14 @@ Na inscrição comum, por encaixe ou por exceção, as declarações obrigatóri
 A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
 
 Validação das declarações em 2026-10-23: 151 testes frontend e 458 backend aprovados; lint/typecheck/build/orçamento do frontend e check do backend aprovados. Nove cenários Chromium com API sintética passaram em desktop (1280px) e mobile (390px), cobrindo inscrição comum, encaixe, exceção, pendências acessíveis e detalhe de respostas antigas. O teste real de integração foi adaptado aos novos textos, mas não foi executado nesta alteração; nenhuma migration ou seed foi aplicada.
+
+
+## Nome do programa PEEAD — 2026-10-26
+
+O programa passa a ser identificado como **PEEAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEEAD**. O nome completo permite quebra de linha em desktop/mobile.
+
+A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
+
+Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEEAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
+
+Validação PEEAD em 2026-10-26: 151 testes frontend e 459 backend aprovados; lint/typecheck/build/orçamento frontend e check/build backend aprovados. Oito cenários Chromium passaram (seis jornadas críticas e dois cenários PEEAD desktop/mobile, estes também reexecutados com saída 0). A migration foi validada em teste unitário com QueryInterface simulado, incluindo repetição, identidade por module_key e rollback sem sobrescrever nome posterior; nenhuma execução em banco real. OpenAPI regenerado com alteração somente das tags descritivas; tipos regenerados sem mudança semântica. Busca final pelo nome anterior encontrou somente a constante do rollback e sua fixture de teste.

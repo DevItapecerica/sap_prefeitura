@@ -38,7 +38,7 @@ const body = {
   },
 };
 const common = {
-  tags: ["Frente de Trabalho - Pagadores"],
+  tags: ["PEEAD - Pagadores"],
   security: [{ JWTToken: [] }],
 };
 const capacityResource = {
