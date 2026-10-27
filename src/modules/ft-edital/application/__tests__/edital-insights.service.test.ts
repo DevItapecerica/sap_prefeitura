@@ -13,6 +13,10 @@ test('history joins all same-edital attempts, batches actors and marks missing l
   const result = await service.history('edital', 'registration', true, { limit: 50 });
   assert.ok(queries.every(q => q.where.edital_id === 'edital'));
   assert.equal(result.rows.find(row => row.id === 'event').responsavel, 'Operator');
+  assert.equal(result.rows.find(row => row.id === 'event').recurso_nome, 'Participação 1');
+  assert.equal(result.rows.find(row => row.recurso_id === 'registration').recurso_nome, 'Inscrição');
+  const secondPage = await service.history('edital', 'registration', true, { page: 1, limit: 1 });
+  assert.equal(secondPage.rows[0].recurso_nome, result.rows[1].recurso_nome);
   assert.equal(result.rows.filter(row => row.recurso_id === 'attempt2' && row.acao === 'convocar').length, 0);
   assert.ok(result.rows.some(row => row.acao === 'prorrogar' && row.data === null && row.responsavel === 'N\u00e3o registrado'));
   assert.ok(result.rows.some(row => row.acao === 'ativar' && row.data === null));

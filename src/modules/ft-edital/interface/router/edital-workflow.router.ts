@@ -31,7 +31,7 @@ const itemProperties = {
   permitido: { type: 'boolean' }, pendencias: { type: 'array', items: issue }, novo_termino: date, termino_previsto: date,
   nome_inscricao: nullableText, inscricao_excepcional: { type: 'boolean' }, convocacao_excepcional: { type: 'boolean' },
   createdAt: instant, data_referencia: date, dias_restantes: { type: ['integer', 'null'] }, dias_reservada: { type: ['integer', 'null'] }, vencimento_alerta: nullableText, reserva_antiga: { type: 'boolean' }, prorrogacao_fim: { type: ['string', 'null'] }, prorrogacao_motivo: nullableText, pagamento_pendente: { type: 'boolean' },
-  acao: { type: 'string' }, data: { type: ['string', 'null'], format: 'date-time' }, responsavel: { type: 'string' }, motivo: nullableText, origem: { type: 'string' }, recurso_id: uuid,
+  acao: { type: 'string' }, data: { type: ['string', 'null'], format: 'date-time' }, responsavel: { type: 'string' }, motivo: nullableText, origem: { type: 'string' }, recurso_id: uuid, recurso_nome: { type: 'string' },
   ...configuration, id: uuid, uuid, edital_id: uuid, inscricao_id: uuid, bolsista_id: uuid,
   idade_maxima: { type: ['integer', 'null'], minimum: 18 },
   nome: { type: 'string' }, status: { type: 'string' }, fase: { type: 'string' },

@@ -82,6 +82,11 @@ export class EditalInsightsService {
       if (p.prorrogated) fallback(p.id, 'prorrogar', null);
     }
     rows.sort((a, b) => String(a.data ? new Date(a.data).toISOString() : '9999').localeCompare(String(b.data ? new Date(b.data).toISOString() : '9999')) || String(a.id).localeCompare(String(b.id)));
+    const orderedParticipations = [...participations].sort((a: any, b: any) =>
+      String(a.createdAt ? new Date(a.createdAt).toISOString() : '9999').localeCompare(String(b.createdAt ? new Date(b.createdAt).toISOString() : '9999')) || String(a.id).localeCompare(String(b.id)));
+    const resourceNames = new Map<string, string>(orderedParticipations.map((p: any, index: number) => [String(p.id), 'Participação ' + (index + 1)]));
+    if (registration) resourceNames.set(String(registration.id), 'Inscrição');
+    for (const event of rows) event.recurso_nome = resourceNames.get(String(event.recurso_id)) || 'Participação';
     const { offset, limit } = pagination(query);
     return { rows: rows.slice(offset, offset + limit), count: rows.length };
   }

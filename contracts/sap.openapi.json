@@ -296,6 +296,9 @@
             "format": "uuid",
             "type": "string"
           },
+          "recurso_nome": {
+            "type": "string"
+          },
           "reserva_antiga": {
             "type": "boolean"
           },
