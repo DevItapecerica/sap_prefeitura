@@ -77,6 +77,12 @@ export class FtRelatorioController {
     });
     return reply.type("application/zip").header("Content-Disposition", `attachment; filename="${download.record.nome_arquivo}"`).header("Content-Length", download.size).send(download.stream);
   };
+  static previaPagamento = async (request: FastifyRequest<{ Params: { id: string }; Querystring: FtRelatorioQueryDto }>, reply: FastifyReply) => {
+    const result = await gerarRelatorioFtUseCase.preview(request.params.id, request.query);
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, { context: makeApplicationEventContext(request), module: 'ft-relatorio', resourceType: 'previa_pagamento', resourceId: request.params.id, filters: { ...request.query, editalId: request.params.id }, returnedCount: result.count });
+    return reply.send(result);
+  };
+
   static gerarRelatorioEdital = async (
     request: FastifyRequest<{
       Params: { id: string };

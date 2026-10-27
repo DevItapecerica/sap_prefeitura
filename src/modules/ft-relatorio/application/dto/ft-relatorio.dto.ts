@@ -1,4 +1,7 @@
 export interface FtRelatorioQueryDto {
+  versao?: string;
+  page?: number;
+  limit?: number;
   data_inicio?: string;
   data_fim?: string;
 }

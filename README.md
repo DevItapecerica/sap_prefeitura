@@ -306,7 +306,7 @@ Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos
 
 ## CSV de pagamento do PEAAD
 
-O botão **Pagamento CSV**, dentro do edital em **Relatórios / Downloads**, exporta somente dados separados por ponto e vírgula, sem linha de títulos, resumo do edital, grupos de pagador, totais ou linhas vazias. As nove posições são:
+O botão **Pagamento CSV**, dentro do edital em **Relatórios / Downloads**, abre a conferência antes do download. O arquivo exportado contém somente dados separados por ponto e vírgula, sem linha de títulos, resumo do edital, grupos de pagador, totais ou linhas vazias. As nove posições são:
 
 `Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor`
 
@@ -318,3 +318,18 @@ Os cálculos de proporcionalidade e faltas permanecem os mesmos, assim como as l
 ## Correção da sigla — 2026-10-27
 
 A sigla correta é **PEAAD**, mantendo o nome completo PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO. Interface, seed inicial, tags OpenAPI, testes e documentação usam a nova sigla. A migration incremental `20261027120000-rename-ft-service-peaad` atualiza somente o nome do serviço de módulo `ft`, sem mudar IDs, permissões ou rotas. A migration anterior e seus testes permanecem históricos. Nenhuma migration ou seed foi aplicada à base corrente.
+
+
+## Melhorias operacionais do PEAAD - 2026-10-27
+
+- Inscrições, convocados e participantes: busca pelo nome atual do munícipe ou CPF completo (com ou sem máscara), filtros combinados de situação, pagador, turno e modalidade de exceção. O backend filtra e conta antes de paginar; o CPF usa o hash existente. O detalhe conserva o nome original da inscrição. Os seletores de pagador e turno respeitam as permissões existentes de consulta desses cadastros, com busca remota e paginação.
+- **Pagamento CSV** abre uma prévia paginada com dados bancários, participantes distintos, registros, total líquido e alertas de CPF/banco. Alertas não bloqueiam exportação. A versão conferida acompanha o download: conflito HTTP 409 atualiza a prévia e exige novo clique. O CSV continua com nove campos e os demais relatórios mantêm seus formatos.
+- Participações ativas destacam vencimento entre hoje e 30 dias, inclusive; vencidos aguardando processamento aparecem separadamente. Convocados mostram início previsto e dias de reserva contados da criação, com destaque a partir de 7 dias. Não há cancelamento automático da reserva por esse aviso.
+- A confirmação de prorrogação mostra o término exato calculado pelo backend, respeitando o período cadastrado, uma única prorrogação e o último dia do edital. O motivo da indisponibilidade aparece na lista.
+- **Histórico** apresenta eventos de todas as tentativas da inscrição no mesmo edital, com responsável, data e motivo; marcos antigos incompletos indicam explicitamente a informação ausente. Não inclui questionários, dados bancários ou conteúdo de faltas/ocorrências.
+- Formulários consultam pré-validações somente de leitura ao abrir e alterar campos. Pendências bloqueiam Confirmar, sem gravar dados ou reservar vagas; respostas antigas são ignoradas. A confirmação continua validando disponibilidade e permissões no servidor, dentro da transação. Indisponibilidade da consulta auxiliar permite tentar a confirmação normal, sujeita a todas as validações do servidor.
+- Não há atualização automática por foco ou consulta periódica. Os atrasos de 300 ms servem somente para agrupar digitação.
+
+Contratos: `GET /frente-de-trabalho/relatorio/edital/:id/previa`, versão opcional `versao` no CSV existente, históricos `GET /frente-de-trabalho/edital/:id/inscricoes/:inscricaoId/historico` e `.../participacoes/:participacaoId/historico`, e `POST /frente-de-trabalho/edital/:id/prevalidacoes/{inscricao,inscricao-encaixe,inscricao-excecao,convocacao,convocacao-excecao,ativacao,prorrogacao}`. Cada pré-validação exige a permissão da respectiva operação; históricos reutilizam as permissões de consulta das listas. Nenhuma nova permissão ou seed.
+
+Na implantação do backend, aplicar pelo procedimento habitual a migration incremental `20261028120000-ft-workflow-timeline-index`, que acrescenta o índice `(edital_id,recurso_id,createdAt,id)` aos eventos. Encerramentos futuros, manuais e do scheduler, registram evento por participação na mesma transação. Nenhuma migration ou seed foi aplicada a base corrente. Plano e evidências: [codex/plans/peaad-melhorias-fluxo.md](codex/plans/peaad-melhorias-fluxo.md).

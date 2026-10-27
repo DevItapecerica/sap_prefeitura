@@ -25,7 +25,13 @@ const answers = object({ desempregado: { type: 'boolean' }, possui_renda: { type
   vulnerabilidade_atestada: { type: 'boolean' }, beneficiario_familiar: { type: 'boolean' }, aceite: { type: 'boolean' } });
 const allocation = { pagador_id: uuid, turno_id: uuid, local: { type: 'string', minLength: 1, maxLength: 255, pattern: '\\S' } };
 const payment = object({ bco: { type: 'string', pattern: '^\\d{1,3}$' }, ag: { type: 'string', pattern: '^\\d{1,4}$' }, dig_ag: { type: 'string', pattern: '^[0-9Xx]$' }, conta: { type: 'string', pattern: '^\\d{1,11}$' }, dig_conta: { type: 'string', pattern: '^[0-9Xx]$' } });
+const nullableText = { type: ['string', 'null'] };
+const issue = object({ codigo: text, mensagem: { type: 'string' }, campo: nullableText });
 const itemProperties = {
+  permitido: { type: 'boolean' }, pendencias: { type: 'array', items: issue }, novo_termino: date, termino_previsto: date,
+  nome_inscricao: nullableText, inscricao_excepcional: { type: 'boolean' }, convocacao_excepcional: { type: 'boolean' },
+  createdAt: instant, data_referencia: date, dias_restantes: { type: ['integer', 'null'] }, dias_reservada: { type: ['integer', 'null'] }, vencimento_alerta: nullableText, reserva_antiga: { type: 'boolean' }, prorrogacao_fim: { type: ['string', 'null'] }, prorrogacao_motivo: nullableText, pagamento_pendente: { type: 'boolean' },
+  acao: { type: 'string' }, data: { type: ['string', 'null'], format: 'date-time' }, responsavel: { type: 'string' }, motivo: nullableText, origem: { type: 'string' }, recurso_id: uuid,
   ...configuration, id: uuid, uuid, edital_id: uuid, inscricao_id: uuid, bolsista_id: uuid,
   idade_maxima: { type: ['integer', 'null'], minimum: 18 },
   nome: { type: 'string' }, status: { type: 'string' }, fase: { type: 'string' },
@@ -42,7 +48,7 @@ const itemProperties = {
 const item = { type: 'object', additionalProperties: true, properties: itemProperties };
 const itemRef = { $ref: 'FtWorkflowItem#' };
 const collection = { type: 'object', required: ['rows', 'count'], properties: { rows: { type: 'array', items: itemRef }, count: integer() } };
-const query = object({ page: integer(), limit: integer(1, 50), search: { type: 'string', maxLength: 120 }, status: { type: 'string', enum: ['convocado', 'ativo', 'cancelado', 'concluido', 'expirado'] } }, []);
+const query = object({ pagador_id: uuid, turno_id: uuid, excecao: { type: 'string', enum: ['inscricao', 'convocacao', 'qualquer', 'nenhuma'] }, page: integer(), limit: integer(1, 50), search: { type: 'string', maxLength: 120 }, status: { type: 'string', enum: ['inscrito', 'convocado', 'ativo', 'cancelado', 'concluido', 'expirado'] } }, []);
 
 export function strictBody(schema: any, value: any): void {
   if (schema.type === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
@@ -60,10 +66,10 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflow
   const service = options.service ?? new EditalWorkflowService((await import('../../../../infra/database/sequelize/index.js')).default);
   fastify.addHook('preHandler', AuthMiddleware.verifyJWT);
   const allow = requirePermission('ft');
-  const route = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, action: string, body: any, handler: (r: any) => Promise<any>, list = false) => {
+  const route = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, action: string, body: any, handler: (r: any) => Promise<any>, list = false, readOnly = false) => {
     const params = Object.fromEntries([...url.matchAll(/:([A-Za-z]+)/g)].map(m => [m[1], uuid]));
     fastify.route({ method, url,
-      config: { audit: { failureAction: method === 'GET' ? 'VIEW' : method === 'POST' ? 'CREATE' : 'UPDATE', module: 'ft-edital', resourceType: 'edital_workflow', resourceIdParam: 'id', omitRequestedChanges: true } },
+      config: { audit: { failureAction: method === 'GET' || readOnly ? 'VIEW' : method === 'POST' ? 'CREATE' : 'UPDATE', module: 'ft-edital', resourceType: 'edital_workflow', resourceIdParam: 'id', omitRequestedChanges: true } },
       schema: { tags: ['PEAAD - Edital'], security: [{ JWTToken: [] }], summary: action.replaceAll('_', ' '),
         ...(Object.keys(params).length ? { params: object(params) } : {}), ...(body ? { body } : {}), ...(method === 'GET' ? { querystring: query } : {}),
         response: { 200: list ? collection : itemRef, ...errorResponseSchema, 409: errorResponseSchema[400], 410: errorResponseSchema[400], 422: errorResponseSchema[400] } },
@@ -71,7 +77,7 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflow
       preValidation: async r => { if (body) strictBody(body, r.body); },
       handler: async (r) => {
         const result = await handler(r);
-        if (method !== 'GET') {
+        if (method !== 'GET' && !readOnly) {
           // Durable, PII-free event is written in the business transaction. Central audit is a second sink.
           try {
             if (options.audit) await options.audit();
@@ -103,6 +109,17 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflow
     route('DELETE', '/:id/' + kind + '/:itemId', resource === 'configuracao_edital' ? 'editar_configuracao_edital' : 'excluir_' + resource, null, r => service.config(r.params.id, kind, r.params.itemId, null, actor(r)));
   }
   route('GET', '/:id/inscricoes', 'consultar_inscricoes', null, r => service.inscriptions(r.params.id, r.query), true);
+  route('GET', '/:id/inscricoes/:inscricaoId/historico', 'consultar_inscricoes', null, r => service.history(r.params.id, r.params.inscricaoId, true, r.query), true);
+  route('GET', '/:id/participacoes/:participacaoId/historico', 'consultar_vinculos', null, r => service.history(r.params.id, r.params.participacaoId, false, r.query), true);
+  const prevalidationFields = { municipe_uuid: uuid, inscricao_id: uuid, participacao_id: uuid, data_inicio: date,
+    pagador_id: uuid, turno_id: uuid, local: { type: 'string', maxLength: 255 }, motivo: { type: 'string', maxLength: 1000 },
+    respostas: object(answers.properties, []), payment_info: object(Object.fromEntries(Object.keys(payment.properties).map(key => [key, { type: 'string', maxLength: 16 }])), []) };
+  for (const [path, operation, mode, action] of [
+    ['inscricao', 'inscricao', 'normal', 'cadastrar_inscricao'], ['inscricao-encaixe', 'inscricao', 'encaixe', 'encaixar_inscricao'],
+    ['inscricao-excecao', 'inscricao', 'excecao', 'cadastrar_inscricao_excecao'],
+    ['convocacao', 'convocacao', 'normal', 'convocar_inscrito'], ['convocacao-excecao', 'convocacao', 'excecao', 'convocar_inscrito_excecao'],
+    ['ativacao', 'ativacao', 'normal', 'ativar_participacao'], ['prorrogacao', 'prorrogacao', 'normal', 'prorrogar_vinculo'],
+  ] as const) route('POST', '/:id/prevalidacoes/' + path, action, object(prevalidationFields, []), r => service.prevalidate(r.params.id, operation, r.body, mode), false, true);
   const registration = object({ municipe_uuid: uuid, respostas: answers, motivo }, ['municipe_uuid', 'respostas']);
   route('POST', '/:id/inscricoes', 'cadastrar_inscricao', registration, r => service.register(r.params.id, r.body, actor(r), false));
   route('POST', '/:id/inscricoes/encaixe', 'encaixar_inscricao', object({ municipe_uuid: uuid, respostas: answers, motivo }), r => service.register(r.params.id, r.body, actor(r), true));

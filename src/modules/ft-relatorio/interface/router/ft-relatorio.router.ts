@@ -12,6 +12,7 @@ const editalIdParamsSchema = {
   properties: { id: { type: "string", format: "uuid" } },
 };
 const csvResponseSchema = {
+  409: errorResponseSchema[400],
   200: {
     type: "string",
     description: "Arquivo CSV",
@@ -21,6 +22,7 @@ const csvResponseSchema = {
 const periodoQuerySchema = {
   type: "object",
   properties: {
+    versao: { type: 'string', pattern: '^[a-f0-9]{64}$' },
     data_inicio: { type: "string", format: "date" },
     data_fim: { type: "string", format: "date" },
   },
@@ -89,6 +91,20 @@ export const FtRelatorioRouter: FastifyPluginAsync<{controller?: typeof FtRelato
       handler,
     });
   };
+
+  fastify.get('/edital/:id/previa', {
+    config: { audit: { failureAction: 'VIEW', module: 'ft-relatorio', resourceType: 'previa_pagamento', resourceIdParam: 'id', omitRequestedChanges: true } },
+    schema: { tags: relatorioTags, security: jwtSecurity, summary: 'Conferir pagamento antes de exportar; alertas não bloqueiam', params: editalIdParamsSchema,
+      querystring: { ...periodoQuerySchema, properties: { ...periodoQuerySchema.properties, page: { type: 'integer', minimum: 0 }, limit: { type: 'integer', minimum: 1, maximum: 50 } } },
+      response: { 200: { type: 'object', required: ['rows', 'count', 'resumo', 'versao'], properties: {
+        rows: { type: 'array', items: { type: 'object', properties: Object.fromEntries([
+          ...['bolsista_id','bco','ag','dig_ag','conta','dig_conta','nome','cpf','pagador','data_pagamento'].map(key => [key, { type: 'string' }]),
+          ['valor_liquido', { type: 'number' }], ['alertas', { type: 'array', items: { type: 'object', properties: { codigo: { type: 'string' }, campo: { type: 'string' }, mensagem: { type: 'string' } } } }],
+        ]) } }, count: { type: 'integer' }, versao: { type: 'string' }, data_pagamento: { type: 'string' },
+        resumo: { type: 'object', properties: Object.fromEntries(['participantes','pagamentos','valor_liquido','com_alertas'].map(key => [key, { type: 'number' }])) },
+      } }, ...errorResponseSchema, 409: errorResponseSchema[400] } },
+    preHandler: allow('gerar_relatorio_edital'),
+  }, FtRelatorioController.previaPagamento);
 
   registerCsvRoute({
     url: "/edital/:id",

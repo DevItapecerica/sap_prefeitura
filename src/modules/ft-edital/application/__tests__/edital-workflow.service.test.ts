@@ -22,7 +22,7 @@ function database() {
     const before = structuredClone(tables);
     try { return await fn({ LOCK: { UPDATE: 'UPDATE' } }); } catch (e) { tables = before; throw e; }
   } } };
-  for (const name of ['Edital', 'MunicipeModel', 'Bolsistas', 'Pagador', 'Turno', 'FtEditalLocal', 'FtEditalBeneficio', 'FtInscricao', 'BolsistasEdital', 'PaymentInfo', 'BolsistaFalta', 'BolsistaOcorrencia', 'FtWorkflowEvento']) {
+  for (const name of ['Edital', 'MunicipeModel', 'Bolsistas', 'Pagador', 'Turno', 'FtEditalLocal', 'FtEditalBeneficio', 'FtInscricao', 'BolsistasEdital', 'PaymentInfo', 'BolsistaFalta', 'BolsistaOcorrencia', 'FtWorkflowEvento', 'UserModel']) {
     const pk = ['MunicipeModel', 'Pagador', 'Turno'].includes(name) ? 'uuid' : 'id';
     tables[name] = [];
     const wrap = (row: any) => row ? new Proxy(row, { get(target, key) {
@@ -39,7 +39,11 @@ function database() {
       findOne: async (options: any) => wrap(all(options)[0]),
       findAll: async (options: any = {}) => all(options).map(wrap),
       count: async (options: any = {}) => all(options).length,
-      findAndCountAll: async (options: any = {}) => ({ count: all(options).length, rows: all(options).slice(options.offset || 0, (options.offset || 0) + (options.limit || 20)).map(wrap) }),
+      findAndCountAll: async (options: any = {}) => ({ count: all(options).length, rows: all(options).slice(options.offset || 0, (options.offset || 0) + (options.limit || 20)).map(row => {
+        const joined = { ...row };
+        if (name === 'FtInscricao') joined.participacoes = tables.BolsistasEdital.filter(p => p.inscricao_id === row.id && ['convocado', 'ativo'].includes(p.status));
+        return wrap(joined);
+      }) }),
       findOrCreate: async (options: any) => { const found = await db[name].findOne(options); return found ? [found, false] : [await db[name].create(options.defaults), true]; },
       update: async (data: any, options: any) => { const rows = all(options); rows.forEach(r => Object.assign(r, data)); return [rows.length]; },
     };
@@ -249,7 +253,7 @@ for (const [current, months, editalEnd, expected] of [
   const result = await service.transition(e.id, participation.id, 'prorrogar', {}, actor);
   assert.equal(result.expire_at, expected + 'T23:59:59-03:00');
   assert.equal(result.prorrogated, true);
-  await assert.rejects(service.transition(e.id, participation.id, 'prorrogar', {}, actor), /indisponivel/);
+  await assert.rejects(service.transition(e.id, participation.id, 'prorrogar', {}, actor), /ja utilizada/);
   assert.equal(await db.FtWorkflowEvento.count({ where: { acao: 'prorrogar', recurso_id: participation.id } }), 1);
 });
 
@@ -273,4 +277,29 @@ test('extension refuses unavailable cases without changing expiry, flag or audit
     assert.equal(row.prorrogated, false);
     assert.equal(await db.FtWorkflowEvento.count({ where: { acao: 'prorrogar', recurso_id: participation.id } }), 0);
   }
+});
+
+
+test('prevalidation is read only, excludes its own reservation and preserves confirmation checks', async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, 'aberto', actor);
+  const before = await db.FtWorkflowEvento.count();
+  assert.equal((await service.prevalidate(e.id, 'inscricao', { municipe_uuid: person.uuid, respostas: answers })).permitido, true);
+  assert.equal(await db.Bolsistas.count(), 0);
+  assert.equal(await db.FtInscricao.count(), 0);
+  assert.equal(await db.FtWorkflowEvento.count(), before);
+  const registration = await service.register(e.id, { municipe_uuid: person.uuid, respostas: answers }, actor, false);
+  const call = await service.call(e.id, registration.id, allocation, actor);
+  await (await db.Edital.findByPk(e.id)).update({ vagas: 1 });
+  await (await db.Pagador.findByPk(allocation.pagador_id)).update({ quantidade: 1 });
+  const baselineEvents = await db.FtWorkflowEvento.count();
+  const payment_info = { bco: '001', ag: '0012', dig_ag: 'X', conta: '00123', dig_conta: '0' };
+  const input = { participacao_id: call.id, data_inicio: allocation.data_inicio, payment_info };
+  assert.equal((await service.prevalidate(e.id, 'ativacao', input)).permitido, true);
+  assert.equal((await service.prevalidate(e.id, 'ativacao', { ...input, payment_info: {} })).permitido, false);
+  assert.equal((await service.prevalidate(e.id, 'convocacao', { inscricao_id: registration.id, ...allocation })).permitido, false);
+  assert.equal(await db.FtWorkflowEvento.count(), baselineEvents);
+  assert.equal(await db.PaymentInfo.count(), 0);
+  await assert.rejects(service.prevalidate(randomUUID(), 'ativacao', input));
+  await assert.rejects(service.prevalidate(e.id, 'ativacao', { ...input, participacao_id: randomUUID() }));
 });

@@ -9,6 +9,7 @@ import { hasOverlappingVinculos } from "../../../ft-edital/domain/services/ft-vi
 import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 
 export type FtRelatorioBolsistaRow = {
+  bolsista_id?: string;
   bco?: string;
   ag?: string;
   dig_ag?: string;
@@ -105,6 +106,7 @@ export class FtRelatorioPagamentoService {
       }
 
       grouped[pagador].push({
+        bolsista_id: bolsista.id,
         bco: bolsista.payment_info?.bco ?? undefined,
         ag: bolsista.payment_info?.ag ?? undefined,
         dig_ag: bolsista.payment_info?.dig_ag ?? undefined,
