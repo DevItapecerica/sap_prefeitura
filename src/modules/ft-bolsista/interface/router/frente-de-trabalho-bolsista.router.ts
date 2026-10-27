@@ -10,7 +10,7 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync<{controller?: type
   const allow = requirePermission("ft");
 
 
-  const tag = ["PEEAD - Bolsista"];
+  const tag = ["PEAAD - Bolsista"];
   const security = [{ JWTToken: [] }];
   const uuidParam = {
     type: "object",

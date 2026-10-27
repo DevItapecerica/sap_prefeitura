@@ -63,7 +63,7 @@ export default {
       },
       {
         id: 6,
-        name: "PEEAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO",
+        name: "PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO",
         description: "ft-app",
         url: "/services/6/ft-app",
         tag: "FT-App",

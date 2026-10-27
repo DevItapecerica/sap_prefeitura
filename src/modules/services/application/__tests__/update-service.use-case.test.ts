@@ -19,7 +19,7 @@ test("UpdateServiceUseCase returns complete before and after aggregates", async 
     [{ id: 2, setor_id: 2, service_id: 6, visibility: true }],
   );
 
-  assert.equal(result.before.services.name, "PEEAD");
+  assert.equal(result.before.services.name, "PEAAD");
   assert.equal(result.before.permissions[0].write, false);
   assert.equal(result.before.visibility[1].visibility, false);
   assert.equal(result.after.services.name, "FT Atualizado");

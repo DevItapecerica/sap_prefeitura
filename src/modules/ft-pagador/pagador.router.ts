@@ -38,7 +38,7 @@ const body = {
   },
 };
 const common = {
-  tags: ["PEEAD - Pagadores"],
+  tags: ["PEAAD - Pagadores"],
   security: [{ JWTToken: [] }],
 };
 const capacityResource = {
