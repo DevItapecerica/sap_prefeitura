@@ -4,7 +4,7 @@ import { requirePermission } from "../../../acess-controll/interface/require-per
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import type { FtRelatorioController as FtRelatorioControllerType } from "../controller/ft-relatorio.controller.js";
 
-const relatorioTags = ["PEEAD - Relatorio"];
+const relatorioTags = ["PEAAD - Relatorio"];
 const jwtSecurity = [{ JWTToken: [] }];
 const editalIdParamsSchema = {
   type: "object",

@@ -97,12 +97,19 @@ A interface apresenta “Não possui renda de qualquer natureza” e “Não rec
 Validação das declarações em 2026-10-23: 151 testes frontend e 458 backend aprovados; lint/typecheck/build/orçamento do frontend e check do backend aprovados. Nove cenários Chromium com API sintética passaram em desktop (1280px) e mobile (390px), cobrindo inscrição comum, encaixe, exceção, pendências acessíveis e detalhe de respostas antigas. O teste real de integração foi adaptado aos novos textos, mas não foi executado nesta alteração; nenhuma migration ou seed foi aplicada.
 
 
-## Nome do programa PEEAD — 2026-10-26
+## Nome do programa PEAAD — 2026-10-26
 
-O programa passa a ser identificado como **PEEAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEEAD**. O nome completo permite quebra de linha em desktop/mobile.
+O programa passa a ser identificado como **PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEAAD**. O nome completo permite quebra de linha em desktop/mobile.
 
 A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
 
-Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEEAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
+Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
 
-Validação PEEAD em 2026-10-26: 151 testes frontend e 459 backend aprovados; lint/typecheck/build/orçamento frontend e check/build backend aprovados. Oito cenários Chromium passaram (seis jornadas críticas e dois cenários PEEAD desktop/mobile, estes também reexecutados com saída 0). A migration foi validada em teste unitário com QueryInterface simulado, incluindo repetição, identidade por module_key e rollback sem sobrescrever nome posterior; nenhuma execução em banco real. OpenAPI regenerado com alteração somente das tags descritivas; tipos regenerados sem mudança semântica. Busca final pelo nome anterior encontrou somente a constante do rollback e sua fixture de teste.
+Validação PEAAD em 2026-10-26: 151 testes frontend e 459 backend aprovados; lint/typecheck/build/orçamento frontend e check/build backend aprovados. Oito cenários Chromium passaram (seis jornadas críticas e dois cenários PEAAD desktop/mobile, estes também reexecutados com saída 0). A migration foi validada em teste unitário com QueryInterface simulado, incluindo repetição, identidade por module_key e rollback sem sobrescrever nome posterior; nenhuma execução em banco real. OpenAPI regenerado com alteração somente das tags descritivas; tipos regenerados sem mudança semântica. Busca final pelo nome anterior encontrou somente a constante do rollback e sua fixture de teste.
+
+
+## Correção da sigla — 2026-10-27
+
+A sigla correta é **PEAAD**, mantendo o nome completo PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO. Interface, seed inicial, tags OpenAPI, testes e documentação usam a nova sigla. A migration incremental `20261027120000-rename-ft-service-peaad` atualiza somente o nome do serviço de módulo `ft`, sem mudar IDs, permissões ou rotas. A migration anterior e seus testes permanecem históricos. Nenhuma migration ou seed foi aplicada à base corrente.
+
+Validação da correção para PEAAD: 477 testes backend aprovados; teste do catálogo frontend aprovado; dois cenários Chromium desktop/mobile aprovados. Check/build backend, lint/typecheck/build/orçamento frontend e geração de OpenAPI/tipos aprovados. As referências à sigla anterior restantes pertencem a migrations/rollback e registros das branches já existentes. Não houve migration ou seed na base corrente.

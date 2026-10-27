@@ -128,16 +128,16 @@ Na inscrição comum, por encaixe ou por exceção, as declarações obrigatóri
 A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
 
 
-## Nome do programa PEEAD — 2026-10-26
+## Nome do programa PEAAD — 2026-10-26
 
-O programa passa a ser identificado como **PEEAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEEAD**. O nome completo permite quebra de linha em desktop/mobile.
+O programa passa a ser identificado como **PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEAAD**. O nome completo permite quebra de linha em desktop/mobile.
 
 A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
 
-Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEEAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
+Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
 
 
-## CSV de pagamento do PEEAD
+## CSV de pagamento do PEAAD
 
 O botão **Pagamento CSV**, dentro do edital em **Relatórios / Downloads**, exporta somente dados separados por ponto e vírgula, sem linha de títulos, resumo do edital, grupos de pagador, totais ou linhas vazias. As nove posições são:
 
@@ -146,3 +146,8 @@ O botão **Pagamento CSV**, dentro do edital em **Relatórios / Downloads**, exp
 O valor líquido é exportado em centavos inteiros: 900,00 → 90000; 900,01 → 90001; 0,01 → 1; zero → 0. CPF contém somente números, mantendo zeros iniciais. Banco, agência, conta e seus dígitos são preservados como texto. A data usa o dia de pagamento do edital no mês de referência, em DDMMAAAA (10/09/2026 → 10092026). Dias inexistentes são limitados ao último dia válido do mês; consultas por intervalo usam o mês da data inicial.
 
 Os cálculos de proporcionalidade e faltas permanecem os mesmos, assim como as linhas de pagamentos de cada pagador; não há consolidação. Campos com ponto e vírgula, aspas ou quebras de linha usam escape CSV. Sem pagamentos, o arquivo fica vazio. A interface continua solicitando somente o mês, com o mesmo download, rota e permissão gerar_relatorio_edital. Relatórios de faltas, presença e PDFs mantêm seus formatos. Nenhuma migration ou seed é necessária.
+
+
+## Correção da sigla — 2026-10-27
+
+A sigla correta é PEAAD. Para bases existentes, a migration incremental `20261027120000-rename-ft-service-peaad` corrige somente o nome do serviço de módulo `ft`; a migration anterior permanece histórica. O seed inicial já usa PEAAD. Nenhuma migration ou seed foi aplicada à base corrente nesta alteração.

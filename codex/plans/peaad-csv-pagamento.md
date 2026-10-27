@@ -1,4 +1,4 @@
-# CSV de pagamento do PEEAD
+# CSV de pagamento do PEAAD
 
 ## Branches
 

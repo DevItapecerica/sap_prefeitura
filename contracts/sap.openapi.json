@@ -5527,7 +5527,7 @@
         ],
         "summary": "Listar bolsistas",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       },
       "post": {
@@ -6030,7 +6030,7 @@
         ],
         "summary": "Criar bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -6247,7 +6247,7 @@
         ],
         "summary": "Cancelar vínculo do bolsista com edital",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -6434,7 +6434,7 @@
         ],
         "summary": "Remover bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       },
       "get": {
@@ -6889,7 +6889,7 @@
         ],
         "summary": "Buscar bolsista por id",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       },
       "put": {
@@ -7401,7 +7401,7 @@
         ],
         "summary": "Atualizar bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -7602,7 +7602,7 @@
         ],
         "summary": "Gerar espelho de ponto mensal do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -7879,7 +7879,7 @@
         ],
         "summary": "Listar faltas do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       },
       "post": {
@@ -8132,7 +8132,7 @@
         ],
         "summary": "Lançar falta para bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -8331,7 +8331,7 @@
         ],
         "summary": "Remover falta do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -8528,7 +8528,7 @@
         ],
         "summary": "Listar historico de vinculos do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -8792,7 +8792,7 @@
         ],
         "summary": "Listar ocorrencias do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       },
       "post": {
@@ -9044,7 +9044,7 @@
         ],
         "summary": "Registrar ocorrencia no historico do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -9243,7 +9243,7 @@
         ],
         "summary": "Remover ocorrencia do bolsista",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -9440,7 +9440,7 @@
         ],
         "summary": "Listar aniversariantes ativos do mes",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -9900,7 +9900,7 @@
         ],
         "summary": "Listar bolsistas de um edital",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -10111,7 +10111,7 @@
         ],
         "summary": "Prorrogar vínculos de bolsistas",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -10297,7 +10297,7 @@
         ],
         "summary": "Listar vínculos de bolsistas a vencer",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -10815,7 +10815,7 @@
         ],
         "summary": "Listar bolsistas elegiveis para vinculo",
         "tags": [
-          "PEEAD - Bolsista"
+          "PEAAD - Bolsista"
         ]
       }
     },
@@ -11136,7 +11136,7 @@
         ],
         "summary": "consultar edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -11494,7 +11494,7 @@
         ],
         "summary": "cadastrar edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -11807,7 +11807,7 @@
         ],
         "summary": "consultar edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "put": {
@@ -12176,7 +12176,7 @@
         ],
         "summary": "editar edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -12445,7 +12445,7 @@
         ],
         "summary": "editar edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -12775,7 +12775,7 @@
         ],
         "summary": "consultar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -13068,7 +13068,7 @@
         ],
         "summary": "editar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -13346,7 +13346,7 @@
         ],
         "summary": "editar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "put": {
@@ -13648,7 +13648,7 @@
         ],
         "summary": "editar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -13917,7 +13917,7 @@
         ],
         "summary": "encerrar edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -14247,7 +14247,7 @@
         ],
         "summary": "consultar inscricoes",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -14578,7 +14578,7 @@
         ],
         "summary": "cadastrar inscricao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -14893,7 +14893,7 @@
         ],
         "summary": "convocar inscrito",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -15215,7 +15215,7 @@
         ],
         "summary": "convocar inscrito excecao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -15549,7 +15549,7 @@
         ],
         "summary": "encaixar inscricao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -15883,7 +15883,7 @@
         ],
         "summary": "cadastrar inscricao excecao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -16184,7 +16184,7 @@
         ],
         "summary": "alterar janela inscricoes",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -16514,7 +16514,7 @@
         ],
         "summary": "consultar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -16807,7 +16807,7 @@
         ],
         "summary": "editar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -17085,7 +17085,7 @@
         ],
         "summary": "editar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "put": {
@@ -17387,7 +17387,7 @@
         ],
         "summary": "editar configuracao edital",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -17717,7 +17717,7 @@
         ],
         "summary": "consultar pagador",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -18011,7 +18011,7 @@
         ],
         "summary": "cadastrar pagador",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -18289,7 +18289,7 @@
         ],
         "summary": "excluir pagador",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "put": {
@@ -18592,7 +18592,7 @@
         ],
         "summary": "editar pagador",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -18922,7 +18922,7 @@
         ],
         "summary": "consultar vinculos",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -19232,7 +19232,7 @@
         ],
         "summary": "editar vinculo",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -19564,7 +19564,7 @@
         ],
         "summary": "ativar participacao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -19864,7 +19864,7 @@
         ],
         "summary": "cancelar participacao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -20164,7 +20164,7 @@
         ],
         "summary": "cancelar participacao",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -20393,7 +20393,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -20732,7 +20732,7 @@
         ],
         "summary": "consultar faltas",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -21032,7 +21032,7 @@
         ],
         "summary": "registrar falta",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -21319,7 +21319,7 @@
         ],
         "summary": "excluir falta",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -21548,7 +21548,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -21887,7 +21887,7 @@
         ],
         "summary": "consultar ocorrencias",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -22189,7 +22189,7 @@
         ],
         "summary": "registrar ocorrencia",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -22476,7 +22476,7 @@
         ],
         "summary": "excluir ocorrencia",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -22767,7 +22767,7 @@
         ],
         "summary": "prorrogar vinculo",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -23097,7 +23097,7 @@
         ],
         "summary": "consultar turno",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "post": {
@@ -23395,7 +23395,7 @@
         ],
         "summary": "cadastrar turno",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -23673,7 +23673,7 @@
         ],
         "summary": "excluir turno",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       },
       "put": {
@@ -23980,7 +23980,7 @@
         ],
         "summary": "editar turno",
         "tags": [
-          "PEEAD - Edital"
+          "PEAAD - Edital"
         ]
       }
     },
@@ -24220,7 +24220,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Pagadores"
+          "PEAAD - Pagadores"
         ]
       },
       "post": {
@@ -24461,7 +24461,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Pagadores"
+          "PEAAD - Pagadores"
         ]
       }
     },
@@ -24635,7 +24635,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Pagadores"
+          "PEAAD - Pagadores"
         ]
       },
       "get": {
@@ -24852,7 +24852,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Pagadores"
+          "PEAAD - Pagadores"
         ]
       },
       "put": {
@@ -25104,7 +25104,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Pagadores"
+          "PEAAD - Pagadores"
         ]
       }
     },
@@ -25322,7 +25322,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Pagadores"
+          "PEAAD - Pagadores"
         ]
       }
     },
@@ -25603,7 +25603,7 @@
         ],
         "summary": "Listar downloads de relatorios",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -25786,7 +25786,7 @@
         ],
         "summary": "Baixar arquivo de relatorios",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -26036,7 +26036,7 @@
         ],
         "summary": "Tentar novamente lote com erro",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -26238,7 +26238,7 @@
         ],
         "summary": "Gerar CSV de pagamento do edital",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -26508,7 +26508,7 @@
         ],
         "summary": "Solicitar espelhos de ponto em lote",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -26700,7 +26700,7 @@
         ],
         "summary": "Gerar relatorio mensal de faltas do edital",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -26970,7 +26970,7 @@
         ],
         "summary": "Solicitar folhas de presenca em lote",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -27162,7 +27162,7 @@
         ],
         "summary": "Gerar lista mensal de presenca do edital",
         "tags": [
-          "PEEAD - Relatorio"
+          "PEAAD - Relatorio"
         ]
       }
     },
@@ -27407,7 +27407,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Turnos"
+          "PEAAD - Turnos"
         ]
       },
       "post": {
@@ -27655,7 +27655,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Turnos"
+          "PEAAD - Turnos"
         ]
       }
     },
@@ -27829,7 +27829,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Turnos"
+          "PEAAD - Turnos"
         ]
       },
       "get": {
@@ -28049,7 +28049,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Turnos"
+          "PEAAD - Turnos"
         ]
       },
       "put": {
@@ -28308,7 +28308,7 @@
           }
         ],
         "tags": [
-          "PEEAD - Turnos"
+          "PEAAD - Turnos"
         ]
       }
     },
