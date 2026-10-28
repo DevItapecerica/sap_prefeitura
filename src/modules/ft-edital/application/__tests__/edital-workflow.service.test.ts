@@ -13,6 +13,7 @@ function database() {
   const matches = (row: any, where: any = {}) => Object.entries(where).every(([key, condition]: [string, any]) => {
     if (Array.isArray(condition)) return condition.includes(row[key]);
     if (condition && typeof condition === 'object') {
+      if (Op.between in condition) return row[key] >= condition[Op.between][0] && row[key] <= condition[Op.between][1];
       if (Op.ne in condition) return row[key] !== condition[Op.ne];
       if (Op.like in condition) return String(row[key]).includes(condition[Op.like].replaceAll('%', ''));
     }
@@ -22,7 +23,7 @@ function database() {
     const before = structuredClone(tables);
     try { return await fn({ LOCK: { UPDATE: 'UPDATE' } }); } catch (e) { tables = before; throw e; }
   } } };
-  for (const name of ['Edital', 'MunicipeModel', 'Bolsistas', 'Pagador', 'Turno', 'FtEditalLocal', 'FtEditalBeneficio', 'FtInscricao', 'BolsistasEdital', 'PaymentInfo', 'BolsistaFalta', 'BolsistaOcorrencia', 'FtWorkflowEvento', 'UserModel']) {
+  for (const name of ['Edital', 'MunicipeModel', 'Bolsistas', 'Pagador', 'Turno', 'FtEditalLocal', 'FtEditalBeneficio', 'FtInscricao', 'BolsistasEdital', 'PaymentInfo', 'BolsistaFalta', 'BolsistaOcorrencia', 'FtWorkflowEvento', 'UserModel', 'FtFolhaFechamento']) {
     const pk = ['MunicipeModel', 'Pagador', 'Turno'].includes(name) ? 'uuid' : 'id';
     tables[name] = [];
     const wrap = (row: any) => row ? new Proxy(row, { get(target, key) {
@@ -65,6 +66,62 @@ async function fixture() {
   const allocation = { pagador_id: pay.uuid, turno_id: shift.uuid, local: 'Local informado', data_inicio: '2026-10-22' };
   return { db, service, e, person, pay, shift, local, allocation };
 }
+
+test('closed month blocks ordinary/exceptional call and activation, while registration and future months stay available', async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, 'aberto', actor);
+  await db.FtFolhaFechamento.create({ edital_id: e.id, mes: '2026-10' });
+  const registration = await service.register(e.id, { municipe_uuid: person.uuid, respostas: answers }, actor, false);
+  for (const exception of [false, true]) await assert.rejects(service.call(e.id, registration.id, { ...allocation, motivo: 'Justificativa' }, actor, exception), /2026-10/);
+  const check = await service.prevalidate(e.id, 'convocacao', { inscricao_id: registration.id, ...allocation });
+  assert.ok(check.pendencias.some((p: any) => p.codigo === 'FOLHA_FECHADA'));
+  const called = await service.call(e.id, registration.id, { ...allocation, data_inicio: '2026-11-01' }, actor);
+  const bank = { bco: '001', ag: '0001', dig_ag: 'X', conta: '000123', dig_conta: '0' };
+  await assert.rejects(service.transition(e.id, called.id, 'ativar', { data_inicio: '2026-10-22', payment_info: bank }, actor), /2026-10/);
+  assert.equal(await db.PaymentInfo.count(), 0);
+  await service.transition(e.id, called.id, 'ativar', { data_inicio: '2026-11-01', payment_info: bank }, actor);
+});
+
+test('closed month blocks dated records, manual endings and edital closing without consuming changes', async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, 'aberto', actor);
+  const r = await service.register(e.id, { municipe_uuid: person.uuid, respostas: answers }, actor, false);
+  const p = await service.call(e.id, r.id, allocation, actor);
+  await service.transition(e.id, p.id, 'ativar', { data_inicio: allocation.data_inicio, payment_info: { bco: '001', ag: '0001', dig_ag: 'X', conta: '001', dig_conta: '0' } }, actor);
+  for (const kind of ['faltas', 'ocorrencias'] as const) await service.record(e.id, p.id, kind, { data_falta: '2026-10-22', data_ocorrencia: '2026-10-22' }, actor);
+  await db.FtFolhaFechamento.create({ edital_id: e.id, mes: '2026-10' });
+  for (const kind of ['faltas', 'ocorrencias'] as const) {
+    await assert.rejects(service.record(e.id, p.id, kind, { data_falta: '2026-10-22', data_ocorrencia: '2026-10-22' }, actor), /2026-10/);
+    const record = (await service.records(e.id, p.id, kind, {})).rows[0];
+    await assert.rejects(service.record(e.id, p.id, kind, {}, actor, record.id), /2026-10/);
+    assert.equal((await service.records(e.id, p.id, kind, {})).count, 1);
+  }
+  for (const op of ['cancelar', 'concluir'] as const) await assert.rejects(service.transition(e.id, p.id, op, { motivo: 'Teste' }, actor), /2026-10/);
+  await assert.rejects(service.phase(e.id, 'encerrado', actor), /2026-10/);
+  assert.equal((await service.detail(e.id)).fase, 'aberto');
+  // An extension adds only future dates; the closed original period must not block it.
+  await service.transition(e.id, p.id, 'prorrogar', {}, actor);
+  const future = new EditalWorkflowService(db, undefined, () => new Date('2026-11-03T12:00:00-03:00'));
+  await future.transition(e.id, p.id, 'concluir', { motivo: 'Encerrado em mês aberto' }, actor);
+});
+
+test('extension rejects a closed added period and keeps its one-time authorization', async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, 'aberto', actor);
+  const r = await service.register(e.id, { municipe_uuid: person.uuid, respostas: answers }, actor, false);
+  const p = await service.call(e.id, r.id, allocation, actor);
+  await service.transition(e.id, p.id, 'ativar', { data_inicio: allocation.data_inicio, payment_info: { bco: '001', ag: '1', dig_ag: '0', conta: '1', dig_conta: '0' } }, actor);
+  await db.BolsistasEdital.update({ expire_at: '2026-10-25T23:59:59-03:00' }, { where: { id: p.id } });
+  await db.FtFolhaFechamento.create({ edital_id: e.id, mes: '2026-10' });
+  await assert.rejects(service.transition(e.id, p.id, 'prorrogar', {}, actor), /2026-10/);
+  const row = await db.BolsistasEdital.findByPk(p.id);
+  assert.ok(!row.prorrogated);
+  assert.equal(dateOnlyForTest(row.expire_at), '2026-10-25');
+  const check = await service.prevalidate(e.id, 'prorrogacao', { participacao_id: p.id });
+  assert.ok(check.pendencias.some((issue: any) => issue.mensagem.includes('2026-10')));
+});
+
+const dateOnlyForTest = (value: any) => String(value).slice(0, 10);
 test('workflow preserves reservation on activation rollback and keeps history when cancelling', async () => {
   const { db, service, e, person, allocation } = await fixture();
   await service.phase(e.id, 'aberto', actor);

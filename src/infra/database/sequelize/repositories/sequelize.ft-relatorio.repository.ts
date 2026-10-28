@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import db from "../index.js";
 import { FtRelatorioRepository } from "../../../../modules/ft-relatorio/domain/repositories/ft-relatorio.repository.js";
 import { FtRelatorioPeriodo } from "../../../../modules/ft-relatorio/application/dto/ft-relatorio.dto.js";
@@ -21,12 +21,13 @@ import {
 import { ftError } from "../../../../modules/ft-bolsista/application/utils/ft-error.js";
 
 export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
+  constructor(private readonly transaction?: Transaction) {}
   private readonly municipeMapper = new MunicipeMapper(
     new AesCryptService(),
     new Sha256CryptService(),
   );
   async findEditalById(id: string) {
-    const edital = await db.Edital.findByPk(id);
+    const edital = await db.Edital.findByPk(id, { transaction: this.transaction });
 
     return edital ? this.toFtEdital(edital) : null;
   }
@@ -47,7 +48,8 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     periodo: FtRelatorioPeriodo,
   ) {
     const bolsistas = await db.Bolsistas.findAll({
-      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"]],
+      transaction: this.transaction,
+      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"], ['id', 'ASC']],
       include: [
         { model: db.MunicipeModel, as: "municipe", required: true },
         {

@@ -1,3 +1,4 @@
+import { makeFtFechamentoFolhaService } from '../../factories/makeFtFechamentoFolhaService.js';
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   FtRelatorioFaltasQueryDto,
@@ -15,6 +16,7 @@ const gerarRelatorioFtUseCase = makeGerarRelatorioFtUseCase();
 const gerarRelatorioFaltasFtUseCase = makeGerarRelatorioFaltasFtUseCase();
 const gerarListaPresencaFtUseCase = makeGerarListaPresencaFtUseCase();
 const resourceReadEventPublisher = makeResourceReadEventPublisher();
+const fechamentoService = makeFtFechamentoFolhaService();
 const arquivoService = makeFtRelatorioArquivoService();
 
 export class FtRelatorioController {
@@ -77,8 +79,12 @@ export class FtRelatorioController {
     });
     return reply.type("application/zip").header("Content-Disposition", `attachment; filename="${download.record.nome_arquivo}"`).header("Content-Length", download.size).send(download.stream);
   };
+  static consultarFechamento = async (request: FastifyRequest<{ Params: { id: string }; Querystring: { mes: string } }>, reply: FastifyReply) =>
+    reply.send(await fechamentoService.state(request.params.id, request.query.mes));
+  static fecharFolha = async (request: FastifyRequest<{ Params: { id: string }; Body: { mes: string; versao: string } }>, reply: FastifyReply) =>
+    reply.send(await fechamentoService.close(request.params.id, request.body.mes, request.body.versao, { id: request.user.id, requestId: request.id }));
   static previaPagamento = async (request: FastifyRequest<{ Params: { id: string }; Querystring: FtRelatorioQueryDto }>, reply: FastifyReply) => {
-    const result = await gerarRelatorioFtUseCase.preview(request.params.id, request.query);
+    const result = await fechamentoService.preview(request.params.id, request.query);
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, { context: makeApplicationEventContext(request), module: 'ft-relatorio', resourceType: 'previa_pagamento', resourceId: request.params.id, filters: { ...request.query, editalId: request.params.id }, returnedCount: result.count });
     return reply.send(result);
   };

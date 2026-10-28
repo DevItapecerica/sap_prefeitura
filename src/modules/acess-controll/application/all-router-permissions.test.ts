@@ -34,12 +34,12 @@ test('every actual business router declares a known explicit guard, JWT runs fir
  AuthMiddleware.verifyJWT = async (request: any) => {authenticated = true; request.user = {id:10};};
  const app = Fastify({exposeHeadRoutes:false});
  app.decorate('permissionAuthorizer',authorizer);
- const routes: {method: any; url: string; permission?: {module:string;action:string}}[] = [];
+ const routes: {method: any; url: string; permission?: {module:string;action:string}; permissions?: {module:string;action:string}[]}[] = [];
  let invoked = 0;
  app.addHook('onRoute', route => {
   const guards = Array.isArray(route.preHandler) ? route.preHandler : [route.preHandler];
   const permission = guards.find((guard:any) => guard?.permission) as any;
-  routes.push({method:route.method,url:route.url,permission:permission?.permission});
+  routes.push({method:route.method,url:route.url,permission:permission?.permission,permissions:guards.filter((g:any) => g?.permission).map((g:any) => g.permission)});
   // Keep real router registration and hook chain; business effects are outside this authorization test.
   route.schema = undefined;
   route.preValidation = undefined;
@@ -58,13 +58,17 @@ test('every actual business router declares a known explicit guard, JWT runs fir
    const own = route.url === '/r3/user' || route.url === '/r4/me';
    assert.equal(Boolean(route.permission),!own,`${route.method} ${route.url}`);
    if (own) continue;
-   const permission = route.permission!;
-   assert.ok(PERMISSION_CATALOG.some(p => p.module === permission.module && p.action === permission.action),JSON.stringify(permission));
+   for (const required of route.permissions!) assert.ok(PERMISSION_CATALOG.some(p => p.module === required.module && p.action === required.action),JSON.stringify(required));
    const url = route.url.replace(/:[^/]+/g,'00000000-0000-4000-8000-000000000001');
    grants = ['acessar']; authenticated=false;
    const denied = await app.inject({method:route.method,url});
    assert.equal(denied.statusCode,403,`${route.method} ${route.url}: ${denied.body}`);
-   grants = ['acessar',permission.action]; authenticated=false;
+   for (const missing of route.permissions!) {
+    if (route.permissions!.length < 2) break;
+    grants = ['acessar', ...route.permissions!.filter(p => p !== missing).map(p => p.action)]; authenticated=false;
+    assert.equal((await app.inject({method:route.method,url})).statusCode,403,`missing ${missing.action}`);
+   }
+   grants = ['acessar',...route.permissions!.map(p => p.action)]; authenticated=false;
    const allowed = await app.inject({method:route.method,url});
    assert.equal(allowed.statusCode,200,`${route.method} ${route.url}: ${allowed.body}`);
   }

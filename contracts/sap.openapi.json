@@ -29819,7 +29819,7 @@
     },
     "/api/v2/frente-de-trabalho/relatorio/edital/{id}": {
       "get": {
-        "description": "CSV separado por ponto e vírgula, sem cabeçalho, agrupamentos, totais ou linhas em branco. Nove campos, nesta ordem: Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor. Valor líquido em centavos inteiros, CPF somente números e dados bancários preservados como texto. Data DDMMAAAA: dia de pagamento do edital no mês da data inicial do período, limitado ao último dia válido do mês. Relatório sem pagamentos retorna conteúdo vazio. Campos com delimitador, aspas ou quebras de linha usam escape CSV.",
+        "description": "Disponivel apenas apos fechamento mensal. Retorna o arquivo preservado, sem recalculo; exige mes completo. CSV separado por ponto e vírgula, sem cabeçalho, agrupamentos, totais ou linhas em branco. Nove campos, nesta ordem: Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor. Valor líquido em centavos inteiros, CPF somente números e dados bancários preservados como texto. Data DDMMAAAA: dia de pagamento do edital no mês da data inicial do período, limitado ao último dia válido do mês. Relatório sem pagamentos retorna conteúdo vazio. Campos com delimitador, aspas ou quebras de linha usam escape CSV.",
         "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id",
         "parameters": [
           {
@@ -30051,7 +30051,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "Gerar CSV de pagamento do edital",
+        "summary": "Baixar CSV preservado da folha mensal fechada do PEAAD",
         "tags": [
           "PEAAD - Relatorio"
         ]
@@ -30543,6 +30543,485 @@
           }
         ],
         "summary": "Gerar relatorio mensal de faltas do edital",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/relatorio/edital/{id}/fechamento": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id_fechamento",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mes",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "fechado_em": {
+                      "type": "string"
+                    },
+                    "fechado_por": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "mes": {
+                      "type": "string"
+                    },
+                    "responsavel": {
+                      "type": "string"
+                    },
+                    "situacao": {
+                      "enum": [
+                        "aberta",
+                        "fechada"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "situacao"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Consultar fechamento mensal da folha do PEAAD",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      },
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_relatorio_edital_id_fechamento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "mes": {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                    "type": "string"
+                  },
+                  "versao": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mes",
+                  "versao"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "fechado_em": {
+                      "type": "string"
+                    },
+                    "fechado_por": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "mes": {
+                      "type": "string"
+                    },
+                    "responsavel": {
+                      "type": "string"
+                    },
+                    "situacao": {
+                      "enum": [
+                        "aberta",
+                        "fechada"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "situacao"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Fechar irreversivelmente a folha mensal do PEAAD",
         "tags": [
           "PEAAD - Relatorio"
         ]
@@ -31111,6 +31590,50 @@
                     "data_pagamento": {
                       "type": "string"
                     },
+                    "fechamento": {
+                      "properties": {
+                        "fechado_em": {
+                          "type": "string"
+                        },
+                        "fechado_por": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "mes": {
+                          "type": "string"
+                        },
+                        "responsavel": {
+                          "type": "string"
+                        },
+                        "situacao": {
+                          "enum": [
+                            "aberta",
+                            "fechada"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "situacao"
+                      ],
+                      "type": "object"
+                    },
+                    "periodo": {
+                      "properties": {
+                        "data_fim": {
+                          "type": "string"
+                        },
+                        "data_inicio": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "pode_fechar": {
+                      "type": "boolean"
+                    },
                     "resumo": {
                       "properties": {
                         "com_alertas": {
@@ -31194,7 +31717,10 @@
                     "rows",
                     "count",
                     "resumo",
-                    "versao"
+                    "versao",
+                    "fechamento",
+                    "periodo",
+                    "pode_fechar"
                   ],
                   "type": "object"
                 }

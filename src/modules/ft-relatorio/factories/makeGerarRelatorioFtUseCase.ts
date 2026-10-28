@@ -1,7 +1,8 @@
+import { makeFtFechamentoFolhaService } from './makeFtFechamentoFolhaService.js';
 import { SequelizeFtRelatorioRepository } from "../../../infra/database/sequelize/repositories/sequelize.ft-relatorio.repository.js";
 import { GerarRelatorioFtUseCase } from "../application/use-case/gerar-relatorio-ft.use-case.js";
 
 export const makeGerarRelatorioFtUseCase = () => {
   const repository = new SequelizeFtRelatorioRepository();
-  return new GerarRelatorioFtUseCase(repository);
+  return new GerarRelatorioFtUseCase(repository, undefined, undefined, undefined, (id, query) => makeFtFechamentoFolhaService().download(id, query));
 };

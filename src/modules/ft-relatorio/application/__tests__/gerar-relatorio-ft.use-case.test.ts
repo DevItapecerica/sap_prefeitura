@@ -85,7 +85,7 @@ describe("GerarRelatorioFtUseCase", () => {
   });
 
   it("gera CSV de nove campos sem cabeçalhos, grupos ou totais", async () => {
-    const response = await useCase.execute("edital-1", {
+    const response = await useCase.calculate("edital-1", {
       data_inicio: "2026-06-01",
       data_fim: "2026-06-30",
     });
@@ -102,7 +102,7 @@ describe("GerarRelatorioFtUseCase", () => {
       "2026-06-08",
     ].map((data_falta) => ({ data_falta }));
 
-    const response = await useCase.execute("edital-1", {
+    const response = await useCase.calculate("edital-1", {
       data_inicio: "2026-06-01",
       data_fim: "2026-06-30",
     });
@@ -123,7 +123,7 @@ describe("GerarRelatorioFtUseCase", () => {
       },
     ];
 
-    const response = await useCase.execute("edital-1", {
+    const response = await useCase.calculate("edital-1", {
       data_inicio: "2026-06-01",
       data_fim: "2026-06-30",
     });
@@ -133,7 +133,7 @@ describe("GerarRelatorioFtUseCase", () => {
 
   it("rejeita período parcial", async () => {
     await assert.rejects(
-      () => useCase.execute("edital-1", { data_inicio: "2026-06-01" }),
+      () => useCase.calculate("edital-1", { data_inicio: "2026-06-01" }),
       (error) =>
         error instanceof AppError &&
         error.statusCode === 400 &&
@@ -149,7 +149,7 @@ describe("GerarRelatorioFtUseCase", () => {
 
     for (const periodo of periodosInvalidos) {
       await assert.rejects(
-        () => useCase.execute("edital-1", periodo),
+        () => useCase.calculate("edital-1", periodo),
         (error) =>
           error instanceof AppError &&
           error.statusCode === 400 &&
@@ -159,7 +159,7 @@ describe("GerarRelatorioFtUseCase", () => {
   });
 
   it("usa o mês atual quando o período não é informado", async () => {
-    await useCase.execute("edital-1");
+    await useCase.calculate("edital-1");
     const now = new Date();
 
     assert.deepEqual(repository.lastPeriodo, {
@@ -176,7 +176,7 @@ describe("GerarRelatorioFtUseCase", () => {
     repository.data.edital = null as never;
 
     await assert.rejects(
-      () => useCase.execute("edital-1"),
+      () => useCase.calculate("edital-1"),
       (error) =>
         error instanceof AppError &&
         error.statusCode === 404 &&
@@ -196,14 +196,14 @@ describe('payment preview', () => {
     assert.deepEqual(preview.resumo, { participantes: 1, pagamentos: 1, valor_liquido: 1000, com_alertas: 0 });
     assert.equal(preview.rows[0]?.valor_liquido, 1000);
     assert.equal(preview.rows[0]?.data_pagamento, '10062026');
-    assert.equal((await useCase.execute('edital-1', { ...query, versao: preview.versao })).csv.split(';')[6], '100000');
+    assert.equal((await useCase.calculate('edital-1', { ...query, versao: preview.versao })).csv.split(';')[6], '100000');
     const second = await useCase.preview('edital-1', { ...query, page: 1, limit: 1 });
     assert.equal(second.rows.length, 0);
     assert.deepEqual(second.resumo, preview.resumo);
     assert.equal(second.versao, preview.versao);
     repo.data.bolsista.nome = 'Changed';
-    await assert.rejects(useCase.execute('edital-1', { ...query, versao: preview.versao }), (e: any) => e.statusCode === 409);
-    assert.ok((await useCase.execute('edital-1', query)).csv.includes('Changed'));
+    await assert.rejects(useCase.calculate('edital-1', { ...query, versao: preview.versao }), (e: any) => e.statusCode === 409);
+    assert.ok((await useCase.calculate('edital-1', query)).csv.includes('Changed'));
   });
   it('reports invalid CPF and bank values but still permits export', async () => {
     const repo = new FakeFtRelatorioRepository();
@@ -214,7 +214,7 @@ describe('payment preview', () => {
     const preview = await useCase.preview('edital-1', query);
     assert.equal(preview.resumo.com_alertas, 1);
     assert.deepEqual(preview.rows[0]?.alertas.map(issue => issue.codigo), ['CPF_INVALIDO', 'PAGAMENTO_CONTA']);
-    assert.ok((await useCase.execute('edital-1', { ...query, versao: preview.versao })).csv);
+    assert.ok((await useCase.calculate('edital-1', { ...query, versao: preview.versao })).csv);
   });
 });
 
@@ -234,7 +234,7 @@ describe('preview totals across payers', () => {
     assert.equal(preview.resumo.participantes, 1);
     assert.equal(preview.resumo.pagamentos, 2);
     assert.equal(preview.resumo.valor_liquido, 1000);
-    const csv = await useCase.execute('edital-1', { ...query, versao: preview.versao });
+    const csv = await useCase.calculate('edital-1', { ...query, versao: preview.versao });
     assert.equal(csv.csv.split('\n').length, 2);
     assert.equal(csv.csv.split('\n').reduce((sum, line) => sum + Number(line.split(';')[6]), 0), 100000);
   });
@@ -246,6 +246,6 @@ describe('preview totals across payers', () => {
     const preview = await useCase.preview('edital-1', query);
     assert.equal(preview.count, 0);
     assert.deepEqual(preview.resumo, { participantes: 0, pagamentos: 0, valor_liquido: 0, com_alertas: 0 });
-    assert.equal((await useCase.execute('edital-1', { ...query, versao: preview.versao })).csv, '');
+    assert.equal((await useCase.calculate('edital-1', { ...query, versao: preview.versao })).csv, '');
   });
 });

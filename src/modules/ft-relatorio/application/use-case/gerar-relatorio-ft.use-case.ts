@@ -14,9 +14,10 @@ export class GerarRelatorioFtUseCase {
     private readonly periodoService = new FtRelatorioPeriodoService(),
     private readonly pagamentoService = new FtRelatorioPagamentoService(),
     private readonly csvFormatter = new FtRelatorioCsvFormatter(),
+    private readonly closedDownload?: (id: string, query: FtRelatorioQueryDto) => Promise<{fileName: string; csv: string; type: string; returnedCount: number}>,
   ) {}
 
-  private async calculate(id: string, query: FtRelatorioQueryDto = {}) {
+  async calculate(id: string, query: FtRelatorioQueryDto = {}) {
     const edital = await this.repository.findEditalById(id);
 
     if (!edital) {
@@ -43,8 +44,9 @@ export class GerarRelatorioFtUseCase {
     const resumo = { participantes: new Set(rows.map(row => row.bolsista_id || row.cpf)).size, pagamentos: rows.length,
       valor_liquido: relatorio.total_valor, com_alertas: rows.filter(row => row.alertas.length).length };
     const versao = createHash('sha256').update(JSON.stringify({ periodo, rows, csv })).digest('hex');
+    if (query.versao && query.versao !== versao) throw ftError(409, 'Pagamento alterado. Atualize a prévia e confira novamente.');
     return {
-      rows, count: rows.length, resumo, versao, data_pagamento,
+      rows, count: rows.length, resumo, versao, data_pagamento, periodo,
       fileName: "relatorio.csv",
       csv,
       type: "text/csv; charset=utf-8",
@@ -53,10 +55,10 @@ export class GerarRelatorioFtUseCase {
   }
 
   async execute(id: string, query: FtRelatorioQueryDto = {}) {
-    const result = await this.calculate(id, query);
-    if (query.versao && query.versao !== result.versao) throw ftError(409, 'Pagamento alterado. Atualize a previa e confirme novamente.');
-    return { fileName: result.fileName, csv: result.csv, type: result.type, returnedCount: result.returnedCount };
+    if (!this.closedDownload) throw ftError(409, 'Feche a folha deste mês antes de emitir o CSV de pagamento.');
+    return this.closedDownload(id, query);
   }
+
   async preview(id: string, query: FtRelatorioQueryDto = {}) {
     const { rows, count, resumo, versao, data_pagamento } = await this.calculate(id, query);
     const limit = Math.min(50, Math.max(1, Number(query.limit) || 20));
