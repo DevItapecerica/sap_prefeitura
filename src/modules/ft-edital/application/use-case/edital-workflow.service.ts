@@ -1,8 +1,13 @@
+import { assertCompetenciasAbertas, nextCivilDay } from '../../domain/services/ft-folha-fechada.policy.js';
+import { getVinculoOperationalEnd } from '../../domain/services/ft-vinculo-period.service.js';
 import { Op, Transaction } from 'sequelize';
+import { EditalInsightsService } from './edital-insights.service.js';
+import { extensionEnd, paymentIssues } from '../../domain/services/edital-insights.policy.js';
+import AppError from '../../../../core/appError.js';
 import type { DbObject } from '../../../../core/types/DbTypes.js';
 import AesCryptService from '../../../../core/security/aes/AesCrypt.service.js';
 import { ftError } from '../../../ft-bolsista/application/utils/ft-error.js';
-import { addMonths, Answers, businessDate, dateOnly, eligible, participationEnd, registrationWindow, validateConfiguration, validateHistory, requireExceptionReason } from '../../domain/services/edital-workflow.policy.js';
+import { Answers, businessDate, dateOnly, eligible, participationEnd, registrationWindow, validateConfiguration, validateHistory, requireExceptionReason } from '../../domain/services/edital-workflow.policy.js';
 
 const occupied = ['convocado', 'ativo'];
 const plain = (row: any) => row?.toJSON?.() ?? row;
@@ -54,10 +59,10 @@ export class EditalWorkflowService {
       // Registration windows have a separate permission and endpoint.
       if (new Date(data.inscricoes_inicio).getTime() !== new Date(e.inscricoes_inicio).getTime() || new Date(data.inscricoes_fim).getTime() !== new Date(e.inscricoes_fim).getTime())
         throw ftError(409, 'Altere a janela pela operacao especifica');
-      if (e.primeira_convocacao_em) {
+      if (e.primeira_convocacao_em || await this.db.FtFolhaFechamento.count({ where: { edital_id: id }, transaction: t })) {
         for (const field of ['data_publicacao', 'vigencia_inicio', 'valor_bolsa', 'dia_pagamento', 'carga_semanal', 'carga_mensal', 'duracao_meses', 'prorrogacao_meses', 'permitir_participacao_anterior', 'permitir_retorno']) {
           const same = ['data_publicacao', 'vigencia_inicio'].includes(field) ? dateOnly(data[field]) === dateOnly(e[field]) : typeof data[field] === 'number' ? Number(data[field]) === Number(e[field]) : String(data[field]) === String(e[field]);
-          if (!same) throw ftError(409, 'Condicoes bloqueadas apos a primeira convocacao: ' + field);
+          if (!same) throw ftError(409, 'Condicoes bloqueadas apos convocacao ou fechamento de folha: ' + field);
         }
         if (dateOnly(data.data_vencimento) < dateOnly(e.data_vencimento)) throw ftError(409, 'Vigencia somente pode ser ampliada');
       }
@@ -86,6 +91,9 @@ export class EditalWorkflowService {
       if (phase === 'aberto') {
         if (e.fase !== 'rascunho' || e.vagas < 1 || Number(e.carga_semanal) <= 0 || Number(e.carga_mensal) <= 0 || businessDate(this.clock()) > dateOnly(e.data_vencimento)) throw ftError(422, 'Configure vagas, cargas e vigencia antes de abrir');
       } else {
+        const affected = await this.db.BolsistasEdital.findAll({ where: { edital_id: id, status: occupied }, transaction: t });
+        for (const participation of affected) if (participation.ativado_em) await this.assertEndChange(id, participation, t);
+        for (const participation of affected) await this.event(t, actor, id, participation.id, participation.status === 'convocado' ? 'cancelar' : 'concluir', 'Edital encerrado');
         await this.db.BolsistasEdital.update({ status: 'cancelado', canceled_at: this.clock(), observacao: 'Edital encerrado' }, { where: { edital_id: id, status: 'convocado' }, transaction: t });
         await this.db.BolsistasEdital.update({ status: 'concluido', concluded_at: this.clock() }, { where: { edital_id: id, status: 'ativo' }, transaction: t });
       }
@@ -96,7 +104,7 @@ export class EditalWorkflowService {
   }
   async configs(id: string, kind: ConfigKind, query: any) {
     await this.edital(id);
-    const result = await this.db[CONFIG_MODELS[kind]].findAndCountAll({ where: { edital_id: id }, ...pageOptions(query), order: [['nome', 'ASC']] });
+    const result = await this.db[CONFIG_MODELS[kind]].findAndCountAll({ where: { edital_id: id, ...(query.search ? { nome: { [Op.like]: '%' + String(query.search).trim() + '%' } } : {}) }, ...pageOptions(query), order: [['nome', 'ASC']] });
     if (kind === 'pagadores') for (const row of result.rows) row.setDataValue('ocupacao', await this.db.BolsistasEdital.count({ where: { edital_id: id, pagador_id: row.uuid, status: occupied } }));
     return result;
   }
@@ -153,16 +161,8 @@ export class EditalWorkflowService {
       return { id: row.id, bolsista_id: bolsista.id, status: row.status };
     });
   }
-  async inscriptions(id: string, query: any) {
-    await this.edital(id);
-    const result = await this.db.FtInscricao.findAndCountAll({ where: { edital_id: id }, ...pageOptions(query), order: [['createdAt', 'DESC']] });
-    const rows = await Promise.all(result.rows.map(async (row: any) => {
-      const snapshot = JSON.parse(await this.crypto.decrypt(row.snapshot));
-      const current = await this.db.BolsistasEdital.findOne({ where: { inscricao_id: row.id, status: occupied } });
-      return { id: row.id, bolsista_id: row.bolsista_id, nome: snapshot.nome, status: row.status, situacao: current?.status || row.status, respostas: JSON.parse(await this.crypto.decrypt(row.respostas)), excecao_motivo: row.excecao_motivo, excecao_autor_id: row.excecao_autor_id, excecao_em: row.excecao_em, createdAt: row.createdAt };
-    }));
-    return { rows, count: result.count };
-  }
+  async inscriptions(id: string, query: any) { return new EditalInsightsService(this.db, this.crypto, this.clock).people(id, query, true); }
+  async history(id: string, resource: string, inscriptions: boolean, query: any) { return new EditalInsightsService(this.db, this.crypto, this.clock).history(id, resource, inscriptions, query); }
   async call(id: string, inscriptionId: string, data: any, actor: WorkflowActor, exception = false) {
     if (exception) requireExceptionReason(data.motivo);
     const seed = await this.db.FtInscricao.findOne({ where: { id: inscriptionId, edital_id: id } });
@@ -172,6 +172,7 @@ export class EditalWorkflowService {
       const registration = await this.db.FtInscricao.findByPk(inscriptionId, { transaction: t, lock: t.LOCK.UPDATE });
       if (registration.status !== 'inscrito') throw ftError(409, 'Inscricao cancelada');
       const inicio = dateOnly(data.data_inicio);
+      await assertCompetenciasAbertas(this.db, id, inicio, participationEnd(e, inicio), t);
       const snapshot = JSON.parse(await this.crypto.decrypt(registration.snapshot));
       eligible(await this.crypto.decrypt(snapshot.nascimento), JSON.parse(await this.crypto.decrypt(registration.respostas)), inicio, e, exception);
       const history = await this.db.BolsistasEdital.findAll({ where: { bolsista_id: seed.bolsista_id }, transaction: t, paranoid: false });
@@ -195,8 +196,8 @@ export class EditalWorkflowService {
       return action(t, e);
     });
   }
-  private async allocation(t: Transaction, e: any, data: any, excludeId?: string) {
-    const pagador = await this.db.Pagador.findOne({ where: { uuid: data.pagador_id, edital_id: e.id }, transaction: t, lock: t.LOCK.UPDATE });
+  private async allocation(t: Transaction | undefined, e: any, data: any, excludeId?: string) {
+    const pagador = await this.db.Pagador.findOne({ where: { uuid: data.pagador_id, edital_id: e.id }, transaction: t, ...(t ? { lock: t.LOCK.UPDATE } : {}) });
     const turno = await this.db.Turno.findOne({ where: { uuid: data.turno_id, edital_id: e.id }, transaction: t });
     const local = typeof data.local === 'string' ? data.local.trim() : '';
     if (!local || local.length > 255) throw ftError(422, 'Informe um local de trabalho com ate 255 caracteres');
@@ -207,17 +208,7 @@ export class EditalWorkflowService {
     return { pagador_id: pagador.uuid, turno_id: turno.uuid, local_id: null, local,
       turno_nome_snapshot: turno.nome, turno_hora_inicio_snapshot: turno.hora_inicio, turno_hora_fim_snapshot: turno.hora_fim };
   }
-  async participations(id: string, query: any) {
-    await this.edital(id);
-    const result = await this.db.BolsistasEdital.findAndCountAll({ where: { edital_id: id, ...(query.status ? { status: query.status } : {}) }, ...pageOptions(query), order: [['createdAt', 'DESC']] });
-    const rows = await Promise.all(result.rows.map(async (row: any) => {
-      const registration = await this.db.FtInscricao.findByPk(row.inscricao_id);
-      const snapshot = registration ? JSON.parse(await this.crypto.decrypt(registration.snapshot)) : {};
-      const pagador = await this.db.Pagador.findByPk(row.pagador_id, { paranoid: false });
-      return { ...plain(row), nome: snapshot.nome || 'Participante', pagador_nome: pagador?.nome || 'Pagador indisponivel' };
-    }));
-    return { rows, count: result.count };
-  }
+  async participations(id: string, query: any) { return new EditalInsightsService(this.db, this.crypto, this.clock).people(id, query, false); }
   async transition(id: string, participationId: string, operation: 'ativar' | 'cancelar' | 'concluir' | 'prorrogar' | 'alocar', data: any, actor: WorkflowActor) {
     const seed = await this.db.BolsistasEdital.findOne({ where: { id: participationId, edital_id: id } });
     if (!seed) throw ftError(404, 'Participacao nao encontrada');
@@ -227,6 +218,7 @@ export class EditalWorkflowService {
       if (operation === 'ativar') {
         if (row.status !== 'convocado') throw ftError(409, 'Somente convocado pode ser ativado');
         const inicio = dateOnly(data.data_inicio);
+        await assertCompetenciasAbertas(this.db, id, inicio, participationEnd(e, inicio), t);
         const exception = Boolean(row.excecao_em && row.excecao_autor_id && row.excecao_motivo);
         const registration = await this.db.FtInscricao.findByPk(row.inscricao_id, { transaction: t });
         const snapshot = JSON.parse(await this.crypto.decrypt(registration.snapshot));
@@ -235,17 +227,13 @@ export class EditalWorkflowService {
         validateHistory(e, history.map(plain), inicio, exception);
         await this.allocation(t, e, plain(row), row.id);
         const p = data.payment_info;
-        for (const field of ['bco', 'ag', 'dig_ag', 'conta', 'dig_conta']) if (!p?.[field]?.trim()) throw ftError(422, 'Dados de pagamento incompletos');
+        if (paymentIssues(p).length) throw ftError(422, 'Dados de pagamento incompletos ou invalidos');
         const [payment] = await this.db.PaymentInfo.findOrCreate({ where: { bolsista_id: row.bolsista_id }, defaults: { ...p, bolsista_id: row.bolsista_id }, transaction: t });
         await payment.update(p, { transaction: t });
         await row.update({ status: 'ativo', ativado_em: this.clock(), data_vinculo: inicio + 'T12:00:00-03:00', expire_at: participationEnd(e, inicio) + 'T23:59:59-03:00' }, { transaction: t });
       } else if (operation === 'prorrogar') {
-        const months = Number(e.prorrogacao_meses);
-        if (row.status !== 'ativo' || row.prorrogated || !Number.isInteger(months) || months < 1) throw ftError(409, 'Prorrogacao indisponivel');
-        const currentEnd = dateOnly(row.expire_at);
-        if (currentEnd < businessDate(this.clock())) throw ftError(409, 'Vinculo ja expirou');
-        const end = [addMonths(currentEnd, months), dateOnly(e.data_vencimento)].sort()[0];
-        if (end <= currentEnd) throw ftError(409, 'Participacao ja alcanca o termino do edital');
+        const end = extensionEnd(e, row, this.clock());
+        await assertCompetenciasAbertas(this.db, id, nextCivilDay(dateOnly(row.expire_at)), end, t);
         await row.update({ expire_at: end + 'T23:59:59-03:00', prorrogated: true }, { transaction: t });
       } else if (operation === 'alocar') {
         if (!occupied.includes(row.status)) throw ftError(409, 'Participacao encerrada');
@@ -254,11 +242,99 @@ export class EditalWorkflowService {
         await row.update(await this.allocation(t, e, data, row.id), { transaction: t });
       } else {
         if (!data.motivo?.trim() || !occupied.includes(row.status) || (operation === 'concluir' && row.status !== 'ativo')) throw ftError(409, 'Transicao invalida ou motivo ausente');
+        if (row.ativado_em) await this.assertEndChange(id, row, t);
         await row.update({ status: operation === 'concluir' ? 'concluido' : 'cancelado', [operation === 'concluir' ? 'concluded_at' : 'canceled_at']: this.clock(), observacao: data.motivo }, { transaction: t });
       }
       await this.event(t, actor, id, row.id, operation, data.motivo);
       return plain(row);
     });
+  }
+  private async assertEndChange(id: string, row: any, transaction: Transaction) {
+    const today = businessDate(this.clock()), end = getVinculoOperationalEnd(row);
+    const start = [nextCivilDay(today), dateOnly(row.data_vinculo)].sort().pop()!;
+    await assertCompetenciasAbertas(this.db, id, start, end, transaction);
+  }
+  async prevalidate(id: string, operation: 'inscricao' | 'convocacao' | 'ativacao' | 'prorrogacao', data: any, mode: 'normal' | 'encaixe' | 'excecao' = 'normal') {
+    const e = plain(await this.edital(id));
+    const pendencias: Array<{ codigo: string; mensagem: string; campo: string | null }> = [];
+    const check = async (codigo: string, campo: string | null, validate: () => any) => {
+      try { await validate(); } catch (error) {
+        if (!(error instanceof AppError)) throw error;
+        pendencias.push({ codigo, campo, mensagem: error.message });
+      }
+    };
+    const required = (field: string) => { if (!data[field]) { pendencias.push({ codigo: 'OBRIGATORIO', campo: field, mensagem: 'Preencha ' + field + '.' }); return false; } return true; };
+    const output: any = { permitido: false, pendencias, data_referencia: businessDate(this.clock()) };
+    let registration: any, person: any, row: any, bolsista: any;
+    if (operation === 'inscricao') {
+      await check('JANELA', null, () => registrationWindow(e, this.clock(), mode !== 'normal', data.motivo));
+      if (mode === 'excecao') await check('JUSTIFICATIVA', 'motivo', () => requireExceptionReason(data.motivo));
+      if (required('municipe_uuid')) {
+        person = await this.db.MunicipeModel.findByPk(data.municipe_uuid);
+        if (!person) throw ftError(404, 'Municipe nao encontrado');
+        bolsista = await this.db.Bolsistas.findOne({ where: { municipe_uuid: data.municipe_uuid } });
+        if (bolsista && await this.db.FtInscricao.findOne({ where: { edital_id: id, bolsista_id: bolsista.id }, paranoid: false })) pendencias.push({ codigo: 'INSCRICAO_DUPLICADA', campo: 'municipe_uuid', mensagem: 'Pessoa ja inscrita neste edital' });
+        await check('RESIDENCIA', null, async () => {
+          if ((await this.crypto.decrypt(person.cidade || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() !== 'itapecerica da serra') throw ftError(422, 'Municipe deve residir em Itapecerica da Serra');
+        });
+      }
+    } else {
+      await check('VIGENCIA', null, () => this.opened(e));
+      if (operation === 'convocacao') {
+        if (required('inscricao_id')) registration = await this.db.FtInscricao.findOne({ where: { id: data.inscricao_id, edital_id: id } });
+        if (data.inscricao_id && !registration) throw ftError(404, 'Inscricao nao encontrada neste edital');
+        if (registration && registration.status !== 'inscrito') pendencias.push({ codigo: 'STATUS', campo: null, mensagem: 'Inscricao cancelada' });
+        if (mode === 'excecao') await check('JUSTIFICATIVA', 'motivo', () => requireExceptionReason(data.motivo));
+      } else {
+        if (required('participacao_id')) row = await this.db.BolsistasEdital.findOne({ where: { id: data.participacao_id, edital_id: id } });
+        if (data.participacao_id && !row) throw ftError(404, 'Participacao nao encontrada neste edital');
+        if (row && operation === 'prorrogacao') await check('PRORROGACAO', null, async () => { output.novo_termino = extensionEnd(e, row, this.clock()); await assertCompetenciasAbertas(this.db, id, nextCivilDay(dateOnly(row.expire_at)), output.novo_termino); });
+        if (row && operation === 'ativacao') {
+          if (row.status !== 'convocado') pendencias.push({ codigo: 'STATUS', campo: null, mensagem: 'Somente convocado pode ser ativado' });
+          registration = row.inscricao_id ? await this.db.FtInscricao.findOne({ where: { id: row.inscricao_id, edital_id: id } }) : null;
+          if (!registration) pendencias.push({ codigo: 'INSCRICAO', campo: null, mensagem: 'Inscricao indisponivel para validar a ativacao' });
+          pendencias.push(...paymentIssues(data.payment_info).map(issue => ({ ...issue, campo: issue.campo })));
+        }
+      }
+      if (registration) bolsista = await this.db.Bolsistas.findByPk(registration.bolsista_id);
+    }
+    if (operation !== 'prorrogacao') {
+      const exception = operation === 'ativacao' ? Boolean(row?.excecao_em && row.excecao_autor_id && row.excecao_motivo) : mode === 'excecao';
+      const snapshot = registration ? JSON.parse(await this.crypto.decrypt(registration.snapshot)) : null;
+      const birth = person?.nascimento || snapshot?.nascimento;
+      const answers = operation === 'inscricao' ? data.respostas : registration ? JSON.parse(await this.crypto.decrypt(registration.respostas)) : null;
+      const reference = operation === 'inscricao' ? businessDate(this.clock()) : data.data_inicio;
+      if (operation !== 'inscricao') {
+        required('data_inicio');
+        if (data.data_inicio) await check('FOLHA_FECHADA', 'data_inicio', () => assertCompetenciasAbertas(this.db, id, dateOnly(data.data_inicio), participationEnd(e, dateOnly(data.data_inicio))));
+      }
+      if (person || registration) await check('REQUISITOS', null, async () => {
+        if (!birth) throw ftError(422, 'Cadastre o nascimento do municipe');
+        if (!answers?.inicio_residencia || !reference) throw ftError(422, 'Preencha as declaracoes e a data de referencia');
+        eligible(await this.crypto.decrypt(birth), answers, reference, e, exception);
+      });
+      if (bolsista && reference) {
+        const history = await this.db.BolsistasEdital.findAll({ where: { bolsista_id: bolsista.id, ...(row ? { id: { [Op.ne]: row.id } } : {}) }, paranoid: false });
+        await check('HISTORICO', null, () => validateHistory(e, history.map(plain), reference, exception));
+      }
+      if (operation !== 'inscricao') {
+        const allocation = row ? { ...plain(row), ...data } : data;
+        for (const field of ['pagador_id', 'turno_id', 'local']) if (!allocation[field]) pendencias.push({ codigo: 'OBRIGATORIO', campo: field, mensagem: 'Preencha ' + field + '.' });
+        if (allocation.pagador_id && allocation.turno_id && allocation.local) await check('ALOCACAO', null, () => this.allocation(undefined, e, allocation, row?.id));
+        // Show the edital capacity before all allocation fields have been filled.
+        if (!allocation.pagador_id || !allocation.turno_id || !allocation.local) {
+          const where = { edital_id: id, status: occupied, ...(row ? { id: { [Op.ne]: row.id } } : {}) };
+          if (await this.db.BolsistasEdital.count({ where }) >= e.vagas) pendencias.push({ codigo: 'VAGAS', campo: null, mensagem: 'Edital sem vagas disponiveis' });
+          if (allocation.pagador_id) {
+            const payer = await this.db.Pagador.findOne({ where: { uuid: allocation.pagador_id, edital_id: id } });
+            if (!payer || await this.db.BolsistasEdital.count({ where: { ...where, pagador_id: allocation.pagador_id } }) >= payer.quantidade) pendencias.push({ codigo: 'CAPACIDADE', campo: 'pagador_id', mensagem: 'Pagador sem capacidade disponivel' });
+          }
+        }
+        if (reference) await check('INICIO', 'data_inicio', () => { output.termino_previsto = participationEnd(e, reference); });
+      }
+    }
+    output.permitido = pendencias.length === 0;
+    return output;
   }
   async records(id: string, pid: string, kind: 'faltas' | 'ocorrencias', query: any) {
     const row = await this.db.BolsistasEdital.findOne({ where: { id: pid, edital_id: id } });
@@ -281,11 +357,14 @@ export class EditalWorkflowService {
       if (deleteId) {
         const item = await Model.findOne({ where: { id: deleteId, bolsista_edital_id: pid }, transaction: t });
         if (!item) throw ftError(404, 'Registro nao encontrado');
+        const date = dateOnly(item[kind === 'faltas' ? 'data_falta' : 'data_ocorrencia']);
+        await assertCompetenciasAbertas(this.db, id, date, date, t);
         await item.destroy({ transaction: t });
       } else {
         this.opened(e);
         if (!row.ativado_em || (kind === 'faltas' && row.status !== 'ativo')) throw ftError(409, 'Registro exige participacao ativada; faltas exigem vinculo ativo');
         const date = dateOnly(data[kind === 'faltas' ? 'data_falta' : 'data_ocorrencia']);
+        await assertCompetenciasAbertas(this.db, id, date, date, t);
         const end = dateOnly(row.canceled_at || row.concluded_at || row.expired_at || row.expire_at);
         if (date < dateOnly(row.data_vinculo) || date > end || date > businessDate(this.clock())) throw ftError(422, 'Data fora da participacao ou no futuro');
         if (kind === 'faltas' && await Model.count({ where: { bolsista_edital_id: pid, data_falta: date }, transaction: t })) throw ftError(409, 'Falta ja registrada nesta data');

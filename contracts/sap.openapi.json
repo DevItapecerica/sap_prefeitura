@@ -4,6 +4,9 @@
       "def-0": {
         "additionalProperties": true,
         "properties": {
+          "acao": {
+            "type": "string"
+          },
           "ativado_em": {
             "anyOf": [
               {
@@ -33,6 +36,18 @@
             "maximum": 168,
             "type": "number"
           },
+          "convocacao_excepcional": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "data": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
           "data_falta": {
             "format": "date",
             "type": "string"
@@ -42,6 +57,10 @@
             "type": "string"
           },
           "data_publicacao": {
+            "format": "date",
+            "type": "string"
+          },
+          "data_referencia": {
             "format": "date",
             "type": "string"
           },
@@ -71,6 +90,14 @@
             "maximum": 31,
             "minimum": 1,
             "type": "integer"
+          },
+          "dias_reservada": {
+            "type": "integer",
+            "nullable": true
+          },
+          "dias_restantes": {
+            "type": "integer",
+            "nullable": true
           },
           "disponiveis": {
             "maximum": 1000000,
@@ -131,6 +158,9 @@
             "type": "integer",
             "nullable": true
           },
+          "inscricao_excepcional": {
+            "type": "boolean"
+          },
           "inscricao_id": {
             "format": "uuid",
             "type": "string"
@@ -149,12 +179,24 @@
             "pattern": "\\S",
             "type": "string"
           },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "maxLength": 120,
             "minLength": 1,
             "type": "string"
           },
           "nome": {
+            "type": "string"
+          },
+          "nome_inscricao": {
+            "type": "string",
+            "nullable": true
+          },
+          "novo_termino": {
+            "format": "date",
             "type": "string"
           },
           "observacao": {
@@ -181,6 +223,9 @@
             "minimum": 0,
             "type": "integer"
           },
+          "origem": {
+            "type": "string"
+          },
           "pagador_id": {
             "format": "uuid",
             "type": "string"
@@ -188,16 +233,56 @@
           "pagador_nome": {
             "type": "string"
           },
+          "pagamento_pendente": {
+            "type": "boolean"
+          },
+          "pendencias": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "campo": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "codigo": {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "mensagem": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "codigo",
+                "mensagem",
+                "campo"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "permitido": {
+            "type": "boolean"
+          },
           "permitir_participacao_anterior": {
             "type": "boolean"
           },
           "permitir_retorno": {
             "type": "boolean"
           },
+          "prorrogacao_fim": {
+            "type": "string",
+            "nullable": true
+          },
           "prorrogacao_meses": {
             "maximum": 120,
             "minimum": 0,
             "type": "integer"
+          },
+          "prorrogacao_motivo": {
+            "type": "string",
+            "nullable": true
           },
           "prorrogated": {
             "type": "boolean"
@@ -207,10 +292,23 @@
             "minimum": 0,
             "type": "integer"
           },
+          "recurso_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "recurso_nome": {
+            "type": "string"
+          },
+          "reserva_antiga": {
+            "type": "boolean"
+          },
           "reservadas": {
             "maximum": 1000000,
             "minimum": 0,
             "type": "integer"
+          },
+          "responsavel": {
+            "type": "string"
           },
           "respostas": {
             "additionalProperties": false,
@@ -255,6 +353,10 @@
           "status": {
             "type": "string"
           },
+          "termino_previsto": {
+            "format": "date",
+            "type": "string"
+          },
           "turno_id": {
             "format": "uuid",
             "type": "string"
@@ -275,6 +377,10 @@
             "maximum": 99999999.99,
             "minimum": 0,
             "type": "number"
+          },
+          "vencimento_alerta": {
+            "type": "string",
+            "nullable": true
           },
           "vigencia_inicio": {
             "format": "date",
@@ -10825,6 +10931,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -10858,6 +10996,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -11504,6 +11643,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -11537,6 +11708,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -12455,6 +12627,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -12488,6 +12692,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -13927,6 +14132,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -13960,6 +14197,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -15219,6 +15457,378 @@
         ]
       }
     },
+    "/api/v2/frente-de-trabalho/edital/{id}/inscricoes/{inscricaoId}/historico": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_edital_id_inscricoes_inscricaoId_historico",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscrito",
+                "convocado",
+                "ativo",
+                "cancelado",
+                "concluido",
+                "expirado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "inscricaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "count": {
+                      "maximum": 1000000,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "rows": {
+                      "items": {
+                        "$ref": "#/components/schemas/def-0"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "rows",
+                    "count"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "consultar inscricoes",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
     "/api/v2/frente-de-trabalho/edital/{id}/inscricoes/encaixe": {
       "post": {
         "operationId": "post_api_v2_frente_de_trabalho_edital_id_inscricoes_encaixe",
@@ -16194,6 +16804,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -16227,6 +16869,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -17397,6 +18040,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -17430,6 +18105,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -18602,6 +19278,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -18635,6 +19343,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -20403,6 +21112,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -20436,6 +21177,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -21552,10 +22294,42 @@
         ]
       }
     },
-    "/api/v2/frente-de-trabalho/edital/{id}/participacoes/{participacaoId}/ocorrencias": {
+    "/api/v2/frente-de-trabalho/edital/{id}/participacoes/{participacaoId}/historico": {
       "get": {
-        "operationId": "get_api_v2_frente_de_trabalho_edital_id_participacoes_participacaoId_ocorrencias",
+        "operationId": "get_api_v2_frente_de_trabalho_edital_id_participacoes_participacaoId_historico",
         "parameters": [
+          {
+            "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "page",
@@ -21591,6 +22365,379 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
+                "convocado",
+                "ativo",
+                "cancelado",
+                "concluido",
+                "expirado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "participacaoId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "count": {
+                      "maximum": 1000000,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "rows": {
+                      "items": {
+                        "$ref": "#/components/schemas/def-0"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "rows",
+                    "count"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "consultar vinculos",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/participacoes/{participacaoId}/ocorrencias": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_edital_id_participacoes_participacaoId_ocorrencias",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -22771,10 +23918,2639 @@
         ]
       }
     },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/ativacao": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_ativacao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "ativar participacao",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/convocacao": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_convocacao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "convocar inscrito",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/convocacao-excecao": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_convocacao_excecao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "convocar inscrito excecao",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/inscricao": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_inscricao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "cadastrar inscricao",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/inscricao-encaixe": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_inscricao_encaixe",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "encaixar inscricao",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/inscricao-excecao": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_inscricao_excecao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "cadastrar inscricao excecao",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/edital/{id}/prevalidacoes/prorrogacao": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_edital_id_prevalidacoes_prorrogacao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_inicio": {
+                    "format": "date",
+                    "type": "string"
+                  },
+                  "inscricao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "local": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "motivo": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "municipe_uuid": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pagador_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "participacao_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payment_info": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "bco": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_ag": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "dig_conta": {
+                        "maxLength": 16,
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "respostas": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "aceite": {
+                        "type": "boolean"
+                      },
+                      "beneficiario_familiar": {
+                        "type": "boolean"
+                      },
+                      "desempregado": {
+                        "type": "boolean"
+                      },
+                      "inicio_residencia": {
+                        "format": "date",
+                        "type": "string"
+                      },
+                      "possui_renda": {
+                        "type": "boolean"
+                      },
+                      "recebe_previdencia": {
+                        "type": "boolean"
+                      },
+                      "vulnerabilidade_atestada": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "turno_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-0"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "prorrogar vinculo",
+        "tags": [
+          "PEAAD - Edital"
+        ]
+      }
+    },
     "/api/v2/frente-de-trabalho/edital/{id}/turnos": {
       "get": {
         "operationId": "get_api_v2_frente_de_trabalho_edital_id_turnos",
         "parameters": [
+          {
+            "in": "query",
+            "name": "pagador_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excecao",
+            "required": false,
+            "schema": {
+              "enum": [
+                "inscricao",
+                "convocacao",
+                "qualquer",
+                "nenhuma"
+              ],
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "page",
@@ -22810,6 +26586,7 @@
             "required": false,
             "schema": {
               "enum": [
+                "inscrito",
                 "convocado",
                 "ativo",
                 "cancelado",
@@ -26042,9 +29819,18 @@
     },
     "/api/v2/frente-de-trabalho/relatorio/edital/{id}": {
       "get": {
-        "description": "CSV separado por ponto e vírgula, sem cabeçalho, agrupamentos, totais ou linhas em branco. Nove campos, nesta ordem: Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor. Valor líquido em centavos inteiros, CPF somente números e dados bancários preservados como texto. Data DDMMAAAA: dia de pagamento do edital no mês da data inicial do período, limitado ao último dia válido do mês. Relatório sem pagamentos retorna conteúdo vazio. Campos com delimitador, aspas ou quebras de linha usam escape CSV.",
+        "description": "Disponivel apenas apos fechamento mensal. Retorna o arquivo preservado, sem recalculo; exige mes completo. CSV separado por ponto e vírgula, sem cabeçalho, agrupamentos, totais ou linhas em branco. Nove campos, nesta ordem: Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor. Valor líquido em centavos inteiros, CPF somente números e dados bancários preservados como texto. Data DDMMAAAA: dia de pagamento do edital no mês da data inicial do período, limitado ao último dia válido do mês. Relatório sem pagamentos retorna conteúdo vazio. Campos com delimitador, aspas ou quebras de linha usam escape CSV.",
         "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id",
         "parameters": [
+          {
+            "in": "query",
+            "name": "versao",
+            "required": false,
+            "schema": {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "data_inicio",
@@ -26201,6 +29987,35 @@
             },
             "description": "Recurso não encontrado"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26236,7 +30051,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "Gerar CSV de pagamento do edital",
+        "summary": "Baixar CSV preservado da folha mensal fechada do PEAAD",
         "tags": [
           "PEAAD - Relatorio"
         ]
@@ -26663,6 +30478,35 @@
             },
             "description": "Recurso não encontrado"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26699,6 +30543,485 @@
           }
         ],
         "summary": "Gerar relatorio mensal de faltas do edital",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/relatorio/edital/{id}/fechamento": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id_fechamento",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mes",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "fechado_em": {
+                      "type": "string"
+                    },
+                    "fechado_por": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "mes": {
+                      "type": "string"
+                    },
+                    "responsavel": {
+                      "type": "string"
+                    },
+                    "situacao": {
+                      "enum": [
+                        "aberta",
+                        "fechada"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "situacao"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Consultar fechamento mensal da folha do PEAAD",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      },
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_relatorio_edital_id_fechamento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "mes": {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                    "type": "string"
+                  },
+                  "versao": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mes",
+                  "versao"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "fechado_em": {
+                      "type": "string"
+                    },
+                    "fechado_por": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "mes": {
+                      "type": "string"
+                    },
+                    "responsavel": {
+                      "type": "string"
+                    },
+                    "situacao": {
+                      "enum": [
+                        "aberta",
+                        "fechada"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "situacao"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Fechar irreversivelmente a folha mensal do PEAAD",
         "tags": [
           "PEAAD - Relatorio"
         ]
@@ -27125,6 +31448,35 @@
             },
             "description": "Recurso não encontrado"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -27161,6 +31513,402 @@
           }
         ],
         "summary": "Gerar lista mensal de presenca do edital",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/relatorio/edital/{id}/previa": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id_previa",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "versao",
+            "required": false,
+            "schema": {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "data_inicio",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "data_fim",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "data_pagamento": {
+                      "type": "string"
+                    },
+                    "fechamento": {
+                      "properties": {
+                        "fechado_em": {
+                          "type": "string"
+                        },
+                        "fechado_por": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "mes": {
+                          "type": "string"
+                        },
+                        "responsavel": {
+                          "type": "string"
+                        },
+                        "situacao": {
+                          "enum": [
+                            "aberta",
+                            "fechada"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "situacao"
+                      ],
+                      "type": "object"
+                    },
+                    "periodo": {
+                      "properties": {
+                        "data_fim": {
+                          "type": "string"
+                        },
+                        "data_inicio": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "pode_fechar": {
+                      "type": "boolean"
+                    },
+                    "resumo": {
+                      "properties": {
+                        "com_alertas": {
+                          "type": "number"
+                        },
+                        "pagamentos": {
+                          "type": "number"
+                        },
+                        "participantes": {
+                          "type": "number"
+                        },
+                        "valor_liquido": {
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "rows": {
+                      "items": {
+                        "properties": {
+                          "ag": {
+                            "type": "string"
+                          },
+                          "alertas": {
+                            "items": {
+                              "properties": {
+                                "campo": {
+                                  "type": "string"
+                                },
+                                "codigo": {
+                                  "type": "string"
+                                },
+                                "mensagem": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "bco": {
+                            "type": "string"
+                          },
+                          "bolsista_id": {
+                            "type": "string"
+                          },
+                          "conta": {
+                            "type": "string"
+                          },
+                          "cpf": {
+                            "type": "string"
+                          },
+                          "data_pagamento": {
+                            "type": "string"
+                          },
+                          "dig_ag": {
+                            "type": "string"
+                          },
+                          "dig_conta": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "pagador": {
+                            "type": "string"
+                          },
+                          "valor_liquido": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "versao": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "rows",
+                    "count",
+                    "resumo",
+                    "versao",
+                    "fechamento",
+                    "periodo",
+                    "pode_fechar"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Conferir pagamento antes de exportar; alertas não bloqueiam",
         "tags": [
           "PEAAD - Relatorio"
         ]

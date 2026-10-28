@@ -70,3 +70,55 @@ test('workflow HTTP enforces permission per transition, UUID scope, bank fields 
     assert.equal((await app.inject('/edital/' + id + '/participacoes/' + id + '/folha-presenca')).statusCode, 400);
   } finally { await app.close(); AuthMiddleware.verifyJWT = original; }
 });
+
+
+test('prevalidations and history require operation permissions and never write business audit', async () => {
+  const original = AuthMiddleware.verifyJWT;
+  AuthMiddleware.verifyJWT = async (r: any) => { r.user = { id: 123 }; };
+  const app = Fastify();
+  let allowed = false, audits = 0;
+  const permissions: string[] = [];
+  app.decorate('permissionAuthorizer', { authorize: async (_id: number, _module: string, action: string) => {
+    permissions.push(action);
+    if (!allowed) throw Object.assign(new Error('Denied'), { statusCode: 403 });
+  } });
+  const calls: any[] = [];
+  const service = {
+    prevalidate: async (...args: any[]) => { calls.push(args); return { permitido: false, pendencias: [{ codigo: 'VAGAS', campo: null, mensagem: 'Edital sem vagas' }], data_referencia: '2026-10-27' }; },
+    history: async () => ({ rows: [], count: 0 }),
+  } as unknown as EditalWorkflowService;
+  await app.register(EditalWorkflowRouter, { prefix: '/edital', service, audit: async () => { audits++; } });
+  const id = '3739d774-6de0-4f48-8dda-1b43414b70ef';
+  try {
+    for (const [path, action, operation, mode] of [
+      ['inscricao', 'cadastrar_inscricao', 'inscricao', 'normal'],
+      ['inscricao-encaixe', 'encaixar_inscricao', 'inscricao', 'encaixe'],
+      ['inscricao-excecao', 'cadastrar_inscricao_excecao', 'inscricao', 'excecao'],
+      ['convocacao', 'convocar_inscrito', 'convocacao', 'normal'],
+      ['convocacao-excecao', 'convocar_inscrito_excecao', 'convocacao', 'excecao'],
+      ['ativacao', 'ativar_participacao', 'ativacao', 'normal'],
+      ['prorrogacao', 'prorrogar_vinculo', 'prorrogacao', 'normal'],
+    ]) {
+      const url = '/edital/' + id + '/prevalidacoes/' + path;
+      allowed = false;
+      assert.equal((await app.inject({ method: 'POST', url, payload: {} })).statusCode, 403);
+      assert.equal(permissions.at(-1), action);
+      allowed = true;
+      const response = await app.inject({ method: 'POST', url, payload: {} });
+      assert.equal(response.statusCode, 200, response.body);
+      assert.equal(response.json().pendencias[0].codigo, 'VAGAS');
+      assert.equal(calls.at(-1)[1], operation);
+      assert.equal(calls.at(-1)[3], mode);
+      assert.equal((await app.inject({ method: 'POST', url, payload: { bypass: true } })).statusCode, 400);
+    }
+    for (const [kind, action] of [['inscricoes', 'consultar_inscricoes'], ['participacoes', 'consultar_vinculos']]) {
+      allowed = false;
+      const url = '/edital/' + id + '/' + kind + '/' + id + '/historico';
+      assert.equal((await app.inject(url)).statusCode, 403);
+      assert.equal(permissions.at(-1), action);
+      allowed = true;
+      assert.equal((await app.inject(url)).statusCode, 200);
+    }
+    assert.equal(audits, 0);
+  } finally { await app.close(); AuthMiddleware.verifyJWT = original; }
+});

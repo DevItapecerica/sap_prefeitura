@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -21,6 +22,8 @@ try {
       const existingId = '8f214433-9407-479c-ad20-9fe6e40fd4f6';
       if (file === '20261022130000-ft-idade-excecoes.ts') await qi.bulkInsert('edital', [{ id: existingId, name: 'Existing synthetic edital', data_publicacao: new Date(), data_vencimento: new Date('2028-12-31'), dia_pagamento: 5, valor_bolsa: 900, status: 'ativo', createdAt: new Date(), updatedAt: new Date() }]);
       await migration.up(qi);
+      if (file === '20261028140000-ft-fechamento-mensal.ts') { await migration.down(qi); await migration.up(qi); }
+      if (file === '20261028120000-ft-workflow-timeline-index.ts') { await migration.up(qi); await migration.down(qi); await migration.up(qi); }
       if (file === '20261022120000-ft-edital-workflow.ts') { await migration.down(qi); await migration.up(qi); }
       if (file === '20261022130000-ft-idade-excecoes.ts') {
         const [rows] = await sql.query('SELECT idade_maxima FROM edital WHERE id=:id', { replacements: { id: existingId } });
@@ -28,7 +31,7 @@ try {
         await migration.down(qi); await migration.up(qi);
         await qi.bulkDelete('edital', { id: existingId });
       }
-      if (file === '20261022131000-ft-exception-permissions.ts') {
+      if (['20261022131000-ft-exception-permissions.ts', '20261028141000-ft-fechamento-permission.ts'].includes(file)) {
         const [before] = await sql.query('SELECT * FROM role_permissions ORDER BY role_id,permission_action_id');
         await migration.up(qi);
         const [after] = await sql.query('SELECT * FROM role_permissions ORDER BY role_id,permission_action_id');
@@ -43,7 +46,7 @@ try {
   const { SequelizeFtRelatorioRepository } = await import('../src/infra/database/sequelize/repositories/sequelize.ft-relatorio.repository.js');
   const { authorizationFactory } = await import('../src/modules/acess-controll/factories/makeAuthorization.js');
   await assert.rejects(authorizationFactory().authorize(1, 'ft', 'encaixar_inscricao'), 'new permissions must not inherit legacy admin grants');
-  for (const action of ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao']) await assert.rejects(authorizationFactory().authorize(1, 'ft', action), 'exception grants must be denied by default');
+  for (const action of ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao', 'fechar_folha_pagamento']) await assert.rejects(authorizationFactory().authorize(1, 'ft', action), 'exception grants must be denied by default');
   const crypto = new Aes();
   const fixedNow = new Date('2026-10-22T12:00:00-03:00');
   const service = new EditalWorkflowService(db, crypto, () => fixedNow);
@@ -68,6 +71,15 @@ try {
     const inscriptions = [];
     for (const person of people) inscriptions.push(await service.register(e.id, { municipe_uuid: person.uuid, respostas: answers }, actor, false));
     assert.equal(await db.PaymentInfo.count(), 0);
+    await people[0].update({ nome: 'Nome Atualizado', cpfHash: createHash('sha256').update('01234567890').digest('hex') });
+    const byName = await service.inscriptions(e.id, { search: 'Nome Atualizado', limit: 1 });
+    assert.equal(byName.count, 1);
+    assert.equal(byName.rows[0].nome, 'Nome Atualizado');
+    assert.equal(byName.rows[0].nome_inscricao, 'Pessoa sintetica 0');
+    assert.equal((await service.inscriptions(e.id, { search: '012.345.678-90' })).count, 1);
+    assert.equal((await service.inscriptions(e.id, { search: '01234567890' })).count, 1);
+    assert.equal((await service.inscriptions(e.id, { limit: 1, page: 1 })).count, 5);
+    assert.equal((await service.inscriptions(e.id, { pagador_id: e.allocation.pagador_id })).count, 0);
     await assert.rejects(service.register(e.id, { municipe_uuid: people[0].uuid, respostas: answers }, actor, false));
     const results = await Promise.allSettled(inscriptions.slice(0, 2).map(r => service.call(e.id, r.id, e.allocation, actor)));
     assert.equal(results.filter(r => r.status === 'fulfilled').length, 1, 'last vacancy must only be reserved once');
@@ -77,8 +89,27 @@ try {
     assert.equal((await reports.findBolsistasByEditalPeriodo(e.id, { data_inicio: '2026-10-01', data_fim: '2026-10-31' })).length, 0, 'convocados are not payable');
     await assert.rejects(service.transition(e.id, current.id, 'ativar', { data_inicio: '2026-10-22', payment_info: {} }, actor));
     assert.equal(await db.PaymentInfo.count(), 0, 'failed activation must roll back bank data');
+    assert.equal((await service.inscriptions(e.id, { pagador_id: e.allocation.pagador_id, turno_id: e.allocation.turno_id, status: 'convocado', excecao: 'nenhuma' })).count, 1);
+    assert.equal((await service.participations(e.id, { pagador_id: e.allocation.pagador_id, status: 'convocado' })).count, 1);
     const bank = { bco: '001', ag: '1234', dig_ag: '0', conta: '123456', dig_conta: '7' };
+    const beforePrecheck = await db.FtWorkflowEvento.count();
+    assert.equal((await service.prevalidate(e.id, 'ativacao', { participacao_id: current.id, data_inicio: '2026-10-22', payment_info: bank })).permitido, true);
+    assert.equal(await db.FtWorkflowEvento.count(), beforePrecheck);
     await service.transition(e.id, current.id, 'ativar', { data_inicio: '2026-10-22', payment_info: bank }, actor);
+    const history = await service.history(e.id, current.id, false, { limit: 50 });
+    assert.ok(history.rows.some((event: any) => event.acao === 'ativar'));
+    assert.ok(history.rows.every((event: any) => !('payment_info' in event) && !('respostas' in event)));
+    await assert.rejects(service.history(people[0].uuid, current.id, false, {}));
+    const { GerarRelatorioFtUseCase } = await import('../src/modules/ft-relatorio/application/use-case/gerar-relatorio-ft.use-case.js');
+    const payments = new GerarRelatorioFtUseCase(reports);
+    const paymentQuery = { data_inicio: '2026-10-01', data_fim: '2026-10-31' };
+    const preview = await payments.preview(e.id, paymentQuery);
+    assert.equal(preview.count, 1);
+    assert.equal((await payments.calculate(e.id, { ...paymentQuery, versao: preview.versao })).csv.split(';').length, 9);
+    const storedBank = await db.PaymentInfo.findOne({ where: { bolsista_id: current.bolsista_id } });
+    await storedBank.update({ conta: '99999' });
+    await assert.rejects(payments.calculate(e.id, { ...paymentQuery, versao: preview.versao }), (error: any) => error.statusCode === 409);
+    console.log('PASS SQL filters, hash search, read-only prevalidation, scoped history and preview version');
     assert.equal((await service.detail(e.id)).ocupadas, 1);
     assert.equal((await reports.findBolsistasByEditalPeriodo(e.id, { data_inicio: '2026-10-01', data_fim: '2026-10-31' })).length, 1);
     await service.record(e.id, current.id, 'faltas', { data_falta: '2026-10-22', observacao: 'Teste' }, actor);
@@ -163,12 +194,15 @@ try {
     console.log('PASS configured extension period, edital date cap and unchanged state/audit when already at the limit');
     await assert.rejects(ageMigration.down(qi), /Rollback refused/);
     console.log('PASS age migration preserves existing edital, exception seed is idempotent, authorizations persist, concurrent exception reserves once, activation preserves authority and same-month return is allowed');
-    console.log('PASS scheduler expiration and edital closure cancel reservations and conclude active participants');
+    for (const acao of ['expirar', 'cancelar', 'concluir']) assert.ok(await db.FtWorkflowEvento.count({ where: { ator_id: 'sistema', acao } }), 'scheduler must persist each lifecycle action');
+    console.log('PASS scheduler expiration and edital closure cancel reservations and conclude active participants with transactional events');
     const eventText = JSON.stringify((await db.FtWorkflowEvento.findAll()).map((r: any) => r.toJSON()));
     assert.ok(!eventText.includes('123456') && !eventText.includes('desempregado'));
     const migration = (await import('../src/infra/database/sequelize/migrations/20261022120000-ft-edital-workflow.js')).default;
     await assert.rejects(migration.down(qi), /Rollback refused/);
     console.log('PASS reservation concurrency, activation rollback, payment, records, reports, single extension, isolation, history, cancellation and closure');
+
+    await (await import('./test-ft-payroll.js')).testPayroll({ db, crypto, service, actor, base, answers, makeEdital });
 
     if (process.env.FT_WORKFLOW_TEST_SERVE === '1') {
       // Explicit grants for this disposable fixture only; production grants remain denied.

@@ -22,7 +22,7 @@ export class FtRelatorioCsvFormatter {
     return /[;"\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
   }
 
-  private paymentDate(relatorio: FtRelatorioPagamento): string {
+  paymentDate(relatorio: FtRelatorioPagamento): string {
     const [year, month] = relatorio.periodo.data_inicio.split("-").map(Number);
     const lastDay = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
     const day = Math.min(relatorio.edital.dia_pagamento, lastDay);

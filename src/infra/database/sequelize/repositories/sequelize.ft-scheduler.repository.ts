@@ -55,6 +55,8 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
       edital.set('fase', 'encerrado');
       await edital.save({ transaction });
 
+      const reserved = await db.BolsistasEdital.findAll({ where: { edital_id: edital.get('id'), status: 'convocado' }, transaction, lock: transaction.LOCK.UPDATE });
+      for (const row of reserved) await db.FtWorkflowEvento.create({ edital_id: edital.get('id'), recurso_id: row.get('id'), acao: 'cancelar', ator_id: 'sistema', request_id: 'scheduler-edital-' + edital.get('id'), motivo: 'Vigencia do edital encerrada' }, { transaction });
       await db.BolsistasEdital.update({ status: 'cancelado', canceled_at: now, observacao: 'Vigencia do edital encerrada' }, { where: { edital_id: edital.get('id'), status: 'convocado' }, transaction });
 
       const active = await db.BolsistasEdital.findAll({ where: { edital_id: edital.get('id'), status: 'ativo' }, transaction, lock: transaction.LOCK.UPDATE });
@@ -67,6 +69,7 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
             concluded_at: edital.get('data_vencimento'),
           });
           await vinculo.save({ transaction });
+          await db.FtWorkflowEvento.create({ edital_id: edital.get('id'), recurso_id: vinculo.get('id'), acao: 'concluir', ator_id: 'sistema', request_id: 'scheduler-edital-' + edital.get('id'), motivo: 'Vigencia do edital encerrada' }, { transaction });
           vinculosUpdated += 1;
           vinculos.push({
             before: vinculoBefore,
@@ -103,6 +106,7 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
         expired_at: vinculo.get('expire_at'),
       });
       await vinculo.save({ transaction });
+      await db.FtWorkflowEvento.create({ edital_id: editalId, recurso_id: vinculo.get('id'), acao: 'expirar', ator_id: 'sistema', request_id: 'scheduler-participacao-' + vinculo.get('id'), motivo: 'Termino da participacao' }, { transaction });
 
       return {
         bolsistaId,

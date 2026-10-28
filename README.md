@@ -304,17 +304,39 @@ A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.
 Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
 
 
-## CSV de pagamento do PEAAD
+## CSV e fechamento mensal da folha do PEAAD
 
-O botão **Pagamento CSV**, dentro do edital em **Relatórios / Downloads**, exporta somente dados separados por ponto e vírgula, sem linha de títulos, resumo do edital, grupos de pagador, totais ou linhas vazias. As nove posições são:
+Em **Relatórios / Downloads → Pagamento CSV**, selecione o mês e confira participantes, dados bancários, totais e alertas. Enquanto a competência estiver **Em aberto**, não será possível baixar o CSV. Usuários com `ft:gerar_relatorio_edital` e `ft:fechar_folha_pagamento` poderão fechar o mês atual ou anterior após confirmação irreversível. Alertas cadastrais não impedem o fechamento; folhas vazias exigem a mesma confirmação e preservam CSV vazio.
+
+Depois do fechamento, a tela mostra responsável e data, e **Baixar CSV** devolve o arquivo preservado, sem recálculo. Não há reabertura, complementares, importação ou exceção financeira. Inscrições continuam permitidas; convocações e ativações cujo período alcance mês fechado ficam bloqueadas, inclusive nas modalidades excepcionais. Faltas e ocorrências não podem ser incluídas ou excluídas no mês fechado. Prorrogações verificam somente o período acrescentado; cancelamentos, conclusões e encerramento manual verificam o intervalo financeiro alterado. Meses abertos continuam operáveis. Expirações automáticas previstas não reescrevem folhas fechadas.
+
+A folha mantém exatamente nove campos separados por ponto e vírgula, sem títulos, grupos, totais ou linhas em branco:
 
 `Numero Banco;Agencia;Digito;Conta;Digito da Conta;Nome Credor;Valor;DATA do pagamento;CPF do Credor`
 
-O valor líquido é exportado em centavos inteiros: 900,00 → 90000; 900,01 → 90001; 0,01 → 1; zero → 0. CPF contém somente números, mantendo zeros iniciais. Banco, agência, conta e seus dígitos são preservados como texto. A data usa o dia de pagamento do edital no mês de referência, em DDMMAAAA (10/09/2026 → 10092026). Dias inexistentes são limitados ao último dia válido do mês; consultas por intervalo usam o mês da data inicial.
+Valor líquido em centavos inteiros (900,00 → 90000; 900,01 → 90001; zero → 0), CPF numérico com zeros preservados e dados bancários textuais, incluindo dígitos alfabéticos. Data DDMMAAAA usa o dia do edital no mês escolhido, limitado ao último dia válido. Campos com delimitador, aspas ou quebras de linha usam escape CSV. Cálculos proporcionais e linhas de múltiplos pagadores permanecem; meses de borda usam o intervalo dentro da vigência. Relatórios de faltas, presença e PDFs não mudam.
 
-Os cálculos de proporcionalidade e faltas permanecem os mesmos, assim como as linhas de pagamentos de cada pagador; não há consolidação. Campos com ponto e vírgula, aspas ou quebras de linha usam escape CSV. Sem pagamentos, o arquivo fica vazio. A interface continua solicitando somente o mês, com o mesmo download, rota e permissão gerar_relatorio_edital. Relatórios de faltas, presença e PDFs mantêm seus formatos. Nenhuma migration ou seed é necessária.
+Contratos sob `/frente-de-trabalho/relatorio/edital/:id`: `GET /previa` para o mês completo; `GET /fechamento?mes=AAAA-MM`; `POST /fechamento` com `{ mes, versao }`; download CSV na rota existente, exigindo mês completo fechado. Alterações após a conferência retornam 409 e exigem nova conferência antes de fechar. Consultas e download usam `gerar_relatorio_edital`. Nenhuma atualização por foco ou consulta periódica foi adicionada.
 
+Na implantação, executar pelo procedimento habitual a migration `20261028140000-ft-fechamento-mensal` e a seed `20261028141000-ft-fechamento-permission`. A seed é idempotente e não concede permissões automaticamente: habilite o novo checkbox nos perfis autorizados. Snapshots criptografados, unicidade por edital/mês e auditoria transacional preservam o fechamento. Nenhuma migration ou seed foi aplicada à base corrente durante esta implementação.
+
+Meses antigos permanecem abertos até fechamento explícito. Fechamento registra a folha emitida, não confirmação bancária; o sistema não identifica arquivos externos anteriormente utilizados. Plano e evidências: [codex/plans/peaad-fechamento-folha.md](codex/plans/peaad-fechamento-folha.md).
 
 ## Correção da sigla — 2026-10-27
 
 A sigla correta é **PEAAD**, mantendo o nome completo PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO. Interface, seed inicial, tags OpenAPI, testes e documentação usam a nova sigla. A migration incremental `20261027120000-rename-ft-service-peaad` atualiza somente o nome do serviço de módulo `ft`, sem mudar IDs, permissões ou rotas. A migration anterior e seus testes permanecem históricos. Nenhuma migration ou seed foi aplicada à base corrente.
+
+
+## Melhorias operacionais do PEAAD - 2026-10-27
+
+- Inscrições, convocados e participantes: busca pelo nome atual do munícipe ou CPF completo (com ou sem máscara), filtros combinados de situação, pagador, turno e modalidade de exceção. O backend filtra e conta antes de paginar; o CPF usa o hash existente. O detalhe conserva o nome original da inscrição. Os seletores de pagador e turno respeitam as permissões existentes de consulta desses cadastros, com busca remota e paginação.
+- **Pagamento CSV** abre a conferência mensal. A versão conferida é validada no fechamento; o download exige folha fechada e retorna o CSV preservado. Consulte a seção de fechamento mensal.
+- Participações ativas destacam vencimento entre hoje e 30 dias, inclusive; vencidos aguardando processamento aparecem separadamente. Convocados mostram início previsto e dias de reserva contados da criação, com destaque a partir de 7 dias. Não há cancelamento automático da reserva por esse aviso.
+- A confirmação de prorrogação mostra o término exato calculado pelo backend, respeitando o período cadastrado, uma única prorrogação e o último dia do edital. O motivo da indisponibilidade aparece na lista.
+- **Histórico** apresenta eventos de todas as tentativas da inscrição no mesmo edital, com responsável, data e motivo; marcos antigos incompletos indicam explicitamente a informação ausente. Não inclui questionários, dados bancários ou conteúdo de faltas/ocorrências.
+- Formulários consultam pré-validações somente de leitura ao abrir e alterar campos. Pendências bloqueiam Confirmar, sem gravar dados ou reservar vagas; respostas antigas são ignoradas. A confirmação continua validando disponibilidade e permissões no servidor, dentro da transação. Indisponibilidade da consulta auxiliar permite tentar a confirmação normal, sujeita a todas as validações do servidor.
+- Não há atualização automática por foco ou consulta periódica. Os atrasos de 300 ms servem somente para agrupar digitação.
+
+Os contratos de histórico e pré-validação mantêm as permissões das respectivas operações. Para a folha mensal, consulte os contratos e a nova permissão descritos na seção de fechamento.
+
+Na implantação do backend, aplicar pelo procedimento habitual a migration incremental `20261028120000-ft-workflow-timeline-index`, que acrescenta o índice `(edital_id,recurso_id,createdAt,id)` aos eventos. Encerramentos futuros, manuais e do scheduler, registram evento por participação na mesma transação. Nenhuma migration ou seed foi aplicada a base corrente. Plano e evidências: [codex/plans/peaad-melhorias-fluxo.md](codex/plans/peaad-melhorias-fluxo.md).

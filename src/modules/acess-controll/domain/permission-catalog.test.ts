@@ -5,7 +5,7 @@ import { permissionKey } from './permission-key.js';
 
 test('catalog exactly covers the approved module/action inventory without duplicates', () => {
   const counts = Object.fromEntries(Object.entries(Object.groupBy(PERMISSION_CATALOG, p => p.module)).map(([module, actions]) => [module, actions!.length]));
-  assert.deepEqual(counts, { usuarios: 6, setores: 5, servicos: 5, roles: 5, demandas_ti: 1, ft: 54, iptu: 1, municipes: 4, esporte: 14, auditoria: 3 });
+  assert.deepEqual(counts, { usuarios: 6, setores: 5, servicos: 5, roles: 5, demandas_ti: 1, ft: 55, iptu: 1, municipes: 4, esporte: 14, auditoria: 3 });
   assert.ok(PERMISSION_CATALOG.filter(p => ['encaixar_inscricao', 'ativar_participacao', 'convocar_inscrito'].includes(p.action)).every(p => p.legacyFlag === null));
   const keys = PERMISSION_CATALOG.map(p => permissionKey(p.module, p.action));
   assert.equal(new Set(keys).size, keys.length);

@@ -25,7 +25,7 @@ const matrix = {
   esporte: { read: ['acessar', 'consultar_atleta', 'consultar_carteirinha', 'gerar_pdf_carteirinha', 'consultar_modalidade'], write: ['cadastrar_atleta', 'vincular_modalidade', 'emitir_carteirinha', 'cadastrar_modalidade'], edit: ['editar_atleta', 'editar_modalidade'], del: ['excluir_atleta', 'remover_modalidade', 'excluir_modalidade'] },
   auditoria: { read: ['acessar', 'consultar_auditoria'], write: ['exportar_auditoria'], edit: [], del: [] },
 } as const;
-export const FT_WORKFLOW_ACTIONS = ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao', 'consultar_inscricoes', 'cadastrar_inscricao', 'encaixar_inscricao', 'alterar_janela_inscricoes', 'convocar_inscrito', 'ativar_participacao', 'cancelar_participacao', 'encerrar_edital', 'consultar_configuracao_edital', 'editar_configuracao_edital', 'gerar_folha_presenca'] as const;
+export const FT_WORKFLOW_ACTIONS = ['fechar_folha_pagamento', 'cadastrar_inscricao_excecao', 'convocar_inscrito_excecao', 'consultar_inscricoes', 'cadastrar_inscricao', 'encaixar_inscricao', 'alterar_janela_inscricoes', 'convocar_inscrito', 'ativar_participacao', 'cancelar_participacao', 'encerrar_edital', 'consultar_configuracao_edital', 'editar_configuracao_edital', 'gerar_folha_presenca'] as const;
 export type PermissionActionName = typeof matrix[PermissionModule][LegacyFlag][number] | typeof FT_WORKFLOW_ACTIONS[number];
 export interface CatalogEntry {
   readonly module: PermissionModule;
