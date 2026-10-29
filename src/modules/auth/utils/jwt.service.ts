@@ -1,6 +1,5 @@
-import jwt from "jsonwebtoken";
-import { SignOptions } from "jsonwebtoken";
-import { SECRET_KEY } from "../../../core/env.js";
+import jwt, {SignOptions} from "jsonwebtoken";
+import { JWT_KEY } from "../../../core/env.js";
 import { JwtUserPayload } from "../types.js";
 
 export default class JwtServices {
@@ -15,7 +14,7 @@ export default class JwtServices {
       {
         ...payload
       },
-      SECRET_KEY,
+      JWT_KEY,
       {
         expiresIn,
       },
@@ -26,6 +25,6 @@ export default class JwtServices {
 
   verify(token: string): JwtUserPayload {
     this.logger.info("Verificando token");
-    return jwt.verify(token, SECRET_KEY) as JwtUserPayload;
+    return jwt.verify(token, JWT_KEY) as JwtUserPayload;
   }
 }

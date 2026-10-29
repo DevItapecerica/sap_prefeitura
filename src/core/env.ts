@@ -35,6 +35,7 @@ export const NODE_ENV = must("NODE_ENV");
 export const DATABASE_URL = must("DATABASE_URL");
 
 export const SECRET_KEY = must("SECRET_KEY");
+export const JWT_KEY = must("JWT_KEY");
 
 export const MAIL_ADRESS = must("MAIL_ADRESS");
 export const MAIL_PASSWORD = must("MAIL_PASSWORD");

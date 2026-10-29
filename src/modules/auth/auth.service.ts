@@ -1,7 +1,7 @@
 import AppError from "../../core/appError.js";
 import comparePass from "../../core/utils/comparePass.js";
 import UserRepository from "../user/domain/repository/user.repository.js";
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { SequelizeUserSessionRepository } from "../../infra/database/sequelize/repositories/sequelize.user-session.repository.js";
 import { AuthLoginResponse, JwtUserPayload, RefreshSessionResponse } from "./types.js";
 import JwtServices from "./utils/jwt.service.js";
