@@ -109,6 +109,33 @@
             "minimum": 1,
             "type": "integer"
           },
+          "edicao": {
+            "additionalProperties": false,
+            "properties": {
+              "campos_bloqueados": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "vagas_minimas": {
+                "maximum": 1000000,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "vigencia_minima": {
+                "format": "date",
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "campos_bloqueados",
+              "vagas_minimas",
+              "vigencia_minima"
+            ],
+            "type": "object"
+          },
           "edital_id": {
             "format": "uuid",
             "type": "string"
@@ -10931,6 +10958,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -11001,7 +11060,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -11643,6 +11703,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -11713,7 +11805,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -12627,6 +12720,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -12697,7 +12822,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -14132,6 +14258,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -14202,7 +14360,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -15463,6 +15622,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -15533,7 +15724,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -16804,6 +16996,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -16874,7 +17098,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -18040,6 +18265,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -18110,7 +18367,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -19278,6 +19536,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -19348,7 +19638,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -21112,6 +21403,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -21182,7 +21505,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -22300,6 +22624,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -22370,7 +22726,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -22672,6 +23029,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -22742,7 +23131,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }
@@ -26521,6 +26911,38 @@
         "parameters": [
           {
             "in": "query",
+            "name": "fase",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rascunho",
+                "aberto",
+                "encerrado"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inscricoes_abertas",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "grupo_status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "encerrados"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "pagador_id",
             "required": false,
             "schema": {
@@ -26591,7 +27013,8 @@
                 "ativo",
                 "cancelado",
                 "concluido",
-                "expirado"
+                "expirado",
+                "inativo"
               ],
               "type": "string"
             }

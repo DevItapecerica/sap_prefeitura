@@ -207,6 +207,7 @@ try {
     await (await import('./test-ft-payroll.js')).testPayroll({ db, crypto, service, actor, base, answers, makeEdital });
 
     await (await import('./test-ft-estoque.js')).testEstoque({ db, crypto, service, actor, answers, makeEdital });
+    await (await import('./test-ft-editais-ux.js')).testEditaisUX({ db, crypto, service, actor, base, answers, makeEdital });
 
     if (process.env.FT_WORKFLOW_TEST_SERVE === '1') {
       // Explicit grants for this disposable fixture only; production grants remain denied.

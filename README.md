@@ -8,6 +8,10 @@ O fluxo de FT passa a ser **inscrição → convocação com reserva → ativaç
 
 Consulte [docs/ft-edital-workflow.md](docs/ft-edital-workflow.md) para campos, permissões, contratos, restrições de alteração, implantação e integração real com banco descartável. O plano do backend fica em [codex/plans/ft-centrada-no-edital.md](codex/plans/ft-centrada-no-edital.md).
 
+A revisão de UX dos editais mantém contratos e permissões existentes e acrescenta filtros de leitura: `fase=rascunho|aberto|encerrado` e `inscricoes_abertas=true` na listagem, e `grupo_status=encerrados` nas participações (concluído, cancelado, expirado e legado inativo). Os filtros e contagens são SQL, antes da paginação. Inscrições continuam sendo registros próprios, separados das participações e seus retornos.
+
+O detalhe retorna `edicao` com `campos_bloqueados` (campo/motivo), `vagas_minimas` e `vigencia_minima`. A leitura e a atualização transacional reutilizam `edital-editing.policy.ts`; os metadados informam a interface e não autorizam alterações. Preenchimento inicial de idade máxima, abertura sem pré-cadastrar alocação e bloqueios financeiros permanecem preservados. Esta revisão não adiciona permissões, migrations ou seeds. Plano e evidências: [peaad-editais-ux-ui.md](codex/plans/peaad-editais-ux-ui.md). O harness descartável inclui `scripts/test-ft-editais-ux.ts` para filtros, contagens, metadados e retornos distintos.
+
 Os comandos de Compose e os caminhos de componentes nas seções abaixo são relativos à raiz do workspace (`sap`), um nível acima deste diretório.
 
 ## Permissões por módulo/ação

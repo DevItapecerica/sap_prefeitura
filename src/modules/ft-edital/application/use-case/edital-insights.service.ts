@@ -24,6 +24,7 @@ export class EditalInsightsService {
     if (query.status) conditions.push(inscriptions ? { [Op.or]: [
       { '$participacoes.status$': query.status }, { '$participacoes.id$': null, status: query.status },
     ] } : { status: query.status });
+    if (!inscriptions && query.grupo_status === 'encerrados') conditions.push({ status: { [Op.in]: ['concluido', 'cancelado', 'expirado', 'inativo'] } });
     const registrationException = inscriptions ? 'excecao_em' : '$inscricao.excecao_em$';
     const convocationException = inscriptions ? '$participacoes.excecao_em$' : 'excecao_em';
     if (query.excecao === 'inscricao') conditions.push({ [registrationException]: { [Op.ne]: null } });
