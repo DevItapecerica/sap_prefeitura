@@ -1,9 +1,11 @@
 import Atleta from "../entity/Atleta.js";
-import { QueryAtletaDto, UpdateAtletaDto } from "../../application/dto/atleta.dto.js";
+import { QueryAtleta, UpdateAtleta } from "../contracts/atleta.js";
 
 export default interface AtletaRepository {
   createAtleta: (atleta: Atleta) => Promise<Atleta>;
-  findAllAtletas: (query?: QueryAtletaDto) => Promise<{ atletas: Atleta[]; count: number }>;
+  findAllAtletas: (
+    query?: QueryAtleta,
+  ) => Promise<{ atletas: Atleta[]; count: number }>;
   findOneAtleta: (uuid: string) => Promise<Atleta | null>;
   findActiveByMunicipe: (municipe_uuid: string) => Promise<Atleta | null>;
   addModalidadeToAtleta: (
@@ -14,6 +16,6 @@ export default interface AtletaRepository {
     atleta_uuid: string,
     modalidade_uuid: string,
   ) => Promise<boolean>;
-  updateAtleta: (uuid: string, data: UpdateAtletaDto) => Promise<Atleta | null>;
+  updateAtleta: (uuid: string, data: UpdateAtleta) => Promise<Atleta | null>;
   deleteAtleta: (uuid: string) => Promise<boolean>;
 }
