@@ -40,3 +40,16 @@ test('frontend keeps transport in services and stateful orchestration in hooks',
   assert.equal(violation('src/context/UserProvider.jsx', dependency('@/service/sessionService'), 'frontend'), null);
   assert.equal(violation('src/components/Editor.tsx', dependency('@/service/editorService', ['EditorData'], true), 'frontend'), null);
 });
+
+test('native HTTP and computed imports cannot bypass protected layers', () => {
+  for (const code of ['fetch("/api");', 'window.fetch("/api");', 'globalThis.fetch("/api");', 'new XMLHttpRequest();']) {
+    const [entry] = dependencies(code);
+    assert.equal(entry.specifier, '<native-http>');
+    assert.ok(violation('src/pages/Editor.jsx', entry, 'frontend'));
+    assert.ok(violation('src/modules/example/application/service.ts', entry, 'backend'));
+    assert.equal(violation('src/service/editorService.ts', entry, 'frontend'), null);
+  }
+  const [entry] = dependencies('const module = import(name);');
+  assert.ok(violation('src/modules/example/domain/policy.ts', entry, 'backend'));
+  assert.equal(violation('src/infra/rendering/loader.ts', entry, 'backend'), null);
+});

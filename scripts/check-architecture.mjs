@@ -7,6 +7,10 @@ const slash = path => path.replaceAll('\\', '/');
 export function dependencies(text, file = 'example.ts') {
   const tree = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const found = [];
+  const intrinsic = (node, specifier) => {
+    const position = tree.getLineAndCharacterOfPosition(node.getStart(tree));
+    found.push({ specifier, line: position.line + 1, names: ['*'], typeOnly: false });
+  };
   const add = (node, literal, names = [], typeOnly = false) => {
     if (!literal || !ts.isStringLiteralLike(literal)) return;
     const position = tree.getLineAndCharacterOfPosition(node.getStart(tree));
@@ -18,7 +22,14 @@ export function dependencies(text, file = 'example.ts') {
       add(node, node.moduleSpecifier, bindings && ts.isNamedImports(bindings) ? bindings.elements.map(e => (e.propertyName || e.name).text) : ['*'], node.importClause?.isTypeOnly || Boolean(bindings && ts.isNamedImports(bindings) && bindings.elements.length && bindings.elements.every(e => e.isTypeOnly)));
     } else if (ts.isExportDeclaration(node)) add(node, node.moduleSpecifier, ['*']);
     else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) add(node, node.argument.literal, ['*']);
-    else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || ts.isIdentifier(node.expression) && node.expression.text === 'require')) add(node, node.arguments[0], ['*']);
+    else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || ts.isIdentifier(node.expression) && node.expression.text === 'require')) {
+      if (node.arguments[0] && ts.isStringLiteralLike(node.arguments[0])) add(node, node.arguments[0], ['*']);
+      else intrinsic(node, '<computed-import>');
+    } else if (ts.isCallExpression(node) || ts.isNewExpression(node)) {
+      const expression = node.expression;
+      const name = ts.isIdentifier(expression) ? expression.text : ts.isPropertyAccessExpression(expression) && ts.isIdentifier(expression.expression) && ['window', 'globalThis'].includes(expression.expression.text) ? expression.name.text : null;
+      if (['fetch', 'XMLHttpRequest'].includes(name)) intrinsic(node, '<native-http>');
+    }
     ts.forEachChild(node, visit);
   }
   visit(tree);
@@ -33,7 +44,8 @@ export function violation(source, dependency, mode) {
   const application = /(^|\/)application\//.test(source) || /\/auth\.service\./.test(source);
   const http = /\/(?:router|routes|controller)s?\//.test(source) || /\.(?:router|routes|controller)\./.test(source);
   const composition = /\/(?:factories|bootstrap)\//.test(source) || /\.(?:factory|factories)\./.test(source) || source === 'src/server.ts';
-  const technical = /(^|\/)(?:sequelize|axios|sharp|pdf-lib|archiver)(?:\/|$)/.test(specifier) || /^(?:node:)?fs(?:\/|$)/.test(specifier) || /\/infra\/(?:database|http|files|pdf|rendering|storage|mail)\//.test(target);
+  const technical = specifier === '<native-http>' || /(^|\/)(?:sequelize|axios|sharp|pdf-lib|archiver)(?:\/|$)/.test(specifier) || /^(?:node:)?(?:fs|http|https)(?:\/|$)/.test(specifier) || /\/infra\/(?:database|http|files|pdf|rendering|storage|mail)\//.test(target);
+  if (specifier === '<computed-import>' && (domain || application || http && !composition || mode === 'frontend' && /\/(?:components|pages|hooks|context|providers)\//.test(source))) return 'protected layers must use statically identifiable imports';
   if (domain && /\/(?:application|interface|infra)\//.test(target)) return 'domain must not depend on outer layers';
   if (domain && technical) return 'domain must not depend on technical drivers';
   if (domain && /(?:^|\/)appError\.js$/.test(target)) return 'domain must use semantic business errors';
@@ -45,7 +57,7 @@ export function violation(source, dependency, mode) {
     const hook = serviceFile || /\/hooks\//.test(source) || /\/use[A-Z][^/]*\.[jt]sx?$/.test(source);
     const provider = /\/(?:context|contexts|providers)\//.test(source) || /Provider\.[jt]sx?$/.test(source);
     const ui = /\/(?:components|pages)\//.test(source);
-    const client = /(^|\/)(?:API|api-client|http-client)(?:\.[jt]s)?$/.test(target) || /(?:^|[/@])api\/API$/.test(target) || specifier === 'axios';
+    const client = specifier === '<native-http>' || /(^|\/)(?:API|api-client|http-client)(?:\.[jt]s)?$/.test(target) || /(?:^|[/@])api\/API$/.test(target) || specifier === 'axios';
     const service = /\/(?:service|services)\//.test(target) || /(?:workflow|estoque)-api$/.test(target) && dependency.names.some(name => ['*','workflowApi','estoqueApi'].includes(name));
     if ((ui || provider || hook) && !serviceFile && client) return 'components, hooks and providers must delegate HTTP clients to services';
     if (ui && !provider && !hook && service && !dependency.typeOnly) return 'components must delegate service orchestration to hooks';

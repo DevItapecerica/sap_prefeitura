@@ -1,5 +1,15 @@
 # SAP Prefeitura — API principal
 
+## Organização das dependências
+
+Use Serviços como referência: rotas explícitas chamam controllers; factories compõem os serviços/casos de uso com contratos de repositório e adapters de `infra`. Domínio não importa DTOs da aplicação nem erros HTTP. Erros semânticos são traduzidos na aplicação para os contratos públicos existentes.
+
+Workflow, estoque e fechamento usam unidades de trabalho tipadas. O callback recebe os repositórios e a escrita de auditoria da mesma transação, sem receber `Transaction`, models ou opções de consulta Sequelize. Somente os adapters conhecem o driver. Políticas recebem dados e permanecem puras. Não abra uma segunda transação em um repositório participante.
+
+As rotas do PEAAD declaram schemas, guards e controllers por operação. Bodies rejeitam campos extras e coerção de tipos na fronteira Fastify; querystrings mantêm o tratamento anterior. Transporte PDF e armazenamento/ZIP são portas com adapters próprios.
+
+Execute `npm run check:architecture`, `npm run check`, `npm run test:coverage`, `npm run build` e `npm run openapi:generate`. O verificador de imports e seus testes também fazem parte da CI. Integração SQL exige o opt-in para um schema descartável vazio descrito no guia FT; nunca use a base corrente. Inventário e evidências: [correcao-clean-architecture.md](codex/plans/correcao-clean-architecture.md).
+
 API modular em Node.js 22, TypeScript, Fastify 5 e Sequelize/MariaDB. Registra autenticação, usuários, setores, roles, serviços, permissões, munícipes, Esporte, PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO e auditoria. A visão do ecossistema está no [README principal](../README.md).
 
 ## PEAAD centrado no edital
