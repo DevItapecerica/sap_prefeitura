@@ -1,159 +1,1811 @@
-import type { FastifyPluginAsync } from 'fastify';
-import AuthMiddleware from '../../../auth/auth.middleware.js';
-import { requirePermission } from '../../../acess-controll/interface/require-permission.js';
-import { EditalWorkflowService, CONFIG_MODELS, ConfigKind } from '../../application/use-case/edital-workflow.service.js';
-import AppError from '../../../../core/appError.js';
-import errorResponseSchema from '../../../../core/schema/errorSchema.js';
-
-const uuid = { type: 'string', format: 'uuid' };
-const text = { type: 'string', minLength: 1, maxLength: 120 };
-const date = { type: 'string', format: 'date' };
-const instant = { type: 'string', format: 'date-time' };
-const integer = (min = 0, max = 1000000) => ({ type: 'integer', minimum: min, maximum: max });
-const object = (properties: Record<string, any>, required = Object.keys(properties)) => ({ type: 'object', additionalProperties: false, properties, required });
-const motivo = { type: 'string', minLength: 3, maxLength: 1000, pattern: '\\S' };
-const configuration = {
-  idade_maxima: integer(18),
-  name: text, data_publicacao: date, vigencia_inicio: date, data_vencimento: date,
-  inscricoes_inicio: instant, inscricoes_fim: instant, vagas: integer(1), dia_pagamento: integer(1, 31),
-  valor_bolsa: { type: 'number', minimum: 0, maximum: 99999999.99 },
-  carga_semanal: { type: 'number', exclusiveMinimum: 0, maximum: 168 }, carga_mensal: { type: 'number', exclusiveMinimum: 0, maximum: 744 },
-  duracao_meses: integer(1, 120), prorrogacao_meses: integer(0, 120),
-  permitir_participacao_anterior: { type: 'boolean' }, permitir_retorno: { type: 'boolean' },
+import type { FastifyPluginAsync } from "fastify";
+import AuthMiddleware from "../../../auth/auth.middleware.js";
+import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
+import errorResponseSchema from "../../../../core/schema/errorSchema.js";
+import { configureBodyValidation } from "../../../../infra/http/fastify/body-validation.js";
+import { EditalWorkflowController } from "../controller/edital-workflow.controller.js";
+import type {
+  WorkflowQuery,
+  WorkflowInput,
+  EditalInput,
+  ConfigInput,
+  DatedInput,
+} from "../../domain/repositories/workflow.repository.js";
+import type { Answers } from "../../domain/services/edital-workflow.policy.js";
+import {
+  uuid,
+  object,
+  item,
+  itemRef,
+  collection,
+  query,
+  payerBody,
+  shiftBody,
+  configBody,
+  registrationBody,
+  exceptionBody,
+  callBody,
+  callExceptionBody,
+  activationBody,
+  reasonBody,
+  allocationBody,
+  emptyBody,
+  editalBody,
+  windowBody,
+  absenceBody,
+  occurrenceBody,
+  prevalidationBody,
+  pdfQuery,
+  pdfResponse,
+} from "../schema/edital-workflow.schema.js";
+type RegistrationInput = {
+  municipe_uuid: string;
+  respostas: Answers;
+  motivo?: string;
 };
-const answers = object({ desempregado: { type: 'boolean' }, possui_renda: { type: 'boolean' }, recebe_previdencia: { type: 'boolean' }, inicio_residencia: date,
-  vulnerabilidade_atestada: { type: 'boolean' }, beneficiario_familiar: { type: 'boolean' }, aceite: { type: 'boolean' } });
-const allocation = { pagador_id: uuid, turno_id: uuid, local: { type: 'string', minLength: 1, maxLength: 255, pattern: '\\S' } };
-const payment = object({ bco: { type: 'string', pattern: '^\\d{1,3}$' }, ag: { type: 'string', pattern: '^\\d{1,4}$' }, dig_ag: { type: 'string', pattern: '^[0-9Xx]$' }, conta: { type: 'string', pattern: '^\\d{1,11}$' }, dig_conta: { type: 'string', pattern: '^[0-9Xx]$' } });
-const nullableText = { type: ['string', 'null'] };
-const issue = object({ codigo: text, mensagem: { type: 'string' }, campo: nullableText });
-const itemProperties = {
-  edicao: object({ campos_bloqueados: { type: 'object', additionalProperties: { type: 'string' } }, vagas_minimas: integer(1), vigencia_minima: { type: ['string', 'null'], format: 'date' } }),
-  permitido: { type: 'boolean' }, pendencias: { type: 'array', items: issue }, novo_termino: date, termino_previsto: date,
-  nome_inscricao: nullableText, inscricao_excepcional: { type: 'boolean' }, convocacao_excepcional: { type: 'boolean' },
-  createdAt: instant, data_referencia: date, dias_restantes: { type: ['integer', 'null'] }, dias_reservada: { type: ['integer', 'null'] }, vencimento_alerta: nullableText, reserva_antiga: { type: 'boolean' }, prorrogacao_fim: { type: ['string', 'null'] }, prorrogacao_motivo: nullableText, pagamento_pendente: { type: 'boolean' },
-  acao: { type: 'string' }, data: { type: ['string', 'null'], format: 'date-time' }, responsavel: { type: 'string' }, motivo: nullableText, origem: { type: 'string' }, recurso_id: uuid, recurso_nome: { type: 'string' },
-  ...configuration, id: uuid, uuid, edital_id: uuid, inscricao_id: uuid, bolsista_id: uuid,
-  idade_maxima: { type: ['integer', 'null'], minimum: 18 },
-  nome: { type: 'string' }, status: { type: 'string' }, fase: { type: 'string' },
-  situacao: { type: 'string' }, pagador_nome: { type: 'string' },
-  quantidade: integer(), ocupacao: integer(), reservadas: integer(), ocupadas: integer(), disponiveis: integer(),
-  respostas: answers, ...allocation,
-  excecao_motivo: { type: ['string', 'null'] }, excecao_autor_id: { type: ['string', 'null'] }, excecao_em: { anyOf: [instant, { type: 'null' }] },
-  data_vinculo: instant, expire_at: instant, ativado_em: { anyOf: [instant, { type: 'null' }] },
-  turno_nome_snapshot: { type: 'string' }, prorrogated: { type: 'boolean' },
-  descricao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
-  data_falta: date, observacao: { anyOf: [{ type: 'string' }, { type: 'null' }] }, data_ocorrencia: date,
-  hora_inicio: { type: 'string' }, hora_fim: { type: 'string' },
-};
-const item = { type: 'object', additionalProperties: true, properties: itemProperties };
-const itemRef = { $ref: 'FtWorkflowItem#' };
-const collection = { type: 'object', required: ['rows', 'count'], properties: { rows: { type: 'array', items: itemRef }, count: integer() } };
-const query = object({ fase: { type: 'string', enum: ['rascunho', 'aberto', 'encerrado'] }, inscricoes_abertas: { type: 'boolean' }, grupo_status: { type: 'string', enum: ['encerrados'] }, pagador_id: uuid, turno_id: uuid, excecao: { type: 'string', enum: ['inscricao', 'convocacao', 'qualquer', 'nenhuma'] }, page: integer(), limit: integer(1, 50), search: { type: 'string', maxLength: 120 }, status: { type: 'string', enum: ['inscrito', 'convocado', 'ativo', 'cancelado', 'concluido', 'expirado', 'inativo'] } }, []);
+export const EditalWorkflowRouter: FastifyPluginAsync<{
+  controller?: EditalWorkflowController;
+}> = async (fastify, options) => {
+  fastify.addSchema({ $id: "FtWorkflowItem", ...item });
+  const controller =
+    options.controller ??
+    (
+      await import("../../factories/makeEditalWorkflowController.js")
+    ).makeEditalWorkflowController();
+  fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
+  configureBodyValidation(fastify, {
+    extraField: (field) => "Campo nao permitido: " + field,
+    invalidType: "Tipo de campo invalido",
+  });
+  const allow = requirePermission("ft");
 
-export function strictBody(schema: any, value: any): void {
-  if (schema.type === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
-    for (const [key, child] of Object.entries(value)) {
-      if (!schema.properties[key]) throw new AppError('Campo nao permitido: ' + key, 400);
-      strictBody(schema.properties[key], child);
-    }
-  } else if (['boolean', 'number', 'integer', 'string'].includes(schema.type)) {
-    const type = schema.type === 'integer' ? 'number' : schema.type;
-    if (typeof value !== type) throw new AppError('Tipo de campo invalido', 400);
-  }
-}
-export const EditalWorkflowRouter: FastifyPluginAsync<{ service?: EditalWorkflowService; audit?: () => Promise<void> }> = async (fastify, options) => {
-  fastify.addSchema({ $id: 'FtWorkflowItem', ...item });
-  const service = options.service ?? new EditalWorkflowService((await import('../../../../infra/database/sequelize/index.js')).default);
-  fastify.addHook('preHandler', AuthMiddleware.verifyJWT);
-  const allow = requirePermission('ft');
-  const route = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, action: string, body: any, handler: (r: any) => Promise<any>, list = false, readOnly = false) => {
-    const params = Object.fromEntries([...url.matchAll(/:([A-Za-z]+)/g)].map(m => [m[1], uuid]));
-    fastify.route({ method, url,
-      config: { audit: { failureAction: method === 'GET' || readOnly ? 'VIEW' : method === 'POST' ? 'CREATE' : 'UPDATE', module: 'ft-edital', resourceType: 'edital_workflow', resourceIdParam: 'id', omitRequestedChanges: true } },
-      schema: { tags: ['PEAAD - Edital'], security: [{ JWTToken: [] }], summary: action.replaceAll('_', ' '),
-        ...(Object.keys(params).length ? { params: object(params) } : {}), ...(body ? { body } : {}), ...(method === 'GET' ? { querystring: query } : {}),
-        response: { 200: list ? collection : itemRef, ...errorResponseSchema, 409: errorResponseSchema[400], 410: errorResponseSchema[400], 422: errorResponseSchema[400] } },
-      preHandler: allow(action),
-      preValidation: async r => { if (body) strictBody(body, r.body); },
-      handler: async (r) => {
-        const result = await handler(r);
-        if (method !== 'GET' && !readOnly) {
-          // Durable, PII-free event is written in the business transaction. Central audit is a second sink.
-          try {
-            if (options.audit) await options.audit();
-            else {
-              const { makeAuditService } = await import('../../../audit/factories/makeAuditService.js');
-              await makeAuditService().record({ actor: { userId: r.user.id }, action: method === 'POST' ? 'CREATE' : 'UPDATE', module: 'ft-edital', resourceType: 'edital_workflow', resourceId: String((r.params as any)?.id || result.id || ''), result: 'SUCCESS', requestId: r.id, metadata: { operation: action } });
-            }
-          } catch (err) { r.log.error({ err }, 'FT central audit unavailable; durable workflow event preserved'); }
-        }
-        return result;
+  fastify.route<{ Params: {}; Querystring: WorkflowQuery; Body: never }>({
+    method: "GET",
+    url: "/",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
       },
-    });
-  };
-  const actor = (r: any) => ({ id: r.user.id, requestId: r.id });
-  route('GET', '/', 'consultar_edital', null, r => service.list(r.query), true);
-  route('POST', '/', 'cadastrar_edital', object(configuration), r => service.create(r.body, actor(r)));
-  route('GET', '/:id', 'consultar_edital', null, r => service.detail(r.params.id));
-  route('PUT', '/:id', 'editar_edital', object(configuration), r => service.update(r.params.id, r.body, actor(r)));
-  route('PUT', '/:id/janela-inscricoes', 'alterar_janela_inscricoes', object({ inscricoes_inicio: instant, inscricoes_fim: instant, motivo }), r => service.window(r.params.id, r.body, actor(r)));
-  route('POST', '/:id/abrir', 'editar_edital', null, r => service.phase(r.params.id, 'aberto', actor(r)));
-  route('POST', '/:id/encerrar', 'encerrar_edital', null, r => service.phase(r.params.id, 'encerrado', actor(r)));
-  for (const kind of Object.keys(CONFIG_MODELS) as ConfigKind[]) {
-    const resource = kind === 'pagadores' ? 'pagador' : kind === 'turnos' ? 'turno' : 'configuracao_edital';
-    const time = { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$' };
-    const fields = kind === 'pagadores' ? { nome: text, quantidade: integer() } : kind === 'turnos' ? { nome: text, hora_inicio: time, hora_fim: time } : { nome: text, descricao: { type: 'string', maxLength: 2000 } };
-    route('GET', '/:id/' + kind, 'consultar_' + resource, null, r => service.configs(r.params.id, kind, r.query), true);
-    route('POST', '/:id/' + kind, resource === 'configuracao_edital' ? 'editar_configuracao_edital' : 'cadastrar_' + resource, object(fields), r => service.config(r.params.id, kind, undefined, r.body, actor(r)));
-    route('PUT', '/:id/' + kind + '/:itemId', resource === 'configuracao_edital' ? 'editar_configuracao_edital' : 'editar_' + resource, object(fields), r => service.config(r.params.id, kind, r.params.itemId, r.body, actor(r)));
-    route('DELETE', '/:id/' + kind + '/:itemId', resource === 'configuracao_edital' ? 'editar_configuracao_edital' : 'excluir_' + resource, null, r => service.config(r.params.id, kind, r.params.itemId, null, actor(r)));
-  }
-  route('GET', '/:id/inscricoes', 'consultar_inscricoes', null, r => service.inscriptions(r.params.id, r.query), true);
-  route('GET', '/:id/inscricoes/:inscricaoId/historico', 'consultar_inscricoes', null, r => service.history(r.params.id, r.params.inscricaoId, true, r.query), true);
-  route('GET', '/:id/participacoes/:participacaoId/historico', 'consultar_vinculos', null, r => service.history(r.params.id, r.params.participacaoId, false, r.query), true);
-  const prevalidationFields = { municipe_uuid: uuid, inscricao_id: uuid, participacao_id: uuid, data_inicio: date,
-    pagador_id: uuid, turno_id: uuid, local: { type: 'string', maxLength: 255 }, motivo: { type: 'string', maxLength: 1000 },
-    respostas: object(answers.properties, []), payment_info: object(Object.fromEntries(Object.keys(payment.properties).map(key => [key, { type: 'string', maxLength: 16 }])), []) };
-  for (const [path, operation, mode, action] of [
-    ['inscricao', 'inscricao', 'normal', 'cadastrar_inscricao'], ['inscricao-encaixe', 'inscricao', 'encaixe', 'encaixar_inscricao'],
-    ['inscricao-excecao', 'inscricao', 'excecao', 'cadastrar_inscricao_excecao'],
-    ['convocacao', 'convocacao', 'normal', 'convocar_inscrito'], ['convocacao-excecao', 'convocacao', 'excecao', 'convocar_inscrito_excecao'],
-    ['ativacao', 'ativacao', 'normal', 'ativar_participacao'], ['prorrogacao', 'prorrogacao', 'normal', 'prorrogar_vinculo'],
-  ] as const) route('POST', '/:id/prevalidacoes/' + path, action, object(prevalidationFields, []), r => service.prevalidate(r.params.id, operation, r.body, mode), false, true);
-  const registration = object({ municipe_uuid: uuid, respostas: answers, motivo }, ['municipe_uuid', 'respostas']);
-  route('POST', '/:id/inscricoes', 'cadastrar_inscricao', registration, r => service.register(r.params.id, r.body, actor(r), false));
-  route('POST', '/:id/inscricoes/encaixe', 'encaixar_inscricao', object({ municipe_uuid: uuid, respostas: answers, motivo }), r => service.register(r.params.id, r.body, actor(r), true));
-  route('POST', '/:id/inscricoes/excecao', 'cadastrar_inscricao_excecao', object({ municipe_uuid: uuid, respostas: answers, motivo }), r => service.register(r.params.id, r.body, actor(r), false, true));
-  route('POST', '/:id/inscricoes/:inscricaoId/convocar', 'convocar_inscrito', object({ ...allocation, data_inicio: date }), r => service.call(r.params.id, r.params.inscricaoId, r.body, actor(r)));
-  route('POST', '/:id/inscricoes/:inscricaoId/convocar-excecao', 'convocar_inscrito_excecao', object({ ...allocation, data_inicio: date, motivo }), r => service.call(r.params.id, r.params.inscricaoId, r.body, actor(r), true));
-  route('GET', '/:id/participacoes', 'consultar_vinculos', null, r => service.participations(r.params.id, r.query), true);
-  for (const [operation, action, body] of [
-    ['ativar', 'ativar_participacao', object({ data_inicio: date, payment_info: payment })],
-    ['cancelar', 'cancelar_participacao', object({ motivo })], ['concluir', 'cancelar_participacao', object({ motivo })],
-    ['prorrogar', 'prorrogar_vinculo', object({})], ['alocar', 'editar_vinculo', object(allocation)],
-  ] as const) route('POST', '/:id/participacoes/:participacaoId/' + operation, action, body, r => service.transition(r.params.id, r.params.participacaoId, operation, r.body, actor(r)));
-  for (const kind of ['faltas', 'ocorrencias'] as const) {
-    const singular = kind === 'faltas' ? 'falta' : 'ocorrencia';
-    route('GET', '/:id/participacoes/:participacaoId/' + kind, 'consultar_' + kind, null, r => service.records(r.params.id, r.params.participacaoId, kind, r.query), true);
-    const body = kind === 'faltas' ? object({ data_falta: date, observacao: { type: 'string', maxLength: 2000 } }, ['data_falta']) : object({ data_ocorrencia: date, descricao: { type: 'string', minLength: 1, maxLength: 2000 } });
-    route('POST', '/:id/participacoes/:participacaoId/' + kind, 'registrar_' + singular, body, r => service.record(r.params.id, r.params.participacaoId, kind, r.body, actor(r)));
-    route('DELETE', '/:id/participacoes/:participacaoId/' + kind + '/:itemId', 'excluir_' + singular, null, r => service.record(r.params.id, r.params.participacaoId, kind, {}, actor(r), r.params.itemId));
-  }
-  for (const kind of ['espelho-ponto', 'folha-presenca'] as const) {
-    fastify.route<{ Params: { id: string; participacaoId: string }; Querystring: { mes: string } }>({
-      method: "GET", url: '/:id/participacoes/:participacaoId/' + kind,
-      config: { audit: { failureAction: 'EXPORT', module: 'ft-edital', resourceType: 'participacao_pdf', resourceIdParam: 'participacaoId' } },
-      schema: { tags: ['PEAAD - Edital'], security: [{ JWTToken: [] }], params: object({ id: uuid, participacaoId: uuid }),
-        querystring: object({ mes: { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])$' } }),
-        response: { 200: { description: 'PDF da participacao', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } }, ...errorResponseSchema, 409: errorResponseSchema[400] } },
-      preHandler: allow(kind === 'espelho-ponto' ? 'gerar_espelho_ponto' : 'gerar_folha_presenca'),
-      handler: async (r, reply) => {
-        const person = await service.pdfParticipant(r.params.id, r.params.participacaoId, r.query.mes);
-        const factory = kind === 'espelho-ponto' ? (await import('../../../ft-bolsista/factories/makeGerarEspelhoPontoBolsista.js')).makeGerarEspelhoPontoBolsista : (await import('../../../ft-bolsista/factories/makeGerarFolhaPresencaBolsista.js')).makeGerarFolhaPresencaBolsista;
-        const pdf = await factory().execute(person, r.params.id, r.query.mes, r.id);
-        return reply.type(pdf.contentType).header('Content-Disposition', pdf.contentDisposition).send(pdf.file);
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar edital",
+      security: [{ JWTToken: [] }],
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
       },
-    });
-  }
+    },
+    preHandler: allow("consultar_edital"),
+    handler: controller.list,
+  });
+
+  fastify.route<{ Params: {}; Querystring: WorkflowQuery; Body: EditalInput }>({
+    method: "POST",
+    url: "/",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar edital",
+      security: [{ JWTToken: [] }],
+      body: editalBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_edital"),
+    handler: controller.create,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_edital"),
+    handler: controller.detail,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: EditalInput;
+  }>({
+    method: "PUT",
+    url: "/:id",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: editalBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_edital"),
+    handler: controller.update,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: { inscricoes_inicio: string; inscricoes_fim: string; motivo: string };
+  }>({
+    method: "PUT",
+    url: "/:id/janela-inscricoes",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "alterar janela inscricoes",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: windowBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("alterar_janela_inscricoes"),
+    handler: controller.window,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "POST",
+    url: "/:id/abrir",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_edital"),
+    handler: controller.open,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "POST",
+    url: "/:id/encerrar",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "encerrar edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("encerrar_edital"),
+    handler: controller.close,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/pagadores",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar pagador",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_pagador"),
+    handler: controller.list_pagadores,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "POST",
+    url: "/:id/pagadores",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar pagador",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: payerBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_pagador"),
+    handler: controller.create_pagadores,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "PUT",
+    url: "/:id/pagadores/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar pagador",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      body: payerBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_pagador"),
+    handler: controller.update_pagadores,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "DELETE",
+    url: "/:id/pagadores/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "excluir pagador",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("excluir_pagador"),
+    handler: controller.remove_pagadores,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/turnos",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar turno",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_turno"),
+    handler: controller.list_turnos,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "POST",
+    url: "/:id/turnos",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar turno",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: shiftBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_turno"),
+    handler: controller.create_turnos,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "PUT",
+    url: "/:id/turnos/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar turno",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      body: shiftBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_turno"),
+    handler: controller.update_turnos,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "DELETE",
+    url: "/:id/turnos/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "excluir turno",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("excluir_turno"),
+    handler: controller.remove_turnos,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/locais",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_configuracao_edital"),
+    handler: controller.list_locais,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "POST",
+    url: "/:id/locais",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: configBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_configuracao_edital"),
+    handler: controller.create_locais,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "PUT",
+    url: "/:id/locais/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      body: configBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_configuracao_edital"),
+    handler: controller.update_locais,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "DELETE",
+    url: "/:id/locais/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_configuracao_edital"),
+    handler: controller.remove_locais,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/beneficios",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_configuracao_edital"),
+    handler: controller.list_beneficios,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "POST",
+    url: "/:id/beneficios",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: configBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_configuracao_edital"),
+    handler: controller.create_beneficios,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: ConfigInput;
+  }>({
+    method: "PUT",
+    url: "/:id/beneficios/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      body: configBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_configuracao_edital"),
+    handler: controller.update_beneficios,
+  });
+
+  fastify.route<{
+    Params: { id: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "DELETE",
+    url: "/:id/beneficios/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar configuracao edital",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, itemId: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_configuracao_edital"),
+    handler: controller.remove_beneficios,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/inscricoes",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar inscricoes",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_inscricoes"),
+    handler: controller.inscriptions,
+  });
+
+  fastify.route<{
+    Params: { id: string; inscricaoId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/inscricoes/:inscricaoId/historico",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar inscricoes",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, inscricaoId: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_inscricoes"),
+    handler: controller.inscriptionHistory,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/participacoes/:participacaoId/historico",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar vinculos",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_vinculos"),
+    handler: controller.participationHistory,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/inscricao",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar inscricao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_inscricao"),
+    handler: controller.prevalidate_inscricao,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/inscricao-encaixe",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "encaixar inscricao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("encaixar_inscricao"),
+    handler: controller.prevalidate_inscricao_encaixe,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/inscricao-excecao",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar inscricao excecao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_inscricao_excecao"),
+    handler: controller.prevalidate_inscricao_excecao,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/convocacao",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "convocar inscrito",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("convocar_inscrito"),
+    handler: controller.prevalidate_convocacao,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/convocacao-excecao",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "convocar inscrito excecao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("convocar_inscrito_excecao"),
+    handler: controller.prevalidate_convocacao_excecao,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/ativacao",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "ativar participacao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("ativar_participacao"),
+    handler: controller.prevalidate_ativacao,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/prevalidacoes/prorrogacao",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "prorrogar vinculo",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: prevalidationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("prorrogar_vinculo"),
+    handler: controller.prevalidate_prorrogacao,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: RegistrationInput;
+  }>({
+    method: "POST",
+    url: "/:id/inscricoes",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar inscricao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: registrationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_inscricao"),
+    handler: controller.register,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: RegistrationInput;
+  }>({
+    method: "POST",
+    url: "/:id/inscricoes/encaixe",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "encaixar inscricao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: exceptionBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("encaixar_inscricao"),
+    handler: controller.registerEncaixe,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: RegistrationInput;
+  }>({
+    method: "POST",
+    url: "/:id/inscricoes/excecao",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cadastrar inscricao excecao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      body: exceptionBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cadastrar_inscricao_excecao"),
+    handler: controller.registerException,
+  });
+
+  fastify.route<{
+    Params: { id: string; inscricaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/inscricoes/:inscricaoId/convocar",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "convocar inscrito",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, inscricaoId: uuid }),
+      body: callBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("convocar_inscrito"),
+    handler: controller.call,
+  });
+
+  fastify.route<{
+    Params: { id: string; inscricaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/inscricoes/:inscricaoId/convocar-excecao",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "convocar inscrito excecao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, inscricaoId: uuid }),
+      body: callExceptionBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("convocar_inscrito_excecao"),
+    handler: controller.callException,
+  });
+
+  fastify.route<{
+    Params: { id: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/participacoes",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar vinculos",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_vinculos"),
+    handler: controller.participations,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/ativar",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "ativar participacao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: activationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("ativar_participacao"),
+    handler: controller.ativar,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/cancelar",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cancelar participacao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: reasonBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cancelar_participacao"),
+    handler: controller.cancelar,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/concluir",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "cancelar participacao",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: reasonBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("cancelar_participacao"),
+    handler: controller.concluir,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/prorrogar",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "prorrogar vinculo",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: emptyBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("prorrogar_vinculo"),
+    handler: controller.prorrogar,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: WorkflowInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/alocar",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "editar vinculo",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: allocationBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("editar_vinculo"),
+    handler: controller.alocar,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/participacoes/:participacaoId/faltas",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar faltas",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_faltas"),
+    handler: controller.list_faltas,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: DatedInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/faltas",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "registrar falta",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: absenceBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("registrar_falta"),
+    handler: controller.create_faltas,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "DELETE",
+    url: "/:id/participacoes/:participacaoId/faltas/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "excluir falta",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid, itemId: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("excluir_falta"),
+    handler: controller.remove_faltas,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/participacoes/:participacaoId/ocorrencias",
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "consultar ocorrencias",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      querystring: query,
+      response: {
+        200: collection,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("consultar_ocorrencias"),
+    handler: controller.list_ocorrencias,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: WorkflowQuery;
+    Body: DatedInput;
+  }>({
+    method: "POST",
+    url: "/:id/participacoes/:participacaoId/ocorrencias",
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "registrar ocorrencia",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      body: occurrenceBody,
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("registrar_ocorrencia"),
+    handler: controller.create_ocorrencias,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string; itemId: string };
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
+    method: "DELETE",
+    url: "/:id/participacoes/:participacaoId/ocorrencias/:itemId",
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "ft-edital",
+        resourceType: "edital_workflow",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "excluir ocorrencia",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid, itemId: uuid }),
+      response: {
+        200: itemRef,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("excluir_ocorrencia"),
+    handler: controller.remove_ocorrencias,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: { mes: string };
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/participacoes/:participacaoId/espelho-ponto",
+    config: {
+      audit: {
+        failureAction: "EXPORT",
+        module: "ft-edital",
+        resourceType: "participacao_pdf",
+        resourceIdParam: "participacaoId",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "gerar espelho ponto",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      querystring: pdfQuery,
+      response: {
+        200: pdfResponse,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("gerar_espelho_ponto"),
+    handler: controller.timeSheet,
+  });
+
+  fastify.route<{
+    Params: { id: string; participacaoId: string };
+    Querystring: { mes: string };
+    Body: never;
+  }>({
+    method: "GET",
+    url: "/:id/participacoes/:participacaoId/folha-presenca",
+    config: {
+      audit: {
+        failureAction: "EXPORT",
+        module: "ft-edital",
+        resourceType: "participacao_pdf",
+        resourceIdParam: "participacaoId",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: ["PEAAD - Edital"],
+      summary: "gerar folha presenca",
+      security: [{ JWTToken: [] }],
+      params: object({ id: uuid, participacaoId: uuid }),
+      querystring: pdfQuery,
+      response: {
+        200: pdfResponse,
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+        410: errorResponseSchema[400],
+        422: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("gerar_folha_presenca"),
+    handler: controller.attendanceSheet,
+  });
 };

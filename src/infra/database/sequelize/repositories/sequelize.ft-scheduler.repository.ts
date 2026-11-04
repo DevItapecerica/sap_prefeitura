@@ -1,10 +1,14 @@
-import { Op } from "sequelize";
+import { Op, type Model, type Transaction } from "sequelize";
 import db from "../index.js";
-import { FtSchedulerRepository } from "../../../../modules/ft-edital/domain/repositories/ft-scheduler.repository.js";
+import type {
+  FtSchedulerRepository,
+  ExpiredEdital,
+  ExpiredParticipation,
+} from "../../../../modules/ft-edital/domain/repositories/ft-scheduler.repository.js";
 
 export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
-  findExpiredActiveEditais(now: Date) {
-    return db.Edital.findAll({
+  async findExpiredActiveEditais(now: Date) {
+    const rows = await db.Edital.findAll({
       where: {
         data_vencimento: { [Op.lt]: now },
         status: "ativo",
@@ -30,46 +34,107 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
         },
       ],
     });
+    return rows.map((row: Model) => ({
+      id: String(row.get("id")),
+      name: String(row.get("name")),
+    }));
   }
 
-  findExpiredActiveVinculos(now: Date) {
-    return db.BolsistasEdital.findAll({
+  async findExpiredActiveVinculos(now: Date) {
+    const rows = await db.BolsistasEdital.findAll({
       where: {
         expire_at: { [Op.lt]: now },
         status: "ativo",
       },
     });
+    return rows.map((row: Model) => ({
+      id: String(row.get("id")),
+      edital_id: String(row.get("edital_id")),
+    }));
   }
 
-  async concludeExpiredEdital(edital: any) {
-    return db.sequelize.transaction(async (transaction: any) => {
-      const current = await db.Edital.findByPk(edital.get('id'), { transaction, lock: transaction.LOCK.UPDATE });
-      if (!current || current.get('status') !== 'ativo' || new Date(current.get('data_vencimento')) >= new Date()) return { editalId: edital.get('id'), editalName: edital.get('name'), vinculosUpdated: 0, before: {}, after: {}, vinculos: [] };
-      edital = current;
+  async concludeExpiredEdital(candidate: ExpiredEdital) {
+    return db.sequelize.transaction(async (transaction: Transaction) => {
+      const current = await db.Edital.findByPk(candidate.id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (
+        !current ||
+        current.get("status") !== "ativo" ||
+        new Date(current.get("data_vencimento")) >= new Date()
+      )
+        return {
+          editalId: candidate.id,
+          editalName: candidate.name,
+          vinculosUpdated: 0,
+          before: {},
+          after: {},
+          vinculos: [],
+        };
+      const edital = current;
       let vinculosUpdated = 0;
       const now = new Date();
       const before = edital.toJSON();
       const vinculos: Array<{ before: unknown; after: unknown }> = [];
 
       edital.set("status", "inativo");
-      edital.set('fase', 'encerrado');
+      edital.set("fase", "encerrado");
       await edital.save({ transaction });
 
-      const reserved = await db.BolsistasEdital.findAll({ where: { edital_id: edital.get('id'), status: 'convocado' }, transaction, lock: transaction.LOCK.UPDATE });
-      for (const row of reserved) await db.FtWorkflowEvento.create({ edital_id: edital.get('id'), recurso_id: row.get('id'), acao: 'cancelar', ator_id: 'sistema', request_id: 'scheduler-edital-' + edital.get('id'), motivo: 'Vigencia do edital encerrada' }, { transaction });
-      await db.BolsistasEdital.update({ status: 'cancelado', canceled_at: now, observacao: 'Vigencia do edital encerrada' }, { where: { edital_id: edital.get('id'), status: 'convocado' }, transaction });
+      const reserved = await db.BolsistasEdital.findAll({
+        where: { edital_id: edital.get("id"), status: "convocado" },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      for (const row of reserved)
+        await db.FtWorkflowEvento.create(
+          {
+            edital_id: edital.get("id"),
+            recurso_id: row.get("id"),
+            acao: "cancelar",
+            ator_id: "sistema",
+            request_id: "scheduler-edital-" + edital.get("id"),
+            motivo: "Vigencia do edital encerrada",
+          },
+          { transaction },
+        );
+      await db.BolsistasEdital.update(
+        {
+          status: "cancelado",
+          canceled_at: now,
+          observacao: "Vigencia do edital encerrada",
+        },
+        {
+          where: { edital_id: edital.get("id"), status: "convocado" },
+          transaction,
+        },
+      );
 
-      const active = await db.BolsistasEdital.findAll({ where: { edital_id: edital.get('id'), status: 'ativo' }, transaction, lock: transaction.LOCK.UPDATE });
+      const active = await db.BolsistasEdital.findAll({
+        where: { edital_id: edital.get("id"), status: "ativo" },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
       for (const vinculo of active) {
-
         if (vinculo) {
           const vinculoBefore = vinculo.toJSON();
           vinculo.set({
             status: "concluido",
-            concluded_at: edital.get('data_vencimento'),
+            concluded_at: edital.get("data_vencimento"),
           });
           await vinculo.save({ transaction });
-          await db.FtWorkflowEvento.create({ edital_id: edital.get('id'), recurso_id: vinculo.get('id'), acao: 'concluir', ator_id: 'sistema', request_id: 'scheduler-edital-' + edital.get('id'), motivo: 'Vigencia do edital encerrada' }, { transaction });
+          await db.FtWorkflowEvento.create(
+            {
+              edital_id: edital.get("id"),
+              recurso_id: vinculo.get("id"),
+              acao: "concluir",
+              ator_id: "sistema",
+              request_id: "scheduler-edital-" + edital.get("id"),
+              motivo: "Vigencia do edital encerrada",
+            },
+            { transaction },
+          );
           vinculosUpdated += 1;
           vinculos.push({
             before: vinculoBefore,
@@ -89,11 +154,27 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
     });
   }
 
-  async expireVinculo(vinculo: any) {
-    return db.sequelize.transaction(async (transaction: any) => {
-      await db.Edital.findByPk(vinculo.get('edital_id'), { transaction, lock: transaction.LOCK.UPDATE });
-      vinculo = await db.BolsistasEdital.findByPk(vinculo.get('id'), { transaction, lock: transaction.LOCK.UPDATE });
-      if (vinculo.get('status') !== 'ativo' || new Date(vinculo.get('expire_at')) >= new Date()) return { bolsistaId: vinculo.get('bolsista_id'), editalId: vinculo.get('edital_id'), vinculoId: vinculo.get('id'), before: {}, after: {} };
+  async expireVinculo(candidate: ExpiredParticipation) {
+    return db.sequelize.transaction(async (transaction: Transaction) => {
+      await db.Edital.findByPk(candidate.edital_id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      const vinculo = await db.BolsistasEdital.findByPk(candidate.id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (
+        vinculo.get("status") !== "ativo" ||
+        new Date(vinculo.get("expire_at")) >= new Date()
+      )
+        return {
+          bolsistaId: vinculo.get("bolsista_id"),
+          editalId: vinculo.get("edital_id"),
+          vinculoId: vinculo.get("id"),
+          before: {},
+          after: {},
+        };
       const bolsistaId = vinculo.get("bolsista_id");
       const editalId = vinculo.get("edital_id");
       const before = {
@@ -103,10 +184,20 @@ export class SequelizeFtSchedulerRepository implements FtSchedulerRepository {
 
       vinculo.set({
         status: "expirado",
-        expired_at: vinculo.get('expire_at'),
+        expired_at: vinculo.get("expire_at"),
       });
       await vinculo.save({ transaction });
-      await db.FtWorkflowEvento.create({ edital_id: editalId, recurso_id: vinculo.get('id'), acao: 'expirar', ator_id: 'sistema', request_id: 'scheduler-participacao-' + vinculo.get('id'), motivo: 'Termino da participacao' }, { transaction });
+      await db.FtWorkflowEvento.create(
+        {
+          edital_id: editalId,
+          recurso_id: vinculo.get("id"),
+          acao: "expirar",
+          ator_id: "sistema",
+          request_id: "scheduler-participacao-" + vinculo.get("id"),
+          motivo: "Termino da participacao",
+        },
+        { transaction },
+      );
 
       return {
         bolsistaId,

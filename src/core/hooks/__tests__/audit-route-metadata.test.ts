@@ -11,8 +11,7 @@ test("todas as rotas de negócio declaram metadata de falha de auditoria", () =>
     withFileTypes: true,
   }).filter(
     (entry) =>
-      entry.isFile() &&
-      /\.(route|routes|router)\.ts$/.test(entry.name),
+      entry.isFile() && /\.(route|routes|router)\.ts$/.test(entry.name),
   );
 
   const uncovered: string[] = [];
@@ -20,7 +19,7 @@ test("todas as rotas de negócio declaram metadata de falha de auditoria", () =>
     const file = join(entry.parentPath, entry.name);
     const source = readFileSync(file, "utf8");
     const routeDeclarations =
-      (source.match(/method:\s*"(?:GET|POST|PUT|PATCH|DELETE)"/g) ?? [])
+      (source.match(/method:\s*['"](?:GET|POST|PUT|PATCH|DELETE)['"]/g) ?? [])
         .length +
       (source.match(/fastify\.route\(\{ method, url,/g) ?? []).length +
       (source.match(/fastify\.(?:get|post|put|patch|delete)(?:<|\()/g) ?? [])

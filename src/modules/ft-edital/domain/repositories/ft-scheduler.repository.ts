@@ -1,7 +1,17 @@
+export interface ExpiredEdital {
+  id: string;
+  name: string;
+}
+
+export interface ExpiredParticipation {
+  id: string;
+  edital_id: string;
+}
+
 export interface FtSchedulerRepository {
-  findExpiredActiveEditais(now: Date): Promise<any[]>;
-  findExpiredActiveVinculos(now: Date): Promise<any[]>;
-  concludeExpiredEdital(edital: any): Promise<{
+  findExpiredActiveEditais(now: Date): Promise<ExpiredEdital[]>;
+  findExpiredActiveVinculos(now: Date): Promise<ExpiredParticipation[]>;
+  concludeExpiredEdital(edital: ExpiredEdital): Promise<{
     editalId: string;
     editalName: string;
     vinculosUpdated: number;
@@ -9,7 +19,7 @@ export interface FtSchedulerRepository {
     after: unknown;
     vinculos: unknown[];
   }>;
-  expireVinculo(vinculo: any): Promise<{
+  expireVinculo(vinculo: ExpiredParticipation): Promise<{
     bolsistaId: string;
     vinculoId: string;
     editalId: string;

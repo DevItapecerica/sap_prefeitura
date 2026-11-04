@@ -1,28 +1,30 @@
-import AppError from "../../../../core/appError.js";
+import { PeaadRuleError } from "../../../ft-bolsista/domain/errors/peaad-rule.error.js";
 import {
-  FtRelatorioFaltasQueryDto,
+  FtRelatorioFaltasQuery,
   FtRelatorioPeriodo,
-  FtRelatorioQueryDto,
-} from "../../application/dto/ft-relatorio.dto.js";
-
-const ftError = (statusCode: number, message: string) =>
-  new AppError(message, statusCode, "FT_MS");
+  FtRelatorioQuery,
+} from "../contracts/ft-relatorio.js";
 
 export class FtRelatorioPeriodoService {
   constructor(private readonly nowProvider = () => new Date()) {}
 
-  resolve(query: FtRelatorioQueryDto = {}): FtRelatorioPeriodo {
+  resolve(query: FtRelatorioQuery = {}): FtRelatorioPeriodo {
     const hasInicio = Boolean(String(query.data_inicio || "").trim());
     const hasFim = Boolean(String(query.data_fim || "").trim());
 
     if (hasInicio !== hasFim) {
-      throw ftError(400, "data_inicio e data_fim devem ser informadas juntas");
+      throw new PeaadRuleError(
+        "REPORT_BOTH_DATES_REQUIRED",
+        "data_inicio e data_fim devem ser informadas juntas",
+      );
     }
 
     if (!hasInicio && !hasFim) {
       const now = this.nowProvider();
       const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-      const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
+      const lastDay = new Date(
+        Date.UTC(now.getFullYear(), now.getMonth() + 1, 0),
+      );
 
       return {
         data_inicio: this.toDateOnly(firstDay),
@@ -34,20 +36,26 @@ export class FtRelatorioPeriodoService {
       Number.isNaN(Date.parse(String(query.data_inicio))) ||
       Number.isNaN(Date.parse(String(query.data_fim)))
     ) {
-      throw ftError(400, "Periodo do relatorio invalido");
+      throw new PeaadRuleError(
+        "REPORT_PERIOD_INVALID",
+        "Periodo do relatorio invalido",
+      );
     }
 
     const dataInicio = this.toDateOnly(query.data_inicio);
     const dataFim = this.toDateOnly(query.data_fim);
 
     if (dataInicio > dataFim) {
-      throw ftError(400, "data_inicio deve ser menor ou igual a data_fim");
+      throw new PeaadRuleError(
+        "REPORT_PERIOD_REVERSED",
+        "data_inicio deve ser menor ou igual a data_fim",
+      );
     }
 
     return { data_inicio: dataInicio, data_fim: dataFim };
   }
 
-  resolveMonth(query: FtRelatorioFaltasQueryDto = {}): FtRelatorioPeriodo {
+  resolveMonth(query: FtRelatorioFaltasQuery = {}): FtRelatorioPeriodo {
     const month = String(query.mes || "").trim();
 
     if (!month) {
@@ -56,13 +64,19 @@ export class FtRelatorioPeriodoService {
     }
 
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-      throw ftError(400, "mes deve estar no formato YYYY-MM");
+      throw new PeaadRuleError(
+        "REPORT_MONTH_INVALID",
+        "mes deve estar no formato YYYY-MM",
+      );
     }
 
     const [year, monthNumber] = month.split("-").map(Number);
 
     if (this.isFutureMonth(year, monthNumber)) {
-      throw ftError(400, "Nao e permitido gerar relatorio para mes futuro");
+      throw new PeaadRuleError(
+        "REPORT_MONTH_FUTURE",
+        "Nao e permitido gerar relatorio para mes futuro",
+      );
     }
 
     return this.monthToPeriod(year, monthNumber);

@@ -1,13 +1,10 @@
-import axios, { AxiosInstance } from "axios";
+import type { CarterinhaPdfGateway } from "../ports/carterinha-pdf.gateway.js";
 import AppError from "../../../../core/appError.js";
 import { IAesCrypt } from "../../../../core/security/aes/AesCrypt.interface.js";
 import { ISha256Crypt } from "../../../../core/security/sha256/sha256.interface.js";
 import MunicipeRepository from "../../../municipe/domain/repositories/Municipe.repository.js";
 import { MunicipeMapper } from "../../../municipe/application/mapper/municipe.mapper.js";
 import CarterinhaEsporteRepository from "../../domain/repositories/carterinha-esporte.repository.js";
-import { recordDependency } from "../../../../core/observability/metrics.js";
-
-type HttpClient = Pick<AxiosInstance, "post">;
 
 type PdfGatewayResponse = {
   file: Buffer;
@@ -20,10 +17,9 @@ export default class RenderCarterinhaEsportePdfUseCase {
   constructor(
     private carterinhaRepository: CarterinhaEsporteRepository,
     private municipeRepository: MunicipeRepository,
-    private pdfApiUrl: string,
+    private gateway: CarterinhaPdfGateway,
     private aesCrypt?: IAesCrypt,
     private sha256Crypt?: ISha256Crypt,
-    private httpClient: HttpClient = axios,
   ) {}
 
   async execute(uuid: string, requestId?: string): Promise<PdfGatewayResponse> {
@@ -62,61 +58,28 @@ export default class RenderCarterinhaEsportePdfUseCase {
 
     const fileName = `carteirinha-esporte-${this.slugify(municipe.nome)}.pdf`;
 
-    const startedAt = performance.now();
-    try {
-      const response = await this.httpClient.post(
-        `${this.pdfApiUrl.replace(/\/$/, "")}/carterinhas/esporte/render`,
-        {
-          name: fileName.replace(/\.pdf$/, ""),
-          entityData: {
-            name: municipe.nome,
-            identidade: municipe.cpf,
-            modalidade: carterinha.modalidade,
-            cadastro: this.formatDate(carterinha.emissao),
-            nascimento: municipe.nascimento,
-            endereco: municipe.rua,
-            numero: municipe.numero,
-            bairro: municipe.bairro,
-            cep: municipe.cep,
-            obs: carterinha.observacao || "sem observacoes",
-            exame: carterinha.validade_exame
-              ? this.formatDate(carterinha.validade_exame)
-              : "",
-            foto: carterinha.foto || null,
-          },
+    return this.gateway.execute(
+      {
+        name: fileName.replace(/\.pdf$/, ""),
+        entityData: {
+          name: municipe.nome,
+          identidade: municipe.cpf,
+          modalidade: carterinha.modalidade,
+          cadastro: this.formatDate(carterinha.emissao),
+          nascimento: municipe.nascimento,
+          endereco: municipe.rua,
+          numero: municipe.numero,
+          bairro: municipe.bairro,
+          cep: municipe.cep,
+          obs: carterinha.observacao || "sem observacoes",
+          exame: carterinha.validade_exame
+            ? this.formatDate(carterinha.validade_exame)
+            : "",
+          foto: carterinha.foto || null,
         },
-        {
-          responseType: "arraybuffer",
-          headers: requestId ? { "X-Request-Id": requestId } : undefined,
-        },
-      );
-
-      const contentType = this.getHeaderString(
-        response.headers["content-type"],
-      );
-      const contentDisposition = this.getHeaderString(
-        response.headers["content-disposition"],
-      );
-      const contentLength = this.getHeaderString(
-        response.headers["content-length"],
-      );
-
-      recordDependency("pdf", "success", (performance.now() - startedAt) / 1_000);
-      return {
-        file: Buffer.from(response.data),
-        contentType: contentType || "application/pdf",
-        contentDisposition:
-          contentDisposition || `inline; filename="${fileName}"`,
-        contentLength,
-      };
-    } catch {
-      recordDependency("pdf", "error", (performance.now() - startedAt) / 1_000);
-      throw new AppError(
-        "PDF service unavailable",
-        502,
-        "PDF_SERVICE_UNAVAILABLE",
-      );
-    }
+      },
+      requestId,
+    );
   }
 
   private formatDate(value: Date): string {
@@ -130,11 +93,5 @@ export default class RenderCarterinhaEsportePdfUseCase {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
-  }
-
-  private getHeaderString(value: unknown): string | undefined {
-    if (value === undefined || value === null) return undefined;
-    if (Array.isArray(value)) return value.join(", ");
-    return String(value);
   }
 }

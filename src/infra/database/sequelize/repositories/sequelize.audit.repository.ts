@@ -8,10 +8,11 @@ import AuditRepository from "../../../../modules/audit/domain/repository/audit.r
 import db from "../index.js";
 
 export class SequelizeAuditRepository implements AuditRepository {
+  constructor(private transaction?: Transaction) {}
   private outbox = db.AuditOutboxModel;
   private logs = db.AuditLogModel;
 
-  async enqueue(event: StoredAuditEvent, transaction?: unknown): Promise<void> {
+  async enqueue(event: StoredAuditEvent): Promise<void> {
     await this.outbox.findOrCreate({
       where: { eventId: event.eventId },
       defaults: {
@@ -21,7 +22,7 @@ export class SequelizeAuditRepository implements AuditRepository {
         attempts: 0,
         nextAttemptAt: new Date(),
       },
-      transaction: transaction as Transaction | undefined,
+      transaction: this.transaction,
     });
   }
 

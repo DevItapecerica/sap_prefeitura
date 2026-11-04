@@ -1,6 +1,5 @@
+import { makeFtSchedulerService } from "../factories/makeFtSchedulerService.js";
 import { FastifyBaseLogger } from "fastify";
-import { SequelizeFtSchedulerRepository } from "../../../infra/database/sequelize/repositories/sequelize.ft-scheduler.repository.js";
-import { FtSchedulerService } from "../application/use-case/ft-scheduler.service.js";
 
 let running = false;
 let daysWithoutError = 0;
@@ -27,9 +26,7 @@ export const runFtSchedulerTask = async (logger: FastifyBaseLogger) => {
   try {
     logger.info(`FT scheduler iniciado. Dias sem erros: ${daysWithoutError++}`);
 
-    const service = new FtSchedulerService(
-      new SequelizeFtSchedulerRepository(),
-    );
+    const service = makeFtSchedulerService();
     const result = await service.run();
 
     logger.info({ result }, "FT scheduler finalizado com sucesso.");

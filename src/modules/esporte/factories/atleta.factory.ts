@@ -1,3 +1,4 @@
+import AxiosCarterinhaEsporteGateway from "../../../infra/pdf/axios-carterinha-esporte.gateway.js";
 import { FastifyBaseLogger } from "fastify";
 import { SequelizeCarterinhaEsporteRepository } from "../../../infra/database/sequelize/repositories/sequelize.carterinha-esporte.repository.js";
 import { SequelizeMunicipeRepository } from "../../../infra/database/sequelize/repositories/sequelize.municipe.repository.js";
@@ -12,9 +13,12 @@ import ListCarterinhasEsporteUseCase from "../../carterinha-esporte/application/
 import ListCarterinhasEsporteByAtletaUseCase from "../../carterinha-esporte/application/use-case/list-carterinhas-esporte-by-atleta.use-case.js";
 import RenderCarterinhaEsportePdfUseCase from "../../carterinha-esporte/application/use-case/render-carterinha-esporte-pdf.use-case.js";
 
-export default function atletaFactory(_logger: FastifyBaseLogger): AtletaService {
+export default function atletaFactory(
+  _logger: FastifyBaseLogger,
+): AtletaService {
   const municipeRepository = new SequelizeMunicipeRepository();
-  const carterinhaEsporteRepository = new SequelizeCarterinhaEsporteRepository();
+  const carterinhaEsporteRepository =
+    new SequelizeCarterinhaEsporteRepository();
   const aesCrypt = new AesCryptService();
   const sha256Crypt = new Sha256CryptService();
   const createCarterinhaEsporteUseCase = new CreateCarterinhaEsporteUseCase(
@@ -29,7 +33,7 @@ export default function atletaFactory(_logger: FastifyBaseLogger): AtletaService
     new RenderCarterinhaEsportePdfUseCase(
       carterinhaEsporteRepository,
       municipeRepository,
-      PDF_API_URL,
+      new AxiosCarterinhaEsporteGateway(PDF_API_URL),
       aesCrypt,
       sha256Crypt,
     );

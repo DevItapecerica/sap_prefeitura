@@ -1,12 +1,12 @@
-import AppError from "../../../../core/appError.js";
-
-const ftError = (statusCode: number, message: string) =>
-  new AppError(message, statusCode, "FT_MS");
+import { PeaadRuleError } from "../errors/peaad-rule.error.js";
 
 export class FtBolsistaPolicyService {
   validateBolsistaPayload(data: any) {
     if (!data) {
-      throw ftError(400, "Bolsista e obrigatorio");
+      throw new PeaadRuleError(
+        "PARTICIPANT_REQUIRED",
+        "Bolsista e obrigatorio",
+      );
     }
 
     const requiredFields = [["municipe_uuid", "Municipe"]];
@@ -16,8 +16,8 @@ export class FtBolsistaPolicyService {
       .map(([, label]) => label);
 
     if (missingFields.length > 0) {
-      throw ftError(
-        400,
+      throw new PeaadRuleError(
+        "PARTICIPANT_DATA_INCOMPLETE",
         `Dados do bolsista incompletos: ${missingFields.join(", ")}`,
       );
     }
@@ -25,7 +25,10 @@ export class FtBolsistaPolicyService {
 
   validatePaymentInfo(paymentInfo: any) {
     if (!paymentInfo) {
-      throw ftError(400, "Dados bancarios sao obrigatorios");
+      throw new PeaadRuleError(
+        "BANK_DATA_REQUIRED",
+        "Dados bancarios sao obrigatorios",
+      );
     }
 
     const requiredFields = [
@@ -41,8 +44,8 @@ export class FtBolsistaPolicyService {
       .map(([, label]) => label);
 
     if (missingFields.length > 0) {
-      throw ftError(
-        400,
+      throw new PeaadRuleError(
+        "BANK_DATA_INCOMPLETE",
         `Dados bancarios incompletos: ${missingFields.join(", ")}`,
       );
     }
@@ -50,11 +53,14 @@ export class FtBolsistaPolicyService {
 
   ensureCanCreateFalta(edital: any, vinculo: any) {
     if (edital.get("status") !== "ativo") {
-      throw ftError(400, "Edital inativo");
+      throw new PeaadRuleError("PROGRAM_INACTIVE", "Edital inativo");
     }
 
     if (vinculo.get("status") !== "ativo") {
-      throw ftError(400, "Bolsista inativo neste edital");
+      throw new PeaadRuleError(
+        "PARTICIPATION_INACTIVE",
+        "Bolsista inativo neste edital",
+      );
     }
   }
 }

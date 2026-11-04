@@ -1,15 +1,15 @@
 import {
-  QueryCarterinhaEsporteByMunicipeDto,
-  QueryCarterinhaEsporteDto,
-} from "../../application/dto/queryCarterinhaEsporte.dto.js";
+  QueryCarterinhaEsporteByMunicipe,
+  QueryCarterinhaEsporte,
+} from "../contracts/queryCarterinhaEsporte.js";
 import CarterinhaEsporte from "../entity/CarterinhaEsporte.js";
 
 export default interface CarterinhaEsporteRepository {
   list: (
-    query: QueryCarterinhaEsporteDto,
+    query: QueryCarterinhaEsporte,
   ) => Promise<{ carterinhas: CarterinhaEsporte[]; count: number }>;
   listByMunicipe: (
-    query: QueryCarterinhaEsporteByMunicipeDto,
+    query: QueryCarterinhaEsporteByMunicipe,
   ) => Promise<{ carterinhas: CarterinhaEsporte[]; count: number }>;
   create: (carterinha: CarterinhaEsporte) => Promise<CarterinhaEsporte>;
   findById: (id: string) => Promise<CarterinhaEsporte | null>;

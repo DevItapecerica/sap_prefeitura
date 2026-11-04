@@ -1,11 +1,5 @@
-export type QueryCarterinhaEsporteDto = {
-  limit?: number;
-  page?: number;
-  order?: string;
-  modalidade?: string;
-};
-
-export type QueryCarterinhaEsporteByMunicipeDto =
-  QueryCarterinhaEsporteDto & {
-    municipe_uuid: string;
-  };
+// HTTP/application aliases of the domain's plain data contracts.
+export type {
+  QueryCarterinhaEsporte as QueryCarterinhaEsporteDto,
+  QueryCarterinhaEsporteByMunicipe as QueryCarterinhaEsporteByMunicipeDto,
+} from "../../domain/contracts/queryCarterinhaEsporte.js";

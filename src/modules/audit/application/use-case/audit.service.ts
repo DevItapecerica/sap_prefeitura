@@ -1,36 +1,63 @@
 import { randomUUID } from "crypto";
 import AppError from "../../../../core/appError.js";
-import { eventBus } from "../../../../core/event/index.js";
+import type { EventPublisher } from "../../../../core/event/event-contracts.js";
 import AuditRepository from "../../domain/repository/audit.repository.js";
 import { AuditQueryDto, RecordAuditDto } from "../dto/audit.dto.js";
 import { AuditMapper } from "../mapper/audit.mapper.js";
 import { recordDependency } from "../../../../core/observability/metrics.js";
 
 export class AuditService {
-  constructor(private repository: AuditRepository, private mapper: AuditMapper) {}
+  constructor(
+    private repository: AuditRepository,
+    private mapper: AuditMapper,
+    private events: EventPublisher<{
+      AUDIT_OUTBOX_AVAILABLE: { eventId: string };
+    }>,
+  ) {}
 
-  async record(input: RecordAuditDto, transaction?: unknown): Promise<string> {
+  async record(input: RecordAuditDto): Promise<string> {
     const startedAt = performance.now();
     const eventId = input.eventId ?? randomUUID();
     try {
-      const event = await this.mapper.toPersistence({ ...input, eventId, occurredAt: input.occurredAt ?? new Date().toISOString() });
-      await this.repository.enqueue(event, transaction);
-      await eventBus.emit("AUDIT_OUTBOX_AVAILABLE", { eventId });
-      recordDependency("audit", "success", (performance.now() - startedAt) / 1_000);
+      const event = await this.mapper.toPersistence({
+        ...input,
+        eventId,
+        occurredAt: input.occurredAt ?? new Date().toISOString(),
+      });
+      await this.repository.enqueue(event);
+      await this.events.publish("AUDIT_OUTBOX_AVAILABLE", { eventId });
+      recordDependency(
+        "audit",
+        "success",
+        (performance.now() - startedAt) / 1_000,
+      );
       return eventId;
     } catch (error) {
-      recordDependency("audit", "error", (performance.now() - startedAt) / 1_000);
+      recordDependency(
+        "audit",
+        "error",
+        (performance.now() - startedAt) / 1_000,
+      );
       throw error;
     }
   }
 
-  list(query: AuditQueryDto) { return this.repository.list(query); }
+  list(query: AuditQueryDto) {
+    return this.repository.list(query);
+  }
 
   async detail(id: string) {
     const row = await this.repository.detail(id);
-    if (!row) throw new AppError("Evento de auditoria nao encontrado", 404, "AUDIT_NOT_FOUND");
+    if (!row)
+      throw new AppError(
+        "Evento de auditoria nao encontrado",
+        404,
+        "AUDIT_NOT_FOUND",
+      );
     return this.mapper.toDetail(row);
   }
 
-  export(query: AuditQueryDto) { return this.repository.export(query); }
+  export(query: AuditQueryDto) {
+    return this.repository.export(query);
+  }
 }

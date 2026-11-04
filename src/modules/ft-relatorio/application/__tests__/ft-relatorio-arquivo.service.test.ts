@@ -12,20 +12,22 @@ const makeService = (hasEdital = true) => {
     },
     async list(page: number, limit: number) {
       return {
-        rows: [{
-          id: "arquivo-1",
-          nome_arquivo: "folhas.zip",
-          tipo: "folhas_presenca",
-          status: "concluido",
-          edital_id: "edital-1",
-          mes: "2026-09",
-          solicitado_por: 12,
-          caminho_arquivo: "nao-expor.zip",
-          total_bolsistas: 1,
-          total_gerados: 1,
-          total_falhas: 0,
-          tentativas: 0,
-        }],
+        rows: [
+          {
+            id: "arquivo-1",
+            nome_arquivo: "folhas.zip",
+            tipo: "folhas_presenca",
+            status: "concluido",
+            edital_id: "edital-1",
+            mes: "2026-09",
+            solicitado_por: 12,
+            caminho_arquivo: "nao-expor.zip",
+            total_bolsistas: 1,
+            total_gerados: 1,
+            total_falhas: 0,
+            tentativas: 0,
+          },
+        ],
         count: page + limit,
       };
     },
@@ -35,19 +37,44 @@ const makeService = (hasEdital = true) => {
       return hasEdital ? { id: "edital-1", name: "Edital São José" } : null;
     },
   };
-  const period = new FtRelatorioPeriodoService(() => new Date("2026-10-15T12:00:00.000Z"));
+  const period = new FtRelatorioPeriodoService(
+    () => new Date("2026-10-15T12:00:00.000Z"),
+  );
   return {
-    service: new FtRelatorioArquivoService(files as any, reports as any, period),
+    service: new FtRelatorioArquivoService(
+      files as any,
+      reports as any,
+      {
+        open: async () => {
+          throw new Error("unused");
+        },
+        create: async () => {
+          throw new Error("unused");
+        },
+        remove: async () => {},
+        purgeTemporary: async () => {},
+      },
+      { publish: async () => {} },
+      period,
+    ),
     created: () => created,
   };
 };
 
 test("solicita lote de folhas de presenca com tipo e nome especificos", async () => {
   const fixture = makeService();
-  const result = await fixture.service.request("edital-1", "2026-09", 12, "folhas_presenca");
+  const result = await fixture.service.request(
+    "edital-1",
+    "2026-09",
+    12,
+    "folhas_presenca",
+  );
 
   assert.equal(result.tipo, "folhas_presenca");
-  assert.equal(result.nome_arquivo, "folhas-presenca-Edital-Sao-Jose-2026-09.zip");
+  assert.equal(
+    result.nome_arquivo,
+    "folhas-presenca-Edital-Sao-Jose-2026-09.zip",
+  );
   assert.equal(fixture.created().tipo, "folhas_presenca");
   assert.equal(fixture.created().solicitado_por, 12);
 });
@@ -62,11 +89,23 @@ test("mantem espelhos de ponto como tipo padrao", async () => {
 
 test("rejeita mes futuro e edital inexistente", async () => {
   await assert.rejects(
-    () => makeService().service.request("edital-1", "2026-11", 12, "folhas_presenca"),
+    () =>
+      makeService().service.request(
+        "edital-1",
+        "2026-11",
+        12,
+        "folhas_presenca",
+      ),
     /mes futuro/,
   );
   await assert.rejects(
-    () => makeService(false).service.request("edital-1", "2026-09", 12, "folhas_presenca"),
+    () =>
+      makeService(false).service.request(
+        "edital-1",
+        "2026-09",
+        12,
+        "folhas_presenca",
+      ),
     /Edital not found/,
   );
 });

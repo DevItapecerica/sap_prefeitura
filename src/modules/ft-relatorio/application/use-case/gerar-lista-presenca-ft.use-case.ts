@@ -1,3 +1,4 @@
+import { mapPeaadRuleError } from "../../../ft-bolsista/application/utils/map-peaad-rule-error.js";
 import { FtRelatorioFaltasQueryDto } from "../dto/ft-relatorio.dto.js";
 import { FtListaPresencaCsvFormatter } from "../formatter/ft-lista-presenca-csv.formatter.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
@@ -19,14 +20,18 @@ export class GerarListaPresencaFtUseCase {
   }
 
   async execute(id: string, query: FtRelatorioFaltasQueryDto = {}) {
-    const relatorio = await this.mensalHelper.execute(id, query);
-    const csv = this.csvFormatter.format(relatorio);
+    try {
+      const relatorio = await this.mensalHelper.execute(id, query);
+      const csv = this.csvFormatter.format(relatorio);
 
-    return {
-      fileName: `lista-presenca-${relatorio.mes}.csv`,
-      csv,
-      type: "text/csv; charset=utf-8",
-      returnedCount: relatorio.bolsistas.length,
-    };
+      return await {
+        fileName: `lista-presenca-${relatorio.mes}.csv`,
+        csv,
+        type: "text/csv; charset=utf-8",
+        returnedCount: relatorio.bolsistas.length,
+      };
+    } catch (error) {
+      throw mapPeaadRuleError(error);
+    }
   }
 }

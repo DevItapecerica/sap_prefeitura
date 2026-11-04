@@ -1,16 +1,6 @@
-export interface FtRelatorioQueryDto {
-  versao?: string;
-  page?: number;
-  limit?: number;
-  data_inicio?: string;
-  data_fim?: string;
-}
-
-export interface FtRelatorioFaltasQueryDto {
-  mes?: string;
-}
-
-export interface FtRelatorioPeriodo {
-  data_inicio: string;
-  data_fim: string;
-}
+// HTTP/application aliases of the domain's plain data contracts.
+export type {
+  FtRelatorioQuery as FtRelatorioQueryDto,
+  FtRelatorioFaltasQuery as FtRelatorioFaltasQueryDto,
+  FtRelatorioPeriodo,
+} from "../../domain/contracts/ft-relatorio.js";
