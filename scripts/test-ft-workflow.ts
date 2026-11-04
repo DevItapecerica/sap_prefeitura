@@ -10,7 +10,7 @@ const target = process.env.FT_WORKFLOW_TEST_URL;
 if (!target || process.env.FT_WORKFLOW_TEST_ALLOW_CREATE !== 'YES') throw new Error('Set FT_WORKFLOW_TEST_URL and FT_WORKFLOW_TEST_ALLOW_CREATE=YES for an EMPTY disposable schema.');
 const url = new URL(target);
 if (url.protocol !== 'mariadb:' || !['localhost', '127.0.0.1'].includes(url.hostname) || !/^\/[a-z0-9_]+_ft_test$/.test(url.pathname) || decodeURIComponent(url.username).toLowerCase() === 'root' || url.search || url.hash) throw new Error('Refusing unsafe FT test target');
-Object.assign(process.env, { DATABASE_URL: target, NODE_ENV: 'test', SECRET_KEY: 'ft-workflow-synthetic-key-for-tests-only', APPLICATION_PORT: '3117', MAIL_ADRESS: 'test@example.invalid', MAIL_PASSWORD: 'synthetic', MAIL_HOST: '127.0.0.1', PDF_API_URL: 'http://127.0.0.1:39999/api/v1', CORS_ORIGINS: 'http://127.0.0.1:4173', BOOTSTRAP_ADMIN_EMAIL: 'ft-e2e@example.invalid', BOOTSTRAP_ADMIN_PASSWORD: 'FtSynthetic123!' });
+Object.assign(process.env, { DATABASE_URL: target, NODE_ENV: 'test', JWT_KEY: 'synthetic-workflow-jwt-key-only', SECRET_KEY: 'ft-workflow-synthetic-key-for-tests-only', APPLICATION_PORT: '3117', MAIL_ADRESS: 'test@example.invalid', MAIL_PASSWORD: 'synthetic', MAIL_HOST: '127.0.0.1', PDF_API_URL: 'http://127.0.0.1:39999/api/v1', CORS_ORIGINS: 'http://127.0.0.1:4173', BOOTSTRAP_ADMIN_EMAIL: 'ft-e2e@example.invalid', BOOTSTRAP_ADMIN_PASSWORD: 'FtSynthetic123!' });
 const sql = new Sequelize(target, { dialect: 'mariadb', logging: false });
 try {
   const qi = sql.getQueryInterface();
@@ -22,6 +22,7 @@ try {
       const existingId = '8f214433-9407-479c-ad20-9fe6e40fd4f6';
       if (file === '20261022130000-ft-idade-excecoes.ts') await qi.bulkInsert('edital', [{ id: existingId, name: 'Existing synthetic edital', data_publicacao: new Date(), data_vencimento: new Date('2028-12-31'), dia_pagamento: 5, valor_bolsa: 900, status: 'ativo', createdAt: new Date(), updatedAt: new Date() }]);
       await migration.up(qi);
+      if (file === '20261103120000-ft-estoque-epi.ts') { await migration.down(qi); await migration.up(qi); }
       if (file === '20261028140000-ft-fechamento-mensal.ts') { await migration.down(qi); await migration.up(qi); }
       if (file === '20261028120000-ft-workflow-timeline-index.ts') { await migration.up(qi); await migration.down(qi); await migration.up(qi); }
       if (file === '20261022120000-ft-edital-workflow.ts') { await migration.down(qi); await migration.up(qi); }
@@ -31,7 +32,7 @@ try {
         await migration.down(qi); await migration.up(qi);
         await qi.bulkDelete('edital', { id: existingId });
       }
-      if (['20261022131000-ft-exception-permissions.ts', '20261028141000-ft-fechamento-permission.ts'].includes(file)) {
+      if (['20261022131000-ft-exception-permissions.ts', '20261028141000-ft-fechamento-permission.ts', '20261103121000-ft-estoque-permissions.ts'].includes(file)) {
         const [before] = await sql.query('SELECT * FROM role_permissions ORDER BY role_id,permission_action_id');
         await migration.up(qi);
         const [after] = await sql.query('SELECT * FROM role_permissions ORDER BY role_id,permission_action_id');
@@ -47,6 +48,7 @@ try {
   const { authorizationFactory } = await import('../src/modules/acess-controll/factories/makeAuthorization.js');
   await assert.rejects(authorizationFactory().authorize(1, 'ft', 'encaixar_inscricao'), 'new permissions must not inherit legacy admin grants');
   for (const action of ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao', 'fechar_folha_pagamento']) await assert.rejects(authorizationFactory().authorize(1, 'ft', action), 'exception grants must be denied by default');
+  for (const action of (await import('../src/modules/acess-controll/domain/permission-catalog.js')).FT_ESTOQUE_ACTIONS) await assert.rejects(authorizationFactory().authorize(1, 'ft', action), 'stock grants must be denied by default');
   const crypto = new Aes();
   const fixedNow = new Date('2026-10-22T12:00:00-03:00');
   const service = new EditalWorkflowService(db, crypto, () => fixedNow);
@@ -203,6 +205,8 @@ try {
     console.log('PASS reservation concurrency, activation rollback, payment, records, reports, single extension, isolation, history, cancellation and closure');
 
     await (await import('./test-ft-payroll.js')).testPayroll({ db, crypto, service, actor, base, answers, makeEdital });
+
+    await (await import('./test-ft-estoque.js')).testEstoque({ db, crypto, service, actor, answers, makeEdital });
 
     if (process.env.FT_WORKFLOW_TEST_SERVE === '1') {
       // Explicit grants for this disposable fixture only; production grants remain denied.

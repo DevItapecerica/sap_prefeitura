@@ -23,6 +23,7 @@ test('every actual business router declares a known explicit guard, JWT runs fir
   ['../../esporte/interface/router/atleta.router.js','AtletaRouter'],
   ['../../esporte/interface/router/modalidade.router.js','ModalidadeRouter'],
   ['../../audit/interface/audit.routes.js','AuditRoutes'],
+  ['../../ft-estoque/estoque.router.js','EstoqueRouter'],
  ];
  const saved = AuthMiddleware.verifyJWT;
  let authenticated = false;

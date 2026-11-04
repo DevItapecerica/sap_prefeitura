@@ -1,3 +1,4 @@
+import EstoqueModule from './modules/ft-estoque/index.js';
 import { FastifyPluginAsync } from "fastify";
 
 import userModule from "./modules/user/index.js";
@@ -43,6 +44,7 @@ const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   await fastify.register(FtEditalModule, { runtimeWorkers });
   fastify.log.info("FTEdital Module Registrado");
 
+  await fastify.register(EstoqueModule);
   await fastify.register(FtBolsistaModule);
   fastify.log.info("FTBolsista Module Registrado");
 
