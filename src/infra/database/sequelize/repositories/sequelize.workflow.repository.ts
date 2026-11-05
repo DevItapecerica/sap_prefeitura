@@ -382,25 +382,48 @@ export class SequelizeWorkflowRepository implements WorkflowTransaction {
     ].findByPk(id, this.scope());
     await row.destroy(this.scope());
   }
+  private searchFilter(search: string) {
+    const digits = search.replace(/\D/g, "");
+    if (digits.length === 11 && /^[\d.\s-]+$/.test(search)) {
+      return {
+        "$bolsista.municipe.cpfHash$": createHash("sha256")
+          .update(digits)
+          .digest("hex"),
+      };
+    }
+    return {
+      "$bolsista.municipe.nome$": {
+        [Op.like]: "%" + search.replace(/[\\%_]/g, "\\$&") + "%",
+      },
+    };
+  }
+  private exceptionFilter(mode: string | undefined, inscriptions: boolean) {
+    const registration = inscriptions ? "excecao_em" : "$inscricao.excecao_em$";
+    const convocation = inscriptions
+      ? "$participacoes.excecao_em$"
+      : "excecao_em";
+    switch (mode) {
+      case "inscricao":
+        return { [registration]: { [Op.ne]: null } };
+      case "convocacao":
+        return { [convocation]: { [Op.ne]: null } };
+      case "qualquer":
+        return {
+          [Op.or]: [
+            { [registration]: { [Op.ne]: null } },
+            { [convocation]: { [Op.ne]: null } },
+          ],
+        };
+      case "nenhuma":
+        return { [registration]: null, [convocation]: null };
+      default:
+        return undefined;
+    }
+  }
   private filters(query: WorkflowQuery, inscriptions: boolean) {
     const conditions: any[] = [];
     const search = String(query.search || "").trim();
-    if (search) {
-      const digits = search.replace(/\D/g, "");
-      conditions.push(
-        digits.length === 11 && /^[\d.\s-]+$/.test(search)
-          ? {
-              "$bolsista.municipe.cpfHash$": createHash("sha256")
-                .update(digits)
-                .digest("hex"),
-            }
-          : {
-              "$bolsista.municipe.nome$": {
-                [Op.like]: "%" + search.replace(/[\\%_]/g, "\\$&") + "%",
-              },
-            },
-      );
-    }
+    if (search) conditions.push(this.searchFilter(search));
     const prefix = inscriptions ? "participacoes." : "";
     for (const field of ["pagador_id", "turno_id"] as const)
       if (query[field])
@@ -422,28 +445,8 @@ export class SequelizeWorkflowRepository implements WorkflowTransaction {
       conditions.push({
         status: { [Op.in]: ["concluido", "cancelado", "expirado", "inativo"] },
       });
-    const registrationException = inscriptions
-      ? "excecao_em"
-      : "$inscricao.excecao_em$";
-    const convocationException = inscriptions
-      ? "$participacoes.excecao_em$"
-      : "excecao_em";
-    if (query.excecao === "inscricao")
-      conditions.push({ [registrationException]: { [Op.ne]: null } });
-    if (query.excecao === "convocacao")
-      conditions.push({ [convocationException]: { [Op.ne]: null } });
-    if (query.excecao === "qualquer")
-      conditions.push({
-        [Op.or]: [
-          { [registrationException]: { [Op.ne]: null } },
-          { [convocationException]: { [Op.ne]: null } },
-        ],
-      });
-    if (query.excecao === "nenhuma")
-      conditions.push({
-        [registrationException]: null,
-        [convocationException]: null,
-      });
+    const exception = this.exceptionFilter(query.excecao, inscriptions);
+    if (exception) conditions.push(exception);
     return conditions.length ? { [Op.and]: conditions } : {};
   }
   async people(

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { readdir } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
@@ -33,7 +33,7 @@ Object.assign(process.env, {
   PDF_API_URL: "http://127.0.0.1:39999/api/v1",
   CORS_ORIGINS: "http://127.0.0.1:4173",
   BOOTSTRAP_ADMIN_EMAIL: "ft-e2e@example.invalid",
-  BOOTSTRAP_ADMIN_PASSWORD: "FtSynthetic123!",
+  BOOTSTRAP_ADMIN_PASSWORD: randomBytes(24).toString("base64url"),
 });
 const sql = new Sequelize(target, { dialect: "mariadb", logging: false });
 try {

@@ -52,6 +52,19 @@ export function editingPolicy(
   };
 }
 
+function sameLockedValue(
+  field: string,
+  proposed: unknown,
+  current: unknown,
+): boolean {
+  if (field.startsWith("inscricoes_"))
+    return instantTime(proposed) === instantTime(current);
+  if (["data_publicacao", "vigencia_inicio"].includes(field))
+    return dateOnly(proposed) === dateOnly(current);
+  if (typeof proposed === "number") return Number(proposed) === Number(current);
+  return String(proposed) === String(current);
+}
+
 export function assertEditable(
   edital: Partial<Program>,
   data: EditalInput,
@@ -62,14 +75,7 @@ export function assertEditable(
   for (const field of Object.keys(policy.campos_bloqueados) as Array<
     keyof EditalInput
   >) {
-    const same = field.startsWith("inscricoes_")
-      ? instantTime(data[field]) === instantTime(edital[field])
-      : ["data_publicacao", "vigencia_inicio"].includes(field)
-        ? dateOnly(data[field]) === dateOnly(edital[field])
-        : typeof data[field] === "number"
-          ? Number(data[field]) === Number(edital[field])
-          : String(data[field]) === String(edital[field]);
-    if (!same)
+    if (!sameLockedValue(field, data[field], edital[field]))
       throw new PeaadRuleError(
         "PROGRAM_FIELD_LOCKED",
         policy.campos_bloqueados[field] + " Campo: " + field,

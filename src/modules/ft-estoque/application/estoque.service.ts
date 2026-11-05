@@ -29,16 +29,23 @@ import type {
   ReversalInput,
   StockItem,
 } from "../domain/estoque.contracts.js";
-const canonical = (value: unknown): unknown =>
-  Array.isArray(value)
-    ? value.map(canonical)
-    : value && typeof value === "object"
-      ? Object.fromEntries(
-          Object.entries(value)
-            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-            .map(([key, value]) => [key, canonical(value)]),
-        )
-      : value;
+// Persisted signatures use UTF-16 ordering, independent of the server locale.
+const compareKeys = (left: string, right: string) => {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+};
+const canonical = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([left], [right]) => compareKeys(left, right))
+        .map(([key, value]) => [key, canonical(value)]),
+    );
+  }
+  return value;
+};
 const hash = (data: unknown) =>
   createHash("sha256")
     .update(JSON.stringify(canonical(data)))
@@ -482,9 +489,10 @@ export class EstoqueService {
             justificativa:
               tipo === "individual" ? reason(data.justificativa) : null,
           });
-          for (const line of lines.sort((a, b) =>
+          const orderedLines = lines.toSorted((a, b) =>
             a.variation.id.localeCompare(b.variation.id),
-          )) {
+          );
+          for (const line of orderedLines) {
             const row = this.required(await t.variation(line.variation.id));
             await this.move(
               t,

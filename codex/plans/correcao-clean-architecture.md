@@ -75,3 +75,11 @@ Após essa extração final, os seis cenários de Editais/Munícipes passaram no
 - Comandos executados: backend `check:architecture`, `check`, `test:coverage`, `build`, `openapi:generate`, teste de segurança do harness e `test:ft:db`; API PDF `check:architecture`, `test:coverage`, `build`, `openapi:generate`; frontend `check:architecture`, `lint`, `typecheck`, `test:coverage`, `contracts:generate`, `build`, `bundle:check` e Playwright.
 - Ambiente local de validação: Windows, Node 24.6.0; a configuração de produção/CI continua em Node 22. Logs e artefatos sintéticos ficam em `.tmp`/diretórios ignorados, fora dos commits. Os planos registram os resultados para revisão sem depender desses arquivos locais.
 - Sem novas migrations, seeds, permissões, atualização por foco, polling, mudanças de autenticação ou publicação.
+
+## Propagacao das correcoes do SonarCloud do PR #53
+
+- Incorporadas as correcoes da branch de estoque, preservando os contratos e a unidade de trabalho desta branch. Nao foram restaurados servicos acoplados ao banco nem testes antigos eliminados na refatoracao.
+- Senha do harness gerada por execucao, comparador explicito e compativel com assinaturas antigas, ordenacao nao mutante das linhas, comparacao de campos bloqueados simplificada e filtros extraidos no adapter Sequelize.
+- Regressao de assinatura legada e testes dos filtros CPF/nome/excecao adaptados para os contratos e adapters atuais.
+- Node 22.23.4, banco desconectado: check, check:architecture (5 casos + inventario), build e 495 testes aprovados; cobertura 92,49% linhas/statements, 96,15% funcoes e 90,05% branches, mantendo os limites existentes. Sem migrations/seeds.
+- PR #53 no commit 4dddd61: Quality e SonarCloud aprovados, sem aceitar ou suprimir ocorrencias. O indicador de cobertura da analise automatica Sonar e separado do LCOV publicado no workflow.

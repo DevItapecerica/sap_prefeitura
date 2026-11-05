@@ -180,6 +180,26 @@ function fixture() {
   };
 }
 
+test("legacy operation signatures retain UTF-16 key ordering independent of locale", async () => {
+  const f = fixture();
+  const data = {
+    operacao_id: "00000000-0000-0000-0000-000000000001",
+    nome: "Bota",
+    epi: true,
+    extra: { Z: 1, a: 2, "\u00e1": 3, A: 4 },
+  };
+  f.state().operations[data.operacao_id] = {
+    assinatura:
+      "84f988100ecd5cc34a00d5b9ed0f8d1287a376e1f4f8fecf4f633f59e5bf0772",
+    resultado: JSON.stringify({ id: "original-item" }),
+  };
+  assert.deepEqual(await f.service.saveItem(undefined, data, actor), {
+    id: "original-item",
+  });
+  assert.equal(f.state().items.length, 0);
+  assert.equal(f.state().version, 0);
+});
+
 test("complete registration uses zero balance then movements, is idempotent, and rolls back with audit", async () => {
   const f = fixture(),
     input = {

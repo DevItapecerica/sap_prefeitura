@@ -50,3 +50,13 @@ Testar duplicação de tamanhos, dinheiro, estoque insuficiente, kit completo/ú
 O PR #53 falhava porque o workflow não declarava JWT_KEY: 27 falhas interrompiam testes e a cobertura caía para 70,36%. Acrescentada chave JWT sintética própria da CI, sem utilizar segredos reais nem alterar a autenticação da aplicação.
 
 Reprodução em checkout isolado desta branch, sem .env, com as variáveis sintéticas da CI e Node 22.23.4: **511 testes aprovados**, linhas/statements **94,58%**, funções **95,06%** e branches **90,51%**. Mantidos os limites de cobertura. Tipos e build aprovados; nenhuma conexão ou alteração na base corrente.
+
+## Correcoes do gate SonarCloud ? PR #53
+
+- O workflow Quality aprovado nao significa que o gate SonarCloud passou. O gate separado apontou S2068 (senha fixa no harness descartavel, seguranca C) e S2871 (sort sem comparador, confiabilidade D).
+- O harness agora gera a senha do administrador com randomBytes a cada execucao. Nenhuma credencial da base corrente foi alterada.
+- A serializacao de idempotencia usa comparador explicito por unidades UTF-16, preservando as assinaturas anteriores; teste verifica a reutilizacao de uma assinatura legada com chaves ASCII e acentuadas.
+- Ordenacao das linhas de entrega nao altera o array original. As operacoes e travas transacionais continuam sequenciais.
+- Extraidas comparacoes de campos bloqueados e filtros de pesquisa/excecao para reduzir complexidade, mantendo regras e escopo antes da paginacao.
+- Validacao local em Node 22.23.4, sem .env e com URL de banco desconectada: check e build aprovados; 513 testes aprovados; cobertura 94,62% linhas/statements, 95,08% funcoes e 90,64% branches. Nenhuma migration/seed aplicada.
+- Nova analise remota do SonarCloud pendente apos o push. Nao foram suprimidas regras nem reduzidos limites de cobertura.
