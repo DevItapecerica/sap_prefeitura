@@ -44,3 +44,9 @@ Testar duplicação de tamanhos, dinheiro, estoque insuficiente, kit completo/ú
 - Operações têm identificador UUID e assinatura canônica por autor/tipo/dados. Trava transacional única do estoque evita inconsistência entre composição, custo e saldo; entregas/estornos também travam edital/participação antes dela. Índices e FKs preservam o histórico.
 - Corrigido apenas o fixture de autenticação que ainda assinava tokens de teste com SECRET_KEY: passou a utilizar JWT_KEY, acompanhando a configuração já existente do projeto. Nenhuma alteração no fluxo de autenticação da aplicação.
 - READMEs da raiz/frontend/backend, OpenAPI compartilhado e tipos gerados atualizados. Sem mudanças no serviço de PDF, sem commits/push nesta implementação e sem migrations/seeds na base corrente.
+
+## Correção da CI em 05/11/2026
+
+O PR #53 falhava porque o workflow não declarava JWT_KEY: 27 falhas interrompiam testes e a cobertura caía para 70,36%. Acrescentada chave JWT sintética própria da CI, sem utilizar segredos reais nem alterar a autenticação da aplicação.
+
+Reprodução em checkout isolado desta branch, sem .env, com as variáveis sintéticas da CI e Node 22.23.4: **511 testes aprovados**, linhas/statements **94,58%**, funções **95,06%** e branches **90,51%**. Mantidos os limites de cobertura. Tipos e build aprovados; nenhuma conexão ou alteração na base corrente.
