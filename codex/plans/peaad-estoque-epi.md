@@ -60,3 +60,7 @@ Reprodução em checkout isolado desta branch, sem .env, com as variáveis sint�
 - Extraidas comparacoes de campos bloqueados e filtros de pesquisa/excecao para reduzir complexidade, mantendo regras e escopo antes da paginacao.
 - Validacao local em Node 22.23.4, sem .env e com URL de banco desconectada: check e build aprovados; 513 testes aprovados; cobertura 94,62% linhas/statements, 95,08% funcoes e 90,64% branches. Nenhuma migration/seed aplicada.
 - Nova analise remota do SonarCloud pendente apos o push. Nao foram suprimidas regras nem reduzidos limites de cobertura.
+
+### Confirmacao remota do gate
+
+Commit 4dddd61f22838a2244baaa8f18bb0b89454338a3: SonarCloud Code Analysis 127411801546 concluido com Quality Gate passed, e workflow Quality 42074642382/job 127411461143 aprovado. Permanecem 35 avisos de manutencao fora dos bloqueios corrigidos, sem ocorrencias aceitas/suprimidas. A cobertura executada pelo Quality e 94,62% de linhas; o indicador de cobertura do Sonar ainda aparece como 0% (o workflow atual apenas publica o artefato LCOV, nao o importa na analise automatica). Nao confundir essas duas metricas.
