@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -10,7 +10,7 @@ const target = process.env.FT_WORKFLOW_TEST_URL;
 if (!target || process.env.FT_WORKFLOW_TEST_ALLOW_CREATE !== 'YES') throw new Error('Set FT_WORKFLOW_TEST_URL and FT_WORKFLOW_TEST_ALLOW_CREATE=YES for an EMPTY disposable schema.');
 const url = new URL(target);
 if (url.protocol !== 'mariadb:' || !['localhost', '127.0.0.1'].includes(url.hostname) || !/^\/[a-z0-9_]+_ft_test$/.test(url.pathname) || decodeURIComponent(url.username).toLowerCase() === 'root' || url.search || url.hash) throw new Error('Refusing unsafe FT test target');
-Object.assign(process.env, { DATABASE_URL: target, NODE_ENV: 'test', JWT_KEY: 'synthetic-workflow-jwt-key-only', SECRET_KEY: 'ft-workflow-synthetic-key-for-tests-only', APPLICATION_PORT: '3117', MAIL_ADRESS: 'test@example.invalid', MAIL_PASSWORD: 'synthetic', MAIL_HOST: '127.0.0.1', PDF_API_URL: 'http://127.0.0.1:39999/api/v1', CORS_ORIGINS: 'http://127.0.0.1:4173', BOOTSTRAP_ADMIN_EMAIL: 'ft-e2e@example.invalid', BOOTSTRAP_ADMIN_PASSWORD: 'FtSynthetic123!' });
+Object.assign(process.env, { DATABASE_URL: target, NODE_ENV: 'test', JWT_KEY: 'synthetic-workflow-jwt-key-only', SECRET_KEY: 'ft-workflow-synthetic-key-for-tests-only', APPLICATION_PORT: '3117', MAIL_ADRESS: 'test@example.invalid', MAIL_PASSWORD: 'synthetic', MAIL_HOST: '127.0.0.1', PDF_API_URL: 'http://127.0.0.1:39999/api/v1', CORS_ORIGINS: 'http://127.0.0.1:4173', BOOTSTRAP_ADMIN_EMAIL: 'ft-e2e@example.invalid', BOOTSTRAP_ADMIN_PASSWORD: randomBytes(24).toString('base64url') });
 const sql = new Sequelize(target, { dialect: 'mariadb', logging: false });
 try {
   const qi = sql.getQueryInterface();

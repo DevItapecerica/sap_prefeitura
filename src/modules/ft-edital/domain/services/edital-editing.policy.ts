@@ -14,13 +14,17 @@ export function editingPolicy(edital: any, hasClosedPayroll: boolean, used: numb
   return { campos_bloqueados: locked, vagas_minimas: Math.max(1, used), vigencia_minima: restricted ? dateOnly(edital.data_vencimento) : null };
 }
 
+function sameLockedValue(field: string, proposed: any, current: any): boolean {
+  if (field.startsWith('inscricoes_')) return new Date(proposed).getTime() === new Date(current).getTime();
+  if (['data_publicacao', 'vigencia_inicio'].includes(field)) return dateOnly(proposed) === dateOnly(current);
+  if (typeof proposed === 'number') return Number(proposed) === Number(current);
+  return String(proposed) === String(current);
+}
+
 export function assertEditable(edital: any, data: any, policy: ReturnType<typeof editingPolicy>) {
   if (edital.fase === 'encerrado') throw ftError(409, 'Edital encerrado');
   for (const field of Object.keys(policy.campos_bloqueados)) {
-    const same = field.startsWith('inscricoes_') ? new Date(data[field]).getTime() === new Date(edital[field]).getTime()
-      : ['data_publicacao', 'vigencia_inicio'].includes(field) ? dateOnly(data[field]) === dateOnly(edital[field])
-        : typeof data[field] === 'number' ? Number(data[field]) === Number(edital[field]) : String(data[field]) === String(edital[field]);
-    if (!same) throw ftError(409, policy.campos_bloqueados[field] + ' Campo: ' + field);
+    if (!sameLockedValue(field, data[field], edital[field])) throw ftError(409, policy.campos_bloqueados[field] + ' Campo: ' + field);
   }
   if (policy.vigencia_minima && dateOnly(data.data_vencimento) < policy.vigencia_minima) throw ftError(409, 'Vigencia somente pode ser ampliada');
   if (data.vagas < policy.vagas_minimas) throw ftError(409, 'Vagas abaixo da ocupacao e reservas');

@@ -39,6 +39,18 @@ function fixture() {
   return { db, service, table: (name: string) => tables[name], auditRows, failAudit: () => { auditFailure = true; } };
 }
 const actor = { id: 1, requestId: 'test' }, op = () => ({ operacao_id: randomUUID() });
+
+test('persisted operation signatures retain UTF-16 key ordering independent of locale', async () => {
+  const f = fixture();
+  const data = { operacao_id: '00000000-0000-0000-0000-000000000001', nome: 'Bota', epi: true, extra: { Z: 1, a: 2, '\u00e1': 3, A: 4 } };
+  // Produced by the original canonical serializer before adding an explicit comparator.
+  f.table('FtEstoqueOperacao').push({ id: data.operacao_id,
+    assinatura: '84f988100ecd5cc34a00d5b9ed0f8d1287a376e1f4f8fecf4f633f59e5bf0772',
+    resultado: JSON.stringify({ id: 'original-item' }) });
+  assert.deepEqual(await f.service.saveItem(undefined, data, actor), { id: 'original-item' });
+  assert.equal(f.table('FtEstoqueItem').length, 0);
+  assert.equal(f.table('FtEstoqueControle')[0].versao, 0);
+});
 async function stocked(f: ReturnType<typeof fixture>, nome: string, epi = true, tamanho = 'Único', saldo = 5) {
   const item = await f.service.saveItem(undefined, { ...op(), nome, epi }, actor);
   const variation = await f.service.saveVariation(item.id, undefined, { ...op(), tamanho, custo_unitario: 80.01 }, actor);

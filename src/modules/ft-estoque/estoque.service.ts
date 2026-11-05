@@ -26,7 +26,19 @@ const text = (value: any, max: number) => {
   if (typeof value !== 'string' || !value.trim() || value.trim().length > max) throw ftError(422, 'Texto obrigatório ou acima do limite permitido.');
   return value.trim().replace(/\s+/g, ' ');
 };
-const canonical = (value: any): any => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+// Keep UTF-16 key ordering: locale-dependent sorting would change persisted signatures.
+const compareKeys = (left: string, right: string) => {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+};
+const canonical = (value: any): any => {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort(compareKeys).map(key => [key, canonical(value[key])]));
+  }
+  return value;
+};
 const hash = (data: unknown) => createHash('sha256').update(JSON.stringify(canonical(data))).digest('hex');
 const pagination = (q: any) => { const limit = Math.min(50, Math.max(1, Number(q.limit) || 20)); return { limit, offset: Math.max(0, Number(q.page) || 0) * limit }; };
 const like = (s: any) => '%' + String(s || '').trim().replace(/[\\%_]/g, '\\$&') + '%';
@@ -217,7 +229,8 @@ export class EstoqueService {
       if (!Number.isSafeInteger(total)) throw ftError(422, 'Custo total acima do limite.');
       const delivery = await this.db.FtEstoqueEntrega.create({ participacao_id: p.id, edital_id: p.edital_id, bolsista_id: p.bolsista_id, kit_ativo_participacao_id: tipo === 'kit' ? p.id : null,
         tipo, autor_id: String(actor.id), entregue_em: this.clock(), total_centavos: total, justificativa: tipo === 'individual' ? reason(data.justificativa) : null }, { transaction: t });
-      for (const line of lines.sort((a: any, b: any) => a.variation.id.localeCompare(b.variation.id))) {
+      const orderedLines = lines.toSorted((a: any, b: any) => a.variation.id.localeCompare(b.variation.id));
+      for (const line of orderedLines) {
         const row = await this.required('FtEstoqueVariacao', line.variation.id, t);
         await this.move(t, row, -line.quantidade, 'entrega', actor, undefined, delivery.id);
         await this.db.FtEstoqueEntregaItem.create({ entrega_id: delivery.id, variacao_id: row.id, nome: line.product.nome, tamanho: row.tamanho, quantidade: line.quantidade, custo_centavos: row.custo_centavos }, { transaction: t });
