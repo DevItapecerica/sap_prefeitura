@@ -1,9 +1,6 @@
-import AppError from "../../../../core/appError.js";
+import { PeaadRuleError } from "../errors/peaad-rule.error.js";
 import { todayInSaoPaulo } from "../../../../core/utils/sao-paulo-date.js";
 import { getVinculoOperationalEnd } from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
-
-const ftError = (statusCode: number, message: string) =>
-  new AppError(message, statusCode, "FT_MS");
 
 const getValue = (target: any, key: string) =>
   typeof target?.get === "function" ? target.get(key) : target?.[key];
@@ -32,15 +29,21 @@ export class FtFaltaPolicyService {
     faltaExistente?: any | null;
   }) {
     if (getValue(edital, "status") !== "ativo") {
-      throw ftError(400, "Edital inativo");
+      throw new PeaadRuleError("PROGRAM_INACTIVE", "Edital inativo");
     }
 
     if (!vinculo || getValue(vinculo, "status") !== "ativo") {
-      throw ftError(400, "Bolsista inativo neste edital");
+      throw new PeaadRuleError(
+        "PARTICIPATION_INACTIVE",
+        "Bolsista inativo neste edital",
+      );
     }
 
     if (faltaExistente) {
-      throw ftError(400, "Falta ja lancada para esta data");
+      throw new PeaadRuleError(
+        "ABSENCE_ALREADY_RECORDED",
+        "Falta ja lancada para esta data",
+      );
     }
 
     const faltaDate = toDateOnly(data_falta);
@@ -48,20 +51,32 @@ export class FtFaltaPolicyService {
     const dataVinculo = toDateOnly(getValue(vinculo, "data_vinculo"));
     const operationalEnd = getVinculoOperationalEnd(vinculo) || null;
 
-    if (faltaDate === null || hoje === null) {
-      throw ftError(400, "Data da falta invalida");
+    if (faltaDate === null) {
+      throw new PeaadRuleError(
+        "ABSENCE_DATE_INVALID",
+        "Data da falta invalida",
+      );
     }
 
     if (faltaDate > hoje) {
-      throw ftError(400, "Data da falta nao pode ser futura");
+      throw new PeaadRuleError(
+        "ABSENCE_DATE_FUTURE",
+        "Data da falta nao pode ser futura",
+      );
     }
 
     if (dataVinculo !== null && faltaDate < dataVinculo) {
-      throw ftError(400, "Data da falta fora do periodo do vinculo");
+      throw new PeaadRuleError(
+        "ABSENCE_OUTSIDE_PARTICIPATION",
+        "Data da falta fora do periodo do vinculo",
+      );
     }
 
     if (operationalEnd !== null && faltaDate > operationalEnd) {
-      throw ftError(400, "Data da falta fora do periodo do vinculo");
+      throw new PeaadRuleError(
+        "ABSENCE_OUTSIDE_PARTICIPATION",
+        "Data da falta fora do periodo do vinculo",
+      );
     }
   }
 }

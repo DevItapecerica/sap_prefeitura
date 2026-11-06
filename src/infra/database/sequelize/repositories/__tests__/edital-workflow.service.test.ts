@@ -1,0 +1,1253 @@
+import {
+  SequelizeWorkflowUnitOfWork,
+  SequelizeWorkflowRepository,
+} from "../sequelize.workflow.repository.js";
+import type { IAesCrypt } from "../../../../../core/security/aes/AesCrypt.interface.js";
+const passthroughCrypto: IAesCrypt = {
+  encrypt: async (value) => value,
+  decrypt: async (value) => value,
+};
+import assert from "node:assert/strict";
+import test from "node:test";
+import { randomUUID } from "node:crypto";
+import { Op } from "sequelize";
+import { EditalWorkflowService } from "../../../../../modules/ft-edital/application/use-case/edital-workflow.service.js";
+import type { DbObject } from "../../../../../core/types/DbTypes.js";
+import type AesCryptService from "../../../../../core/security/aes/AesCrypt.service.js";
+
+// An in-memory persistence adapter tests business transitions and rollback. Real SQL locking
+// and constraints are independently exercised by scripts/test-ft-workflow.ts.
+function database() {
+  let tables: Record<string, any[]> = {};
+  const matches = (row: any, where: any = {}) =>
+    Object.entries(where).every(([key, condition]: [string, any]) => {
+      if (Array.isArray(condition)) return condition.includes(row[key]);
+      if (condition && typeof condition === "object") {
+        if (Op.between in condition)
+          return (
+            row[key] >= condition[Op.between][0] &&
+            row[key] <= condition[Op.between][1]
+          );
+        if (Op.ne in condition) return row[key] !== condition[Op.ne];
+        if (Op.like in condition)
+          return String(row[key]).includes(
+            condition[Op.like].replaceAll("%", ""),
+          );
+      }
+      return row[key] === condition;
+    });
+  const db: any = {
+    sequelize: {
+      transaction: async (fn: any) => {
+        const before = structuredClone(tables);
+        try {
+          return await fn({ LOCK: { UPDATE: "UPDATE" } });
+        } catch (e) {
+          tables = before;
+          throw e;
+        }
+      },
+    },
+  };
+  for (const name of [
+    "Edital",
+    "MunicipeModel",
+    "Bolsistas",
+    "Pagador",
+    "Turno",
+    "FtEditalLocal",
+    "FtEditalBeneficio",
+    "FtInscricao",
+    "BolsistasEdital",
+    "PaymentInfo",
+    "BolsistaFalta",
+    "BolsistaOcorrencia",
+    "FtWorkflowEvento",
+    "UserModel",
+    "FtFolhaFechamento",
+  ]) {
+    const pk = ["MunicipeModel", "Pagador", "Turno"].includes(name)
+      ? "uuid"
+      : "id";
+    tables[name] = [];
+    const wrap = (row: any) =>
+      row
+        ? new Proxy(row, {
+            get(target, key) {
+              if (key === "toJSON") return () => ({ ...target });
+              if (key === "update")
+                return async (data: any) => {
+                  Object.assign(target, data);
+                  return wrap(target);
+                };
+              if (key === "destroy")
+                return async () => {
+                  target.deletedAt = new Date();
+                };
+              if (key === "setDataValue")
+                return (field: string, value: any) => {
+                  target[field] = value;
+                };
+              return target[key];
+            },
+          })
+        : null;
+    const all = (options: any = {}) =>
+      tables[name].filter(
+        (r) =>
+          (options.paranoid === false || !r.deletedAt) &&
+          matches(r, options.where),
+      );
+    db[name] = {
+      create: async (data: any) => {
+        const row = {
+          [pk]: randomUUID(),
+          createdAt: new Date(),
+          status: name === "FtInscricao" ? "inscrito" : undefined,
+          ...data,
+        };
+        tables[name].push(row);
+        return wrap(row);
+      },
+      findByPk: async (id: string, options: any = {}) =>
+        wrap(all(options).find((r) => r[pk] === id)),
+      findOne: async (options: any) => wrap(all(options)[0]),
+      findAll: async (options: any = {}) => all(options).map(wrap),
+      count: async (options: any = {}) => all(options).length,
+      findAndCountAll: async (options: any = {}) => ({
+        count: all(options).length,
+        rows: all(options)
+          .slice(
+            options.offset || 0,
+            (options.offset || 0) + (options.limit || 20),
+          )
+          .map((row) => {
+            const joined = { ...row };
+            if (name === "FtInscricao")
+              joined.participacoes = tables.BolsistasEdital.filter(
+                (p) =>
+                  p.inscricao_id === row.id &&
+                  ["convocado", "ativo"].includes(p.status),
+              );
+            return wrap(joined);
+          }),
+      }),
+      findOrCreate: async (options: any) => {
+        const found = await db[name].findOne(options);
+        return found
+          ? [found, false]
+          : [await db[name].create(options.defaults), true];
+      },
+      update: async (data: any, options: any) => {
+        const rows = all(options);
+        rows.forEach((r) => Object.assign(r, data));
+        return [rows.length];
+      },
+    };
+  }
+  return db as DbObject;
+}
+const actor = { id: 1, requestId: randomUUID() };
+const base = {
+  idade_maxima: 65,
+  name: "Teste",
+  data_publicacao: "2026-01-01",
+  vigencia_inicio: "2026-01-01",
+  data_vencimento: "2028-12-31",
+  inscricoes_inicio: "2026-10-01T09:00:00-03:00",
+  inscricoes_fim: "2026-10-30T17:00:00-03:00",
+  vagas: 2,
+  dia_pagamento: 5,
+  valor_bolsa: 900,
+  carga_semanal: 30,
+  carga_mensal: 180,
+  duracao_meses: 6,
+  prorrogacao_meses: 3,
+  permitir_participacao_anterior: true,
+  permitir_retorno: true,
+};
+const answers = {
+  desempregado: true,
+  possui_renda: false,
+  recebe_previdencia: false,
+  inicio_residencia: "2020-01-01",
+  vulnerabilidade_atestada: true,
+  beneficiario_familiar: false,
+  aceite: true,
+};
+async function fixture() {
+  const db = database();
+  const crypto = {
+    encrypt: async (v: string) => v,
+    decrypt: async (v: string) => v,
+  } as unknown as AesCryptService;
+  const service = new EditalWorkflowService(
+    new SequelizeWorkflowUnitOfWork(db, () => ({
+      record: async () => "audit",
+    })),
+    crypto,
+    () => new Date("2026-10-22T12:00:00-03:00"),
+  );
+  const e = await service.create(base, actor);
+  const person = await db.MunicipeModel.create({
+    nome: "Pessoa",
+    nascimento: "1990-01-01",
+    cidade: "Itapecerica da Serra",
+  });
+  const pay = await service.config(
+    e.id,
+    "pagadores",
+    undefined,
+    { nome: "Pagador", quantidade: 2 },
+    actor,
+  );
+  const shift = await service.config(
+    e.id,
+    "turnos",
+    undefined,
+    { nome: "Manhã", hora_inicio: "08:00", hora_fim: "14:00" },
+    actor,
+  );
+  const local = await service.config(
+    e.id,
+    "locais",
+    undefined,
+    { nome: "Local", descricao: "Teste" },
+    actor,
+  );
+  const allocation = {
+    pagador_id: pay.uuid,
+    turno_id: shift.uuid,
+    local: "Local informado",
+    data_inicio: "2026-10-22",
+  };
+  return { db, service, e, person, pay, shift, local, allocation };
+}
+
+test("closed month blocks ordinary/exceptional call and activation, while registration and future months stay available", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  await db.FtFolhaFechamento.create({ edital_id: e.id, mes: "2026-10" });
+  const registration = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  for (const exception of [false, true])
+    await assert.rejects(
+      service.call(
+        e.id,
+        registration.id,
+        { ...allocation, motivo: "Justificativa" },
+        actor,
+        exception,
+      ),
+      /2026-10/,
+    );
+  const check = await service.prevalidate(e.id, "convocacao", {
+    inscricao_id: registration.id,
+    ...allocation,
+  });
+  assert.ok(check.pendencias.some((p: any) => p.codigo === "FOLHA_FECHADA"));
+  const called = await service.call(
+    e.id,
+    registration.id,
+    { ...allocation, data_inicio: "2026-11-01" },
+    actor,
+  );
+  const bank = {
+    bco: "001",
+    ag: "0001",
+    dig_ag: "X",
+    conta: "000123",
+    dig_conta: "0",
+  };
+  await assert.rejects(
+    service.transition(
+      e.id,
+      called.id,
+      "ativar",
+      { data_inicio: "2026-10-22", payment_info: bank },
+      actor,
+    ),
+    /2026-10/,
+  );
+  assert.equal(await db.PaymentInfo.count(), 0);
+  await service.transition(
+    e.id,
+    called.id,
+    "ativar",
+    { data_inicio: "2026-11-01", payment_info: bank },
+    actor,
+  );
+});
+
+test("closed month blocks dated records, manual endings and edital closing without consuming changes", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  const r = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  const p = await service.call(e.id, r.id, allocation, actor);
+  await service.transition(
+    e.id,
+    p.id,
+    "ativar",
+    {
+      data_inicio: allocation.data_inicio,
+      payment_info: {
+        bco: "001",
+        ag: "0001",
+        dig_ag: "X",
+        conta: "001",
+        dig_conta: "0",
+      },
+    },
+    actor,
+  );
+  for (const kind of ["faltas", "ocorrencias"] as const)
+    await service.record(
+      e.id,
+      p.id,
+      kind,
+      { data_falta: "2026-10-22", data_ocorrencia: "2026-10-22" },
+      actor,
+    );
+  await db.FtFolhaFechamento.create({ edital_id: e.id, mes: "2026-10" });
+  for (const kind of ["faltas", "ocorrencias"] as const) {
+    await assert.rejects(
+      service.record(
+        e.id,
+        p.id,
+        kind,
+        { data_falta: "2026-10-22", data_ocorrencia: "2026-10-22" },
+        actor,
+      ),
+      /2026-10/,
+    );
+    const record = (await service.records(e.id, p.id, kind, {})).rows[0];
+    await assert.rejects(
+      service.record(e.id, p.id, kind, {}, actor, record.id),
+      /2026-10/,
+    );
+    assert.equal((await service.records(e.id, p.id, kind, {})).count, 1);
+  }
+  for (const op of ["cancelar", "concluir"] as const)
+    await assert.rejects(
+      service.transition(e.id, p.id, op, { motivo: "Teste" }, actor),
+      /2026-10/,
+    );
+  await assert.rejects(service.phase(e.id, "encerrado", actor), /2026-10/);
+  assert.equal((await service.detail(e.id)).fase, "aberto");
+  // An extension adds only future dates; the closed original period must not block it.
+  await service.transition(e.id, p.id, "prorrogar", {}, actor);
+  const future = new EditalWorkflowService(
+    new SequelizeWorkflowUnitOfWork(db, () => ({
+      record: async () => "audit",
+    })),
+    passthroughCrypto,
+    () => new Date("2026-11-03T12:00:00-03:00"),
+  );
+  await future.transition(
+    e.id,
+    p.id,
+    "concluir",
+    { motivo: "Encerrado em mês aberto" },
+    actor,
+  );
+});
+
+test("extension rejects a closed added period and keeps its one-time authorization", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  const r = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  const p = await service.call(e.id, r.id, allocation, actor);
+  await service.transition(
+    e.id,
+    p.id,
+    "ativar",
+    {
+      data_inicio: allocation.data_inicio,
+      payment_info: {
+        bco: "001",
+        ag: "1",
+        dig_ag: "0",
+        conta: "1",
+        dig_conta: "0",
+      },
+    },
+    actor,
+  );
+  await db.BolsistasEdital.update(
+    { expire_at: "2026-10-25T23:59:59-03:00" },
+    { where: { id: p.id } },
+  );
+  await db.FtFolhaFechamento.create({ edital_id: e.id, mes: "2026-10" });
+  await assert.rejects(
+    service.transition(e.id, p.id, "prorrogar", {}, actor),
+    /2026-10/,
+  );
+  const row = await db.BolsistasEdital.findByPk(p.id);
+  assert.ok(!row.prorrogated);
+  assert.equal(dateOnlyForTest(row.expire_at), "2026-10-25");
+  const check = await service.prevalidate(e.id, "prorrogacao", {
+    participacao_id: p.id,
+  });
+  assert.ok(
+    check.pendencias.some((issue: any) => issue.mensagem.includes("2026-10")),
+  );
+});
+
+const dateOnlyForTest = (value: any) => String(value).slice(0, 10);
+test("workflow preserves reservation on activation rollback and keeps history when cancelling", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  const inscription = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  assert.equal((await service.inscriptions(e.id, {})).rows[0].nome, "Pessoa");
+  assert.equal(await db.PaymentInfo.count(), 0);
+  const called = await service.call(e.id, inscription.id, allocation, actor);
+  assert.equal(
+    (await service.inscriptions(e.id, {})).rows[0].situacao,
+    "convocado",
+  );
+  assert.equal((await service.detail(e.id)).reservadas, 1);
+  assert.equal(
+    (await service.participations(e.id, { status: "convocado" })).count,
+    1,
+  );
+  await assert.rejects(
+    service.transition(
+      e.id,
+      called.id,
+      "ativar",
+      { data_inicio: "2026-10-22", payment_info: {} },
+      actor,
+    ),
+  );
+  assert.equal((await service.detail(e.id)).reservadas, 1);
+  assert.equal(await db.PaymentInfo.count(), 0);
+  await service.transition(e.id, called.id, "alocar", allocation, actor);
+  await service.transition(
+    e.id,
+    called.id,
+    "ativar",
+    {
+      data_inicio: "2026-10-22",
+      payment_info: {
+        bco: "001",
+        ag: "1234",
+        dig_ag: "0",
+        conta: "1234",
+        dig_conta: "1",
+      },
+    },
+    actor,
+  );
+  assert.equal(
+    await service.pdfParticipant(e.id, called.id, "2026-10"),
+    inscription.bolsista_id,
+  );
+  await assert.rejects(service.pdfParticipant(e.id, called.id, "2025-01"));
+  await assert.rejects(service.pdfParticipant(e.id, randomUUID(), "2026-10"));
+  assert.equal((await service.detail(e.id)).ocupadas, 1);
+  await service.record(
+    e.id,
+    called.id,
+    "faltas",
+    { data_falta: "2026-10-22", observacao: "Teste" },
+    actor,
+  );
+  const record = (await service.records(e.id, called.id, "faltas", {})).rows[0];
+  await service.record(e.id, called.id, "faltas", {}, actor, record.id);
+  assert.equal((await service.records(e.id, called.id, "faltas", {})).count, 0);
+  await service.transition(e.id, called.id, "prorrogar", {}, actor);
+  await assert.rejects(
+    service.transition(e.id, called.id, "prorrogar", {}, actor),
+  );
+  await service.transition(
+    e.id,
+    called.id,
+    "cancelar",
+    { motivo: "Encerrado" },
+    actor,
+  );
+  assert.equal((await service.detail(e.id)).disponiveis, 2);
+  assert.equal((await service.participations(e.id, {})).count, 1);
+});
+test("configuration scopes, mutations, capacity floor, locks and opening requirements", async () => {
+  const { service, e, person, pay, local, allocation } = await fixture();
+  await service.update(e.id, { ...base, name: "Atualizado" }, actor);
+  assert.equal((await service.list({ search: "Atualizado" })).count, 1);
+  assert.equal(
+    (await service.configs(e.id, "pagadores", {})).rows[0].ocupacao,
+    0,
+  );
+  await service.config(
+    e.id,
+    "locais",
+    local.id,
+    { nome: "Local atualizado", descricao: "Texto" },
+    actor,
+  );
+  const benefit = await service.config(
+    e.id,
+    "beneficios",
+    undefined,
+    { nome: "Cesta", descricao: "Mensal" },
+    actor,
+  );
+  await service.config(e.id, "beneficios", benefit.id, null, actor);
+  await assert.rejects(
+    service.config(
+      e.id,
+      "turnos",
+      undefined,
+      { nome: "Ruim", hora_inicio: "14:00", hora_fim: "08:00" },
+      actor,
+    ),
+  );
+  await service.phase(e.id, "aberto", actor);
+  await service.window(
+    e.id,
+    {
+      inscricoes_inicio: base.inscricoes_inicio,
+      inscricoes_fim: "2026-10-31T17:00:00-03:00",
+      motivo: "Novo prazo",
+    },
+    actor,
+  );
+  const inscription = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  await assert.rejects(
+    service.register(
+      e.id,
+      { municipe_uuid: person.uuid, respostas: answers },
+      actor,
+      false,
+    ),
+  );
+  const called = await service.call(e.id, inscription.id, allocation, actor);
+  await assert.rejects(
+    service.config(
+      e.id,
+      "pagadores",
+      pay.uuid,
+      { nome: "Pagador", quantidade: 0 },
+      actor,
+    ),
+  );
+  await assert.rejects(
+    service.config(e.id, "pagadores", pay.uuid, null, actor),
+  );
+  await assert.rejects(
+    service.config(
+      e.id,
+      "beneficios",
+      undefined,
+      { nome: "Outro", descricao: "Teste" },
+      actor,
+    ),
+  );
+  await service.phase(e.id, "encerrado", actor);
+  assert.equal(
+    (await service.participations(e.id, {})).rows.find(
+      (r: any) => r.id === called.id,
+    )!.status,
+    "cancelado",
+  );
+  await assert.rejects(
+    service.transition(e.id, called.id, "ativar", {}, actor),
+  );
+  await assert.rejects(service.detail(randomUUID()));
+});
+
+test("invalid scopes and incomplete lifecycle actions cannot create or mutate participation", async () => {
+  const { service, e, allocation } = await fixture();
+  assert.equal((await service.list({})).count, 1);
+  assert.equal(
+    (await service.configs(e.id, "locais", { page: 0, limit: 10 })).count,
+    1,
+  );
+  await assert.rejects(service.call(e.id, randomUUID(), allocation, actor));
+  await assert.rejects(
+    service.transition(
+      e.id,
+      randomUUID(),
+      "cancelar",
+      { motivo: "Teste" },
+      actor,
+    ),
+  );
+  await assert.rejects(service.records(e.id, randomUUID(), "faltas", {}));
+  await assert.rejects(
+    service.record(
+      e.id,
+      randomUUID(),
+      "ocorrencias",
+      { descricao: "Teste" },
+      actor,
+    ),
+  );
+  await assert.rejects(
+    service.register(
+      e.id,
+      { municipe_uuid: randomUUID(), respostas: answers },
+      actor,
+      false,
+    ),
+  );
+  await assert.rejects(
+    service.config(
+      e.id,
+      "locais",
+      randomUUID(),
+      { nome: "Local", descricao: "" },
+      actor,
+    ),
+  );
+  await assert.rejects(
+    service.config(
+      e.id,
+      "locais",
+      undefined,
+      { nome: "  ", descricao: "" },
+      actor,
+    ),
+  );
+  const incomplete = await service.create(
+    { ...base, name: "Sem configurações" },
+    actor,
+  );
+  assert.equal(
+    (await service.phase(incomplete.id, "aberto", actor)).fase,
+    "aberto",
+  );
+  await assert.rejects(
+    service.update(
+      e.id,
+      { ...base, inscricoes_fim: "2026-10-31T17:00:00-03:00" },
+      actor,
+    ),
+  );
+  await service.phase(e.id, "aberto", actor);
+  await assert.rejects(service.phase(e.id, "aberto", actor));
+});
+
+test("registration and convocation exceptions are separate and activation preserves only convocation authority", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await person.update({ nascimento: "1950-01-01" });
+  await service.phase(e.id, "aberto", actor);
+  const data = {
+    municipe_uuid: person.uuid,
+    respostas: answers,
+    motivo: "Atendimento excepcional autorizado",
+  };
+  await assert.rejects(
+    service.register(e.id, data, actor, false),
+    /Idade permitida/,
+  );
+  await assert.rejects(
+    service.register(e.id, { ...data, motivo: " " }, actor, false, true),
+    /justificativa/,
+  );
+  const inscription = await service.register(e.id, data, actor, false, true);
+  const recorded = (await service.inscriptions(e.id, {})).rows[0];
+  assert.equal(recorded.excecao_autor_id, "1");
+  assert.equal(recorded.excecao_motivo, data.motivo);
+  await assert.rejects(
+    service.register(e.id, data, actor, false, true),
+    /ja inscrita/,
+  );
+  await assert.rejects(
+    service.call(e.id, inscription.id, allocation, actor),
+    /Idade permitida/,
+  );
+  await assert.rejects(
+    service.call(e.id, inscription.id, allocation, actor, true),
+    /justificativa/,
+  );
+  const called = await service.call(
+    e.id,
+    inscription.id,
+    { ...allocation, motivo: "Convocacao excepcional autorizada" },
+    actor,
+    true,
+  );
+  assert.equal(called.excecao_autor_id, "1");
+  await assert.rejects(
+    service.transition(
+      e.id,
+      called.id,
+      "ativar",
+      { data_inicio: allocation.data_inicio, payment_info: {} },
+      actor,
+    ),
+    /pagamento/,
+  );
+  assert.equal((await service.detail(e.id)).reservadas, 1);
+  await service.transition(
+    e.id,
+    called.id,
+    "ativar",
+    {
+      data_inicio: allocation.data_inicio,
+      payment_info: {
+        bco: "001",
+        ag: "1234",
+        dig_ag: "0",
+        conta: "1234",
+        dig_conta: "1",
+      },
+    },
+    actor,
+  );
+  assert.equal((await service.detail(e.id)).ocupadas, 1);
+  const actions = (await db.FtWorkflowEvento.findAll()).map(
+    (row: any) => row.acao,
+  );
+  assert.ok(
+    actions.includes("inscrever_excecao") &&
+      actions.includes("convocar_excecao"),
+  );
+});
+
+test("exceptions bypass closed registration window and history but preserve concurrency and same-edital uniqueness", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  await service.update(
+    e.id,
+    { ...base, permitir_participacao_anterior: false, permitir_retorno: false },
+    actor,
+  );
+  await service.window(
+    e.id,
+    {
+      inscricoes_inicio: base.inscricoes_inicio,
+      inscricoes_fim: "2026-10-21T17:00:00-03:00",
+      motivo: "Prazo reduzido",
+    },
+    actor,
+  );
+  const [identity] = await db.Bolsistas.findOrCreate({
+    where: { municipe_uuid: person.uuid },
+    defaults: { municipe_uuid: person.uuid },
+  });
+  const past = await db.BolsistasEdital.create({
+    edital_id: randomUUID(),
+    bolsista_id: identity.id,
+    status: "concluido",
+    ativado_em: "2026-10-01",
+    concluded_at: "2026-10-21",
+  });
+  const data = {
+    municipe_uuid: person.uuid,
+    respostas: answers,
+    motivo: "Excecao autorizada",
+  };
+  await assert.rejects(
+    service.register(e.id, data, actor, false),
+    /fora do prazo/,
+  );
+  await assert.rejects(
+    service.register(e.id, data, actor, true),
+    /anteriormente/,
+  );
+  const inscription = await service.register(e.id, data, actor, false, true);
+  await assert.rejects(
+    service.call(e.id, inscription.id, allocation, actor),
+    /anteriormente/,
+  );
+  await db.BolsistasEdital.update(
+    { edital_id: e.id },
+    { where: { id: past.id } },
+  );
+  await assert.rejects(
+    service.call(e.id, inscription.id, allocation, actor),
+    /retorno/,
+  );
+  const called = await service.call(
+    e.id,
+    inscription.id,
+    { ...allocation, motivo: data.motivo },
+    actor,
+    true,
+  );
+  await assert.rejects(
+    service.call(
+      e.id,
+      inscription.id,
+      { ...allocation, motivo: data.motivo },
+      actor,
+      true,
+    ),
+    /ja convocada/,
+  );
+  await service.transition(
+    e.id,
+    called.id,
+    "cancelar",
+    { motivo: "Encerrado" },
+    actor,
+  );
+  await service.call(
+    e.id,
+    inscription.id,
+    { ...allocation, motivo: data.motivo },
+    actor,
+    true,
+  );
+});
+
+test("missing age blocks all new operations and initial filling remains possible after first convocation", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  const inscription = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  const called = await service.call(e.id, inscription.id, allocation, actor);
+  await db.Edital.update({ idade_maxima: null }, { where: { id: e.id } });
+  await assert.rejects(
+    service.transition(
+      e.id,
+      called.id,
+      "ativar",
+      { data_inicio: allocation.data_inicio },
+      actor,
+    ),
+    /idade maxima/,
+  );
+  await assert.rejects(
+    service.call(
+      e.id,
+      inscription.id,
+      { ...allocation, motivo: "Autorizado" },
+      actor,
+      true,
+    ),
+    /idade maxima/,
+  );
+  await assert.rejects(
+    service.register(
+      e.id,
+      { municipe_uuid: person.uuid, respostas: answers, motivo: "Autorizado" },
+      actor,
+      false,
+      true,
+    ),
+    /idade maxima/,
+  );
+  await service.update(e.id, { ...base, idade_maxima: 70 }, actor);
+  assert.equal((await service.detail(e.id)).idade_maxima, 70);
+  await assert.rejects(
+    service.update(e.id, { ...base, idade_maxima: 71 }, actor),
+    /Idade maxima bloqueada/,
+  );
+  await assert.rejects(
+    service.create(
+      { ...base, idade_maxima: undefined as unknown as number },
+      actor,
+    ),
+    /idade maxima/,
+  );
+});
+
+test("exception never authorizes before opening, minors, missing birth, invalid declarations or allocations", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  const data = {
+    municipe_uuid: person.uuid,
+    respostas: answers,
+    motivo: "Autorizado",
+  };
+  await service.window(
+    e.id,
+    {
+      inscricoes_inicio: "2026-10-23T09:00:00-03:00",
+      inscricoes_fim: base.inscricoes_fim,
+      motivo: "Abertura adiada",
+    },
+    actor,
+  );
+  await assert.rejects(
+    service.register(e.id, data, actor, false, true),
+    /nao iniciadas/,
+  );
+  await service.window(
+    e.id,
+    {
+      inscricoes_inicio: base.inscricoes_inicio,
+      inscricoes_fim: base.inscricoes_fim,
+      motivo: "Abertura restaurada",
+    },
+    actor,
+  );
+  for (const nascimento of [null, "2009-01-01", "2026-02-30"]) {
+    await db.MunicipeModel.update(
+      { nascimento },
+      { where: { uuid: person.uuid } },
+    );
+    await assert.rejects(service.register(e.id, data, actor, false, true));
+  }
+  await db.MunicipeModel.update(
+    { nascimento: "1950-01-01" },
+    { where: { uuid: person.uuid } },
+  );
+  await assert.rejects(
+    service.register(
+      e.id,
+      { ...data, respostas: { ...answers, aceite: false } },
+      actor,
+      false,
+      true,
+    ),
+    /Declaracoes/,
+  );
+  const inscription = await service.register(e.id, data, actor, false, true);
+  await assert.rejects(
+    service.call(
+      e.id,
+      inscription.id,
+      { ...allocation, pagador_id: randomUUID(), motivo: "Autorizado" },
+      actor,
+      true,
+    ),
+    /neste edital/,
+  );
+  assert.equal((await service.detail(e.id)).reservadas, 0);
+});
+
+test("opens without configuration and accepts free-text location when reserving and activating", async () => {
+  const { db, service, person } = await fixture();
+  const e = await service.create(
+    { ...base, name: "Sem configuração prévia" },
+    actor,
+  );
+  assert.equal((await service.phase(e.id, "aberto", actor)).fase, "aberto");
+  const registration = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  await assert.rejects(
+    service.call(
+      e.id,
+      registration.id,
+      {
+        pagador_id: randomUUID(),
+        turno_id: randomUUID(),
+        local: "Secretaria",
+        data_inicio: "2026-10-22",
+      },
+      actor,
+    ),
+    /neste edital/,
+  );
+  const payer = await service.config(
+    e.id,
+    "pagadores",
+    undefined,
+    { nome: "Pagador", quantidade: 1 },
+    actor,
+  );
+  const shift = await service.config(
+    e.id,
+    "turnos",
+    undefined,
+    { nome: "Manhã", hora_inicio: "08:00", hora_fim: "14:00" },
+    actor,
+  );
+  const data = {
+    pagador_id: payer.uuid,
+    turno_id: shift.uuid,
+    local: "  Secretaria de Obras  ",
+    data_inicio: "2026-10-22",
+  };
+  for (const local of [undefined, "", "   ", "x".repeat(256)])
+    await assert.rejects(
+      service.call(e.id, registration.id, { ...data, local }, actor),
+      /local de trabalho/,
+    );
+  const called = await service.call(e.id, registration.id, data, actor);
+  assert.equal(called.local, "Secretaria de Obras");
+  assert.equal(called.local_id, null);
+  assert.equal(await db.FtEditalLocal.count({ where: { edital_id: e.id } }), 0);
+  await service.transition(
+    e.id,
+    called.id,
+    "alocar",
+    { ...data, local: "Biblioteca" },
+    actor,
+  );
+  await service.transition(
+    e.id,
+    called.id,
+    "ativar",
+    {
+      data_inicio: data.data_inicio,
+      payment_info: {
+        bco: "001",
+        ag: "1234",
+        dig_ag: "0",
+        conta: "1234",
+        dig_conta: "1",
+      },
+    },
+    actor,
+  );
+  assert.equal(
+    (await service.participations(e.id, {})).rows[0].local,
+    "Biblioteca",
+  );
+  assert.equal((await service.detail(e.id)).ocupadas, 1);
+});
+
+async function activeFixture() {
+  const f = await fixture();
+  await f.service.phase(f.e.id, "aberto", actor);
+  const registration = await f.service.register(
+    f.e.id,
+    { municipe_uuid: f.person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  const participation = await f.service.call(
+    f.e.id,
+    registration.id,
+    f.allocation,
+    actor,
+  );
+  await f.service.transition(
+    f.e.id,
+    participation.id,
+    "ativar",
+    {
+      data_inicio: f.allocation.data_inicio,
+      payment_info: {
+        bco: "001",
+        ag: "1234",
+        dig_ag: "0",
+        conta: "1234",
+        dig_conta: "1",
+      },
+    },
+    actor,
+  );
+  return { ...f, participation };
+}
+
+for (const [current, months, editalEnd, expected] of [
+  ["2026-10-31", 3, "2028-12-31", "2027-01-31"],
+  ["2026-10-31", 3, "2026-12-31", "2026-12-31"],
+  ["2027-01-31", 1, "2028-12-31", "2027-02-28"],
+  ["2028-01-31", 1, "2028-12-31", "2028-02-29"],
+] as const)
+  test(`extension applies edital period ${months}, from ${current}, limited to ${editalEnd}`, async () => {
+    const { db, service, e, participation } = await activeFixture();
+    await db.Edital.update(
+      { prorrogacao_meses: months, data_vencimento: editalEnd },
+      { where: { id: e.id } },
+    );
+    await db.BolsistasEdital.update(
+      { expire_at: new Date(current + "T23:59:59-03:00") },
+      { where: { id: participation.id } },
+    );
+    const result = await service.transition(
+      e.id,
+      participation.id,
+      "prorrogar",
+      {},
+      actor,
+    );
+    assert.equal(result.expire_at, expected + "T23:59:59-03:00");
+    assert.equal(result.prorrogated, true);
+    await assert.rejects(
+      service.transition(e.id, participation.id, "prorrogar", {}, actor),
+      /ja utilizada/,
+    );
+    assert.equal(
+      await db.FtWorkflowEvento.count({
+        where: { acao: "prorrogar", recurso_id: participation.id },
+      }),
+      1,
+    );
+  });
+
+test("extension refuses unavailable cases without changing expiry, flag or audit events", async () => {
+  const { db, service, e, participation } = await activeFixture();
+  const end = "2026-12-31T23:59:59-03:00";
+  for (const scenario of [
+    {
+      months: 0,
+      status: "ativo",
+      current: end,
+      editalEnd: "2028-12-31",
+      fase: "aberto",
+    },
+    {
+      months: 3,
+      status: "convocado",
+      current: end,
+      editalEnd: "2028-12-31",
+      fase: "aberto",
+    },
+    {
+      months: 3,
+      status: "cancelado",
+      current: end,
+      editalEnd: "2028-12-31",
+      fase: "aberto",
+    },
+    {
+      months: 3,
+      status: "ativo",
+      current: "2026-10-21T23:59:59-03:00",
+      editalEnd: "2028-12-31",
+      fase: "aberto",
+    },
+    {
+      months: 3,
+      status: "ativo",
+      current: end,
+      editalEnd: "2026-12-31",
+      fase: "aberto",
+    },
+    {
+      months: 3,
+      status: "ativo",
+      current: end,
+      editalEnd: "2028-12-31",
+      fase: "encerrado",
+    },
+    {
+      months: 3,
+      status: "ativo",
+      current: end,
+      editalEnd: "2026-10-21",
+      fase: "aberto",
+    },
+  ]) {
+    await db.Edital.update(
+      {
+        prorrogacao_meses: scenario.months,
+        data_vencimento: scenario.editalEnd,
+        fase: scenario.fase,
+      },
+      { where: { id: e.id } },
+    );
+    await db.BolsistasEdital.update(
+      {
+        expire_at: scenario.current,
+        status: scenario.status,
+        prorrogated: false,
+      },
+      { where: { id: participation.id } },
+    );
+    await assert.rejects(
+      service.transition(e.id, participation.id, "prorrogar", {}, actor),
+    );
+    const row = await db.BolsistasEdital.findByPk(participation.id);
+    assert.equal(row.expire_at, scenario.current);
+    assert.equal(row.prorrogated, false);
+    assert.equal(
+      await db.FtWorkflowEvento.count({
+        where: { acao: "prorrogar", recurso_id: participation.id },
+      }),
+      0,
+    );
+  }
+});
+
+test("prevalidation is read only, excludes its own reservation and preserves confirmation checks", async () => {
+  const { db, service, e, person, allocation } = await fixture();
+  await service.phase(e.id, "aberto", actor);
+  const before = await db.FtWorkflowEvento.count();
+  assert.equal(
+    (
+      await service.prevalidate(e.id, "inscricao", {
+        municipe_uuid: person.uuid,
+        respostas: answers,
+      })
+    ).permitido,
+    true,
+  );
+  assert.equal(await db.Bolsistas.count(), 0);
+  assert.equal(await db.FtInscricao.count(), 0);
+  assert.equal(await db.FtWorkflowEvento.count(), before);
+  const registration = await service.register(
+    e.id,
+    { municipe_uuid: person.uuid, respostas: answers },
+    actor,
+    false,
+  );
+  const call = await service.call(e.id, registration.id, allocation, actor);
+  await (await db.Edital.findByPk(e.id)).update({ vagas: 1 });
+  await (
+    await db.Pagador.findByPk(allocation.pagador_id)
+  ).update({ quantidade: 1 });
+  const baselineEvents = await db.FtWorkflowEvento.count();
+  const payment_info = {
+    bco: "001",
+    ag: "0012",
+    dig_ag: "X",
+    conta: "00123",
+    dig_conta: "0",
+  };
+  const input = {
+    participacao_id: call.id,
+    data_inicio: allocation.data_inicio,
+    payment_info,
+  };
+  assert.equal(
+    (await service.prevalidate(e.id, "ativacao", input)).permitido,
+    true,
+  );
+  assert.equal(
+    (
+      await service.prevalidate(e.id, "ativacao", {
+        ...input,
+        payment_info: {},
+      })
+    ).permitido,
+    false,
+  );
+  assert.equal(
+    (
+      await service.prevalidate(e.id, "convocacao", {
+        inscricao_id: registration.id,
+        ...allocation,
+      })
+    ).permitido,
+    false,
+  );
+  assert.equal(await db.FtWorkflowEvento.count(), baselineEvents);
+  assert.equal(await db.PaymentInfo.count(), 0);
+  await assert.rejects(service.prevalidate(randomUUID(), "ativacao", input));
+  await assert.rejects(
+    service.prevalidate(e.id, "ativacao", {
+      ...input,
+      participacao_id: randomUUID(),
+    }),
+  );
+});

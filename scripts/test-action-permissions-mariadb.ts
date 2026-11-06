@@ -22,7 +22,7 @@ type Migration = { up: (qi: QueryInterface) => Promise<void>; down: (qi: QueryIn
 const load = async (kind: "migrations" | "seeders", file: string): Promise<Migration> =>
   (await import(pathToFileURL(resolve(directory, kind, file)).href)).default;
 const files = async (kind: "migrations" | "seeders") =>
-  (await readdir(resolve(directory, kind))).filter((name) => /^\d.*\.js$/.test(name)).sort();
+  (await readdir(resolve(directory, kind))).filter((name) => /^\d.*\.js$/.test(name)).sort((left, right) => left.localeCompare(right));
 const rows = <T extends object>(sql: string) => database.query<T>(sql, { type: QueryTypes.SELECT });
 const snapshot = () => rows("SELECT role_id, permission_action_id, allowed FROM role_permissions ORDER BY role_id, permission_action_id");
 

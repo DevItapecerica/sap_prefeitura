@@ -1,7 +1,2 @@
-export interface UserQuery {
-  search?: string;
-  page: number;
-  limit: number;
-  order: string;
-  setorId?: number;
-}
+// HTTP/application aliases of the domain's plain data contracts.
+export type { UserQuery } from "../../domain/contracts/user-query.js";

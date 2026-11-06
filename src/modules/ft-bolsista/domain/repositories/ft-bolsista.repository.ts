@@ -1,8 +1,8 @@
 import {
-  FtBolsistaFaltaQueryDto,
-  FtBolsistaQueryDto,
-  FtBolsistaVinculoCandidatesQueryDto,
-} from "../../application/dto/ft-bolsista.dto.js";
+  FtBolsistaFaltaQuery,
+  FtBolsistaQuery,
+  FtBolsistaVinculoCandidatesQuery,
+} from "../contracts/ft-bolsista.js";
 
 export interface FtBolsistaRepository {
   findById(id: string): Promise<any | null>;
@@ -19,9 +19,11 @@ export interface FtBolsistaRepository {
     paymentInfo: any,
     paymentInfoData: any,
   ): Promise<any>;
-  findAndCount(query?: FtBolsistaQueryDto): Promise<{ count: number; rows: any[] }>;
+  findAndCount(
+    query?: FtBolsistaQuery,
+  ): Promise<{ count: number; rows: any[] }>;
   findAndCountVinculoCandidates(
-    query: FtBolsistaVinculoCandidatesQueryDto,
+    query: FtBolsistaVinculoCandidatesQuery,
   ): Promise<{ rows: any[]; hasMore: boolean; nextCursor: string | null }>;
   findAniversariantesAtivos(): Promise<any[]>;
   findToExpire(limitDate: Date): Promise<{ count: number; rows: any[] }>;
@@ -47,7 +49,7 @@ export interface FtBolsistaRepository {
   destroyFalta(falta: any): Promise<void>;
   findAndCountFaltasByBolsista(
     bolsistaId: string,
-    query?: FtBolsistaFaltaQueryDto,
+    query?: FtBolsistaFaltaQuery,
   ): Promise<{ count: number; rows: any[] }>;
   findFaltasByBolsistaPeriodo(
     bolsistaId: string,
@@ -60,6 +62,6 @@ export interface FtBolsistaRepository {
   destroyOcorrencia(ocorrencia: any): Promise<void>;
   findAndCountOcorrenciasByBolsista(
     bolsistaId: string,
-    query?: import("../../application/dto/ft-bolsista.dto.js").FtBolsistaOcorrenciaQueryDto,
+    query?: import("../contracts/ft-bolsista.js").FtBolsistaOcorrenciaQuery,
   ): Promise<{ count: number; rows: any[] }>;
 }

@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { FtSchedulerService } from "../use-case/ft-scheduler.service.js";
-import {
-  __testing,
-  startFtScheduler,
-} from "../../scheduler/ft-scheduler.js";
+import { __testing, startFtScheduler } from "../../scheduler/ft-scheduler.js";
 
 class FakeFtSchedulerRepository {
-  expiredEditais = [{ id: "edital-1" }];
-  expiredVinculos = [{ id: "vinculo-1" }, { id: "vinculo-2" }];
+  expiredEditais = [{ id: "edital-1", name: "Edital 1" }];
+  expiredVinculos = [
+    { id: "vinculo-1", edital_id: "edital-1" },
+    { id: "vinculo-2", edital_id: "edital-1" },
+  ];
   nowReceived: Date | null = null;
   concluded = 0;
   expired = 0;
@@ -34,7 +34,7 @@ class FakeFtSchedulerRepository {
     };
   }
 
-  async expireVinculo(vinculo: any) {
+  async expireVinculo(vinculo: { id: string; edital_id: string }) {
     this.expired += 1;
     return {
       bolsistaId: `bolsista-${vinculo.id}`,
@@ -48,7 +48,9 @@ class FakeFtSchedulerRepository {
 
 test("FtSchedulerService inativa editais vencidos e expira vinculos vencidos", async () => {
   const repository = new FakeFtSchedulerRepository();
-  const service = new FtSchedulerService(repository);
+  const service = new FtSchedulerService(repository, {
+    publish: async () => {},
+  });
   const now = new Date("2026-06-09T12:00:00.000Z");
 
   const result = await service.run(now);
@@ -67,7 +69,9 @@ test("FtSchedulerService retorna zeros quando nao ha pendencias", async () => {
   const repository = new FakeFtSchedulerRepository();
   repository.expiredEditais = [];
   repository.expiredVinculos = [];
-  const service = new FtSchedulerService(repository);
+  const service = new FtSchedulerService(repository, {
+    publish: async () => {},
+  });
 
   const result = await service.run(new Date("2026-06-09T12:00:00.000Z"));
 
@@ -87,14 +91,11 @@ test("FtSchedulerService publica auditoria das transicoes automaticas", async ()
     },
   } as any);
 
-  await service.run(
-    new Date("2026-06-09T12:00:00.000Z"),
-    {
-      correlationId: "scheduler-1",
-      actor: { id: "system" },
-      origin: { type: "SCHEDULER", route: "ft-scheduler" },
-    },
-  );
+  await service.run(new Date("2026-06-09T12:00:00.000Z"), {
+    correlationId: "scheduler-1",
+    actor: { id: "system" },
+    origin: { type: "SCHEDULER", route: "ft-scheduler" },
+  });
 
   assert.equal(events.length, 3);
   assert.equal(events[0].name, "FT_EDITAL_CONCLUDED");

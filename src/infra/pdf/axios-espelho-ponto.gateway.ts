@@ -1,0 +1,72 @@
+import { fileNameSlug } from "../../core/utils/file-name-slug.js";
+import axios, { AxiosInstance } from "axios";
+import AppError from "../../core/appError.js";
+import {
+  EspelhoPontoPdfDto,
+  EspelhoPontoRequestDto,
+} from "../../modules/espelho-ponto/application/dto/espelho-ponto.dto.js";
+import { recordDependency } from "../../core/observability/metrics.js";
+
+type HttpClient = Pick<AxiosInstance, "post">;
+
+export default class AxiosEspelhoPontoGateway {
+  constructor(
+    private readonly pdfApiUrl: string,
+    private readonly httpClient: HttpClient = axios,
+  ) {}
+
+  async execute(
+    data: EspelhoPontoRequestDto,
+    requestId?: string,
+  ): Promise<EspelhoPontoPdfDto> {
+    const startedAt = performance.now();
+    try {
+      const response = await this.httpClient.post(
+        `${this.pdfApiUrl.replace(/\/$/, "")}/espelhos-ponto/render`,
+        data,
+        {
+          responseType: "arraybuffer",
+          timeout: 15_000,
+          headers: requestId ? { "X-Request-Id": requestId } : undefined,
+        },
+      );
+      const file = Buffer.from(response.data);
+      const contentType = this.header(response.headers["content-type"]);
+      if (
+        file.subarray(0, 4).toString() !== "%PDF" ||
+        !contentType?.toLowerCase().startsWith("application/pdf")
+      ) {
+        throw new Error("Invalid PDF response");
+      }
+      const fallback = `inline; filename="espelho-ponto-${this.slug(data.servidor.matricula)}-${data.periodo.referencia.replace("/", "-")}.pdf"`;
+      recordDependency(
+        "pdf",
+        "success",
+        (performance.now() - startedAt) / 1_000,
+      );
+      return {
+        file,
+        contentType,
+        contentDisposition:
+          this.header(response.headers["content-disposition"]) || fallback,
+        contentLength: this.header(response.headers["content-length"]),
+      };
+    } catch {
+      recordDependency("pdf", "error", (performance.now() - startedAt) / 1_000);
+      throw new AppError(
+        "PDF service unavailable",
+        502,
+        "PDF_SERVICE_UNAVAILABLE",
+      );
+    }
+  }
+
+  private header(value: unknown): string | undefined {
+    if (value === undefined || value === null) return undefined;
+    return Array.isArray(value) ? value.join(", ") : String(value);
+  }
+
+  private slug(value: string): string {
+    return fileNameSlug(value, "servidor");
+  }
+}

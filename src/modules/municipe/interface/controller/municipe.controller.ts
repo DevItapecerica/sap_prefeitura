@@ -1,15 +1,17 @@
+import {
+  makeGetMunicipe,
+  makeGetMunicipeById,
+  makeCreateMunicipe,
+  makeUpdateMunicipe,
+} from "../../factories/municipe.factories.js";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { QueryParams } from "../../../../core/types/genericTypes.js";
-import { SequelizeMunicipeRepository } from "../../../../infra/database/sequelize/repositories/sequelize.municipe.repository.js";
-import getMunicipeUseCase from "../../application/usecase/getMunicipe.use-case.js";
 import MunicipePresentation from "../presentation/municipe.masked.presentation.js";
 import Municipe from "../../domain/entity/Municipe.js";
-import { MunicipeDto, updateMunicipeDto } from "../../application/dto/municipe.dto.js";
-import createMunicipeUseCase from "../../application/usecase/createMunicipe.use-case.js";
-import getMunicipeByIdUseCase from "../../application/usecase/getMunicipeById.use-case.js";
-import updateMunicipeUseCase from "../../application/usecase/updateMunicipe.use-case.js";
-import AesCryptService from "../../../../core/security/aes/AesCrypt.service.js";
-import Sha256CryptService from "../../../../core/security/sha256/sha256.service.js";
+import {
+  MunicipeDto,
+  updateMunicipeDto,
+} from "../../application/dto/municipe.dto.js";
 import { makeResourceReadEventPublisher } from "../../../../factories/resource-read-events.factory.js";
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
 import { makeMunicipeEventPublisher } from "../../factories/municipe-events.factory.js";
@@ -31,11 +33,7 @@ export default class municipeController {
       order: request.query.order,
     };
 
-    const useCase = new getMunicipeUseCase(
-      new SequelizeMunicipeRepository(),
-      new AesCryptService(),
-      new Sha256CryptService(),
-    );
+    const useCase = makeGetMunicipe();
 
     const response = await useCase.execute(query);
 
@@ -64,11 +62,7 @@ export default class municipeController {
   ) {
     const uuid = request.params.uuid;
 
-    const useCase = new getMunicipeByIdUseCase(
-      new SequelizeMunicipeRepository(),
-      new AesCryptService(),
-      new Sha256CryptService(),
-    );
+    const useCase = makeGetMunicipeById();
 
     const response = await useCase.execute(uuid);
 
@@ -93,11 +87,7 @@ export default class municipeController {
   ) {
     const user = request.user;
     const municipe = request.body;
-    const useCase = new createMunicipeUseCase(
-      new SequelizeMunicipeRepository(),
-      new AesCryptService(),
-      new Sha256CryptService(),
-    );
+    const useCase = makeCreateMunicipe();
 
     const payload = {
       nome: municipe.nome,
@@ -113,8 +103,10 @@ export default class municipeController {
       complemento: municipe.complemento,
     };
 
-    const { municipe: response, protected: after } =
-      await useCase.execute(payload, String(user.id));
+    const { municipe: response, protected: after } = await useCase.execute(
+      payload,
+      String(user.id),
+    );
     await municipeEventPublisher.publish(MUNICIPE_EVENTS.created, {
       context: makeApplicationEventContext(request),
       after,
@@ -130,16 +122,15 @@ export default class municipeController {
   }
 
   static async updateMunicipe(
-    request: FastifyRequest<{ Body: updateMunicipeDto; Params: { uuid: string } }>,
+    request: FastifyRequest<{
+      Body: updateMunicipeDto;
+      Params: { uuid: string };
+    }>,
     reply: FastifyReply,
   ) {
     const user = request.user;
     const municipe = request.body;
-    const useCase = new updateMunicipeUseCase(
-      new SequelizeMunicipeRepository(),
-      new AesCryptService(),
-      new Sha256CryptService(),
-    );
+    const useCase = makeUpdateMunicipe();
 
     const uuid = request.params.uuid;
 
@@ -158,8 +149,11 @@ export default class municipeController {
       }).filter(([, value]) => value !== undefined),
     ) as updateMunicipeDto;
 
-    const { municipe: response, before, after } =
-      await useCase.execute(uuid, payload, user.id);
+    const {
+      municipe: response,
+      before,
+      after,
+    } = await useCase.execute(uuid, payload, user.id);
     await municipeEventPublisher.publish(MUNICIPE_EVENTS.updated, {
       context: makeApplicationEventContext(request),
       before,

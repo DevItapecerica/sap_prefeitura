@@ -13,7 +13,7 @@ export const toDateOnly = (value?: string | Date | null): string => {
 
 export const getVinculoOperationalEnd = (source: any): string => {
   const vinculo = source?.toJSON?.() ?? source;
-  return [vinculo?.canceled_at, vinculo?.concluded_at, vinculo?.expired_at, vinculo?.expire_at].filter(Boolean).map(toDateOnly).sort()[0] || '';
+  return [vinculo?.canceled_at, vinculo?.concluded_at, vinculo?.expired_at, vinculo?.expire_at].filter(Boolean).map(toDateOnly).sort((left, right) => left.localeCompare(right))[0] || '';
 };
 
 export const vinculoIntersectsPeriod = (

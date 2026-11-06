@@ -1,103 +1,221 @@
-import { Op } from 'sequelize';
-import { createHash } from 'node:crypto';
-import type { DbObject } from '../../../../core/types/DbTypes.js';
-import AesCryptService from '../../../../core/security/aes/AesCrypt.service.js';
-import { participationSignals, paymentIssues } from '../../domain/services/edital-insights.policy.js';
-import { ftError } from '../../../ft-bolsista/application/utils/ft-error.js';
+import {
+  enrollmentSnapshot,
+  enrollmentAnswers,
+} from "../utils/enrollment-content.js";
+import { mapPeaadRuleError } from "../../../ft-bolsista/application/utils/map-peaad-rule-error.js";
+import type {
+  WorkflowReader,
+  WorkflowQuery,
+  IAesCrypt,
+  Participation,
+} from "../../domain/repositories/workflow.repository.js";
+import type { Instant, Page } from "../../../../core/contracts/unit-of-work.js";
+import type { Answers } from "../../domain/services/edital-workflow.policy.js";
+import {
+  participationSignals,
+  paymentIssues,
+} from "../../domain/services/edital-insights.policy.js";
+import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 
-const plain = (row: any) => row?.toJSON?.() ?? row;
-const pagination = (q: any) => { const limit = Math.min(50, Math.max(1, Number(q.limit) || 20)); return { limit, offset: Math.max(0, Number(q.page) || 0) * limit }; };
-const lifecycle = ['inscrever', 'inscrever_excecao', 'convocar', 'convocar_excecao', 'ativar', 'alocar', 'prorrogar', 'cancelar', 'concluir', 'expirar'];
+const pagination = (q: WorkflowQuery) => {
+  const limit = Math.min(50, Math.max(1, Number(q.limit) || 20));
+  return { limit, offset: Math.max(0, Number(q.page) || 0) * limit };
+};
+interface PersonListRow extends Partial<Participation> {
+  id: string;
+  bolsista_id: string;
+  nome: string;
+  nome_inscricao: string | null;
+  status: string;
+  situacao: string;
+  inscricao_excepcional: boolean;
+  convocacao_excepcional: boolean;
+  respostas?: Partial<Answers>;
+  pagador_nome?: string;
+  pagamento_pendente?: boolean;
+}
 export class EditalInsightsService {
-  constructor(private db: DbObject, private crypto = new AesCryptService(), private clock = () => new Date()) {}
-  private searchFilter(search: string) {
-    const digits = search.replace(/\D/g, '');
-    if (digits.length === 11 && /^[\d.\s-]+$/.test(search)) {
-      return { '$bolsista.municipe.cpfHash$': createHash('sha256').update(digits).digest('hex') };
+  constructor(
+    private repository: WorkflowReader,
+    private crypto: IAesCrypt,
+    private clock = () => new Date(),
+  ) {}
+  async people(
+    id: string,
+    query: WorkflowQuery,
+    inscriptions: boolean,
+  ): Promise<Page<PersonListRow>> {
+    try {
+      const e = await this.repository.edital(id);
+      if (!e) throw ftError(404, "Edital nao encontrado");
+      const result = await this.repository.people(id, query, inscriptions);
+      const rows = await Promise.all(
+        result.rows.map(async (row) => {
+          const registration = inscriptions ? row : row.inscricao;
+          const snapshot = registration?.snapshot
+            ? enrollmentSnapshot(
+                await this.crypto.decrypt(registration.snapshot),
+              )
+            : {};
+          const current = inscriptions ? row.participacoes?.[0] : row;
+          const base = {
+            id: row.id,
+            bolsista_id: row.bolsista_id,
+            nome:
+              row.bolsista?.municipe?.nome || snapshot.nome || "Participante",
+            nome_inscricao: snapshot.nome || null,
+            status: row.status,
+            situacao: current?.status || row.status,
+            excecao_motivo: row.excecao_motivo,
+            excecao_autor_id: row.excecao_autor_id,
+            excecao_em: row.excecao_em,
+            inscricao_excepcional: Boolean(registration?.excecao_em),
+            convocacao_excepcional: Boolean(current?.excecao_em),
+            createdAt: row.createdAt,
+          };
+          if (inscriptions)
+            return {
+              ...base,
+              respostas: enrollmentAnswers(
+                await this.crypto.decrypt(row.respostas!),
+              ),
+              pagador_id: current?.pagador_id,
+              turno_id: current?.turno_id,
+            };
+          const {
+            bolsista: _b,
+            inscricao: _i,
+            pagador: _p,
+            respostas: _encryptedAnswers,
+            ...participation
+          } = row;
+          return {
+            ...participation,
+            ...base,
+            pagador_nome: row.pagador?.nome || "Pagador indisponível",
+            ...participationSignals(e, row, this.clock()),
+            pagamento_pendente:
+              paymentIssues(row.bolsista?.payment_info).length > 0,
+          };
+        }),
+      );
+      return { rows, count: result.count };
+    } catch (error) {
+      throw mapPeaadRuleError(error);
     }
-    return { '$bolsista.municipe.nome$': { [Op.like]: '%' + search.replace(/[\\%_]/g, '\\$&') + '%' } };
   }
-  private exceptionFilter(mode: string, inscriptions: boolean) {
-    const registration = inscriptions ? 'excecao_em' : '$inscricao.excecao_em$';
-    const convocation = inscriptions ? '$participacoes.excecao_em$' : 'excecao_em';
-    switch (mode) {
-      case 'inscricao': return { [registration]: { [Op.ne]: null } };
-      case 'convocacao': return { [convocation]: { [Op.ne]: null } };
-      case 'qualquer': return { [Op.or]: [{ [registration]: { [Op.ne]: null } }, { [convocation]: { [Op.ne]: null } }] };
-      case 'nenhuma': return { [registration]: null, [convocation]: null };
-      default: return undefined;
+  async history(
+    id: string,
+    resource: string,
+    inscriptions: boolean,
+    query: WorkflowQuery,
+  ) {
+    try {
+      const source = await this.repository.historySource(
+        id,
+        resource,
+        inscriptions,
+      );
+      if (!source) throw ftError(404, "Registro nao encontrado neste edital");
+      const { registration, participations, events, actors: users } = source;
+      const names = new Map(users.map((user) => [String(user.id), user.name]));
+      const rows: Array<{
+        id: string;
+        recurso_id: string;
+        acao: string;
+        data: Instant | null | undefined;
+        responsavel: string;
+        motivo: string | null;
+        origem: string;
+        recurso_nome?: string;
+      }> = events.map((event) => ({
+        id: event.id,
+        recurso_id: event.recurso_id,
+        acao: event.acao,
+        data: event.createdAt,
+        responsavel:
+          event.ator_id === "sistema"
+            ? "Sistema"
+            : names.get(String(event.ator_id)) ||
+              "Usuário " + event.ator_id + " (nome indisponível)",
+        motivo: event.motivo || null,
+        origem: "evento",
+      }));
+      const fallback = (
+        resourceId: string,
+        action: string,
+        date: Instant | null | undefined,
+        reason?: string | null,
+      ) => {
+        if (
+          !rows.some(
+            (event) =>
+              event.recurso_id === resourceId &&
+              (event.acao === action || event.acao === action + "_excecao"),
+          )
+        )
+          rows.push({
+            id: "marco-" + resourceId + "-" + action,
+            recurso_id: resourceId,
+            acao: action,
+            data: date || null,
+            responsavel: "Não registrado",
+            motivo: reason || null,
+            origem: "marco",
+          });
+      };
+      if (registration)
+        fallback(registration.id, "inscrever", registration.createdAt);
+      for (const p of participations) {
+        fallback(p.id, "convocar", p.inscricao_id ? p.createdAt : null);
+        if (
+          !p.ativado_em &&
+          (["ativo", "concluido", "expirado"].includes(p.status) ||
+            p.prorrogated)
+        )
+          fallback(p.id, "ativar", null);
+        for (const [field, action] of [
+          ["ativado_em", "ativar"],
+          ["canceled_at", "cancelar"],
+          ["concluded_at", "concluir"],
+          ["expired_at", "expirar"],
+        ] as const)
+          if (p[field]) fallback(p.id, action!, p[field], p.observacao);
+        if (p.prorrogated) fallback(p.id, "prorrogar", null);
+      }
+      rows.sort(
+        (a, b) =>
+          String(
+            a.data ? new Date(a.data).toISOString() : "9999",
+          ).localeCompare(
+            String(b.data ? new Date(b.data).toISOString() : "9999"),
+          ) || String(a.id).localeCompare(String(b.id)),
+      );
+      const orderedParticipations = [...participations].sort(
+        (a, b) =>
+          String(
+            a.createdAt ? new Date(a.createdAt).toISOString() : "9999",
+          ).localeCompare(
+            String(b.createdAt ? new Date(b.createdAt).toISOString() : "9999"),
+          ) || String(a.id).localeCompare(String(b.id)),
+      );
+      const resourceNames = new Map<string, string>(
+        orderedParticipations.map((p, index) => [
+          String(p.id),
+          "Participação " + (index + 1),
+        ]),
+      );
+      if (registration) resourceNames.set(String(registration.id), "Inscrição");
+      for (const event of rows)
+        event.recurso_nome =
+          resourceNames.get(String(event.recurso_id)) || "Participação";
+      const { offset, limit } = pagination(query);
+      return {
+        rows: rows.slice(offset, offset + limit),
+        count: rows.length,
+      };
+    } catch (error) {
+      throw mapPeaadRuleError(error);
     }
-  }
-  private filters(query: any, inscriptions: boolean) {
-    const conditions: any[] = [];
-    const search = String(query.search || '').trim();
-    if (search) conditions.push(this.searchFilter(search));
-    const prefix = inscriptions ? 'participacoes.' : '';
-    for (const field of ['pagador_id', 'turno_id']) if (query[field]) conditions.push({ [inscriptions ? '$' + prefix + field + '$' : field]: query[field] });
-    if (query.status) conditions.push(inscriptions ? { [Op.or]: [
-      { '$participacoes.status$': query.status }, { '$participacoes.id$': null, status: query.status },
-    ] } : { status: query.status });
-    if (!inscriptions && query.grupo_status === 'encerrados') conditions.push({ status: { [Op.in]: ['concluido', 'cancelado', 'expirado', 'inativo'] } });
-    const exception = this.exceptionFilter(query.excecao, inscriptions);
-    if (exception) conditions.push(exception);
-    return conditions.length ? { [Op.and]: conditions } : {};
-  }
-  async people(id: string, query: any, inscriptions: boolean) {
-    const e = plain(await this.db.Edital.findByPk(id));
-    if (!e) throw ftError(404, 'Edital nao encontrado');
-    const include: any[] = [{ model: this.db.Bolsistas, as: 'bolsista', paranoid: false, required: true,
-      include: [{ model: this.db.MunicipeModel, as: 'municipe', paranoid: false, required: true, attributes: ['uuid', 'nome'] },
-        ...(!inscriptions ? [{ model: this.db.PaymentInfo, as: 'payment_info' }] : [])] }];
-    if (inscriptions) include.push({ model: this.db.BolsistasEdital, as: 'participacoes', required: false, duplicating: false,
-      where: { edital_id: id, status: ['convocado', 'ativo'] } });
-    else include.push({ model: this.db.FtInscricao, as: 'inscricao', required: false }, { model: this.db.Pagador, as: 'pagador', paranoid: false });
-    const Model = inscriptions ? this.db.FtInscricao : this.db.BolsistasEdital;
-    const result = await Model.findAndCountAll({ where: { edital_id: id, ...this.filters(query, inscriptions) }, include,
-      distinct: true, subQuery: false, ...pagination(query), order: [['createdAt', 'DESC'], ['id', 'DESC']] });
-    const rows = await Promise.all(result.rows.map(async (model: any) => {
-      const row = plain(model), registration = inscriptions ? row : row.inscricao;
-      const snapshot = registration?.snapshot ? JSON.parse(await this.crypto.decrypt(registration.snapshot)) : {};
-      const current = inscriptions ? row.participacoes?.[0] : row;
-      const base = { id: row.id, bolsista_id: row.bolsista_id, nome: row.bolsista?.municipe?.nome || snapshot.nome || 'Participante',
-        nome_inscricao: snapshot.nome || null, status: row.status, situacao: current?.status || row.status,
-        excecao_motivo: row.excecao_motivo, excecao_autor_id: row.excecao_autor_id, excecao_em: row.excecao_em,
-        inscricao_excepcional: Boolean(registration?.excecao_em), convocacao_excepcional: Boolean(current?.excecao_em), createdAt: row.createdAt };
-      if (inscriptions) return { ...base, respostas: JSON.parse(await this.crypto.decrypt(row.respostas)), pagador_id: current?.pagador_id, turno_id: current?.turno_id };
-      const { bolsista: _b, inscricao: _i, pagador: _p, ...participation } = row;
-      return { ...participation, ...base, pagador_nome: row.pagador?.nome || 'Pagador indisponível', ...participationSignals(e, row, this.clock()),
-        pagamento_pendente: paymentIssues(row.bolsista?.payment_info).length > 0 };
-    }));
-    return { rows, count: result.count };
-  }
-  async history(id: string, resource: string, inscriptions: boolean, query: any) {
-    const row = await (inscriptions ? this.db.FtInscricao : this.db.BolsistasEdital).findOne({ where: { id: resource, edital_id: id }, paranoid: false });
-    if (!row) throw ftError(404, 'Registro nao encontrado neste edital');
-    const registration = inscriptions ? row : row.inscricao_id ? await this.db.FtInscricao.findOne({ where: { id: row.inscricao_id, edital_id: id }, paranoid: false }) : null;
-    const participations = registration ? await this.db.BolsistasEdital.findAll({ where: { inscricao_id: registration.id, edital_id: id }, paranoid: false }) : [row];
-    const ids = [...new Set([registration?.id, ...participations.map((p: any) => p.id)].filter(Boolean))];
-    const events = await this.db.FtWorkflowEvento.findAll({ where: { edital_id: id, recurso_id: { [Op.in]: ids }, acao: { [Op.in]: lifecycle } }, order: [['createdAt', 'ASC'], ['id', 'ASC']] });
-    const actors = [...new Set(events.map((event: any) => String(event.ator_id)).filter((actor: string) => /^\d+$/.test(actor)))];
-    const users = actors.length ? await this.db.UserModel.findAll({ where: { id: { [Op.in]: actors } }, attributes: ['id', 'name'], paranoid: false }) : [];
-    const names = new Map(users.map((user: any) => [String(user.id), user.name]));
-    const rows: any[] = events.map((event: any) => ({ id: event.id, recurso_id: event.recurso_id, acao: event.acao, data: event.createdAt,
-      responsavel: event.ator_id === 'sistema' ? 'Sistema' : names.get(String(event.ator_id)) || 'Usuário ' + event.ator_id + ' (nome indisponível)', motivo: event.motivo || null, origem: 'evento' }));
-    const fallback = (resourceId: string, action: string, date: any, reason?: string) => {
-      if (!rows.some(event => event.recurso_id === resourceId && (event.acao === action || event.acao === action + '_excecao'))) rows.push({ id: 'marco-' + resourceId + '-' + action, recurso_id: resourceId, acao: action, data: date || null, responsavel: 'Não registrado', motivo: reason || null, origem: 'marco' });
-    };
-    if (registration) fallback(registration.id, 'inscrever', registration.createdAt);
-    for (const p of participations) {
-      fallback(p.id, 'convocar', p.inscricao_id ? p.createdAt : null);
-      if (!p.ativado_em && (['ativo', 'concluido', 'expirado'].includes(p.status) || p.prorrogated)) fallback(p.id, 'ativar', null);
-      for (const [field, action] of [['ativado_em', 'ativar'], ['canceled_at', 'cancelar'], ['concluded_at', 'concluir'], ['expired_at', 'expirar']]) if (p[field]) fallback(p.id, action!, p[field], p.observacao);
-      if (p.prorrogated) fallback(p.id, 'prorrogar', null);
-    }
-    rows.sort((a, b) => String(a.data ? new Date(a.data).toISOString() : '9999').localeCompare(String(b.data ? new Date(b.data).toISOString() : '9999')) || String(a.id).localeCompare(String(b.id)));
-    const orderedParticipations = [...participations].sort((a: any, b: any) =>
-      String(a.createdAt ? new Date(a.createdAt).toISOString() : '9999').localeCompare(String(b.createdAt ? new Date(b.createdAt).toISOString() : '9999')) || String(a.id).localeCompare(String(b.id)));
-    const resourceNames = new Map<string, string>(orderedParticipations.map((p: any, index: number) => [String(p.id), 'Participação ' + (index + 1)]));
-    if (registration) resourceNames.set(String(registration.id), 'Inscrição');
-    for (const event of rows) event.recurso_nome = resourceNames.get(String(event.recurso_id)) || 'Participação';
-    const { offset, limit } = pagination(query);
-    return { rows: rows.slice(offset, offset + limit), count: rows.length };
   }
 }

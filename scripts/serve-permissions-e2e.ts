@@ -63,7 +63,7 @@ const ftActions = await db.PermissionActionModel.findAll({ where: { module_key: 
 for (const action of ftActions) {
   await db.RolePermissionsModel.create({ role_id: targetRole.get("id"), permission_action_id: action.get("id"), allowed: ["acessar", "consultar_bolsista", "consultar_edital", "consultar_vinculos"].includes(String(action.get("action"))) });
 }
-const token = (user: any) => jwt.sign({ id: user.get("id"), role_id: user.get("role_id"), setor_id: user.get("setor_id"), name: user.get("name") }, process.env.SECRET_KEY!, { expiresIn: "1h" });
+const token = (user: any) => jwt.sign({ id: user.get("id"), role_id: user.get("role_id"), setor_id: user.get("setor_id"), name: user.get("name") }, process.env.JWT_KEY!, { expiresIn: "1h" });
 const fixture = {
   database: target.pathname.slice(1), apiUrl: "http://127.0.0.1:3099/api/v2", targetRoleId: targetRole.get("id"),
   otherRoleId: otherRole.get("id"), manager: { id: admin.get("id"), token: token(admin) },

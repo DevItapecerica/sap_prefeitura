@@ -2,8 +2,12 @@ import AppError from "../../core/appError.js";
 import comparePass from "../../core/utils/comparePass.js";
 import UserRepository from "../user/domain/repository/user.repository.js";
 import { createHash, randomBytes } from "node:crypto";
-import { SequelizeUserSessionRepository } from "../../infra/database/sequelize/repositories/sequelize.user-session.repository.js";
-import { AuthLoginResponse, JwtUserPayload, RefreshSessionResponse } from "./types.js";
+import type { UserSessionRepository } from "./domain/user-session.repository.js";
+import {
+  AuthLoginResponse,
+  JwtUserPayload,
+  RefreshSessionResponse,
+} from "./types.js";
 import JwtServices from "./utils/jwt.service.js";
 
 const REFRESH_TOKEN_BYTES = 48;
@@ -13,8 +17,8 @@ export default class authService {
   constructor(
     private userRepository: UserRepository,
     private tokenService: JwtServices,
-    private logger: any,
-    private sessionRepository = new SequelizeUserSessionRepository(),
+    private logger: { info(message: string): void },
+    private sessionRepository: UserSessionRepository,
   ) {}
 
   async login(email: string, password: string): Promise<AuthLoginResponse> {
@@ -31,7 +35,10 @@ export default class authService {
     }
 
     this.logger.info("Validando senha");
-    const validPassword = await comparePass(password, user.password || "NoPass");
+    const validPassword = await comparePass(
+      password,
+      user.password || "NoPass",
+    );
 
     if (!validPassword) {
       const error = new AppError(
@@ -89,7 +96,8 @@ export default class authService {
 
   async refreshSession(refreshToken: string): Promise<RefreshSessionResponse> {
     const tokenHash = this.hashRefreshToken(refreshToken);
-    const session = await this.sessionRepository.findActiveByTokenHash(tokenHash);
+    const session =
+      await this.sessionRepository.findActiveByTokenHash(tokenHash);
 
     if (!session) {
       throw new AppError("Sessão expirada ou inválida", 401, "SESSION_ERROR");
@@ -99,7 +107,11 @@ export default class authService {
 
     if (!user) {
       await this.sessionRepository.revokeByTokenHash(tokenHash);
-      throw new AppError("Usuário da sessão não encontrado", 401, "SESSION_ERROR");
+      throw new AppError(
+        "Usuário da sessão não encontrado",
+        401,
+        "SESSION_ERROR",
+      );
     }
 
     const payload: JwtUserPayload = {
@@ -126,7 +138,8 @@ export default class authService {
 
   async logout(refreshToken: string): Promise<number | null> {
     const tokenHash = this.hashRefreshToken(refreshToken);
-    const session = await this.sessionRepository.findActiveByTokenHash(tokenHash);
+    const session =
+      await this.sessionRepository.findActiveByTokenHash(tokenHash);
     await this.sessionRepository.revokeByTokenHash(tokenHash);
     return session?.userId ?? null;
   }

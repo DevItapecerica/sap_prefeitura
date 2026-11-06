@@ -12,7 +12,7 @@ type FtListaPresenca = {
 export class FtListaPresencaCsvFormatter {
   format(relatorio: FtListaPresenca): string {
     const dias = this.daysInPeriod(relatorio.periodo);
-    const rows: any[][] = [
+    const rows: unknown[][] = [
       ["Lista de presenca"],
       ["Edital:", relatorio.edital.id],
       ["Nome:", relatorio.edital.name],
@@ -31,7 +31,7 @@ export class FtListaPresencaCsvFormatter {
     ];
 
     for (const item of relatorio.bolsistas) {
-      const municipe = item.bolsista.municipe as any;
+      const municipe = item.bolsista.municipe;
       const status =
         item.vinculos.at(-1)?.status || item.bolsista.status || "sem_vinculo";
       const faltas = new Set(
@@ -124,7 +124,7 @@ export class FtListaPresencaCsvFormatter {
     return day === 0 || day === 6;
   }
 
-  private formatCell(cell: any): string {
+  private formatCell(cell: unknown): string {
     return cell === undefined || cell === null ? "" : String(cell);
   }
 }

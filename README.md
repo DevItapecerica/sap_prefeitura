@@ -1,5 +1,15 @@
 # SAP Prefeitura — API principal
 
+## Organização das dependências
+
+Use Serviços como referência: rotas explícitas chamam controllers; factories compõem os serviços/casos de uso com contratos de repositório e adapters de `infra`. Domínio não importa DTOs da aplicação nem erros HTTP. Erros semânticos são traduzidos na aplicação para os contratos públicos existentes.
+
+Workflow, estoque e fechamento usam unidades de trabalho tipadas. O callback recebe os repositórios e a escrita de auditoria da mesma transação, sem receber `Transaction`, models ou opções de consulta Sequelize. Somente os adapters conhecem o driver. Políticas recebem dados e permanecem puras. Não abra uma segunda transação em um repositório participante.
+
+As rotas do PEAAD declaram schemas, guards e controllers por operação. Bodies rejeitam campos extras e coerção de tipos na fronteira Fastify; querystrings mantêm o tratamento anterior. Transporte PDF e armazenamento/ZIP são portas com adapters próprios.
+
+Execute `npm run check:architecture`, `npm run check`, `npm run test:coverage`, `npm run build` e `npm run openapi:generate`. O verificador de imports e seus testes também fazem parte da CI. Integração SQL exige o opt-in para um schema descartável vazio descrito no guia FT; nunca use a base corrente. Inventário e evidências: [correcao-clean-architecture.md](codex/plans/correcao-clean-architecture.md).
+
 API modular em Node.js 22, TypeScript, Fastify 5 e Sequelize/MariaDB. Registra autenticação, usuários, setores, roles, serviços, permissões, munícipes, Esporte, PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO e auditoria. A visão do ecossistema está no [README principal](../README.md).
 
 ## PEAAD centrado no edital
@@ -162,7 +172,7 @@ aguardando -> processando -> concluido -> excluido
 
 ### Armazenamento
 
-`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória e deve ser acrescentada ao ambiente caso não esteja no exemplo copiado. O Compose já define `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
+`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória e está documentada no `.env.example`. Os Composes integrado e isolado definem `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
 
 Na execução nativa em desenvolvimento, a ausência da variável usa `sap_prefeitura/storage/ft-reports`. O diretório deve ser gravável pelo usuário da aplicação. Com múltiplas instâncias, todas precisam compartilhar o mesmo volume; armazenamento local isolado não permite que outra instância entregue o arquivo.
 
@@ -253,7 +263,7 @@ curl http://localhost:3002/ready
 - Se `db` não ficar saudável, revise as quatro variáveis `DATABASE_*` e os logs do MariaDB.
 - Na API principal, se `/health` responder e `/ready` falhar, verifique as dependências. Na API PDF, `/ready` atualmente retorna estado estático.
 - Se o frontend não alcançar a API, confirme que o serviço Compose se chama `sap` e que o proxy recebe requisições sob `/api/`.
-- Se a API principal não iniciar, confirme migrations, `DATABASE_URL`, `SECRET_KEY` e as credenciais de bootstrap.
+- Se a API principal não iniciar, confirme migrations, `DATABASE_URL`, `SECRET_KEY`, `JWT_KEY` e as credenciais de bootstrap. `JWT_KEY` assina os tokens; `SECRET_KEY` protege os dados e deve ser uma chave independente. Os Composes recusam a configuração sem `JWT_KEY`.
 
 ## Documentação do trabalho
 

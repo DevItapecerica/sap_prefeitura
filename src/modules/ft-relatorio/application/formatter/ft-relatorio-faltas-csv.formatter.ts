@@ -11,7 +11,7 @@ type FtRelatorioFaltas = {
 
 export class FtRelatorioFaltasCsvFormatter {
   format(relatorio: FtRelatorioFaltas): string {
-    const rows: any[][] = [
+    const rows: unknown[][] = [
       ["Relatorio de faltas"],
       ["Edital:", relatorio.edital.id],
       ["Nome:", relatorio.edital.name],
@@ -30,7 +30,7 @@ export class FtRelatorioFaltasCsvFormatter {
     ];
 
     for (const item of relatorio.bolsistas) {
-      const municipe = item.bolsista.municipe as any;
+      const municipe = item.bolsista.municipe;
       const status =
         item.vinculos.at(-1)?.status || item.bolsista.status || "sem_vinculo";
       const faltas = [...item.faltas].sort((a, b) =>
@@ -56,7 +56,7 @@ export class FtRelatorioFaltasCsvFormatter {
       .join("\n");
   }
 
-  private formatCell(cell: any): string {
+  private formatCell(cell: unknown): string {
     return cell === undefined || cell === null ? "" : String(cell);
   }
 

@@ -1,12 +1,12 @@
+import { PeaadRuleError } from "../../../ft-bolsista/domain/errors/peaad-rule.error.js";
 import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
-import { FtRelatorioPeriodo } from "../../application/dto/ft-relatorio.dto.js";
+import { FtRelatorioPeriodo } from "../contracts/ft-relatorio.js";
 import {
   FtRelatorioBolsista,
   FtRelatorioVinculo,
 } from "../entities/ft-relatorio.entity.js";
 import { DESCONTAR_FALTA } from "../../../ft-edital/domain/constants/ft-vinculo.constants.js";
 import { hasOverlappingVinculos } from "../../../ft-edital/domain/services/ft-vinculo-period.service.js";
-import { ftError } from "../../../ft-bolsista/application/utils/ft-error.js";
 
 export type FtRelatorioBolsistaRow = {
   bolsista_id?: string;
@@ -59,8 +59,8 @@ export class FtRelatorioPagamentoService {
     const grouped: Record<string, FtRelatorioBolsistaRow[]> = {};
     for (const item of bolsistas) {
       if (hasOverlappingVinculos(item.vinculos)) {
-        throw ftError(
-          409,
+        throw new PeaadRuleError(
+          "OVERLAPPING_PARTICIPATIONS",
           "Existem vinculos sobrepostos para o bolsista no periodo informado",
         );
       }

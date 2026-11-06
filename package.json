@@ -29,7 +29,8 @@
     "migrate:undo:all": "npm run build && npx sequelize-cli db:migrate:undo:all",
     "seed": "npm run build && npx sequelize-cli db:seed:all",
     "seed:undo": "npm run build && npx sequelize-cli db:seed:undo",
-    "seed:undo:all": "npm run build && npx sequelize-cli db:seed:undo:all"
+    "seed:undo:all": "npm run build && npx sequelize-cli db:seed:undo:all",
+    "check:architecture": "node --test scripts/check-architecture.cases.mjs && node scripts/check-architecture.mjs backend"
   },
   "keywords": [],
   "author": "",
@@ -53,7 +54,8 @@
     "nodemailer": "^9.0.1",
     "pino-pretty": "^13.1.1",
     "sequelize": "^6.37.8",
-    "sequelize-cli": "^6.6.5"
+    "sequelize-cli": "^6.6.5",
+    "@fastify/ajv-compiler": "^4.0.5"
   },
   "devDependencies": {
     "@types/archiver": "^8.0.0",

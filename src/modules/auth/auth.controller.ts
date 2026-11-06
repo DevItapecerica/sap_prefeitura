@@ -1,8 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import authService from "./auth.service.js";
-import UserRepository from "../user/domain/repository/user.repository.js";
-import JwtServices from "./utils/jwt.service.js";
-import { SequelizeUserRepository } from "../../infra/database/sequelize/repositories/sequelize.user.repository.js";
+import { makeAuthService } from "./factories/makeAuthService.js";
 import { NODE_ENV } from "../../core/env.js";
 import AppError from "../../core/appError.js";
 import { makeAuthEventPublisher } from "./factories/auth-events.factory.js";
@@ -28,7 +25,7 @@ export default class authController {
     request: FastifyRequest<{ Body: { email: string; password: string } }>,
     reply: FastifyReply,
   ) {
-    const service = new authService(new SequelizeUserRepository(), new JwtServices(request.log), request.log);
+    const service = makeAuthService(request.log);
 
     const { email, password } = request.body;
     const response = await service.login(email, password);
@@ -58,18 +55,22 @@ export default class authController {
     });
   }
 
-  static async authUser(request: FastifyRequest<{Headers: {authorization: string}}>, reply: FastifyReply) {
-    const service = new authService(new SequelizeUserRepository(), new JwtServices(request.log), request.log);
+  static async authUser(
+    request: FastifyRequest<{ Headers: { authorization: string } }>,
+    reply: FastifyReply,
+  ) {
+    const service = makeAuthService(request.log);
     const token = request.headers.authorization.replace("Bearer ", "");
 
     const response = await service.authUser(token);
 
-    reply.status(200).send({ message: "Usuário authenticado", user: response, ok: true });
-
+    reply
+      .status(200)
+      .send({ message: "Usuário authenticado", user: response, ok: true });
   }
 
   static async refresh(request: FastifyRequest, reply: FastifyReply) {
-    const service = new authService(new SequelizeUserRepository(), new JwtServices(request.log), request.log);
+    const service = makeAuthService(request.log);
     const refreshToken = request.cookies?.[REFRESH_TOKEN_COOKIE];
 
     if (!refreshToken) {
@@ -92,7 +93,7 @@ export default class authController {
   }
 
   static async logout(request: FastifyRequest, reply: FastifyReply) {
-    const service = new authService(new SequelizeUserRepository(), new JwtServices(request.log), request.log);
+    const service = makeAuthService(request.log);
     const refreshToken = request.cookies?.[REFRESH_TOKEN_COOKIE];
 
     const userId = refreshToken ? await service.logout(refreshToken) : null;

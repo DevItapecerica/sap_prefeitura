@@ -1,15 +1,13 @@
 import { Op } from "sequelize";
 import db from "../index.js";
 
-export type UserSession = {
-  id: number;
-  userId: number;
-  refreshTokenHash: string;
-  expiresAt: Date;
-  revokedAt: Date | null;
-};
+import type {
+  UserSession,
+  UserSessionRepository,
+} from "../../../../modules/auth/domain/user-session.repository.js";
+export type { UserSession } from "../../../../modules/auth/domain/user-session.repository.js";
 
-export class SequelizeUserSessionRepository {
+export class SequelizeUserSessionRepository implements UserSessionRepository {
   private model = db.UserSessionModel;
 
   async createSession(
@@ -67,7 +65,7 @@ export class SequelizeUserSessionRepository {
     );
   }
 
-  private toEntity(data: any): UserSession {
+  private toEntity(data: UserSession): UserSession {
     return {
       id: data.id,
       userId: data.userId,

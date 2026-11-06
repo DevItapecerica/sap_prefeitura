@@ -1,4 +1,4 @@
-import { FtRelatorioPeriodo } from "../../application/dto/ft-relatorio.dto.js";
+import { FtRelatorioPeriodo } from "../contracts/ft-relatorio.js";
 import { FtEdital } from "../../../ft-edital/domain/entity/FtEdital.js";
 import { FtRelatorioBolsista } from "../entities/ft-relatorio.entity.js";
 

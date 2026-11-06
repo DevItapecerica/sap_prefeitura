@@ -1,28 +1,8 @@
-export type CreateAtletaDto = {
-  municipe_uuid: string;
-  ativo?: boolean;
-};
-
-export type UpdateAtletaDto = {
-  ativo?: boolean;
-};
-
-export type AddModalidadeAtletaDto = {
-  modalidade_uuid: string;
-};
-
-export type CreateCarteirinhaAtletaDto = {
-  observacao?: string | null;
-  validade_exame?: string | null;
-  foto?: string | null;
-};
-
-export type QueryAtletaDto = {
-  search?: string;
-  searchHash?: string;
-  ativo?: boolean | string;
-  municipe_uuid?: string;
-  page?: number;
-  limit?: number;
-  order?: string;
-};
+// HTTP/application aliases of the domain's plain data contracts.
+export type {
+  CreateAtleta as CreateAtletaDto,
+  UpdateAtleta as UpdateAtletaDto,
+  AddModalidadeAtleta as AddModalidadeAtletaDto,
+  CreateCarteirinhaAtleta as CreateCarteirinhaAtletaDto,
+  QueryAtleta as QueryAtletaDto,
+} from "../../domain/contracts/atleta.js";

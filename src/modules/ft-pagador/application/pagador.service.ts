@@ -1,3 +1,4 @@
+import { mapPeaadRuleError } from "../../ft-bolsista/application/utils/map-peaad-rule-error.js";
 import { ftError } from "../../ft-bolsista/application/utils/ft-error.js";
 import { PagadorInput, PagadorQuery } from "../domain/pagador.js";
 import { PagadorRepository } from "../domain/pagador.repository.js";
@@ -22,47 +23,67 @@ export class PagadorService {
   }
 
   async listCapacityByEdital(editalId: string) {
-    const pagadores = await this.repository.listCapacityByEdital(editalId);
-    if (!pagadores) throw ftError(404, "Edital nao encontrado");
-    return pagadores;
+    try {
+      const pagadores = await this.repository.listCapacityByEdital(editalId);
+      if (!pagadores) throw ftError(404, "Edital nao encontrado");
+      return pagadores;
+    } catch (error) {
+      throw mapPeaadRuleError(error);
+    }
   }
 
   async get(uuid: string) {
-    const item = await this.repository.findById(uuid);
-    if (!item) throw ftError(404, "Pagador nao encontrado");
-    return item;
+    try {
+      const item = await this.repository.findById(uuid);
+      if (!item) throw ftError(404, "Pagador nao encontrado");
+      return await item;
+    } catch (error) {
+      throw mapPeaadRuleError(error);
+    }
   }
 
   async create(raw: PagadorInput) {
-    const input = normalize(raw);
-    if (await this.repository.findByName(input.nome))
-      throw ftError(409, "Ja existe um pagador com esse nome");
-    return this.repository.create(input);
+    try {
+      const input = normalize(raw);
+      if (await this.repository.findByName(input.nome))
+        throw ftError(409, "Ja existe um pagador com esse nome");
+      return await this.repository.create(input);
+    } catch (error) {
+      throw mapPeaadRuleError(error);
+    }
   }
 
   async update(uuid: string, raw: PagadorInput) {
-    const item = await this.get(uuid);
-    const input = normalize(raw);
-    const duplicate = await this.repository.findByName(input.nome);
-    if (duplicate && duplicate.get("uuid") !== uuid)
-      throw ftError(409, "Ja existe um pagador com esse nome");
-    const occupation = await this.repository.maxActiveOccupation(uuid);
-    if (input.quantidade < occupation) {
-      throw ftError(
-        409,
-        `Quantidade nao pode ser menor que a ocupacao ativa (${occupation})`,
-      );
+    try {
+      const item = await this.get(uuid);
+      const input = normalize(raw);
+      const duplicate = await this.repository.findByName(input.nome);
+      if (duplicate && duplicate.get("uuid") !== uuid)
+        throw ftError(409, "Ja existe um pagador com esse nome");
+      const occupation = await this.repository.maxActiveOccupation(uuid);
+      if (input.quantidade < occupation) {
+        throw ftError(
+          409,
+          `Quantidade nao pode ser menor que a ocupacao ativa (${occupation})`,
+        );
+      }
+      return {
+        before: item.toJSON(),
+        after: await this.repository.update(item, input),
+      };
+    } catch (error) {
+      throw mapPeaadRuleError(error);
     }
-    return {
-      before: item.toJSON(),
-      after: await this.repository.update(item, input),
-    };
   }
 
   async delete(uuid: string) {
-    const item = await this.get(uuid);
-    const before = item.toJSON();
-    await this.repository.softDelete(item);
-    return before;
+    try {
+      const item = await this.get(uuid);
+      const before = item.toJSON();
+      await this.repository.softDelete(item);
+      return await before;
+    } catch (error) {
+      throw mapPeaadRuleError(error);
+    }
   }
 }

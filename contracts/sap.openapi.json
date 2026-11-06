@@ -21357,6 +21357,64 @@
             },
             "description": "Erro no 400: Requisição inválida"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -21392,6 +21450,7 @@
             "JWTToken": []
           }
         ],
+        "summary": "gerar espelho ponto",
         "tags": [
           "PEAAD - Edital"
         ]
@@ -22578,6 +22637,64 @@
             },
             "description": "Erro no 400: Requisição inválida"
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -22613,6 +22730,7 @@
             "JWTToken": []
           }
         ],
+        "summary": "gerar folha presenca",
         "tags": [
           "PEAAD - Edital"
         ]
@@ -28297,255 +28415,19 @@
                     "count": {
                       "type": "integer"
                     },
-                    "item": {
-                      "anyOf": [
-                        {
-                          "properties": {
-                            "ativo": {
-                              "type": "boolean"
-                            },
-                            "autor_id": {
-                              "type": "string"
-                            },
-                            "bolsista_id": {
-                              "type": "string"
-                            },
-                            "createdAt": {
-                              "type": "string"
-                            },
-                            "custo_centavos": {
-                              "type": "integer"
-                            },
-                            "custo_unitario": {
-                              "type": "number"
-                            },
-                            "data": {
-                              "type": "string"
-                            },
-                            "delta": {
-                              "type": "integer"
-                            },
-                            "edital_id": {
-                              "type": "string"
-                            },
-                            "edital_nome": {
-                              "type": "string"
-                            },
-                            "entrega_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "entregue_em": {
-                              "type": "string"
-                            },
-                            "epi": {
-                              "type": "boolean"
-                            },
-                            "estornado_em": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "estornado_por": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "id": {
-                              "type": "string"
-                            },
-                            "item_id": {
-                              "type": "string"
-                            },
-                            "justificativa": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "kit_ativo_participacao_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "nome": {
-                              "type": "string"
-                            },
-                            "participacao_id": {
-                              "type": "string"
-                            },
-                            "quantidade": {
-                              "type": "integer"
-                            },
-                            "responsavel": {
-                              "type": "string"
-                            },
-                            "responsavel_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "saldo": {
-                              "type": "integer"
-                            },
-                            "saldo_apos": {
-                              "type": "integer"
-                            },
-                            "saldo_total": {
-                              "type": "number"
-                            },
-                            "tamanho": {
-                              "type": "string"
-                            },
-                            "tamanho_chave": {
-                              "type": "string"
-                            },
-                            "tamanhos_ativos": {
-                              "type": "integer"
-                            },
-                            "tipo": {
-                              "type": "string"
-                            },
-                            "total_centavos": {
-                              "type": "number"
-                            },
-                            "updatedAt": {
-                              "type": "string"
-                            },
-                            "variacao_id": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        {
-                          "type": "string",
-                          "nullable": true,
-                          "enum": [
-                            null
-                          ]
-                        }
-                      ]
-                    },
                     "rows": {
                       "items": {
                         "properties": {
-                          "ativo": {
-                            "type": "boolean"
-                          },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "custo_centavos": {
-                            "type": "integer"
-                          },
-                          "custo_unitario": {
-                            "type": "number"
-                          },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
                           "edital_id": {
                             "type": "string"
                           },
                           "edital_nome": {
                             "type": "string"
                           },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
-                            "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
-                          },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "id": {
                             "type": "string"
                           },
-                          "item_id": {
-                            "type": "string"
-                          },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "nome": {
-                            "type": "string"
-                          },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "saldo": {
-                            "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
-                          "saldo_total": {
-                            "type": "number"
-                          },
-                          "tamanho": {
-                            "type": "string"
-                          },
-                          "tamanho_chave": {
-                            "type": "string"
-                          },
-                          "tamanhos_ativos": {
-                            "type": "integer"
-                          },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
-                          },
-                          "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           }
                         },
@@ -28798,7 +28680,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "listRecipients",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -28917,144 +28799,9 @@
                     "count": {
                       "type": "integer"
                     },
-                    "item": {
-                      "anyOf": [
-                        {
-                          "properties": {
-                            "ativo": {
-                              "type": "boolean"
-                            },
-                            "autor_id": {
-                              "type": "string"
-                            },
-                            "bolsista_id": {
-                              "type": "string"
-                            },
-                            "createdAt": {
-                              "type": "string"
-                            },
-                            "custo_centavos": {
-                              "type": "integer"
-                            },
-                            "custo_unitario": {
-                              "type": "number"
-                            },
-                            "data": {
-                              "type": "string"
-                            },
-                            "delta": {
-                              "type": "integer"
-                            },
-                            "edital_id": {
-                              "type": "string"
-                            },
-                            "edital_nome": {
-                              "type": "string"
-                            },
-                            "entrega_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "entregue_em": {
-                              "type": "string"
-                            },
-                            "epi": {
-                              "type": "boolean"
-                            },
-                            "estornado_em": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "estornado_por": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "id": {
-                              "type": "string"
-                            },
-                            "item_id": {
-                              "type": "string"
-                            },
-                            "justificativa": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "kit_ativo_participacao_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "nome": {
-                              "type": "string"
-                            },
-                            "participacao_id": {
-                              "type": "string"
-                            },
-                            "quantidade": {
-                              "type": "integer"
-                            },
-                            "responsavel": {
-                              "type": "string"
-                            },
-                            "responsavel_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "saldo": {
-                              "type": "integer"
-                            },
-                            "saldo_apos": {
-                              "type": "integer"
-                            },
-                            "saldo_total": {
-                              "type": "number"
-                            },
-                            "tamanho": {
-                              "type": "string"
-                            },
-                            "tamanho_chave": {
-                              "type": "string"
-                            },
-                            "tamanhos_ativos": {
-                              "type": "integer"
-                            },
-                            "tipo": {
-                              "type": "string"
-                            },
-                            "total_centavos": {
-                              "type": "number"
-                            },
-                            "updatedAt": {
-                              "type": "string"
-                            },
-                            "variacao_id": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        {
-                          "type": "string",
-                          "nullable": true,
-                          "enum": [
-                            null
-                          ]
-                        }
-                      ]
-                    },
                     "rows": {
                       "items": {
                         "properties": {
-                          "ativo": {
-                            "type": "boolean"
-                          },
                           "autor_id": {
                             "type": "string"
                           },
@@ -29064,33 +28811,14 @@
                           "createdAt": {
                             "type": "string"
                           },
-                          "custo_centavos": {
-                            "type": "integer"
-                          },
-                          "custo_unitario": {
-                            "type": "number"
-                          },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
                           "edital_id": {
                             "type": "string"
                           },
                           "edital_nome": {
                             "type": "string"
                           },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "entregue_em": {
                             "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
                           },
                           "estornado_em": {
                             "type": "string",
@@ -29103,18 +28831,11 @@
                           "id": {
                             "type": "string"
                           },
-                          "item_id": {
-                            "type": "string"
-                          },
                           "justificativa": {
                             "type": "string",
                             "nullable": true
                           },
                           "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
                             "type": "string",
                             "nullable": true
                           },
@@ -29128,33 +28849,12 @@
                           "participacao_id": {
                             "type": "string"
                           },
-                          "quantidade": {
-                            "type": "integer"
-                          },
                           "responsavel": {
                             "type": "string"
                           },
                           "responsavel_estorno": {
                             "type": "string",
                             "nullable": true
-                          },
-                          "saldo": {
-                            "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
-                          "saldo_total": {
-                            "type": "number"
-                          },
-                          "tamanho": {
-                            "type": "string"
-                          },
-                          "tamanho_chave": {
-                            "type": "string"
-                          },
-                          "tamanhos_ativos": {
-                            "type": "integer"
                           },
                           "tipo": {
                             "type": "string"
@@ -29163,9 +28863,6 @@
                             "type": "number"
                           },
                           "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           }
                         },
@@ -29418,7 +29115,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar entregas estoque",
+        "summary": "listDeliveries",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -29543,9 +29240,6 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "ativo": {
-                      "type": "boolean"
-                    },
                     "autor_id": {
                       "type": "string"
                     },
@@ -29555,33 +29249,14 @@
                     "createdAt": {
                       "type": "string"
                     },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
                     "edital_id": {
                       "type": "string"
                     },
                     "edital_nome": {
                       "type": "string"
                     },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "entregue_em": {
                       "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
                     },
                     "estornado_em": {
                       "type": "string",
@@ -29594,121 +29269,30 @@
                     "id": {
                       "type": "string"
                     },
-                    "item_id": {
-                      "type": "string"
-                    },
                     "itens": {
                       "items": {
                         "properties": {
-                          "ativo": {
-                            "type": "boolean"
-                          },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
-                          },
                           "createdAt": {
                             "type": "string"
                           },
                           "custo_centavos": {
                             "type": "integer"
                           },
-                          "custo_unitario": {
-                            "type": "number"
-                          },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
                           "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
-                            "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
-                          },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
                             "type": "string",
                             "nullable": true
                           },
                           "id": {
                             "type": "string"
                           },
-                          "item_id": {
-                            "type": "string"
-                          },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "nome": {
-                            "type": "string"
-                          },
-                          "participacao_id": {
                             "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "saldo": {
-                            "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
-                          "saldo_total": {
-                            "type": "number"
-                          },
                           "tamanho": {
                             "type": "string"
-                          },
-                          "tamanho_chave": {
-                            "type": "string"
-                          },
-                          "tamanhos_ativos": {
-                            "type": "integer"
-                          },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
                           },
                           "updatedAt": {
                             "type": "string"
@@ -29729,10 +29313,6 @@
                       "type": "string",
                       "nullable": true
                     },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "motivo_estorno": {
                       "type": "string",
                       "nullable": true
@@ -29743,33 +29323,12 @@
                     "participacao_id": {
                       "type": "string"
                     },
-                    "quantidade": {
-                      "type": "integer"
-                    },
                     "responsavel": {
                       "type": "string"
                     },
                     "responsavel_estorno": {
                       "type": "string",
                       "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
-                    },
-                    "tamanhos_ativos": {
-                      "type": "integer"
                     },
                     "tipo": {
                       "type": "string"
@@ -29778,9 +29337,6 @@
                       "type": "number"
                     },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -30028,7 +29584,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar entregas estoque",
+        "summary": "getDelivery",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -30081,9 +29637,6 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "ativo": {
-                      "type": "boolean"
-                    },
                     "autor_id": {
                       "type": "string"
                     },
@@ -30093,33 +29646,14 @@
                     "createdAt": {
                       "type": "string"
                     },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
                     "edital_id": {
                       "type": "string"
                     },
                     "edital_nome": {
                       "type": "string"
                     },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "entregue_em": {
                       "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
                     },
                     "estornado_em": {
                       "type": "string",
@@ -30132,18 +29666,11 @@
                     "id": {
                       "type": "string"
                     },
-                    "item_id": {
-                      "type": "string"
-                    },
                     "justificativa": {
                       "type": "string",
                       "nullable": true
                     },
                     "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
                       "type": "string",
                       "nullable": true
                     },
@@ -30157,33 +29684,12 @@
                     "participacao_id": {
                       "type": "string"
                     },
-                    "quantidade": {
-                      "type": "integer"
-                    },
                     "responsavel": {
                       "type": "string"
                     },
                     "responsavel_estorno": {
                       "type": "string",
                       "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
-                    },
-                    "tamanhos_ativos": {
-                      "type": "integer"
                     },
                     "tipo": {
                       "type": "string"
@@ -30192,9 +29698,6 @@
                       "type": "number"
                     },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -30442,7 +29945,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "estornar entrega estoque",
+        "summary": "reverseDelivery",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -30519,9 +30022,6 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "ativo": {
-                      "type": "boolean"
-                    },
                     "autor_id": {
                       "type": "string"
                     },
@@ -30531,33 +30031,14 @@
                     "createdAt": {
                       "type": "string"
                     },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
                     "edital_id": {
                       "type": "string"
                     },
                     "edital_nome": {
                       "type": "string"
                     },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "entregue_em": {
                       "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
                     },
                     "estornado_em": {
                       "type": "string",
@@ -30570,18 +30051,11 @@
                     "id": {
                       "type": "string"
                     },
-                    "item_id": {
-                      "type": "string"
-                    },
                     "justificativa": {
                       "type": "string",
                       "nullable": true
                     },
                     "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
                       "type": "string",
                       "nullable": true
                     },
@@ -30595,33 +30069,12 @@
                     "participacao_id": {
                       "type": "string"
                     },
-                    "quantidade": {
-                      "type": "integer"
-                    },
                     "responsavel": {
                       "type": "string"
                     },
                     "responsavel_estorno": {
                       "type": "string",
                       "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
-                    },
-                    "tamanhos_ativos": {
-                      "type": "integer"
                     },
                     "tipo": {
                       "type": "string"
@@ -30630,9 +30083,6 @@
                       "type": "number"
                     },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -30880,7 +30330,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "entregar item estoque",
+        "summary": "deliverIndividual",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -30950,9 +30400,6 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "ativo": {
-                      "type": "boolean"
-                    },
                     "autor_id": {
                       "type": "string"
                     },
@@ -30962,33 +30409,14 @@
                     "createdAt": {
                       "type": "string"
                     },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
                     "edital_id": {
                       "type": "string"
                     },
                     "edital_nome": {
                       "type": "string"
                     },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "entregue_em": {
                       "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
                     },
                     "estornado_em": {
                       "type": "string",
@@ -31001,18 +30429,11 @@
                     "id": {
                       "type": "string"
                     },
-                    "item_id": {
-                      "type": "string"
-                    },
                     "justificativa": {
                       "type": "string",
                       "nullable": true
                     },
                     "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
                       "type": "string",
                       "nullable": true
                     },
@@ -31026,33 +30447,12 @@
                     "participacao_id": {
                       "type": "string"
                     },
-                    "quantidade": {
-                      "type": "integer"
-                    },
                     "responsavel": {
                       "type": "string"
                     },
                     "responsavel_estorno": {
                       "type": "string",
                       "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
-                    },
-                    "tamanhos_ativos": {
-                      "type": "integer"
                     },
                     "tipo": {
                       "type": "string"
@@ -31061,9 +30461,6 @@
                       "type": "number"
                     },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -31311,7 +30708,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "entregar kit epi",
+        "summary": "deliverKit",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -31430,255 +30827,31 @@
                     "count": {
                       "type": "integer"
                     },
-                    "item": {
-                      "anyOf": [
-                        {
-                          "properties": {
-                            "ativo": {
-                              "type": "boolean"
-                            },
-                            "autor_id": {
-                              "type": "string"
-                            },
-                            "bolsista_id": {
-                              "type": "string"
-                            },
-                            "createdAt": {
-                              "type": "string"
-                            },
-                            "custo_centavos": {
-                              "type": "integer"
-                            },
-                            "custo_unitario": {
-                              "type": "number"
-                            },
-                            "data": {
-                              "type": "string"
-                            },
-                            "delta": {
-                              "type": "integer"
-                            },
-                            "edital_id": {
-                              "type": "string"
-                            },
-                            "edital_nome": {
-                              "type": "string"
-                            },
-                            "entrega_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "entregue_em": {
-                              "type": "string"
-                            },
-                            "epi": {
-                              "type": "boolean"
-                            },
-                            "estornado_em": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "estornado_por": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "id": {
-                              "type": "string"
-                            },
-                            "item_id": {
-                              "type": "string"
-                            },
-                            "justificativa": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "kit_ativo_participacao_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "nome": {
-                              "type": "string"
-                            },
-                            "participacao_id": {
-                              "type": "string"
-                            },
-                            "quantidade": {
-                              "type": "integer"
-                            },
-                            "responsavel": {
-                              "type": "string"
-                            },
-                            "responsavel_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "saldo": {
-                              "type": "integer"
-                            },
-                            "saldo_apos": {
-                              "type": "integer"
-                            },
-                            "saldo_total": {
-                              "type": "number"
-                            },
-                            "tamanho": {
-                              "type": "string"
-                            },
-                            "tamanho_chave": {
-                              "type": "string"
-                            },
-                            "tamanhos_ativos": {
-                              "type": "integer"
-                            },
-                            "tipo": {
-                              "type": "string"
-                            },
-                            "total_centavos": {
-                              "type": "number"
-                            },
-                            "updatedAt": {
-                              "type": "string"
-                            },
-                            "variacao_id": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        {
-                          "type": "string",
-                          "nullable": true,
-                          "enum": [
-                            null
-                          ]
-                        }
-                      ]
-                    },
                     "rows": {
                       "items": {
                         "properties": {
                           "ativo": {
                             "type": "boolean"
                           },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
-                          },
                           "createdAt": {
-                            "type": "string"
-                          },
-                          "custo_centavos": {
-                            "type": "integer"
-                          },
-                          "custo_unitario": {
-                            "type": "number"
-                          },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
                             "type": "string"
                           },
                           "epi": {
                             "type": "boolean"
                           },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "id": {
                             "type": "string"
-                          },
-                          "item_id": {
-                            "type": "string"
-                          },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
                           },
                           "nome": {
                             "type": "string"
                           },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "saldo": {
-                            "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
                           "saldo_total": {
                             "type": "number"
-                          },
-                          "tamanho": {
-                            "type": "string"
-                          },
-                          "tamanho_chave": {
-                            "type": "string"
                           },
                           "tamanhos_ativos": {
                             "type": "integer"
                           },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
-                          },
                           "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           }
                         },
@@ -31931,7 +31104,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "listItems",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -31980,117 +31153,25 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
-                      "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
                       "type": "string"
                     },
                     "epi": {
                       "type": "boolean"
                     },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
-                    },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
                     "saldo_total": {
                       "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
                     },
                     "tamanhos_ativos": {
                       "type": "integer"
                     },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -32338,7 +31419,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "cadastrar item estoque",
+        "summary": "createItem",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -32387,117 +31468,25 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
-                      "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
                       "type": "string"
                     },
                     "epi": {
                       "type": "boolean"
                     },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
-                    },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
                     "saldo_total": {
                       "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
                     },
                     "tamanhos_ativos": {
                       "type": "integer"
                     },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -32745,7 +31734,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "excluir item estoque",
+        "summary": "removeItem",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -32871,117 +31860,25 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
-                      "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
                       "type": "string"
                     },
                     "epi": {
                       "type": "boolean"
                     },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
-                    },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
                     "saldo_total": {
                       "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
                     },
                     "tamanhos_ativos": {
                       "type": "integer"
                     },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -33229,7 +32126,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "getItem",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -33289,117 +32186,25 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
-                      "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
                       "type": "string"
                     },
                     "epi": {
                       "type": "boolean"
                     },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
-                    },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
                     "saldo_total": {
                       "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
                     },
                     "tamanhos_ativos": {
                       "type": "integer"
                     },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -33647,7 +32452,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "editar item estoque",
+        "summary": "updateItem",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -33782,117 +32587,25 @@
                             "ativo": {
                               "type": "boolean"
                             },
-                            "autor_id": {
-                              "type": "string"
-                            },
-                            "bolsista_id": {
-                              "type": "string"
-                            },
                             "createdAt": {
-                              "type": "string"
-                            },
-                            "custo_centavos": {
-                              "type": "integer"
-                            },
-                            "custo_unitario": {
-                              "type": "number"
-                            },
-                            "data": {
-                              "type": "string"
-                            },
-                            "delta": {
-                              "type": "integer"
-                            },
-                            "edital_id": {
-                              "type": "string"
-                            },
-                            "edital_nome": {
-                              "type": "string"
-                            },
-                            "entrega_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "entregue_em": {
                               "type": "string"
                             },
                             "epi": {
                               "type": "boolean"
                             },
-                            "estornado_em": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "estornado_por": {
-                              "type": "string",
-                              "nullable": true
-                            },
                             "id": {
                               "type": "string"
-                            },
-                            "item_id": {
-                              "type": "string"
-                            },
-                            "justificativa": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "kit_ativo_participacao_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo_estorno": {
-                              "type": "string",
-                              "nullable": true
                             },
                             "nome": {
                               "type": "string"
                             },
-                            "participacao_id": {
-                              "type": "string"
-                            },
-                            "quantidade": {
-                              "type": "integer"
-                            },
-                            "responsavel": {
-                              "type": "string"
-                            },
-                            "responsavel_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "saldo": {
-                              "type": "integer"
-                            },
-                            "saldo_apos": {
-                              "type": "integer"
-                            },
                             "saldo_total": {
                               "type": "number"
-                            },
-                            "tamanho": {
-                              "type": "string"
-                            },
-                            "tamanho_chave": {
-                              "type": "string"
                             },
                             "tamanhos_ativos": {
                               "type": "integer"
                             },
-                            "tipo": {
-                              "type": "string"
-                            },
-                            "total_centavos": {
-                              "type": "number"
-                            },
                             "updatedAt": {
-                              "type": "string"
-                            },
-                            "variacao_id": {
                               "type": "string"
                             }
                           },
@@ -33913,12 +32626,6 @@
                           "ativo": {
                             "type": "boolean"
                           },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
-                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -33928,82 +32635,14 @@
                           "custo_unitario": {
                             "type": "number"
                           },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
-                            "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
-                          },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "id": {
                             "type": "string"
                           },
                           "item_id": {
                             "type": "string"
                           },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "saldo": {
                             "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
-                          "saldo_total": {
-                            "type": "number"
                           },
                           "tamanho": {
                             "type": "string"
@@ -34011,19 +32650,7 @@
                           "tamanho_chave": {
                             "type": "string"
                           },
-                          "tamanhos_ativos": {
-                            "type": "integer"
-                          },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
-                          },
                           "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           }
                         },
@@ -34276,7 +32903,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "listItemVariations",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -34338,12 +32965,6 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
                       "type": "string"
                     },
@@ -34353,82 +32974,14 @@
                     "custo_unitario": {
                       "type": "number"
                     },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
-                      "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
-                    },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
                     },
                     "item_id": {
                       "type": "string"
                     },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "saldo": {
                       "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
                     },
                     "tamanho": {
                       "type": "string"
@@ -34436,19 +32989,7 @@
                     "tamanho_chave": {
                       "type": "string"
                     },
-                    "tamanhos_ativos": {
-                      "type": "integer"
-                    },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -34696,7 +33237,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "cadastrar item estoque",
+        "summary": "createVariation",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -34754,12 +33295,6 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
                       "type": "string"
                     },
@@ -34769,82 +33304,14 @@
                     "custo_unitario": {
                       "type": "number"
                     },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
-                      "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
-                    },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
                     },
                     "item_id": {
                       "type": "string"
                     },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "saldo": {
                       "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
                     },
                     "tamanho": {
                       "type": "string"
@@ -34852,19 +33319,7 @@
                     "tamanho_chave": {
                       "type": "string"
                     },
-                    "tamanhos_ativos": {
-                      "type": "integer"
-                    },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -35112,7 +33567,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "excluir item estoque",
+        "summary": "removeVariation",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -35183,12 +33638,6 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
                       "type": "string"
                     },
@@ -35198,82 +33647,14 @@
                     "custo_unitario": {
                       "type": "number"
                     },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
-                      "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
-                    },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
                     },
                     "item_id": {
                       "type": "string"
                     },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "saldo": {
                       "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
                     },
                     "tamanho": {
                       "type": "string"
@@ -35281,19 +33662,7 @@
                     "tamanho_chave": {
                       "type": "string"
                     },
-                    "tamanhos_ativos": {
-                      "type": "integer"
-                    },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -35541,7 +33910,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "editar item estoque",
+        "summary": "updateVariation",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -35620,117 +33989,25 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
-                      "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
                       "type": "string"
                     },
                     "epi": {
                       "type": "boolean"
                     },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
-                    },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
                     "saldo_total": {
                       "type": "number"
-                    },
-                    "tamanho": {
-                      "type": "string"
-                    },
-                    "tamanho_chave": {
-                      "type": "string"
                     },
                     "tamanhos_ativos": {
                       "type": "integer"
                     },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     },
                     "variacoes": {
@@ -35738,12 +34015,6 @@
                         "properties": {
                           "ativo": {
                             "type": "boolean"
-                          },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
                           },
                           "createdAt": {
                             "type": "string"
@@ -35754,82 +34025,14 @@
                           "custo_unitario": {
                             "type": "number"
                           },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
-                            "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
-                          },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "id": {
                             "type": "string"
                           },
                           "item_id": {
                             "type": "string"
                           },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "saldo": {
                             "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
-                          "saldo_total": {
-                            "type": "number"
                           },
                           "tamanho": {
                             "type": "string"
@@ -35837,19 +34040,7 @@
                           "tamanho_chave": {
                             "type": "string"
                           },
-                          "tamanhos_ativos": {
-                            "type": "integer"
-                          },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
-                          },
                           "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           }
                         },
@@ -36102,7 +34293,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "cadastrar item estoque",
+        "summary": "createComplete",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -36221,158 +34412,14 @@
                     "count": {
                       "type": "integer"
                     },
-                    "item": {
-                      "anyOf": [
-                        {
-                          "properties": {
-                            "ativo": {
-                              "type": "boolean"
-                            },
-                            "autor_id": {
-                              "type": "string"
-                            },
-                            "bolsista_id": {
-                              "type": "string"
-                            },
-                            "createdAt": {
-                              "type": "string"
-                            },
-                            "custo_centavos": {
-                              "type": "integer"
-                            },
-                            "custo_unitario": {
-                              "type": "number"
-                            },
-                            "data": {
-                              "type": "string"
-                            },
-                            "delta": {
-                              "type": "integer"
-                            },
-                            "edital_id": {
-                              "type": "string"
-                            },
-                            "edital_nome": {
-                              "type": "string"
-                            },
-                            "entrega_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "entregue_em": {
-                              "type": "string"
-                            },
-                            "epi": {
-                              "type": "boolean"
-                            },
-                            "estornado_em": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "estornado_por": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "id": {
-                              "type": "string"
-                            },
-                            "item_id": {
-                              "type": "string"
-                            },
-                            "justificativa": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "kit_ativo_participacao_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "nome": {
-                              "type": "string"
-                            },
-                            "participacao_id": {
-                              "type": "string"
-                            },
-                            "quantidade": {
-                              "type": "integer"
-                            },
-                            "responsavel": {
-                              "type": "string"
-                            },
-                            "responsavel_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "saldo": {
-                              "type": "integer"
-                            },
-                            "saldo_apos": {
-                              "type": "integer"
-                            },
-                            "saldo_total": {
-                              "type": "number"
-                            },
-                            "tamanho": {
-                              "type": "string"
-                            },
-                            "tamanho_chave": {
-                              "type": "string"
-                            },
-                            "tamanhos_ativos": {
-                              "type": "integer"
-                            },
-                            "tipo": {
-                              "type": "string"
-                            },
-                            "total_centavos": {
-                              "type": "number"
-                            },
-                            "updatedAt": {
-                              "type": "string"
-                            },
-                            "variacao_id": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        {
-                          "type": "string",
-                          "nullable": true,
-                          "enum": [
-                            null
-                          ]
-                        }
-                      ]
-                    },
                     "rows": {
                       "items": {
                         "properties": {
-                          "ativo": {
-                            "type": "boolean"
-                          },
                           "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
                             "type": "string"
                           },
                           "createdAt": {
                             "type": "string"
-                          },
-                          "custo_centavos": {
-                            "type": "integer"
-                          },
-                          "custo_unitario": {
-                            "type": "number"
                           },
                           "data": {
                             "type": "string"
@@ -36380,91 +34427,31 @@
                           "delta": {
                             "type": "integer"
                           },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
                           "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
-                            "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
-                          },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
                             "type": "string",
                             "nullable": true
                           },
                           "id": {
                             "type": "string"
                           },
-                          "item_id": {
-                            "type": "string"
-                          },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
                             "type": "string",
                             "nullable": true
                           },
                           "nome": {
                             "type": "string"
                           },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
                           "responsavel": {
                             "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "saldo": {
-                            "type": "integer"
                           },
                           "saldo_apos": {
                             "type": "integer"
                           },
-                          "saldo_total": {
-                            "type": "number"
-                          },
                           "tamanho": {
                             "type": "string"
                           },
-                          "tamanho_chave": {
-                            "type": "string"
-                          },
-                          "tamanhos_ativos": {
-                            "type": "integer"
-                          },
                           "tipo": {
                             "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
                           },
                           "updatedAt": {
                             "type": "string"
@@ -36722,7 +34709,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "listMovements",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -36880,117 +34867,25 @@
                           "ativo": {
                             "type": "boolean"
                           },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
-                          },
                           "createdAt": {
-                            "type": "string"
-                          },
-                          "custo_centavos": {
-                            "type": "integer"
-                          },
-                          "custo_unitario": {
-                            "type": "number"
-                          },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
                             "type": "string"
                           },
                           "epi": {
                             "type": "boolean"
                           },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "id": {
                             "type": "string"
-                          },
-                          "item_id": {
-                            "type": "string"
-                          },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
                           },
                           "nome": {
                             "type": "string"
                           },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "saldo": {
-                            "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
                           "saldo_total": {
                             "type": "number"
-                          },
-                          "tamanho": {
-                            "type": "string"
-                          },
-                          "tamanho_chave": {
-                            "type": "string"
                           },
                           "tamanhos_ativos": {
                             "type": "integer"
                           },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
-                          },
                           "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           },
                           "variacoes": {
@@ -36998,12 +34893,6 @@
                               "properties": {
                                 "ativo": {
                                   "type": "boolean"
-                                },
-                                "autor_id": {
-                                  "type": "string"
-                                },
-                                "bolsista_id": {
-                                  "type": "string"
                                 },
                                 "createdAt": {
                                   "type": "string"
@@ -37014,82 +34903,14 @@
                                 "custo_unitario": {
                                   "type": "number"
                                 },
-                                "data": {
-                                  "type": "string"
-                                },
-                                "delta": {
-                                  "type": "integer"
-                                },
-                                "edital_id": {
-                                  "type": "string"
-                                },
-                                "edital_nome": {
-                                  "type": "string"
-                                },
-                                "entrega_id": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "entregue_em": {
-                                  "type": "string"
-                                },
-                                "epi": {
-                                  "type": "boolean"
-                                },
-                                "estornado_em": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "estornado_por": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
                                 "id": {
                                   "type": "string"
                                 },
                                 "item_id": {
                                   "type": "string"
                                 },
-                                "justificativa": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "kit_ativo_participacao_id": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "motivo": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "motivo_estorno": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "nome": {
-                                  "type": "string"
-                                },
-                                "participacao_id": {
-                                  "type": "string"
-                                },
-                                "quantidade": {
-                                  "type": "integer"
-                                },
-                                "responsavel": {
-                                  "type": "string"
-                                },
-                                "responsavel_estorno": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
                                 "saldo": {
                                   "type": "integer"
-                                },
-                                "saldo_apos": {
-                                  "type": "integer"
-                                },
-                                "saldo_total": {
-                                  "type": "number"
                                 },
                                 "tamanho": {
                                   "type": "string"
@@ -37097,19 +34918,7 @@
                                 "tamanho_chave": {
                                   "type": "string"
                                 },
-                                "tamanhos_ativos": {
-                                  "type": "integer"
-                                },
-                                "tipo": {
-                                  "type": "string"
-                                },
-                                "total_centavos": {
-                                  "type": "number"
-                                },
                                 "updatedAt": {
-                                  "type": "string"
-                                },
-                                "variacao_id": {
                                   "type": "string"
                                 }
                               },
@@ -37370,7 +35179,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "previewDelivery",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -37496,117 +35305,25 @@
                             "ativo": {
                               "type": "boolean"
                             },
-                            "autor_id": {
-                              "type": "string"
-                            },
-                            "bolsista_id": {
-                              "type": "string"
-                            },
                             "createdAt": {
-                              "type": "string"
-                            },
-                            "custo_centavos": {
-                              "type": "integer"
-                            },
-                            "custo_unitario": {
-                              "type": "number"
-                            },
-                            "data": {
-                              "type": "string"
-                            },
-                            "delta": {
-                              "type": "integer"
-                            },
-                            "edital_id": {
-                              "type": "string"
-                            },
-                            "edital_nome": {
-                              "type": "string"
-                            },
-                            "entrega_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "entregue_em": {
                               "type": "string"
                             },
                             "epi": {
                               "type": "boolean"
                             },
-                            "estornado_em": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "estornado_por": {
-                              "type": "string",
-                              "nullable": true
-                            },
                             "id": {
                               "type": "string"
-                            },
-                            "item_id": {
-                              "type": "string"
-                            },
-                            "justificativa": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "kit_ativo_participacao_id": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "motivo_estorno": {
-                              "type": "string",
-                              "nullable": true
                             },
                             "nome": {
                               "type": "string"
                             },
-                            "participacao_id": {
-                              "type": "string"
-                            },
-                            "quantidade": {
-                              "type": "integer"
-                            },
-                            "responsavel": {
-                              "type": "string"
-                            },
-                            "responsavel_estorno": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "saldo": {
-                              "type": "integer"
-                            },
-                            "saldo_apos": {
-                              "type": "integer"
-                            },
                             "saldo_total": {
                               "type": "number"
-                            },
-                            "tamanho": {
-                              "type": "string"
-                            },
-                            "tamanho_chave": {
-                              "type": "string"
                             },
                             "tamanhos_ativos": {
                               "type": "integer"
                             },
-                            "tipo": {
-                              "type": "string"
-                            },
-                            "total_centavos": {
-                              "type": "number"
-                            },
                             "updatedAt": {
-                              "type": "string"
-                            },
-                            "variacao_id": {
                               "type": "string"
                             }
                           },
@@ -37627,12 +35344,6 @@
                           "ativo": {
                             "type": "boolean"
                           },
-                          "autor_id": {
-                            "type": "string"
-                          },
-                          "bolsista_id": {
-                            "type": "string"
-                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -37642,82 +35353,14 @@
                           "custo_unitario": {
                             "type": "number"
                           },
-                          "data": {
-                            "type": "string"
-                          },
-                          "delta": {
-                            "type": "integer"
-                          },
-                          "edital_id": {
-                            "type": "string"
-                          },
-                          "edital_nome": {
-                            "type": "string"
-                          },
-                          "entrega_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "entregue_em": {
-                            "type": "string"
-                          },
-                          "epi": {
-                            "type": "boolean"
-                          },
-                          "estornado_em": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "estornado_por": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "id": {
                             "type": "string"
                           },
                           "item_id": {
                             "type": "string"
                           },
-                          "justificativa": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "kit_ativo_participacao_id": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "motivo_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "participacao_id": {
-                            "type": "string"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "responsavel": {
-                            "type": "string"
-                          },
-                          "responsavel_estorno": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "saldo": {
                             "type": "integer"
-                          },
-                          "saldo_apos": {
-                            "type": "integer"
-                          },
-                          "saldo_total": {
-                            "type": "number"
                           },
                           "tamanho": {
                             "type": "string"
@@ -37725,19 +35368,7 @@
                           "tamanho_chave": {
                             "type": "string"
                           },
-                          "tamanhos_ativos": {
-                            "type": "integer"
-                          },
-                          "tipo": {
-                            "type": "string"
-                          },
-                          "total_centavos": {
-                            "type": "number"
-                          },
                           "updatedAt": {
-                            "type": "string"
-                          },
-                          "variacao_id": {
                             "type": "string"
                           }
                         },
@@ -37990,7 +35621,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "listVariations",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -38118,12 +35749,6 @@
                     "ativo": {
                       "type": "boolean"
                     },
-                    "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
-                      "type": "string"
-                    },
                     "createdAt": {
                       "type": "string"
                     },
@@ -38133,82 +35758,14 @@
                     "custo_unitario": {
                       "type": "number"
                     },
-                    "data": {
-                      "type": "string"
-                    },
-                    "delta": {
-                      "type": "integer"
-                    },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
-                    "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
-                      "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
-                    },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "id": {
                       "type": "string"
                     },
                     "item_id": {
                       "type": "string"
                     },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "responsavel": {
-                      "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "saldo": {
                       "type": "integer"
-                    },
-                    "saldo_apos": {
-                      "type": "integer"
-                    },
-                    "saldo_total": {
-                      "type": "number"
                     },
                     "tamanho": {
                       "type": "string"
@@ -38216,19 +35773,7 @@
                     "tamanho_chave": {
                       "type": "string"
                     },
-                    "tamanhos_ativos": {
-                      "type": "integer"
-                    },
-                    "tipo": {
-                      "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
-                    },
                     "updatedAt": {
-                      "type": "string"
-                    },
-                    "variacao_id": {
                       "type": "string"
                     }
                   },
@@ -38476,7 +36021,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "consultar estoque",
+        "summary": "getVariation",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -38535,23 +36080,11 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "ativo": {
-                      "type": "boolean"
-                    },
                     "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
                       "type": "string"
                     },
                     "createdAt": {
                       "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
                     },
                     "data": {
                       "type": "string"
@@ -38559,91 +36092,31 @@
                     "delta": {
                       "type": "integer"
                     },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
                     "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
-                      "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
-                    },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
                       "type": "string",
                       "nullable": true
                     },
                     "id": {
                       "type": "string"
                     },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
                       "type": "string",
                       "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
                     "responsavel": {
                       "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
                     },
                     "saldo_apos": {
                       "type": "integer"
                     },
-                    "saldo_total": {
-                      "type": "number"
-                    },
                     "tamanho": {
                       "type": "string"
                     },
-                    "tamanho_chave": {
-                      "type": "string"
-                    },
-                    "tamanhos_ativos": {
-                      "type": "integer"
-                    },
                     "tipo": {
                       "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
                     },
                     "updatedAt": {
                       "type": "string"
@@ -38896,7 +36369,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "ajustar estoque",
+        "summary": "adjustStock",
         "tags": [
           "PEAAD - Estoque"
         ]
@@ -38948,23 +36421,11 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "ativo": {
-                      "type": "boolean"
-                    },
                     "autor_id": {
-                      "type": "string"
-                    },
-                    "bolsista_id": {
                       "type": "string"
                     },
                     "createdAt": {
                       "type": "string"
-                    },
-                    "custo_centavos": {
-                      "type": "integer"
-                    },
-                    "custo_unitario": {
-                      "type": "number"
                     },
                     "data": {
                       "type": "string"
@@ -38972,91 +36433,31 @@
                     "delta": {
                       "type": "integer"
                     },
-                    "edital_id": {
-                      "type": "string"
-                    },
-                    "edital_nome": {
-                      "type": "string"
-                    },
                     "entrega_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "entregue_em": {
-                      "type": "string"
-                    },
-                    "epi": {
-                      "type": "boolean"
-                    },
-                    "estornado_em": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "estornado_por": {
                       "type": "string",
                       "nullable": true
                     },
                     "id": {
                       "type": "string"
                     },
-                    "item_id": {
-                      "type": "string"
-                    },
-                    "justificativa": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "kit_ativo_participacao_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
                     "motivo": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "motivo_estorno": {
                       "type": "string",
                       "nullable": true
                     },
                     "nome": {
                       "type": "string"
                     },
-                    "participacao_id": {
-                      "type": "string"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
                     "responsavel": {
                       "type": "string"
-                    },
-                    "responsavel_estorno": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "saldo": {
-                      "type": "integer"
                     },
                     "saldo_apos": {
                       "type": "integer"
                     },
-                    "saldo_total": {
-                      "type": "number"
-                    },
                     "tamanho": {
                       "type": "string"
                     },
-                    "tamanho_chave": {
-                      "type": "string"
-                    },
-                    "tamanhos_ativos": {
-                      "type": "integer"
-                    },
                     "tipo": {
                       "type": "string"
-                    },
-                    "total_centavos": {
-                      "type": "number"
                     },
                     "updatedAt": {
                       "type": "string"
@@ -39309,7 +36710,7 @@
             "JWTToken": []
           }
         ],
-        "summary": "registrar entrada estoque",
+        "summary": "registerEntry",
         "tags": [
           "PEAAD - Estoque"
         ]

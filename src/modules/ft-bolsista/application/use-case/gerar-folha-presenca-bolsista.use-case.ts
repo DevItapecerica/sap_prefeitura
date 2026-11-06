@@ -1,3 +1,4 @@
+import { mapPeaadRuleError } from "../utils/map-peaad-rule-error.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import RenderFolhaPresencaPdfUseCase from "../../../espelho-ponto/application/use-case/render-folha-presenca-pdf.use-case.js";
 import { ftError } from "../utils/ft-error.js";
@@ -21,70 +22,74 @@ export class GerarFolhaPresencaBolsistaUseCase {
     mes: string,
     requestId?: string,
   ) {
-    const periodo = this.parseMonth(mes);
-    const bolsista = await this.repository.findById(bolsistaId);
-    if (!bolsista) throw ftError(404, "Bolsista not found");
+    try {
+      const periodo = this.parseMonth(mes);
+      const bolsista = await this.repository.findById(bolsistaId);
+      if (!bolsista) throw ftError(404, "Bolsista not found");
 
-    const edital = await this.repository.findEditalById(editalId);
-    if (!edital) throw ftError(404, "Edital not found");
+      const edital = await this.repository.findEditalById(editalId);
+      if (!edital) throw ftError(404, "Edital not found");
 
-    const vinculos =
-      await this.repository.findHistoricoByBolsistaId(bolsistaId);
-    const vigentes = selectVinculosForPeriod(
-      vinculos.filter(
-        (item: any) =>
-          String(item.get?.("edital_id") ?? item.edital_id) === editalId,
-      ),
-      { inicio: periodo.inicio, fim: periodo.fim },
-    );
-    if (!vigentes.length)
-      throw ftError(409, "O vinculo nao abrange o mes selecionado");
-    if (vigentes.length > 1)
-      throw ftError(
-        409,
-        "Existem multiplos vinculos vigentes no mes informado",
-      );
-    const vinculo = vigentes[0];
-
-    const person = this.plain(bolsista);
-    const municipe = this.plain(person.municipe);
-    const address = [
-      municipe.rua,
-      municipe.numero,
-      municipe.bairro,
-      municipe.cidade,
-      municipe.uf,
-    ]
-      .filter(Boolean)
-      .join(", ");
-
-    return this.pdfGateway.execute(
-      {
-        name: `folha-presenca-${municipe.nome || bolsistaId}-${mes}`,
-        servidor: {
-          matricula: String(person.id || bolsistaId),
-          nome: String(municipe.nome || ""),
-          cargo: "Bolsista",
-          unidade: String(vinculo.local || ""),
-          horario: this.horarioTurno(resolveTurnoSnapshot(vinculo)),
-          localTrabalho: String(vinculo.local || ""),
-          endereco: address,
-        },
-        periodo: {
-          referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
-          inicio: periodo.inicio,
-          fim: periodo.fim,
-        },
-        dias: this.days(
-          periodo.inicio,
-          periodo.fim,
-          this.dateOnly(vinculo.data_vinculo),
-          this.endDate(vinculo),
+      const vinculos =
+        await this.repository.findHistoricoByBolsistaId(bolsistaId);
+      const vigentes = selectVinculosForPeriod(
+        vinculos.filter(
+          (item: any) =>
+            String(item.get?.("edital_id") ?? item.edital_id) === editalId,
         ),
-        observacoes: "",
-      },
-      requestId,
-    );
+        { inicio: periodo.inicio, fim: periodo.fim },
+      );
+      if (!vigentes.length)
+        throw ftError(409, "O vinculo nao abrange o mes selecionado");
+      if (vigentes.length > 1)
+        throw ftError(
+          409,
+          "Existem multiplos vinculos vigentes no mes informado",
+        );
+      const vinculo = vigentes[0];
+
+      const person = this.plain(bolsista);
+      const municipe = this.plain(person.municipe);
+      const address = [
+        municipe.rua,
+        municipe.numero,
+        municipe.bairro,
+        municipe.cidade,
+        municipe.uf,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return await this.pdfGateway.execute(
+        {
+          name: `folha-presenca-${municipe.nome || bolsistaId}-${mes}`,
+          servidor: {
+            matricula: String(person.id || bolsistaId),
+            nome: String(municipe.nome || ""),
+            cargo: "Bolsista",
+            unidade: String(vinculo.local || ""),
+            horario: this.horarioTurno(resolveTurnoSnapshot(vinculo)),
+            localTrabalho: String(vinculo.local || ""),
+            endereco: address,
+          },
+          periodo: {
+            referencia: `${mes.slice(5, 7)}/${mes.slice(0, 4)}`,
+            inicio: periodo.inicio,
+            fim: periodo.fim,
+          },
+          dias: this.days(
+            periodo.inicio,
+            periodo.fim,
+            this.dateOnly(vinculo.data_vinculo),
+            this.endDate(vinculo),
+          ),
+          observacoes: "",
+        },
+        requestId,
+      );
+    } catch (error) {
+      throw mapPeaadRuleError(error);
+    }
   }
 
   private parseMonth(value: string) {
