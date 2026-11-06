@@ -1,3 +1,4 @@
+import { editingPolicy, assertEditable } from '../../domain/services/edital-editing.policy.js';
 import { assertCompetenciasAbertas, nextCivilDay } from '../../domain/services/ft-folha-fechada.policy.js';
 import { getVinculoOperationalEnd } from '../../domain/services/ft-vinculo-period.service.js';
 import { Op, Transaction } from 'sequelize';
@@ -34,14 +35,21 @@ export class EditalWorkflowService {
     if (e.fase !== 'aberto' || businessDate(this.clock()) > dateOnly(e.data_vencimento)) throw ftError(409, 'Edital nao esta vigente e aberto');
   }
   async list(query: any) {
-    const result = await this.db.Edital.findAndCountAll({ ...pageOptions(query), order: [['createdAt', 'DESC']],
-      where: query.search ? { name: { [Op.like]: '%' + query.search + '%' } } : {} });
+    const now = this.clock(), where: any = {};
+    if (query.search) where.name = { [Op.like]: '%' + String(query.search).trim().replace(/[\\%_]/g, '\\$&') + '%' };
+    if (query.fase) where.fase = query.fase;
+    if (query.inscricoes_abertas === true || query.inscricoes_abertas === 'true') where[Op.and] = {
+      fase: 'aberto', inscricoes_inicio: { [Op.lte]: now }, inscricoes_fim: { [Op.gte]: now },
+      data_vencimento: { [Op.gte]: businessDate(now) + 'T00:00:00-03:00' },
+    };
+    const result = await this.db.Edital.findAndCountAll({ ...pageOptions(query), order: [['createdAt', 'DESC'], ['id', 'DESC']], where });
     return { rows: result.rows.map(editalOutput), count: result.count };
   }
   async detail(id: string) {
     const edital = editalOutput(await this.edital(id));
     const [reservadas, ocupadas] = await Promise.all(['convocado', 'ativo'].map(status => this.db.BolsistasEdital.count({ where: { edital_id: id, status } })));
-    return { ...edital, reservadas, ocupadas, disponiveis: Math.max(0, edital.vagas - reservadas - ocupadas) };
+    const closed = await this.db.FtFolhaFechamento.count({ where: { edital_id: id } });
+    return { ...edital, edicao: editingPolicy(edital, Boolean(closed), reservadas + ocupadas), reservadas, ocupadas, disponiveis: Math.max(0, edital.vagas - reservadas - ocupadas) };
   }
   async create(data: any, actor: WorkflowActor) {
     validateConfiguration(data);
@@ -56,19 +64,9 @@ export class EditalWorkflowService {
       const row = await this.edital(id, t), e = plain(row);
       if (e.fase === 'encerrado') throw ftError(409, 'Edital encerrado');
       validateConfiguration(data);
-      // Registration windows have a separate permission and endpoint.
-      if (new Date(data.inscricoes_inicio).getTime() !== new Date(e.inscricoes_inicio).getTime() || new Date(data.inscricoes_fim).getTime() !== new Date(e.inscricoes_fim).getTime())
-        throw ftError(409, 'Altere a janela pela operacao especifica');
-      if (e.primeira_convocacao_em || await this.db.FtFolhaFechamento.count({ where: { edital_id: id }, transaction: t })) {
-        for (const field of ['data_publicacao', 'vigencia_inicio', 'valor_bolsa', 'dia_pagamento', 'carga_semanal', 'carga_mensal', 'duracao_meses', 'prorrogacao_meses', 'permitir_participacao_anterior', 'permitir_retorno']) {
-          const same = ['data_publicacao', 'vigencia_inicio'].includes(field) ? dateOnly(data[field]) === dateOnly(e[field]) : typeof data[field] === 'number' ? Number(data[field]) === Number(e[field]) : String(data[field]) === String(e[field]);
-          if (!same) throw ftError(409, 'Condicoes bloqueadas apos convocacao ou fechamento de folha: ' + field);
-        }
-        if (dateOnly(data.data_vencimento) < dateOnly(e.data_vencimento)) throw ftError(409, 'Vigencia somente pode ser ampliada');
-      }
-      if (e.primeira_convocacao_em && e.idade_maxima != null && Number(data.idade_maxima) !== Number(e.idade_maxima)) throw ftError(409, 'Idade maxima bloqueada apos a primeira convocacao');
       const used = await this.db.BolsistasEdital.count({ where: { edital_id: id, status: occupied }, transaction: t });
-      if (data.vagas < used) throw ftError(409, 'Vagas abaixo da ocupacao e reservas');
+      const closed = await this.db.FtFolhaFechamento.count({ where: { edital_id: id }, transaction: t });
+      assertEditable(e, data, editingPolicy(e, Boolean(closed), used));
       await row.update(editalPersistence(data), { transaction: t });
       await this.event(t, actor, id, id, 'editar_edital');
       return editalOutput(row);

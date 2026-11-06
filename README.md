@@ -8,6 +8,10 @@ O fluxo de FT passa a ser **inscrição → convocação com reserva → ativaç
 
 Consulte [docs/ft-edital-workflow.md](docs/ft-edital-workflow.md) para campos, permissões, contratos, restrições de alteração, implantação e integração real com banco descartável. O plano do backend fica em [codex/plans/ft-centrada-no-edital.md](codex/plans/ft-centrada-no-edital.md).
 
+A revisão de UX dos editais mantém contratos e permissões existentes e acrescenta filtros de leitura: `fase=rascunho|aberto|encerrado` e `inscricoes_abertas=true` na listagem, e `grupo_status=encerrados` nas participações (concluído, cancelado, expirado e legado inativo). Os filtros e contagens são SQL, antes da paginação. Inscrições continuam sendo registros próprios, separados das participações e seus retornos.
+
+O detalhe retorna `edicao` com `campos_bloqueados` (campo/motivo), `vagas_minimas` e `vigencia_minima`. A leitura e a atualização transacional reutilizam `edital-editing.policy.ts`; os metadados informam a interface e não autorizam alterações. Preenchimento inicial de idade máxima, abertura sem pré-cadastrar alocação e bloqueios financeiros permanecem preservados. Esta revisão não adiciona permissões, migrations ou seeds. Plano e evidências: [peaad-editais-ux-ui.md](codex/plans/peaad-editais-ux-ui.md). O harness descartável inclui `scripts/test-ft-editais-ux.ts` para filtros, contagens, metadados e retornos distintos.
+
 Os comandos de Compose e os caminhos de componentes nas seções abaixo são relativos à raiz do workspace (`sap`), um nível acima deste diretório.
 
 ## Permissões por módulo/ação
@@ -340,3 +344,39 @@ A sigla correta é **PEAAD**, mantendo o nome completo PROGRAMA EMERGENCIAL E AS
 Os contratos de histórico e pré-validação mantêm as permissões das respectivas operações. Para a folha mensal, consulte os contratos e a nova permissão descritos na seção de fechamento.
 
 Na implantação do backend, aplicar pelo procedimento habitual a migration incremental `20261028120000-ft-workflow-timeline-index`, que acrescenta o índice `(edital_id,recurso_id,createdAt,id)` aos eventos. Encerramentos futuros, manuais e do scheduler, registram evento por participação na mesma transação. Nenhuma migration ou seed foi aplicada a base corrente. Plano e evidências: [codex/plans/peaad-melhorias-fluxo.md](codex/plans/peaad-melhorias-fluxo.md).
+
+## Estoque e entregas de EPI do PEAAD
+
+O estoque é compartilhado entre os editais e fica em **PEAAD → Estoque** (`/services/:id/ft-app/estoque`). O acesso usa `ft:consultar_estoque` e independe de consultar editais. A interface usa PrimeReact e não adiciona atualização por foco ou consultas periódicas.
+
+Cadastre o item, seus tamanhos, custos e entradas iniciais no mesmo formulário. Cada variação é criada com saldo zero e suas entradas são registradas na mesma transação. Ajustes e estornos mantêm justificativa e histórico; o saldo não é editado diretamente no cadastro.
+
+**Entregar EPI** inclui uma unidade de cada tipo ativo marcado como EPI, escolhendo um tamanho por tipo. O kit é integral, não permite falta de itens/saldo e fica limitado a um kit não estornado por participação. Reposições são feitas por **Entrega individual**, que também permite itens não EPI, quantidade positiva e exige justificativa. Convocados e ativos não vencidos podem receber, desde que o edital esteja aberto e vigente.
+
+Entregas preservam itens, tamanhos, custos unitários e total em centavos, além de participação, responsável e data definidos pelo servidor. Não podem ser editadas ou excluídas. **Estornar entrega** exige ação própria e justificativa; devolve todas as quantidades, preserva a entrega original e permite novo kit se a participação continuar elegível. Pode ocorrer mesmo após encerramento do edital/participação. O estoque não modifica a folha de pagamento.
+
+API sob `/frente-de-trabalho/estoque`: CRUD `/itens` e `/itens/:id/variacoes`; consulta `/variacoes/:id`; entradas/ajustes `POST /variacoes/:id/{entradas,ajustes}`; consultas paginadas de `/movimentacoes`, `/destinatarios` e `/entregas`; conferência `GET /previa/:id` (participação); `POST /entregas/{kit,individual}`; detalhe `GET /entregas/:id`; estorno `POST /entregas/:id/estornar`. Edição/exclusão de variação usa `/itens/:itemId/variacoes/:id`.
+
+Toda mutação exige `operacao_id` UUID. Repetir a mesma operação devolve o resultado original sem nova baixa; reutilizar a chave com dados/autor/operação diferentes retorna 409. Entregas recebem `participacao_id`, `versao` da prévia e `itens: [{ variacao_id, quantidade }]`; individual também recebe `justificativa`. Alterações do catálogo/custos exigem nova conferência. Ajustes/estornos também recebem `justificativa`. Saldo, autor, datas e custo interno não são aceitos como campos de bypass.
+
+Persistência: itens, variações com tamanho normalizado único por item, entregas, itens entregues, movimentações e operações idempotentes. Uma linha de controle serializa escritas do estoque e versiona o catálogo; entregas/estornos primeiro travam edital e participação na mesma ordem do fluxo existente. Baixas, snapshots, idempotência e auditoria são persistidos na mesma transação. Há unicidade SQL para kit vigente por participação.
+
+Na implantação, aplicar `20261103120000-ft-estoque-epi` e executar a seed `20261103121000-ft-estoque-permissions`. A seed é idempotente, preserva concessões e não concede ações automaticamente. Os novos checkboxes do módulo `ft` são: `consultar_estoque`, `cadastrar_item_estoque`, `editar_item_estoque`, `excluir_item_estoque`, `registrar_entrada_estoque`, `ajustar_estoque`, `entregar_kit_epi`, `entregar_item_estoque`, `consultar_entregas_estoque`, `estornar_entrega_estoque`. Destinatários, prévia e entregas também exigem `consultar_vinculos`.
+
+Nenhuma migration ou seed foi aplicada à base corrente. Plano e evidências: [codex/plans/peaad-estoque-epi.md](codex/plans/peaad-estoque-epi.md).
+
+## Simplificação do estoque — UX/UI
+
+O PEAAD possui abas principais **Editais | Estoque**, respeitando as permissões e as URLs existentes. Quem consulta apenas estoque entra diretamente nessa aba. Filtros, páginas e seleções permanecem ao alternar; não há consulta automática por foco nem carregamento global adicional.
+
+O estoque possui **Itens | Entregas | Movimentações**. A lista mostra tamanhos ativos e saldo total, busca por nome e filtros adicionais recolhíveis. **Cadastrar item** reúne nome, EPI, tamanhos, custos e quantidades iniciais em uma confirmação. Sem permissão de entrada, o cadastro permanece disponível com saldo zero.
+
+Detalhes e manutenção ficam em painel lateral único, com cartões no celular. **Repor estoque** usa o item/tamanho selecionado; **Corrigir saldo** permite Adicionar/Retirar com quantidade positiva, justificativa e saldo previsto. Edição, inativação e estorno ficam em menus de ações secundárias.
+
+**Nova entrega** reúne **Kit completo de EPI** e **Item avulso**, mostrando progressivamente destinatário, itens e resumo. A busca usa AutoComplete remoto por nome/CPF. Apenas uma variação ativa com saldo permite seleção automática; múltiplos tamanhos exigem escolha explícita. O histórico admite busca por nome/CPF antes da paginação. Estorno exige uma justificativa própria, inicialmente vazia.
+
+Novo contrato: `POST /frente-de-trabalho/estoque/itens/cadastro-completo` recebe `{ operacao_id, nome, epi, tamanhos: [{ tamanho, custo_unitario, quantidade_inicial }] }`, com 1–100 tamanhos. Quantidade inicial é opcional e assume zero. Exige `cadastrar_item_estoque` e, se alguma quantidade for positiva, também `registrar_entrada_estoque`. Retorna o item e `variacoes` com custos/saldos criados. Item, tamanhos, entradas, auditoria e idempotência usam uma única transação. Falhas não deixam cadastro parcial.
+
+A listagem de itens acrescenta `tamanhos_ativos` e `saldo_total` dos tamanhos ativos do item; o histórico aceita `search` por nome ou CPF completo. Os endpoints anteriores permanecem compatíveis. Este ajuste não cria permissões, migrations ou seeds; as do módulo de estoque continuam necessárias na implantação. Nenhuma migration ou seed foi aplicada à base corrente.
+
+Plano e evidências: [codex/plans/peaad-estoque-ux-ui.md](codex/plans/peaad-estoque-ux-ui.md).

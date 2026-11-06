@@ -28,6 +28,7 @@ const payment = object({ bco: { type: 'string', pattern: '^\\d{1,3}$' }, ag: { t
 const nullableText = { type: ['string', 'null'] };
 const issue = object({ codigo: text, mensagem: { type: 'string' }, campo: nullableText });
 const itemProperties = {
+  edicao: object({ campos_bloqueados: { type: 'object', additionalProperties: { type: 'string' } }, vagas_minimas: integer(1), vigencia_minima: { type: ['string', 'null'], format: 'date' } }),
   permitido: { type: 'boolean' }, pendencias: { type: 'array', items: issue }, novo_termino: date, termino_previsto: date,
   nome_inscricao: nullableText, inscricao_excepcional: { type: 'boolean' }, convocacao_excepcional: { type: 'boolean' },
   createdAt: instant, data_referencia: date, dias_restantes: { type: ['integer', 'null'] }, dias_reservada: { type: ['integer', 'null'] }, vencimento_alerta: nullableText, reserva_antiga: { type: 'boolean' }, prorrogacao_fim: { type: ['string', 'null'] }, prorrogacao_motivo: nullableText, pagamento_pendente: { type: 'boolean' },
@@ -48,7 +49,7 @@ const itemProperties = {
 const item = { type: 'object', additionalProperties: true, properties: itemProperties };
 const itemRef = { $ref: 'FtWorkflowItem#' };
 const collection = { type: 'object', required: ['rows', 'count'], properties: { rows: { type: 'array', items: itemRef }, count: integer() } };
-const query = object({ pagador_id: uuid, turno_id: uuid, excecao: { type: 'string', enum: ['inscricao', 'convocacao', 'qualquer', 'nenhuma'] }, page: integer(), limit: integer(1, 50), search: { type: 'string', maxLength: 120 }, status: { type: 'string', enum: ['inscrito', 'convocado', 'ativo', 'cancelado', 'concluido', 'expirado'] } }, []);
+const query = object({ fase: { type: 'string', enum: ['rascunho', 'aberto', 'encerrado'] }, inscricoes_abertas: { type: 'boolean' }, grupo_status: { type: 'string', enum: ['encerrados'] }, pagador_id: uuid, turno_id: uuid, excecao: { type: 'string', enum: ['inscricao', 'convocacao', 'qualquer', 'nenhuma'] }, page: integer(), limit: integer(1, 50), search: { type: 'string', maxLength: 120 }, status: { type: 'string', enum: ['inscrito', 'convocado', 'ativo', 'cancelado', 'concluido', 'expirado', 'inativo'] } }, []);
 
 export function strictBody(schema: any, value: any): void {
   if (schema.type === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {

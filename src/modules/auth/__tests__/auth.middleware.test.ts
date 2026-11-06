@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 process.env.NODE_ENV ??= "test";
 process.env.DATABASE_URL ??= "mariadb://user:pass@localhost:3306/app_prefeitura_test";
 process.env.SECRET_KEY ??= "12345678901234567890123456789012";
+process.env.JWT_KEY ??= "jwt-middleware-synthetic-key-for-tests-only";
 process.env.MAIL_ADRESS ??= "test@example.com";
 process.env.MAIL_PASSWORD ??= "password";
 process.env.MAIL_HOST ??= "localhost";
@@ -25,7 +26,7 @@ async function verify(headers: Record<string, string> = {}, query: Record<string
 function validToken() {
   return jwt.sign(
     { id: 1, name: "User", role_id: 1, setor_id: 1 },
-    process.env.SECRET_KEY!,
+    process.env.JWT_KEY!,
     { expiresIn: "5m" },
   );
 }

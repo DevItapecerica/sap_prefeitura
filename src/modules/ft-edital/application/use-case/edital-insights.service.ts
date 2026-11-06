@@ -10,26 +10,36 @@ const pagination = (q: any) => { const limit = Math.min(50, Math.max(1, Number(q
 const lifecycle = ['inscrever', 'inscrever_excecao', 'convocar', 'convocar_excecao', 'ativar', 'alocar', 'prorrogar', 'cancelar', 'concluir', 'expirar'];
 export class EditalInsightsService {
   constructor(private db: DbObject, private crypto = new AesCryptService(), private clock = () => new Date()) {}
+  private searchFilter(search: string) {
+    const digits = search.replace(/\D/g, '');
+    if (digits.length === 11 && /^[\d.\s-]+$/.test(search)) {
+      return { '$bolsista.municipe.cpfHash$': createHash('sha256').update(digits).digest('hex') };
+    }
+    return { '$bolsista.municipe.nome$': { [Op.like]: '%' + search.replace(/[\\%_]/g, '\\$&') + '%' } };
+  }
+  private exceptionFilter(mode: string, inscriptions: boolean) {
+    const registration = inscriptions ? 'excecao_em' : '$inscricao.excecao_em$';
+    const convocation = inscriptions ? '$participacoes.excecao_em$' : 'excecao_em';
+    switch (mode) {
+      case 'inscricao': return { [registration]: { [Op.ne]: null } };
+      case 'convocacao': return { [convocation]: { [Op.ne]: null } };
+      case 'qualquer': return { [Op.or]: [{ [registration]: { [Op.ne]: null } }, { [convocation]: { [Op.ne]: null } }] };
+      case 'nenhuma': return { [registration]: null, [convocation]: null };
+      default: return undefined;
+    }
+  }
   private filters(query: any, inscriptions: boolean) {
     const conditions: any[] = [];
     const search = String(query.search || '').trim();
-    if (search) {
-      const digits = search.replace(/\D/g, '');
-      conditions.push(digits.length === 11 && /^[\d.\s-]+$/.test(search)
-        ? { '$bolsista.municipe.cpfHash$': createHash('sha256').update(digits).digest('hex') }
-        : { '$bolsista.municipe.nome$': { [Op.like]: '%' + search.replace(/[\\%_]/g, '\\$&') + '%' } });
-    }
+    if (search) conditions.push(this.searchFilter(search));
     const prefix = inscriptions ? 'participacoes.' : '';
     for (const field of ['pagador_id', 'turno_id']) if (query[field]) conditions.push({ [inscriptions ? '$' + prefix + field + '$' : field]: query[field] });
     if (query.status) conditions.push(inscriptions ? { [Op.or]: [
       { '$participacoes.status$': query.status }, { '$participacoes.id$': null, status: query.status },
     ] } : { status: query.status });
-    const registrationException = inscriptions ? 'excecao_em' : '$inscricao.excecao_em$';
-    const convocationException = inscriptions ? '$participacoes.excecao_em$' : 'excecao_em';
-    if (query.excecao === 'inscricao') conditions.push({ [registrationException]: { [Op.ne]: null } });
-    if (query.excecao === 'convocacao') conditions.push({ [convocationException]: { [Op.ne]: null } });
-    if (query.excecao === 'qualquer') conditions.push({ [Op.or]: [{ [registrationException]: { [Op.ne]: null } }, { [convocationException]: { [Op.ne]: null } }] });
-    if (query.excecao === 'nenhuma') conditions.push({ [registrationException]: null, [convocationException]: null });
+    if (!inscriptions && query.grupo_status === 'encerrados') conditions.push({ status: { [Op.in]: ['concluido', 'cancelado', 'expirado', 'inativo'] } });
+    const exception = this.exceptionFilter(query.excecao, inscriptions);
+    if (exception) conditions.push(exception);
     return conditions.length ? { [Op.and]: conditions } : {};
   }
   async people(id: string, query: any, inscriptions: boolean) {

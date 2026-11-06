@@ -5,6 +5,40 @@ import AuthMiddleware from '../../../auth/auth.middleware.js';
 import { EditalWorkflowRouter } from './edital-workflow.router.js';
 import type { EditalWorkflowService } from '../../application/use-case/edital-workflow.service.js';
 
+test('new read filters and editing metadata preserve separate HTTP read permissions', async () => {
+  const original = AuthMiddleware.verifyJWT;
+  AuthMiddleware.verifyJWT = async (r: any) => { r.user = { id: 123 }; };
+  const app = Fastify();
+  const calls: any[] = [];
+  let deniedAction = '';
+  app.decorate('permissionAuthorizer', { authorize: async (_id: number, module: string, action: string) => {
+    calls.push([module, action]);
+    if (action === deniedAction) throw Object.assign(new Error('Denied'), { statusCode: 403 });
+  } });
+  const metadata = { campos_bloqueados: { valor_bolsa: 'Bloqueado' }, vagas_minimas: 2, vigencia_minima: '2028-12-31' };
+  const service: any = { list: async (q: any) => { calls.push(q); return { rows: [], count: 5 }; },
+    detail: async () => ({ edicao: metadata }), inscriptions: async () => ({ rows: [], count: 1 }), participations: async (id: string, q: any) => { calls.push([id, q]); return { rows: [], count: 4 }; } };
+  await app.register(EditalWorkflowRouter, { prefix: '/edital', service, audit: async () => {} });
+  const id = '3739d774-6de0-4f48-8dda-1b43414b70ef';
+  try {
+    const list = await app.inject('/edital/?fase=aberto&inscricoes_abertas=true&page=1');
+    assert.equal(list.statusCode, 200);
+    assert.equal(calls.at(-1).inscricoes_abertas, true);
+    assert.equal(calls.at(-1).fase, 'aberto');
+    assert.deepEqual((await app.inject('/edital/' + id)).json().edicao, metadata);
+    assert.equal((await app.inject('/edital/' + id + '/participacoes?grupo_status=encerrados')).json().count, 4);
+    assert.equal(calls.at(-1)[1].grupo_status, 'encerrados');
+    assert.equal((await app.inject('/edital/?fase=invalida')).statusCode, 400);
+    assert.equal((await app.inject('/edital/' + id + '/participacoes?grupo_status=qualquer')).statusCode, 400);
+    deniedAction = 'consultar_inscricoes';
+    assert.equal((await app.inject('/edital/' + id + '/inscricoes')).statusCode, 403);
+    assert.equal((await app.inject('/edital/' + id + '/participacoes?grupo_status=encerrados')).statusCode, 200);
+    deniedAction = 'consultar_vinculos';
+    assert.equal((await app.inject('/edital/' + id + '/participacoes?grupo_status=encerrados')).statusCode, 403);
+    assert.equal((await app.inject('/edital/' + id + '/inscricoes')).statusCode, 200);
+  } finally { await app.close(); AuthMiddleware.verifyJWT = original; }
+});
+
 test('workflow HTTP enforces permission per transition, UUID scope, bank fields and strict declarations', async () => {
   const original = AuthMiddleware.verifyJWT;
   AuthMiddleware.verifyJWT = async (r: any) => { r.user = { id: 123 }; };
