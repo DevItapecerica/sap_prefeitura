@@ -59,6 +59,7 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       timestamps: false,
       tableName: "service_visibilities",
+      indexes: [{ name: "uq_service_visibilities_setor_service", unique: true, fields: ["setor_id", "service_id"] }],
     },
   );
 
