@@ -172,7 +172,7 @@ aguardando -> processando -> concluido -> excluido
 
 ### Armazenamento
 
-`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória e deve ser acrescentada ao ambiente caso não esteja no exemplo copiado. O Compose já define `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
+`FT_REPORT_ARCHIVE_DIR` define o diretório privado dos ZIPs. Em produção a variável é obrigatória e está documentada no `.env.example`. Os Composes integrado e isolado definem `/var/lib/sap/ft-reports`, montado no volume persistente `ft_report_data`. O caminho físico nunca é retornado pela API.
 
 Na execução nativa em desenvolvimento, a ausência da variável usa `sap_prefeitura/storage/ft-reports`. O diretório deve ser gravável pelo usuário da aplicação. Com múltiplas instâncias, todas precisam compartilhar o mesmo volume; armazenamento local isolado não permite que outra instância entregue o arquivo.
 
@@ -263,7 +263,7 @@ curl http://localhost:3002/ready
 - Se `db` não ficar saudável, revise as quatro variáveis `DATABASE_*` e os logs do MariaDB.
 - Na API principal, se `/health` responder e `/ready` falhar, verifique as dependências. Na API PDF, `/ready` atualmente retorna estado estático.
 - Se o frontend não alcançar a API, confirme que o serviço Compose se chama `sap` e que o proxy recebe requisições sob `/api/`.
-- Se a API principal não iniciar, confirme migrations, `DATABASE_URL`, `SECRET_KEY` e as credenciais de bootstrap.
+- Se a API principal não iniciar, confirme migrations, `DATABASE_URL`, `SECRET_KEY`, `JWT_KEY` e as credenciais de bootstrap. `JWT_KEY` assina os tokens; `SECRET_KEY` protege os dados e deve ser uma chave independente. Os Composes recusam a configuração sem `JWT_KEY`.
 
 ## Documentação do trabalho
 

@@ -12,6 +12,7 @@ export function configurePermissionsTestEnvironment(env: NodeJS.ProcessEnv = pro
   }
   Object.assign(env, {
     NODE_ENV: "test", SECRET_KEY: "permissions-integration-synthetic-key",
+    JWT_KEY: "permissions-integration-synthetic-jwt-key",
     MAIL_ADRESS: "permissions@example.invalid", MAIL_PASSWORD: "synthetic-not-used",
     MAIL_HOST: "127.0.0.1", MAIL_PORT: "25", MAIL_SECURE: "false",
     CORS_ORIGINS: "http://localhost:5173", APPLICATION_PORT: "3099",
