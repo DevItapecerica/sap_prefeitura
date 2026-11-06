@@ -140,7 +140,7 @@ export class EditalWorkflowService {
   async list(query: WorkflowQuery) {
     try {
       const result = await this.unit.read.listEditais(query, this.clock());
-      return await { rows: result.rows.map(editalOutput), count: result.count };
+      return { rows: result.rows.map(editalOutput), count: result.count };
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -154,7 +154,7 @@ export class EditalWorkflowService {
         ),
       );
       const closed = await this.unit.read.hasClosedPayroll(id);
-      return await {
+      return {
         ...edital,
         edicao: editingPolicy(edital, Boolean(closed), reservadas + ocupadas),
         reservadas,
@@ -302,7 +302,7 @@ export class EditalWorkflowService {
             pagadorId: row.uuid,
             status: occupied,
           });
-      return await result;
+      return result;
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -611,6 +611,79 @@ export class EditalWorkflowService {
       throw mapPeaadRuleError(error);
     }
   }
+  private async activateParticipation(
+    t: WorkflowTransaction,
+    id: string,
+    e: Program,
+    row: Participation,
+    data: WorkflowInput,
+  ) {
+    if (row.status !== "convocado")
+      throw ftError(409, "Somente convocado pode ser ativado");
+    const inicio = dateOnly(data.data_inicio);
+    await this.assertOpenPeriod(t, id, inicio, participationEnd(e, inicio));
+    const exception = Boolean(
+      row.excecao_em && row.excecao_autor_id && row.excecao_motivo,
+    );
+    const registration = await t.registration(id, row.inscricao_id!);
+    if (!registration)
+      throw ftError(409, "Inscricao indisponivel para validar a ativacao");
+    const snapshot = enrollmentSnapshot(
+      await this.crypto.decrypt(registration.snapshot),
+    );
+    eligible(
+      await this.crypto.decrypt(snapshot.nascimento || ""),
+      enrollmentAnswers(await this.crypto.decrypt(registration.respostas!)),
+      inicio,
+      e,
+      exception,
+    );
+    const history = await t.identityHistory(row.bolsista_id, row.id);
+    validateHistory(e, history.map(plain), inicio, exception);
+    await this.allocation(t, e, plain(row), row.id);
+    const p = data.payment_info;
+    if (paymentIssues(p).length)
+      throw ftError(422, "Dados de pagamento incompletos ou invalidos");
+    await t.saveBankData(
+      row.bolsista_id,
+      p as import("../../domain/repositories/workflow.repository.js").BankData,
+    );
+    Object.assign(
+      row,
+      await t.updateParticipation(row.id, {
+        status: "ativo",
+        ativado_em: this.clock(),
+        data_vinculo: inicio + "T12:00:00-03:00",
+        expire_at: participationEnd(e, inicio) + "T23:59:59-03:00",
+      }),
+    );
+  }
+
+  private async endParticipation(
+    t: WorkflowTransaction,
+    id: string,
+    row: Participation,
+    data: WorkflowInput,
+    operation: "concluir" | "cancelar",
+  ) {
+    if (
+      !data.motivo?.trim() ||
+      !occupied.includes(row.status) ||
+      (operation === "concluir" && row.status !== "ativo")
+    )
+      throw ftError(409, "Transicao invalida ou motivo ausente");
+    if (row.ativado_em) await this.assertEndChange(id, row, t);
+    Object.assign(
+      row,
+      await t.updateParticipation(row.id, {
+        status: operation === "concluir" ? "concluido" : "cancelado",
+        [operation === "concluir" ? "concluded_at" : "canceled_at"]:
+          this.clock(),
+        observacao: data.motivo,
+      }),
+    );
+  }
+
   async transition(
     id: string,
     participationId: string,
@@ -625,55 +698,7 @@ export class EditalWorkflowService {
         this.opened(e);
         const row = await t.lockParticipation(participationId);
         if (operation === "ativar") {
-          if (row.status !== "convocado")
-            throw ftError(409, "Somente convocado pode ser ativado");
-          const inicio = dateOnly(data.data_inicio);
-          await this.assertOpenPeriod(
-            t,
-            id,
-            inicio,
-            participationEnd(e, inicio),
-          );
-          const exception = Boolean(
-            row.excecao_em && row.excecao_autor_id && row.excecao_motivo,
-          );
-          const registration = await t.registration(id, row.inscricao_id!);
-          if (!registration)
-            throw ftError(
-              409,
-              "Inscricao indisponivel para validar a ativacao",
-            );
-          const snapshot = enrollmentSnapshot(
-            await this.crypto.decrypt(registration.snapshot),
-          );
-          eligible(
-            await this.crypto.decrypt(snapshot.nascimento || ""),
-            enrollmentAnswers(
-              await this.crypto.decrypt(registration.respostas!),
-            ),
-            inicio,
-            e,
-            exception,
-          );
-          const history = await t.identityHistory(row.bolsista_id, row.id);
-          validateHistory(e, history.map(plain), inicio, exception);
-          await this.allocation(t, e, plain(row), row.id);
-          const p = data.payment_info;
-          if (paymentIssues(p).length)
-            throw ftError(422, "Dados de pagamento incompletos ou invalidos");
-          await t.saveBankData(
-            row.bolsista_id,
-            p as import("../../domain/repositories/workflow.repository.js").BankData,
-          );
-          Object.assign(
-            row,
-            await t.updateParticipation(row.id, {
-              status: "ativo",
-              ativado_em: this.clock(),
-              data_vinculo: inicio + "T12:00:00-03:00",
-              expire_at: participationEnd(e, inicio) + "T23:59:59-03:00",
-            }),
-          );
+          await this.activateParticipation(t, id, e, row, data);
         } else if (operation === "prorrogar") {
           const end = extensionEnd(e, row!, this.clock());
           await this.assertOpenPeriod(
@@ -703,22 +728,7 @@ export class EditalWorkflowService {
             ),
           );
         } else {
-          if (
-            !data.motivo?.trim() ||
-            !occupied.includes(row.status) ||
-            (operation === "concluir" && row.status !== "ativo")
-          )
-            throw ftError(409, "Transicao invalida ou motivo ausente");
-          if (row.ativado_em) await this.assertEndChange(id, row, t);
-          Object.assign(
-            row,
-            await t.updateParticipation(row.id, {
-              status: operation === "concluir" ? "concluido" : "cancelado",
-              [operation === "concluir" ? "concluded_at" : "canceled_at"]:
-                this.clock(),
-              observacao: data.motivo,
-            }),
-          );
+          await this.endParticipation(t, id, row, data, operation);
         }
         await this.event(t, actor, id, row.id, operation, data.motivo);
         return plain(row);
@@ -735,7 +745,7 @@ export class EditalWorkflowService {
     const today = businessDate(this.clock()),
       end = getVinculoOperationalEnd(row);
     const start = [nextCivilDay(today), dateOnly(row.data_vinculo)]
-      .sort()
+      .sort((left, right) => left.localeCompare(right))
       .pop()!;
     await this.assertOpenPeriod(repository, id, start, end);
   }
@@ -1007,7 +1017,7 @@ export class EditalWorkflowService {
         }
       }
       output.permitido = pendencias.length === 0;
-      return await output;
+      return output;
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -1036,7 +1046,7 @@ export class EditalWorkflowService {
       );
       if (dateOnly(row.data_vinculo).slice(0, 7) > mes || end.slice(0, 7) < mes)
         throw ftError(409, "Participacao fora do mes solicitado");
-      return await String(row.bolsista_id);
+      return String(row.bolsista_id);
     } catch (error) {
       throw mapPeaadRuleError(error);
     }

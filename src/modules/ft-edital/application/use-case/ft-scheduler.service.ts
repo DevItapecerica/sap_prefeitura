@@ -67,7 +67,7 @@ export class FtSchedulerService {
         });
       }
 
-      return await result;
+      return result;
     } catch (error) {
       throw mapPeaadRuleError(error);
     }

@@ -151,7 +151,7 @@ export class EstoqueService {
   }
   async item(id: string) {
     try {
-      return await this.required(await this.unit.read.item(id));
+      return this.required(await this.unit.read.item(id));
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -161,7 +161,7 @@ export class EstoqueService {
   }
   async variation(id: string) {
     try {
-      return await this.required(await this.unit.read.variation(id));
+      return this.required(await this.unit.read.variation(id));
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -201,7 +201,7 @@ export class EstoqueService {
         this.unit.read.activeKit(id),
         this.unit.read.participantName(id),
       ]);
-      return await {
+      return {
         ...catalog,
         participante,
         kit_entregue: Boolean(kit),

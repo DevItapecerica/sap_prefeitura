@@ -99,7 +99,7 @@ export class EditalInsightsService {
           };
         }),
       );
-      return await { rows, count: result.count };
+      return { rows, count: result.count };
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -210,7 +210,7 @@ export class EditalInsightsService {
         event.recurso_nome =
           resourceNames.get(String(event.recurso_id)) || "Participação";
       const { offset, limit } = pagination(query);
-      return await {
+      return {
         rows: rows.slice(offset, offset + limit),
         count: rows.length,
       };

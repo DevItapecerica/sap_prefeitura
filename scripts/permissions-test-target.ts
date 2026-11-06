@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 export function configurePermissionsTestEnvironment(env: NodeJS.ProcessEnv = process.env): URL {
   let target: URL;
   try {
@@ -13,11 +15,11 @@ export function configurePermissionsTestEnvironment(env: NodeJS.ProcessEnv = pro
   Object.assign(env, {
     NODE_ENV: "test", SECRET_KEY: "permissions-integration-synthetic-key",
     JWT_KEY: "permissions-integration-synthetic-jwt-key",
-    MAIL_ADRESS: "permissions@example.invalid", MAIL_PASSWORD: "synthetic-not-used",
+    MAIL_ADRESS: "permissions@example.invalid", MAIL_PASSWORD: randomBytes(24).toString("base64url"),
     MAIL_HOST: "127.0.0.1", MAIL_PORT: "25", MAIL_SECURE: "false",
     CORS_ORIGINS: "http://localhost:5173", APPLICATION_PORT: "3099",
     PDF_API_URL: "http://127.0.0.1:3098", BOOTSTRAP_ADMIN_EMAIL: "permissions@example.invalid",
-    BOOTSTRAP_ADMIN_PASSWORD: "SyntheticPermissionsTestOnly!2026",
+    BOOTSTRAP_ADMIN_PASSWORD: randomBytes(24).toString("base64url"),
   });
   return target;
 }

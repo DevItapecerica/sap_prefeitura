@@ -11,6 +11,17 @@ test('test environment replaces inherited JWT credentials with a separate synthe
   assert.notEqual(env.JWT_KEY, env.SECRET_KEY);
 });
 
+test('disposable bootstrap and unused SMTP credentials are generated per run', () => {
+  const first: NodeJS.ProcessEnv = { DATABASE_URL: 'mariadb://runner:synthetic@127.0.0.1/sap_permissions_test', PERMISSIONS_TEST_RESET: 'YES' };
+  const second = { ...first };
+  configurePermissionsTestEnvironment(first);
+  configurePermissionsTestEnvironment(second);
+  assert.ok(first.BOOTSTRAP_ADMIN_PASSWORD);
+  assert.ok(first.MAIL_PASSWORD);
+  assert.notEqual(first.BOOTSTRAP_ADMIN_PASSWORD, second.BOOTSTRAP_ADMIN_PASSWORD);
+  assert.notEqual(first.MAIL_PASSWORD, second.MAIL_PASSWORD);
+});
+
 test('guard rejects connection-option query overrides without attempting a database connection', () => {
   for (const query of ['host=example.invalid', 'user=root', 'database=production', 'socketPath=%2Funsafe.sock', 'initSql=DROP%20TABLE%20roles', 'host=example.invalid&user=root&database=production']) {
     assert.throws(() => configurePermissionsTestEnvironment({ DATABASE_URL: `mariadb://runner:synthetic@127.0.0.1/sap_permissions_test?${query}`, PERMISSIONS_TEST_RESET: 'YES' }), /PERMISSIONS_TEST_TARGET_REFUSED/);

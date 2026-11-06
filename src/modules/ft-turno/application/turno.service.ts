@@ -60,7 +60,7 @@ export class TurnoService {
       const duplicate = await this.repository.findByName(input.nome);
       if (duplicate && duplicate.get("uuid") !== uuid)
         throw ftError(409, "Ja existe um turno com esse nome");
-      return await {
+      return {
         before: item.toJSON(),
         after: await this.repository.update(item, input),
       };

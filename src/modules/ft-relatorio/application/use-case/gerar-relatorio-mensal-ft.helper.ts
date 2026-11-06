@@ -24,7 +24,7 @@ export class GerarRelatorioMensalFtHelper {
         periodo,
       );
 
-      return await {
+      return {
         edital,
         periodo,
         bolsistas,

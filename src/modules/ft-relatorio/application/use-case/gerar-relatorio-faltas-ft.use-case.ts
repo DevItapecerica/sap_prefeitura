@@ -24,7 +24,7 @@ export class GerarRelatorioFaltasFtUseCase {
       const relatorio = await this.mensalHelper.execute(id, query);
       const csv = this.csvFormatter.format(relatorio);
 
-      return await {
+      return {
         fileName: `relatorio-faltas-${relatorio.mes}.csv`,
         csv,
         type: "text/csv; charset=utf-8",

@@ -87,12 +87,12 @@ export class FtFechamentoFolhaService {
       dateOnly(edital.data_publicacao),
       dateOnly(edital.vigencia_inicio || edital.data_publicacao),
     ]
-      .sort()
+      .sort((left, right) => left.localeCompare(right))
       .pop()!;
     const data_fim = [
       month.data_fim,
       dateOnly(edital.data_vencimento),
-    ].sort()[0];
+    ].sort((left, right) => left.localeCompare(right))[0];
     if (data_inicio > data_fim)
       throw ftError(422, "Mês fora da vigência do edital.");
     return { data_inicio, data_fim };
@@ -107,7 +107,7 @@ export class FtFechamentoFolhaService {
         : await this.unit.read.calculate(id, this.period(mes, edital));
       const limit = Math.min(50, Math.max(1, Number(query.limit) || 20)),
         offset = Math.max(0, Number(query.page) || 0) * limit;
-      return await {
+      return {
         rows: result.rows.slice(offset, offset + limit),
         count: result.count,
         resumo: result.resumo,
@@ -189,7 +189,7 @@ export class FtFechamentoFolhaService {
           "Feche a folha deste mês antes de emitir o CSV de pagamento.",
         );
       const result = row.snapshot;
-      return await {
+      return {
         fileName: "pagamento-" + mes + ".csv",
         csv: result.csv,
         type: result.type,

@@ -1,3 +1,4 @@
+import { fileNameSlug } from "../../core/utils/file-name-slug.js";
 import axios, { AxiosInstance } from "axios";
 import AppError from "../../core/appError.js";
 import { recordDependency } from "../../core/observability/metrics.js";
@@ -66,12 +67,6 @@ export default class AxiosFolhaPresencaGateway {
   }
 
   private slug(value: string): string {
-    return (
-      value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9_-]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "bolsista"
-    );
+    return fileNameSlug(value, "bolsista");
   }
 }

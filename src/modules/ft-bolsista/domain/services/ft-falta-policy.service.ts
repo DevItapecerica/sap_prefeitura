@@ -51,7 +51,7 @@ export class FtFaltaPolicyService {
     const dataVinculo = toDateOnly(getValue(vinculo, "data_vinculo"));
     const operationalEnd = getVinculoOperationalEnd(vinculo) || null;
 
-    if (faltaDate === null || hoje === null) {
+    if (faltaDate === null) {
       throw new PeaadRuleError(
         "ABSENCE_DATE_INVALID",
         "Data da falta invalida",

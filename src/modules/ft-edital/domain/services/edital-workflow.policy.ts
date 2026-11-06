@@ -152,7 +152,7 @@ export function participationEnd(
   return [
     addMonths(inicio, Number(edital.duracao_meses)),
     dateOnly(edital.data_vencimento),
-  ].sort()[0];
+  ].sort((left, right) => left.localeCompare(right))[0];
 }
 
 export function validateConfiguration(

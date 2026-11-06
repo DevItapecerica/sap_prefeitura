@@ -1,3 +1,4 @@
+import { fileNameSlug } from "../../../../core/utils/file-name-slug.js";
 import {
   ReportArchiveError,
   type ReportArchiveStorage,
@@ -51,7 +52,7 @@ export class FtRelatorioArquivoService {
         tentativas: 0,
       });
       await this.events.publish("FT_REPORT_BATCH_AVAILABLE", { id });
-      return await this.present(created);
+      return this.present(created);
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -62,7 +63,7 @@ export class FtRelatorioArquivoService {
       const page = Math.max(Number(pageValue) || 0, 0);
       const limit = Math.min(Math.max(Number(limitValue) || 10, 1), 100);
       const result = await this.files.list(page, limit, editalId);
-      return await {
+      return {
         arquivos: result.rows.map((row) => this.present(row)),
         count: result.count,
         page,
@@ -81,7 +82,7 @@ export class FtRelatorioArquivoService {
       if (!(await this.files.retry(id)))
         throw ftError(409, "Somente arquivos com erro podem ser reenviados");
       await this.events.publish("FT_REPORT_BATCH_AVAILABLE", { id });
-      return await this.present((await this.files.findById(id))!);
+      return this.present((await this.files.findById(id))!);
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -132,12 +133,6 @@ export class FtRelatorioArquivoService {
     return safe;
   }
   private slug(value: string) {
-    return (
-      basename(String(value))
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9_-]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "edital"
-    );
+    return fileNameSlug(basename(String(value)), "edital");
   }
 }

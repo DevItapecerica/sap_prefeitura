@@ -1,3 +1,4 @@
+import { fileNameSlug } from "../../../../core/utils/file-name-slug.js";
 import type { ReportArchiveStorage } from "../ports/report-archive.storage.js";
 import type { FtRelatorioArquivoDto } from "../../domain/entities/ft-relatorio-arquivo.entity.js";
 import { mapPeaadRuleError } from "../../../ft-bolsista/application/utils/map-peaad-rule-error.js";
@@ -26,13 +27,13 @@ export class FtRelatorioArquivoWorkerService {
       const stale = new Date(now.getTime() - 30 * 60_000);
       const job = await this.files.claimNext(now, stale);
       if (!job)
-        return await { processed: 0, backlog: await this.files.countPending() };
+        return { processed: 0, backlog: await this.files.countPending() };
       try {
         await this.process(job);
       } catch (error) {
         await this.files.fail(job.id, this.safeError(error));
       }
-      return await { processed: 1, backlog: await this.files.countPending() };
+      return { processed: 1, backlog: await this.files.countPending() };
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -47,13 +48,13 @@ export class FtRelatorioArquivoWorkerService {
         await this.files.markDeleted(row.id, now);
       }
       await this.storage.purgeTemporary(cutoff);
-      return await expired.length;
+      return expired.length;
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
   }
 
-  private async process(job: FtRelatorioArquivoDto) {
+  private async peopleForJob(job: FtRelatorioArquivoDto) {
     const period = {
       data_inicio: `${job.mes}-01`,
       data_fim: this.monthEnd(job.mes),
@@ -71,6 +72,11 @@ export class FtRelatorioArquivoWorkerService {
       );
     if (people.length === 0)
       throw new Error("Nenhum bolsista vinculado ao edital no mes selecionado");
+    return people;
+  }
+
+  private async process(job: FtRelatorioArquivoDto) {
+    const people = await this.peopleForJob(job);
     await this.files.progress(job.id, people.length, 0, 0);
     const archive = await this.storage.create(job.id);
     let generated = 0;
@@ -157,13 +163,7 @@ export class FtRelatorioArquivoWorkerService {
     return "Falha ao gerar o arquivo de relatorios";
   }
   private slug(value: string) {
-    return (
-      String(value || "bolsista")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9_-]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "bolsista"
-    );
+    return fileNameSlug(String(value || "bolsista"), "bolsista");
   }
   private monthEnd(month: string) {
     const [year, value] = month.split("-").map(Number);

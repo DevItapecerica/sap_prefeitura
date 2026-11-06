@@ -85,7 +85,7 @@ export class GerarRelatorioFtUseCase {
           409,
           "Pagamento alterado. Atualize a prévia e confira novamente.",
         );
-      return await {
+      return {
         rows,
         count: rows.length,
         resumo,
@@ -121,7 +121,7 @@ export class GerarRelatorioFtUseCase {
         await this.calculate(id, query);
       const limit = Math.min(50, Math.max(1, Number(query.limit) || 20));
       const offset = Math.max(0, Number(query.page) || 0) * limit;
-      return await {
+      return {
         rows: rows.slice(offset, offset + limit),
         count,
         resumo,

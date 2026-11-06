@@ -36,7 +36,7 @@ export class FtBolsistaService {
         throw ftError(404, "Bolsista not found");
       }
 
-      return await {
+      return {
         bolsista,
         ok: true,
         message: "Bolsista retrieved successfully",
@@ -51,7 +51,7 @@ export class FtBolsistaService {
     try {
       const { count, rows } = await this.repository.findAndCount(query);
 
-      return await {
+      return {
         code: 200,
         bolsista: rows,
         count,
@@ -68,7 +68,7 @@ export class FtBolsistaService {
       const { rows, hasMore, nextCursor } =
         await this.repository.findAndCountVinculoCandidates(query);
 
-      return await {
+      return {
         code: 200,
         bolsistas: rows,
         returned_count: rows.length,
@@ -114,7 +114,7 @@ export class FtBolsistaService {
           a.dia - b.dia ||
           String(a.nome).localeCompare(String(b.nome), "pt-BR"),
       );
-      return await {
+      return {
         aniversariantes,
         count: aniversariantes.length,
         mes: month,
@@ -218,7 +218,7 @@ export class FtBolsistaService {
       const { bolsista } = await this.getBolsistaById(id);
       await this.repository.destroyBolsista(bolsista);
 
-      return await {
+      return {
         message: "Bolsista deletado com sucesso",
       };
     } catch (error) {
@@ -282,7 +282,7 @@ export class FtBolsistaService {
       await this.repository.prorrogateVinculos(vinculos);
       const after = vinculos.map((item) => item.toJSON());
 
-      return await {
+      return {
         message: "Vinculos prorrogados com sucesso",
         before,
         after,
@@ -300,7 +300,7 @@ export class FtBolsistaService {
         throw ftError(404, "Nenhum bolsista encontrado para esse edital");
       }
 
-      return await bolsistas;
+      return bolsistas;
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -313,7 +313,7 @@ export class FtBolsistaService {
         bolsista.get("id"),
       );
 
-      return await {
+      return {
         message: "Historico do bolsista retrieved successfully",
         historico,
         ok: true,
@@ -357,7 +357,7 @@ export class FtBolsistaService {
         vinculo: vinculo.toJSON(),
       };
       await this.repository.cancelVinculo(bolsista, vinculo, observacao);
-      return await {
+      return {
         before,
         after: {
           bolsista: bolsista.toJSON(),
@@ -433,7 +433,7 @@ export class FtBolsistaService {
         observacao,
       });
 
-      return await {
+      return {
         message: "Falta lancada com sucesso",
         falta,
         ok: true,
@@ -454,7 +454,7 @@ export class FtBolsistaService {
       const { count, rows } =
         await this.repository.findAndCountFaltasByBolsista(bolsistaId, query);
 
-      return await {
+      return {
         message: "Faltas retrieved successfully",
         faltas: rows,
         count,
@@ -475,7 +475,7 @@ export class FtBolsistaService {
 
       await this.repository.destroyFalta(falta);
 
-      return await {
+      return {
         message: "Falta deletada com sucesso",
         ok: true,
         before: falta.toJSON(),
@@ -523,7 +523,7 @@ export class FtBolsistaService {
         descricao,
         author_id: authorId,
       });
-      return await {
+      return {
         message: "Ocorrencia registrada com sucesso",
         ocorrencia,
         ok: true,
@@ -545,7 +545,7 @@ export class FtBolsistaService {
           bolsistaId,
           query,
         );
-      return await {
+      return {
         message: "Ocorrencias retrieved successfully",
         ocorrencias: rows,
         count,
@@ -564,7 +564,7 @@ export class FtBolsistaService {
         throw ftError(404, "Ocorrencia not found");
       const before = ocorrencia.toJSON();
       await this.repository.destroyOcorrencia(ocorrencia);
-      return await {
+      return {
         message: "Ocorrencia removida com sucesso",
         ok: true,
         before,

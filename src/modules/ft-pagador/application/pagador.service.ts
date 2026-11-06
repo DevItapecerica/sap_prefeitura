@@ -26,7 +26,7 @@ export class PagadorService {
     try {
       const pagadores = await this.repository.listCapacityByEdital(editalId);
       if (!pagadores) throw ftError(404, "Edital nao encontrado");
-      return await pagadores;
+      return pagadores;
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
@@ -67,7 +67,7 @@ export class PagadorService {
           `Quantidade nao pode ser menor que a ocupacao ativa (${occupation})`,
         );
       }
-      return await {
+      return {
         before: item.toJSON(),
         after: await this.repository.update(item, input),
       };

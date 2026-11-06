@@ -46,8 +46,8 @@ try {
   for (const directory of ["migrations", "seeders"]) {
     const root = resolve("src/infra/database/sequelize", directory);
     for (const file of (await readdir(root))
-      .filter((f) => /^\d+.*\.ts$/.test(f))
-      .sort()) {
+      .filter((f) => /^\d[^\r\n]*\.ts$/.test(f))
+      .sort((left, right) => left.localeCompare(right))) {
       const migration = (await import(pathToFileURL(resolve(root, file)).href))
         .default;
       const existingId = "8f214433-9407-479c-ad20-9fe6e40fd4f6";

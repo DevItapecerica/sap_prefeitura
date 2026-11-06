@@ -72,7 +72,7 @@ export function extensionEnd(
   const end = [
     addMonths(currentEnd, months),
     dateOnly(e.data_vencimento),
-  ].sort()[0]!;
+  ].sort((left, right) => left.localeCompare(right))[0]!;
   if (end <= currentEnd)
     throw new PeaadRuleError(
       "EXTENSION_AT_PROGRAM_LIMIT",
