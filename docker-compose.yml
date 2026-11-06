@@ -71,4 +71,4 @@ networks:
 
 volumes:
   db_data:
-  ft_report_data:
+  sap_prefeitura_db:
