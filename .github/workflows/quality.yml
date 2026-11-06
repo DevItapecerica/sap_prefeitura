@@ -50,3 +50,46 @@ jobs:
           path: coverage
           if-no-files-found: error
           retention-days: 14
+
+  bootstrap:
+    name: fresh-database-bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_DATABASE: ci_bootstrap_permissions_test
+          MARIADB_USER: bootstrap_runner
+          MARIADB_PASSWORD: ci-only-database-password
+          MARIADB_ROOT_PASSWORD: ci-only-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DATABASE_URL: mariadb://bootstrap_runner:ci-only-database-password@127.0.0.1:3306/ci_bootstrap_permissions_test
+      PERMISSIONS_TEST_RESET: "YES"
+      NODE_ENV: test
+      SECRET_KEY: ci-only-secret-key
+      JWT_KEY: ci-only-jwt-key
+      PDF_API_URL: http://127.0.0.1:3002/api/v1
+      MAIL_ADRESS: ci@example.invalid
+      MAIL_PASSWORD: ci-only-password
+      MAIL_HOST: 127.0.0.1
+      CORS_ORIGINS: http://localhost:5173
+      APPLICATION_PORT: 3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:permissions:safety
+      - run: npm run test:permissions:db
+      - run: npm run test:permissions:runtime
