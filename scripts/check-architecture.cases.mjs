@@ -19,6 +19,29 @@ test('domain rejects outer layers even when imports are dynamic, reexported or t
   }
   assert.equal(violation('src/modules/example/domain/policy.ts', dependency('./entity.js'), 'backend'), null);
 });
+
+test('import bindings preserve aliases, namespace imports and explicit type-only declarations', () => {
+  const found = dependencies(`import Default from './default.js';
+import * as Namespace from './namespace.js';
+import { A as Alias, type B } from './mixed.js';
+import { type C, type D } from './types.js';
+import type DefaultType from './default-type.js';
+import './side-effect.js';`);
+  assert.deepEqual(found.map(row => [row.names, row.typeOnly]), [
+    [['*'], false], [['*'], false], [['A', 'B'], false], [['C', 'D'], true], [['*'], true], [['*'], false],
+  ]);
+});
+
+test('computed imports remain blocked in HTTP and providers while factories and adapters can compose', () => {
+  const [entry] = dependencies('const module = require(name);');
+  for (const source of ['src/modules/example/interface/controller/item.ts', 'src/providers/UserProvider.jsx']) {
+    assert.ok(violation(source, entry, 'frontend'));
+  }
+  for (const source of ['src/modules/example/factories/item.factory.ts', 'src/infra/files/loader.ts']) {
+    assert.equal(violation(source, entry, 'backend'), null);
+  }
+  assert.equal(dependencies('client.fetch("/api");').length, 0);
+});
 test('application uses ports, with composition and technical code confined to factories/adapters', () => {
   assert.ok(violation('src/modules/example/application/service.ts', dependency('axios'), 'backend'));
   assert.ok(violation('src/modules/example/application/service.ts', dependency('../../../../infra/database/sequelize/repository.js'), 'backend'));
