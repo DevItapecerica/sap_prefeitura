@@ -1,5 +1,19 @@
 # SAP Prefeitura — API principal
 
+## Benefícios mensais do PEAAD
+
+O módulo `ft-beneficios` registra retiradas parciais na competência atual de Brasília, com trava por pessoa, edital, benefício e mês. Uma entrega reúne um ou vários benefícios e guarda seus nomes/descrições, responsável e data. Retornos em outra participação não liberam nova retirada no mesmo mês. O estorno é integral, justificado e auditado; não apaga a entrega e pode ocorrer após o encerramento.
+
+`PERMITIR_RETIRADA_BENEFICIOS_APOS_ENCERRAMENTO=false` mantém a entrega restrita a ativos não vencidos em edital aberto/vigente. Se habilitada, quem teve ao menos um dia ativo na competência poderá retirar no mês atual mesmo após encerrar. Relatórios sempre consideram esse período efetivo, sem reduzir benefícios por faltas ou presumir entregas externas.
+
+Sob `/frente-de-trabalho/edital`: `GET /:id/participacoes/:participacaoId/beneficios`, `POST /:id/participacoes/:participacaoId/beneficios/entregas`, `GET /:id/beneficios/entregas`, `POST /:id/beneficios/entregas/:entregaId/estornar` e `GET /:id/beneficios/relatorio[.csv]`. Entrega recebe somente `operacao_id` e `beneficio_ids`; estorno recebe `operacao_id` e `motivo`. Histórico filtra por participação e mês; relatório filtra por mês, nome/CPF completo, benefício e situação antes de paginar. CSV exporta todos os resultados filtrados.
+
+A migration `20261109120000-ft-beneficios-entregas` cria cabeçalhos, itens históricos, cobertura vigente com chave única composta e operações idempotentes. A seed `20261109121000-ft-beneficios-permissions` insere quatro ações no catálogo `ft`, sem concessões: `consultar_entregas_beneficios`, `entregar_beneficios`, `estornar_entrega_beneficios` e `gerar_relatorio_beneficios`. Cadastro de benefícios permanece bloqueado após a primeira convocação. Sem efeitos em estoque ou folha.
+
+Rotas/controllers recebem seis casos de uso, com factories nomeadas e a classe de domínio `BeneficiosPolicy`. A persistência usa os models Sequelize de entregas, itens, retiradas vigentes e operações; consultas específicas evitam carregar todo o edital. O histórico usa filtros/contagem/paginação pelo ORM; o relatório consulta somente o período pertinente. O mapper da aplicação trata CPF e snapshots criptografados. A unidade de trabalho conserva a trava edital → participação e a auditoria na mesma transação.
+
+`npm run check` verifica `src` e também `scripts`, por meio de `check:scripts` / `tsconfig.scripts.json`, sem emitir scripts no build de produção. O CI já executa esse comando. O harness `npm run test:ft:db` inclui a integração dos models de benefícios em alvo descartável explícito. Plano e evidências: [peaad-beneficios-mensais.md](codex/plans/peaad-beneficios-mensais.md). Nenhuma migration ou seed foi aplicada à base corrente nesta entrega.
+
 ## Organização das dependências
 
 Use Serviços como referência: rotas explícitas chamam controllers; factories compõem os serviços/casos de uso com contratos de repositório e adapters de `infra`. Domínio não importa DTOs da aplicação nem erros HTTP. Erros semânticos são traduzidos na aplicação para os contratos públicos existentes.
