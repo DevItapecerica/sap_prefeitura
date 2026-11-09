@@ -1,3 +1,5 @@
+> Registro histórico da implementação anterior. Para instalar a linha base atual em banco vazio, consulte [bootstrap-banco-novo.md](bootstrap-banco-novo.md). Referências à conversão ou migrations antigas abaixo não são instruções de implantação atual.
+
 # Evidências locais — permissões por módulo/ação e role
 
 ## Estado

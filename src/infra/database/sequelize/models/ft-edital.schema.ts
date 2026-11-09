@@ -1,7 +1,7 @@
 import { DataTypes as D } from 'sequelize';
 
 export const editalColumns = {
-  idade_maxima: { type: D.INTEGER.UNSIGNED, allowNull: true },
+  idade_maxima: { type: D.INTEGER.UNSIGNED, allowNull: false },
   fase: { type: D.STRING(16), allowNull: false, defaultValue: 'rascunho' },
   vigencia_inicio: { type: D.DATEONLY, allowNull: true },
   inscricoes_inicio: { type: D.DATE, allowNull: true }, inscricoes_fim: { type: D.DATE, allowNull: true },

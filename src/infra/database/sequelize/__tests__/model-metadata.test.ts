@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DataTypes, Sequelize } from "sequelize";
-import permissionModel from "../models/permission.model.js";
 import permissionActionModel from "../models/permission-action.model.js";
 import rolePermissionModel from "../models/role-permission.model.js";
 import rolesModel from "../models/roles.model.js";
@@ -22,7 +21,6 @@ test("access models expose the database relationships", async () => {
 
   const models: any = {};
   for (const defineModel of [
-    permissionModel,
     permissionActionModel,
     rolePermissionModel,
     rolesModel,
@@ -62,17 +60,15 @@ test("access models expose the database relationships", async () => {
   assert.equal(models.UserModel.associations.setor.target, models.SetorModel);
   assert.equal(models.UserModel.associations.role.target, models.RolesModel);
   assert.equal(models.UserModel.associations.sessions.target, models.UserSessionModel);
-  assert.equal(models.PermissionsModel.associations.service.target, models.ServiceModel);
+  assert.equal(models.PermissionsModel, undefined);
+  assert.equal(models.ServiceModel.associations.permissions, undefined);
   assert.equal(models.ServiceVisibilities.associations.setor.target, models.SetorModel);
   assert.equal(models.ServiceVisibilities.associations.service.target, models.ServiceModel);
   assert.deepEqual(models.UserModel.rawAttributes.setor_id.references, {
     model: "setors",
     key: "id",
   });
-  assert.deepEqual(models.PermissionsModel.rawAttributes.service_id.references, {
-    model: "services",
-    key: "id",
-  });
+  assert.ok(models.ServiceVisibilities.options.indexes.some((index: { name: string; unique?: boolean }) => index.name === "uq_service_visibilities_setor_service" && index.unique));
 
   await sequelize.close();
 });
