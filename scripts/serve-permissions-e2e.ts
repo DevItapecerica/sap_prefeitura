@@ -2,6 +2,7 @@ import { configurePermissionsTestEnvironment } from "./permissions-test-target.j
 import { randomUUID, createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { QueryTypes, type Model } from "sequelize";
 
 // This runner only serves the synthetic, previously migrated disposable database.
 try {
@@ -18,7 +19,7 @@ const { default: rateLimit } = await import("../src/core/plugin/rateLimit.js");
 const { default: AesCryptService } = await import("../src/core/security/aes/AesCrypt.service.js");
 const { hash } = await import("bcryptjs");
 await db.sequelize.authenticate();
-const [[state]] = await db.sequelize.query("SELECT completed FROM permission_migration_state WHERE id=1");
+const [state] = await db.sequelize.query<{ completed: boolean }>("SELECT completed FROM permission_migration_state WHERE id=1", { type: QueryTypes.SELECT });
 if (!state || !state.completed) throw new Error("Disposable database must be migrated and seeded before E2E");
 const fixtureName = `e2e_${randomUUID().slice(0, 8)}`;
 const roles = await Promise.all(["target", "other"].map(name => db.RolesModel.create({ name: `${fixtureName}_${name}` })));
@@ -40,7 +41,7 @@ const edital = await db.Edital.create({
 });
 const pagador = await db.Pagador.create({ nome: `${fixtureName}_pagador`, quantidade: 100 });
 const turno = await db.Turno.create({ nome: `${fixtureName}_turno`, hora_inicio: "08:00:00", hora_fim: "12:00:00" });
-const bolsistas = [];
+const bolsistas: Model[] = [];
 for (const [index] of users.entries()) {
   const plaintext = `synthetic_${fixtureName}_${index}`;
   const municipe = await db.MunicipeModel.create({
