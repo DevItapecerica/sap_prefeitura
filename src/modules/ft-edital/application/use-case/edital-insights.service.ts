@@ -2,6 +2,7 @@ import {
   enrollmentSnapshot,
   enrollmentAnswers,
 } from "../utils/enrollment-content.js";
+import { PERMITIR_RETIRADA_BENEFICIOS_APOS_ENCERRAMENTO } from "../../../ft-beneficios/domain/beneficios.policy.js";
 import { mapPeaadRuleError } from "../../../ft-bolsista/application/utils/map-peaad-rule-error.js";
 import type {
   WorkflowReader,
@@ -59,6 +60,7 @@ export class EditalInsightsService {
             : {};
           const current = inscriptions ? row.participacoes?.[0] : row;
           const base = {
+            beneficios_permitir_encerrados: PERMITIR_RETIRADA_BENEFICIOS_APOS_ENCERRAMENTO,
             id: row.id,
             bolsista_id: row.bolsista_id,
             nome:

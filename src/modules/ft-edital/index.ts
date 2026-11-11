@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { EditalWorkflowRouter } from "./interface/router/edital-workflow.router.js";
 import schedulerIndex from "./scheduler/schedulerIndex.js";
+import { BeneficiosRouter } from "../ft-beneficios/interface/beneficios.router.js";
 
 const FtEditalModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   fastify,
@@ -14,6 +15,7 @@ const FtEditalModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   await fastify.register(EditalWorkflowRouter, {
     prefix: "/frente-de-trabalho/edital",
   });
+  await fastify.register(BeneficiosRouter, { prefix: "/frente-de-trabalho/edital" });
 };
 
 export default FtEditalModule;

@@ -63,6 +63,7 @@ const issue = object({
   campo: nullableText,
 });
 const itemProperties = {
+  beneficios_permitir_encerrados: { type: "boolean" },
   edicao: object({
     campos_bloqueados: {
       type: "object",
