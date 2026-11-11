@@ -2,11 +2,13 @@
 
 O edital reúne inscrições, convocações, participantes, pagadores, turnos, locais, benefícios e relatórios. A identidade pessoal continua em munícipes; o bolsista é somente a referência reutilizável dessa pessoa em FT.
 
-## Implantação em banco novo
+## Implantação em base nova
 
-O schema atual nasce diretamente em sete migrations e 38 tabelas finais. A primeira migration recusa tabelas existentes ou histórico de outra linha base. Aponte DATABASE_URL para um banco vazio e siga [bootstrap-banco-novo.md](bootstrap-banco-novo.md). Não remova a SequelizeMeta da base antiga para simular instalação limpa.
+Esta versão exige frontend e backend compatíveis e **base FT vazia**. A migration `20261022120000-ft-edital-workflow` recusa execução quando há editais existentes. Ela não apaga dados, não converte participações antigas e não usa `sync({force:true})`. Prepare um schema novo e aponte `DATABASE_URL` para ele antes de executar `npm run migrate` e os seeds de instalação. Preserve a base anterior até validar a nova instalação. Não remova entradas da `SequelizeMeta` para contornar o precheck.
 
-O primeiro administrador recebe o catálogo inicial; os demais perfis começam sem concessões. Reexecutar seeds preserva revogações. O rollback do schema vazio é validado; tabelas operacionais preenchidas impedem sua remoção.
+O rollback só é permitido antes de cadastrar editais/inscrições; depois disso, a migration recusa perder o novo histórico e exige forward-fix. O harness valida up/down/up em base descartável antes dos seeds e a recusa de rollback depois da utilização.
+
+As novas permissões começam negadas, inclusive para roles que possuíam CRUD legado. Um gestor com acesso à administração de permissões deve concedê-las explicitamente. Não há bypass por nome de role. O frontend exige `ft:consultar_edital`; consulta e cadastro de munícipes também dependem das permissões do módulo `municipes`.
 
 ## Configuração e ciclo de vida
 
@@ -98,7 +100,7 @@ Planos: [backend](../codex/plans/ft-centrada-no-edital.md), [frontend](../../fro
 - [x] Autor, data e justificativa persistidos por etapa e em evento transacional. Só a convocação excepcional autoriza sua ativação posterior quanto ao máximo etário e histórico/retorno. O cadastro excepcional não autoriza convocação comum.
 - [x] Exceção libera máximo etário, histórico em outros editais e retorno ao mesmo edital, inclusive no mesmo mês. Inscrição excepcional admite somente após o prazo final; nunca antes da abertura.
 - [x] Mantidos: edital aberto/vigente, declarações, residência, idade mínima, inscrição única por pessoa/edital, bloqueio de convocação/atividade simultânea, vagas/capacidade e banco na ativação. Encaixe continua liberando apenas o prazo final.
-- [x] Idade e autorizações excepcionais fazem parte do schema inicial do PEAAD; ações integram o catálogo inicial. Não há conversão ou preenchimento de idade legado.
+- [x] Migração incremental `20261022130000-ft-idade-excecoes` e seed idempotente `20261022131000-ft-exception-permissions`, sem concessões automáticas. Rollback recusa perder limites ou autorizações existentes.
 - [x] Interface PrimeReact com limite editável, erro vermelho e Confirmar desabilitado para idade/nascimento inválidos, seleção preservada ao buscar/paginar e botões de exceção por permissão. Limite já configurado fica desabilitado após convocação.
 - [x] Removidas as constantes globais de idade, duplicidade e retorno; consumidores usam a política do edital. `DESCONTAR_FALTA = false` permanece global.
 - [x] OpenAPI/tipos gerados e READMEs atualizados. Testes unitários, autorização HTTP, seed e integração SQL cobrem as regras; Chromium cobre desktop/mobile e o fluxo real de inscrição, exceção, convocação e ativação bancária.
@@ -130,9 +132,9 @@ A interface apresenta “Não possui renda de qualquer natureza” e “Não rec
 
 O programa passa a ser identificado como **PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEAAD**. O nome completo permite quebra de linha em desktop/mobile.
 
-O catálogo inicial já usa o nome completo do PEAAD, com ID 6 e módulo ft. Não há migration de renomeação nesta linha base.
+A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
 
-Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A instalação limpa segue o guia de bootstrap; nenhuma migration ou seed foi aplicada à base corrente.
+Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
 
 
 ## CSV de pagamento do PEAAD
@@ -148,4 +150,4 @@ Os cálculos de proporcionalidade e faltas permanecem os mesmos, assim como as l
 
 ## Correção da sigla — 2026-10-27
 
-A sigla correta é **PEAAD**. O catálogo inicial já contém o nome final, mantendo ID 6, módulo ft, URLs e ações. As antigas etapas de renomeação foram substituídas pela instalação direta do schema e catálogo atuais.
+A sigla correta é PEAAD. Para bases existentes, a migration incremental `20261027120000-rename-ft-service-peaad` corrige somente o nome do serviço de módulo `ft`; a migration anterior permanece histórica. O seed inicial já usa PEAAD. Nenhuma migration ou seed foi aplicada à base corrente nesta alteração.
