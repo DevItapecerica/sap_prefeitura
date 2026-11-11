@@ -28,7 +28,7 @@ API modular em Node.js 22, TypeScript, Fastify 5 e Sequelize/MariaDB. Registra a
 
 ## PEAAD centrado no edital
 
-O fluxo de FT passa a ser **inscrição → convocação com reserva → ativação manual com pagamento**. Editais concentram suas configurações e listas de participantes. A instalação atual exige banco inteiramente vazio e cria diretamente o schema final; consulte o guia de bootstrap. Nenhuma rotina apaga a base existente.
+O fluxo de FT passa a ser **inscrição → convocação com reserva → ativação manual com pagamento**. Editais concentram suas configurações e listas de participantes. Esta versão exige instalação em base FT vazia e não converte os editais anteriores. A migration recusa bases FT populadas; nenhuma rotina apaga o banco automaticamente.
 
 Consulte [docs/ft-edital-workflow.md](docs/ft-edital-workflow.md) para campos, permissões, contratos, restrições de alteração, implantação e integração real com banco descartável. O plano do backend fica em [codex/plans/ft-centrada-no-edital.md](codex/plans/ft-centrada-no-edital.md).
 
@@ -132,18 +132,23 @@ O Vite usa a porta fixa `5173`; o proxy encaminha `/api/*` para `http://localhos
 
 ## Banco, migrations e seeds
 
-A linha base atual é exclusiva para banco vazio: **sete migrations, 38 tabelas finais e três seeds idempotentes**. Não há conversão de dados legados nem cadastro de serviços aposentados. Crie outro banco e configure DATABASE_URL; a primeira migration recusa tabelas ou histórico preexistentes, sem apagar dados.
-
-O primeiro administrador exige BOOTSTRAP_ADMIN_EMAIL e BOOTSTRAP_ADMIN_PASSWORD em qualquer ambiente. Ele recebe as ações iniciais; os demais perfis começam sem concessões. Reexecutar seeds não troca senhas, restaura revogações ou libera ações futuras. Não existe fallback admin/admin.
-
-Execute em sap_prefeitura:
+O container da API executa migrations pendentes antes de iniciar. Na execução nativa, use os comandos abaixo em `sap_prefeitura`:
 
 ```bash
 npm run migrate
 npm run seed
 ```
 
-No container já compilado, use /app e npx --no-install sequelize-cli db:seed:all. Consulte [docs/bootstrap-banco-novo.md](docs/bootstrap-banco-novo.md) para a ordem, os serviços ativos, rollback, Docker e integração SQL. O CI inclui bootstrap real em MariaDB 10.11 isolado, além dos testes usuais.
+Reversões disponíveis:
+
+```bash
+npm run migrate:undo
+npm run seed:undo
+```
+
+Toda alteração de banco deve possuir migration reversível e teste correspondente. Não apague volumes ou migrations para contornar falhas.
+
+Em bases existentes, aplique somente os seeds necessários à atualização. A migração de permissões pode recusar rollback que perderia concessões granulares; consulte [docs/permissions.md](docs/permissions.md) antes de reverter.
 
 ## Modelo do PEAAD
 
@@ -290,7 +295,7 @@ curl http://localhost:3002/ready
 - [x] Autor, data e justificativa persistidos por etapa e em evento transacional. Só a convocação excepcional autoriza sua ativação posterior quanto ao máximo etário e histórico/retorno. O cadastro excepcional não autoriza convocação comum.
 - [x] Exceção libera máximo etário, histórico em outros editais e retorno ao mesmo edital, inclusive no mesmo mês. Inscrição excepcional admite somente após o prazo final; nunca antes da abertura.
 - [x] Mantidos: edital aberto/vigente, declarações, residência, idade mínima, inscrição única por pessoa/edital, bloqueio de convocação/atividade simultânea, vagas/capacidade e banco na ativação. Encaixe continua liberando apenas o prazo final.
-- [x] Idade e autorizações excepcionais fazem parte do schema inicial do PEAAD; ações integram o catálogo inicial. Não há conversão ou preenchimento de idade legado.
+- [x] Migração incremental `20261022130000-ft-idade-excecoes` e seed idempotente `20261022131000-ft-exception-permissions`, sem concessões automáticas. Rollback recusa perder limites ou autorizações existentes.
 - [x] Interface PrimeReact com limite editável, erro vermelho e Confirmar desabilitado para idade/nascimento inválidos, seleção preservada ao buscar/paginar e botões de exceção por permissão. Limite já configurado fica desabilitado após convocação.
 - [x] Removidas as constantes globais de idade, duplicidade e retorno; consumidores usam a política do edital. `DESCONTAR_FALTA = false` permanece global.
 - [x] OpenAPI/tipos gerados e READMEs atualizados. Testes unitários, autorização HTTP, seed e integração SQL cobrem as regras; Chromium cobre desktop/mobile e o fluxo real de inscrição, exceção, convocação e ativação bancária.
@@ -322,9 +327,9 @@ A interface apresenta “Não possui renda de qualquer natureza” e “Não rec
 
 O programa passa a ser identificado como **PEAAD - PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO** nos títulos e no catálogo; notificações e espaços compactos usam **PEAAD**. O nome completo permite quebra de linha em desktop/mobile.
 
-O catálogo inicial já usa o nome completo do PEAAD, com ID 6 e módulo ft. Não há migration de renomeação nesta linha base.
+A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
 
-Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A instalação limpa segue o guia de bootstrap; nenhuma migration ou seed foi aplicada à base corrente.
+Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
 
 
 ## CSV e fechamento mensal da folha do PEAAD
@@ -341,13 +346,13 @@ Valor líquido em centavos inteiros (900,00 → 90000; 900,01 → 90001; zero �
 
 Contratos sob `/frente-de-trabalho/relatorio/edital/:id`: `GET /previa` para o mês completo; `GET /fechamento?mes=AAAA-MM`; `POST /fechamento` com `{ mes, versao }`; download CSV na rota existente, exigindo mês completo fechado. Alterações após a conferência retornam 409 e exigem nova conferência antes de fechar. Consultas e download usam `gerar_relatorio_edital`. Nenhuma atualização por foco ou consulta periódica foi adicionada.
 
-A folha é criada por 20261106094000-create-payroll-schema e suas ações integram a seed inicial de permissões. Snapshots criptografados, unicidade por edital/mês e auditoria transacional preservam o fechamento. Nenhuma migration ou seed foi aplicada à base corrente.
+Na implantação, executar pelo procedimento habitual a migration `20261028140000-ft-fechamento-mensal` e a seed `20261028141000-ft-fechamento-permission`. A seed é idempotente e não concede permissões automaticamente: habilite o novo checkbox nos perfis autorizados. Snapshots criptografados, unicidade por edital/mês e auditoria transacional preservam o fechamento. Nenhuma migration ou seed foi aplicada à base corrente durante esta implementação.
 
 Meses antigos permanecem abertos até fechamento explícito. Fechamento registra a folha emitida, não confirmação bancária; o sistema não identifica arquivos externos anteriormente utilizados. Plano e evidências: [codex/plans/peaad-fechamento-folha.md](codex/plans/peaad-fechamento-folha.md).
 
 ## Correção da sigla — 2026-10-27
 
-A sigla correta é **PEAAD**. O catálogo inicial já contém o nome final, mantendo ID 6, módulo ft, URLs e ações. As antigas etapas de renomeação foram substituídas pela instalação direta do schema e catálogo atuais.
+A sigla correta é **PEAAD**, mantendo o nome completo PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO. Interface, seed inicial, tags OpenAPI, testes e documentação usam a nova sigla. A migration incremental `20261027120000-rename-ft-service-peaad` atualiza somente o nome do serviço de módulo `ft`, sem mudar IDs, permissões ou rotas. A migration anterior e seus testes permanecem históricos. Nenhuma migration ou seed foi aplicada à base corrente.
 
 
 ## Melhorias operacionais do PEAAD - 2026-10-27
@@ -362,7 +367,7 @@ A sigla correta é **PEAAD**. O catálogo inicial já contém o nome final, mant
 
 Os contratos de histórico e pré-validação mantêm as permissões das respectivas operações. Para a folha mensal, consulte os contratos e a nova permissão descritos na seção de fechamento.
 
-O índice (edital_id,recurso_id,createdAt,id) já integra 20261106093000-create-peaad-schema. Encerramentos manuais e automáticos preservam eventos transacionais. Consulte o plano histórico de melhorias operacionais; não há atualização por foco.
+Na implantação do backend, aplicar pelo procedimento habitual a migration incremental `20261028120000-ft-workflow-timeline-index`, que acrescenta o índice `(edital_id,recurso_id,createdAt,id)` aos eventos. Encerramentos futuros, manuais e do scheduler, registram evento por participação na mesma transação. Nenhuma migration ou seed foi aplicada a base corrente. Plano e evidências: [codex/plans/peaad-melhorias-fluxo.md](codex/plans/peaad-melhorias-fluxo.md).
 
 ## Estoque e entregas de EPI do PEAAD
 
@@ -380,7 +385,7 @@ Toda mutação exige `operacao_id` UUID. Repetir a mesma operação devolve o re
 
 Persistência: itens, variações com tamanho normalizado único por item, entregas, itens entregues, movimentações e operações idempotentes. Uma linha de controle serializa escritas do estoque e versiona o catálogo; entregas/estornos primeiro travam edital e participação na mesma ordem do fluxo existente. Baixas, snapshots, idempotência e auditoria são persistidos na mesma transação. Há unicidade SQL para kit vigente por participação.
 
-O estoque é criado por 20261106095000-create-stock-schema. O controle inicial e suas ações integram as três seeds de bootstrap. Somente o primeiro administrador recebe as concessões iniciais; reexecuções preservam revogações. Destinatários, prévia e entregas também exigem consultar_vinculos.
+Na implantação, aplicar `20261103120000-ft-estoque-epi` e executar a seed `20261103121000-ft-estoque-permissions`. A seed é idempotente, preserva concessões e não concede ações automaticamente. Os novos checkboxes do módulo `ft` são: `consultar_estoque`, `cadastrar_item_estoque`, `editar_item_estoque`, `excluir_item_estoque`, `registrar_entrada_estoque`, `ajustar_estoque`, `entregar_kit_epi`, `entregar_item_estoque`, `consultar_entregas_estoque`, `estornar_entrega_estoque`. Destinatários, prévia e entregas também exigem `consultar_vinculos`.
 
 Nenhuma migration ou seed foi aplicada à base corrente. Plano e evidências: [codex/plans/peaad-estoque-epi.md](codex/plans/peaad-estoque-epi.md).
 
