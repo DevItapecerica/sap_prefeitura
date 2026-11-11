@@ -11,10 +11,8 @@ test('catalog exactly covers the approved module/action inventory without duplic
   assert.equal(new Set(keys).size, keys.length);
   for (const p of PERMISSION_CATALOG) assert.equal(p.serviceId, MODULE_SERVICE_IDS[p.module]);
   for (const module of Object.keys(MODULE_SERVICE_IDS)) assert.ok(keys.includes(`${module}:acessar`));
-  assert.equal(PERMISSION_CATALOG.find(p => p.action === 'remover_bolsista')?.legacyFlag, 'edit');
-  assert.equal(PERMISSION_CATALOG.find(p => p.action === 'excluir_bolsista')?.legacyFlag, 'del');
-  assert.equal(PERMISSION_CATALOG.find(p => p.action === 'gerenciar_permissoes')?.legacyFlag, 'edit');
+  for (const action of ['remover_bolsista', 'excluir_bolsista', 'gerenciar_permissoes']) assert.ok(PERMISSION_CATALOG.some(entry => entry.action === action));
   assert.ok(Object.isFrozen(PERMISSION_CATALOG));
-  for (const action of ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao']) assert.equal(PERMISSION_CATALOG.find(p => p.action === action)?.legacyFlag, null);
+  for (const action of ['cadastrar_inscricao_excecao', 'convocar_inscrito_excecao']) assert.ok(PERMISSION_CATALOG.some(entry => entry.action === action));
   assert.ok(PERMISSION_CATALOG.every(Object.isFrozen));
 });

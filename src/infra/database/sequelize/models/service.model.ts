@@ -75,10 +75,6 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
 
   (ServiceDB as any).associate = (models: any) => {
     ServiceDB.hasMany(models.PermissionActionModel, { foreignKey: 'service_id', as: 'permissionActions', constraints: false });
-    ServiceDB.hasMany(models.PermissionsModel, {
-      foreignKey: "service_id",
-      as: "permissions",
-    });
     ServiceDB.hasMany(models.ServiceVisibilities, {
       foreignKey: "service_id",
       as: "visibilities",

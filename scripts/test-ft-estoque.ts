@@ -334,7 +334,7 @@ export async function testEstoque({
     "PASS UX stock: complete atomic registration, concurrent retries, initial entries, summary totals, SQL history filters and audit rollback",
   );
   const migration = (
-    await import("../src/infra/database/sequelize/migrations/20261103120000-ft-estoque-epi.js")
+    await import("../src/infra/database/sequelize/migrations/20261106095000-create-stock-schema.js")
   ).default;
   await assert.rejects(
     migration.down(db.sequelize.getQueryInterface()),

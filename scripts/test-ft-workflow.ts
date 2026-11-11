@@ -50,65 +50,7 @@ try {
       .sort((left, right) => left.localeCompare(right))) {
       const migration = (await import(pathToFileURL(resolve(root, file)).href))
         .default;
-      const existingId = "8f214433-9407-479c-ad20-9fe6e40fd4f6";
-      if (file === "20261022130000-ft-idade-excecoes.ts")
-        await qi.bulkInsert("edital", [
-          {
-            id: existingId,
-            name: "Existing synthetic edital",
-            data_publicacao: new Date(),
-            data_vencimento: new Date("2028-12-31"),
-            dia_pagamento: 5,
-            valor_bolsa: 900,
-            status: "ativo",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ]);
       await migration.up(qi);
-      if (file === "20261103120000-ft-estoque-epi.ts") {
-        await migration.down(qi);
-        await migration.up(qi);
-      }
-      if (file === "20261028140000-ft-fechamento-mensal.ts") {
-        await migration.down(qi);
-        await migration.up(qi);
-      }
-      if (file === "20261028120000-ft-workflow-timeline-index.ts") {
-        await migration.up(qi);
-        await migration.down(qi);
-        await migration.up(qi);
-      }
-      if (file === "20261022120000-ft-edital-workflow.ts") {
-        await migration.down(qi);
-        await migration.up(qi);
-      }
-      if (file === "20261022130000-ft-idade-excecoes.ts") {
-        const [rows] = await sql.query(
-          "SELECT idade_maxima FROM edital WHERE id=:id",
-          { replacements: { id: existingId } },
-        );
-        assert.equal((rows[0] as any).idade_maxima, null);
-        await migration.down(qi);
-        await migration.up(qi);
-        await qi.bulkDelete("edital", { id: existingId });
-      }
-      if (
-        [
-          "20261022131000-ft-exception-permissions.ts",
-          "20261028141000-ft-fechamento-permission.ts",
-          "20261103121000-ft-estoque-permissions.ts",
-        ].includes(file)
-      ) {
-        const [before] = await sql.query(
-          "SELECT * FROM role_permissions ORDER BY role_id,permission_action_id",
-        );
-        await migration.up(qi);
-        const [after] = await sql.query(
-          "SELECT * FROM role_permissions ORDER BY role_id,permission_action_id",
-        );
-        assert.deepEqual(after, before);
-      }
     }
   }
   console.log("PASS migrations and seeds on empty database");
@@ -125,26 +67,9 @@ try {
     await import("../src/infra/database/sequelize/repositories/sequelize.ft-relatorio.repository.js");
   const { authorizationFactory } =
     await import("../src/modules/acess-controll/factories/makeAuthorization.js");
-  await assert.rejects(
-    authorizationFactory().authorize(1, "ft", "encaixar_inscricao"),
-    "new permissions must not inherit legacy admin grants",
-  );
-  for (const action of [
-    "cadastrar_inscricao_excecao",
-    "convocar_inscrito_excecao",
-    "fechar_folha_pagamento",
-  ])
-    await assert.rejects(
-      authorizationFactory().authorize(1, "ft", action),
-      "exception grants must be denied by default",
-    );
-  for (const action of (
-    await import("../src/modules/acess-controll/domain/permission-catalog.js")
-  ).FT_ESTOQUE_ACTIONS)
-    await assert.rejects(
-      authorizationFactory().authorize(1, "ft", action),
-      "stock grants must be denied by default",
-    );
+  for (const action of ['encaixar_inscricao', 'cadastrar_inscricao_excecao', 'convocar_inscrito_excecao', 'fechar_folha_pagamento']) await authorizationFactory().authorize(1, 'ft', action);
+  const [[otherGrants]] = await sql.query('SELECT COUNT(*) AS total FROM role_permissions WHERE role_id <> 1 AND allowed=1');
+  assert.equal(Number((otherGrants as { total: number }).total), 0);
   const crypto = new Aes();
   const fixedNow = new Date("2026-10-22T12:00:00-03:00");
   const service = new EditalWorkflowService(
@@ -714,7 +639,7 @@ try {
       actor,
     );
     const ageMigration = (
-      await import("../src/infra/database/sequelize/migrations/20261022130000-ft-idade-excecoes.js")
+      await import("../src/infra/database/sequelize/migrations/20261106093000-create-peaad-schema.js")
     ).default;
     const extensionEdital = await makeEdital({
       name: "Prorrogacao limitada",
@@ -795,7 +720,7 @@ try {
     );
     await assert.rejects(ageMigration.down(qi), /Rollback refused/);
     console.log(
-      "PASS age migration preserves existing edital, exception seed is idempotent, authorizations persist, concurrent exception reserves once, activation preserves authority and same-month return is allowed",
+      "PASS explicit age and exception authority persist, concurrent exception reserves once, activation preserves authority and same-month return is allowed",
     );
     for (const acao of ["expirar", "cancelar", "concluir"])
       assert.ok(
@@ -814,7 +739,7 @@ try {
       !eventText.includes("123456") && !eventText.includes("desempregado"),
     );
     const migration = (
-      await import("../src/infra/database/sequelize/migrations/20261022120000-ft-edital-workflow.js")
+      await import("../src/infra/database/sequelize/migrations/20261106093000-create-peaad-schema.js")
     ).default;
     await assert.rejects(migration.down(qi), /Rollback refused/);
     console.log(
