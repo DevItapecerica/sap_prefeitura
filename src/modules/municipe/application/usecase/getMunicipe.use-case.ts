@@ -21,7 +21,7 @@ export default class getMunicipeUseCase {
         ? await this.sha256Crypt.encrypt(searchDigits)
         : undefined;
 
-    let response = await this.municipeRepository.getMunicipe({
+    const response = await this.municipeRepository.getMunicipe({
       ...query,
       searchHash,
     });

@@ -43,11 +43,15 @@ export class EditalWorkflowController {
     private attendanceSheetPdf?: ParticipationPdf,
   ) {}
   readonly list = (
-    r: FastifyRequest<{ Params: {}; Querystring: WorkflowQuery; Body: never }>,
+    r: FastifyRequest<{
+      Params: Record<string, never>;
+      Querystring: WorkflowQuery;
+      Body: never;
+    }>,
   ) => this.service.list(r.query);
   readonly create = (
     r: FastifyRequest<{
-      Params: {};
+      Params: Record<string, never>;
       Querystring: WorkflowQuery;
       Body: EditalInput;
     }>,

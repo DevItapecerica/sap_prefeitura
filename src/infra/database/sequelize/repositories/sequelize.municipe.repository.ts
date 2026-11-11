@@ -51,7 +51,7 @@ export class SequelizeMunicipeRepository implements MunicipeRepository {
       order: [[queryOrder[0], queryOrder[1]]],
     };
 
-    let municipe = await this.model.findAll(queryData);
+    const municipe = await this.model.findAll(queryData);
 
     const municipeEntities = await Promise.all(
       municipe.map(async (m: any) => {

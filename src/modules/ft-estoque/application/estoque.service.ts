@@ -27,7 +27,6 @@ import type {
   StockInput,
   DeliveryInput,
   ReversalInput,
-  StockItem,
 } from "../domain/estoque.contracts.js";
 // Persisted signatures use UTF-16 ordering, independent of the server locale.
 const compareKeys = (left: string, right: string) => {

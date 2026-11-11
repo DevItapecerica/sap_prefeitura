@@ -1,9 +1,7 @@
-import { FastifyPluginAsync, FastifyRequest } from "fastify";
+import { FastifyPluginAsync } from "fastify";
 import type municipeControllerType from "../controller/municipe.controller.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
-
-const MUNICIPE_SERVICE_ID = 9;
 
 const MunicipeRouter: FastifyPluginAsync<{
   controller?: typeof municipeControllerType;

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import Fastify from "fastify";
-import AppError from "../../../core/appError.js";
+
 import AuthMiddleware from "../../auth/auth.middleware.js";
 import { PERMISSION_CATALOG } from "../domain/permission-catalog.js";
 import { AuthorizationUseCase } from "./authorization.usecase.js";

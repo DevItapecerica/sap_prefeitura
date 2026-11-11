@@ -1,10 +1,8 @@
-import { FastifyPluginAsync, FastifyRequest } from "fastify";
+import { FastifyPluginAsync } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
 import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import type ModalidadeControllerType from "../controller/modalidade.controller.js";
-
-const ESPORTE_SERVICE_ID = 10;
 
 const modalidadeSchema = {
   type: "object",

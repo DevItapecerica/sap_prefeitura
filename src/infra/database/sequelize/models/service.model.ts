@@ -24,7 +24,7 @@ export interface ServiceDB extends Model<
   deletedAt: CreationOptional<Date | null>;
 }
 
-export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
+export default (sequelize: Sequelize, _dataTypes: typeof DataTypes) => {
   const ServiceDB = sequelize.define<ServiceDB>(
     "ServiceModel",
     {

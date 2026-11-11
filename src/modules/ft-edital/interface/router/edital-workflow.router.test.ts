@@ -414,8 +414,8 @@ test("prevalidations and history require operation permissions and never write b
     r.user = { id: 123 };
   };
   const app = Fastify();
-  let allowed = false,
-    audits = 0;
+  let allowed = false;
+  const audits = 0;
   const permissions: string[] = [];
   app.decorate("permissionAuthorizer", {
     authorize: async (_id: number, _module: string, action: string) => {

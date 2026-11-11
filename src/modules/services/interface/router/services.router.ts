@@ -1,4 +1,4 @@
-import { FastifyPluginAsync, FastifyRequest } from "fastify";
+import { FastifyPluginAsync } from "fastify";
 import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
 import AppError from "../../../../core/appError.js";
 import AuthMiddleware from "../../../auth/auth.middleware.js";

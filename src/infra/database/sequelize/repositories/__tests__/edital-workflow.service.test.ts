@@ -1,7 +1,4 @@
-import {
-  SequelizeWorkflowUnitOfWork,
-  SequelizeWorkflowRepository,
-} from "../sequelize.workflow.repository.js";
+import { SequelizeWorkflowUnitOfWork } from "../sequelize.workflow.repository.js";
 import type { IAesCrypt } from "../../../../../core/security/aes/AesCrypt.interface.js";
 const passthroughCrypto: IAesCrypt = {
   encrypt: async (value) => value,

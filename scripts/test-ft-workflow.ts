@@ -216,7 +216,7 @@ try {
       { nome: "Manhã", hora_inicio: "08:00", hora_fim: "14:00" },
       actor,
     );
-    const local = await service.config(
+    await service.config(
       e.id,
       "locais",
       undefined,

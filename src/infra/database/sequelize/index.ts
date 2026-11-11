@@ -13,11 +13,9 @@ const basename: string = path.basename(__filename);
 
 const db: DbObject = {} as DbObject;
 
-let sequelize: Sequelize;
-
 const envVar = DATABASE_URL;
 
-sequelize = new Sequelize(envVar, {
+const sequelize = new Sequelize(envVar, {
   dialect: "mariadb",
   logging: false,
 });

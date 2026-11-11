@@ -3,7 +3,7 @@ import AppError from "../../core/appError.js";
 import JwtServices from "./utils/jwt.service.js";
 
 export default class AuthMiddleware {
-  static verifyJWT = async (request: FastifyRequest, reply: FastifyReply) => {
+  static verifyJWT = async (request: FastifyRequest, _reply: FastifyReply) => {
     const authorization = request.headers.authorization;
 
     if (!authorization) {

@@ -1,5 +1,5 @@
 import { Roles } from "../../roles/domain/entity/Role.js";
-import { Services } from "../../services/domain/entity/Services.js";
+
 import { ServicesRepository } from "../../services/domain/repository/services.repository.js";
 import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
 import { Setor } from "../../setor/domain/entity/Setor.js";

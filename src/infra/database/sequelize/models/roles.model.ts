@@ -17,7 +17,7 @@ interface RolesDB extends Model<
   name: string;
 }
 
-export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
+export default (sequelize: Sequelize, _dataTypes: typeof DataTypes) => {
   const Roles = sequelize.define<RolesDB>(
     "RolesModel",
     {

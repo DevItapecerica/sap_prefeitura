@@ -17,7 +17,7 @@ export interface SetorDB extends Model<
   description: CreationOptional<string | null>;
 }
 
-export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
+export default (sequelize: Sequelize, _dataTypes: typeof DataTypes) => {
   const SetorDB = sequelize.define<SetorDB>(
     "SetorModel",
     {

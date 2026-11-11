@@ -19,7 +19,7 @@ export interface ServiceVisibilitiesDB extends Model<
   visibility: CreationOptional<boolean | null>;
 }
 
-export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
+export default (sequelize: Sequelize, _dataTypes: typeof DataTypes) => {
   const ServiceVisibilities = sequelize.define<ServiceVisibilitiesDB>(
     "ServiceVisibilities",
     {

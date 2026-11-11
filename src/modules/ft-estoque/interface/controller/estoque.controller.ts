@@ -31,12 +31,16 @@ export type EstoqueUseCases = Pick<
 export class EstoqueController {
   constructor(private service: EstoqueUseCases) {}
   readonly listItems = (
-    r: FastifyRequest<{ Querystring: StockQuery; Params: {}; Body: never }>,
+    r: FastifyRequest<{
+      Querystring: StockQuery;
+      Params: Record<string, never>;
+      Body: never;
+    }>,
   ) => this.service.items(r.query);
   readonly createComplete = (
     r: FastifyRequest<{
       Querystring: StockQuery;
-      Params: {};
+      Params: Record<string, never>;
       Body: CompleteInput;
     }>,
   ) => this.service.createComplete(r.body, { id: r.user.id, requestId: r.id });
@@ -48,7 +52,11 @@ export class EstoqueController {
     }>,
   ) => this.service.item(r.params.id);
   readonly createItem = (
-    r: FastifyRequest<{ Querystring: StockQuery; Params: {}; Body: ItemInput }>,
+    r: FastifyRequest<{
+      Querystring: StockQuery;
+      Params: Record<string, never>;
+      Body: ItemInput;
+    }>,
   ) =>
     this.service.saveItem(undefined, r.body, {
       id: r.user.id,
@@ -79,7 +87,11 @@ export class EstoqueController {
       true,
     );
   readonly listVariations = (
-    r: FastifyRequest<{ Querystring: StockQuery; Params: {}; Body: never }>,
+    r: FastifyRequest<{
+      Querystring: StockQuery;
+      Params: Record<string, never>;
+      Body: never;
+    }>,
   ) => this.service.variations(r.query);
   readonly listItemVariations = (
     r: FastifyRequest<{
@@ -158,10 +170,18 @@ export class EstoqueController {
       true,
     );
   readonly listMovements = (
-    r: FastifyRequest<{ Querystring: StockQuery; Params: {}; Body: never }>,
+    r: FastifyRequest<{
+      Querystring: StockQuery;
+      Params: Record<string, never>;
+      Body: never;
+    }>,
   ) => this.service.movements(r.query);
   readonly listRecipients = (
-    r: FastifyRequest<{ Querystring: StockQuery; Params: {}; Body: never }>,
+    r: FastifyRequest<{
+      Querystring: StockQuery;
+      Params: Record<string, never>;
+      Body: never;
+    }>,
   ) => this.service.recipients(r.query);
   readonly previewDelivery = (
     r: FastifyRequest<{
@@ -173,14 +193,14 @@ export class EstoqueController {
   readonly deliverKit = (
     r: FastifyRequest<{
       Querystring: StockQuery;
-      Params: {};
+      Params: Record<string, never>;
       Body: DeliveryInput;
     }>,
   ) => this.service.deliver("kit", r.body, { id: r.user.id, requestId: r.id });
   readonly deliverIndividual = (
     r: FastifyRequest<{
       Querystring: StockQuery;
-      Params: {};
+      Params: Record<string, never>;
       Body: DeliveryInput;
     }>,
   ) =>
@@ -189,7 +209,11 @@ export class EstoqueController {
       requestId: r.id,
     });
   readonly listDeliveries = (
-    r: FastifyRequest<{ Querystring: StockQuery; Params: {}; Body: never }>,
+    r: FastifyRequest<{
+      Querystring: StockQuery;
+      Params: Record<string, never>;
+      Body: never;
+    }>,
   ) => this.service.deliveries(r.query);
   readonly getDelivery = (
     r: FastifyRequest<{

@@ -65,7 +65,11 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{
   });
   const allow = requirePermission("ft");
 
-  fastify.route<{ Params: {}; Querystring: WorkflowQuery; Body: never }>({
+  fastify.route<{
+    Params: Record<string, never>;
+    Querystring: WorkflowQuery;
+    Body: never;
+  }>({
     method: "GET",
     url: "/",
     config: workflowViewConfig,
@@ -79,7 +83,11 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{
     handler: controller.list,
   });
 
-  fastify.route<{ Params: {}; Querystring: WorkflowQuery; Body: EditalInput }>({
+  fastify.route<{
+    Params: Record<string, never>;
+    Querystring: WorkflowQuery;
+    Body: EditalInput;
+  }>({
     method: "POST",
     url: "/",
     config: workflowCreateConfig,

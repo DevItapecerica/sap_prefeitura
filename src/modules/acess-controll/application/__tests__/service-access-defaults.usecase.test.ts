@@ -65,14 +65,6 @@ class FakeVisibilityRepository {
   }
 }
 
-class FakeRolesRepository {
-  roles = [new Roles(1, "admin"), new Roles(2, "tecnico")];
-
-  async findAll() {
-    return { roles: this.roles, count: this.roles.length };
-  }
-}
-
 class FakePermissionRepository {
   permissions = [new Permissions(10, 2, true, false, false, false, 1)];
 
@@ -114,7 +106,6 @@ class FakeSetorRepository {
 const makeUseCase = () => {
   const servicesRepository = new FakeServicesRepository();
   const visibilityRepository = new FakeVisibilityRepository();
-  const rolesRepository = new FakeRolesRepository();
   const permissionRepository = new FakePermissionRepository();
   const setorRepository = new FakeSetorRepository();
 

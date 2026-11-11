@@ -1,5 +1,5 @@
 import { QueryParams } from "../../../../core/types/genericTypes.js";
-import { MunicipeChanges } from "../contracts/municipe.js";
+
 import Municipe from "../entity/Municipe.js";
 
 export default interface IMunicipeRepository {

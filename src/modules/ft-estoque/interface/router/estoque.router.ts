@@ -66,7 +66,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
       await allow("registrar_entrada_estoque")(request);
   };
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: never }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: never;
+  }>({
     method: "GET",
     url: "/itens",
     config: estoqueViewConfig,
@@ -80,7 +84,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.listItems,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: CompleteInput }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: CompleteInput;
+  }>({
     method: "POST",
     url: "/itens/cadastro-completo",
     config: estoqueCreateConfig,
@@ -116,7 +124,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.getItem,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: ItemInput }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: ItemInput;
+  }>({
     method: "POST",
     url: "/itens",
     config: estoqueCreateConfig,
@@ -168,7 +180,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.removeItem,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: never }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: never;
+  }>({
     method: "GET",
     url: "/variacoes",
     config: estoqueViewConfig,
@@ -322,7 +338,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.adjustStock,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: never }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: never;
+  }>({
     method: "GET",
     url: "/movimentacoes",
     config: estoqueViewConfig,
@@ -336,7 +356,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.listMovements,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: never }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: never;
+  }>({
     method: "GET",
     url: "/destinatarios",
     config: estoqueViewConfig,
@@ -369,7 +393,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.previewDelivery,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: DeliveryInput }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: DeliveryInput;
+  }>({
     method: "POST",
     url: "/entregas/kit",
     config: estoqueCreateConfig,
@@ -383,7 +411,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.deliverKit,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: DeliveryInput }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: DeliveryInput;
+  }>({
     method: "POST",
     url: "/entregas/individual",
     config: estoqueCreateConfig,
@@ -397,7 +429,11 @@ export const EstoqueRouter: FastifyPluginAsync<{
     handler: controller.deliverIndividual,
   });
 
-  fastify.route<{ Querystring: StockQuery; Params: {}; Body: never }>({
+  fastify.route<{
+    Querystring: StockQuery;
+    Params: Record<string, never>;
+    Body: never;
+  }>({
     method: "GET",
     url: "/entregas",
     config: estoqueViewConfig,
