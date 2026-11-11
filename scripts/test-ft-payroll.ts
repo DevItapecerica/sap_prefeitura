@@ -279,7 +279,7 @@ export async function testPayroll({
     0,
   );
   const migration = (
-    await import("../src/infra/database/sequelize/migrations/20261106094000-create-payroll-schema.js")
+    await import("../src/infra/database/sequelize/migrations/20261028140000-ft-fechamento-mensal.js")
   ).default;
   await assert.rejects(
     migration.down(db.sequelize.getQueryInterface()),
