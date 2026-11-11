@@ -1,4 +1,7 @@
-import { EventPublisher, EventSubscriber } from "../core/event/event-contracts.js";
+import {
+  EventPublisher,
+  EventSubscriber,
+} from "../core/event/event-contracts.js";
 import { ResourceReadEventMap } from "../core/event/resource-read.events.js";
 import { EventBusAdapter } from "../infra/event/event-bus.adapter.js";
 

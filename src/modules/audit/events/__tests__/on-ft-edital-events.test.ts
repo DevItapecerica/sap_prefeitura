@@ -14,14 +14,22 @@ test("edicao de vinculo registra local e pagador antes e depois", async () => {
   };
   const unregister = registerFtEditalAuditHandlers(
     subscriber as any,
-    { record: async (record: any) => { records.push(record); } },
+    {
+      record: async (record: any) => {
+        records.push(record);
+      },
+    },
     { error() {} } as any,
   );
   const before = { id: "v1", local: "Secretaria", pagador_id: "p1" };
   const after = { id: "v1", local: "CRAS", pagador_id: "p2" };
 
   await handlers.get(FT_EDITAL_EVENTS.vinculoUpdated)?.({
-    context: { correlationId: "request-1", actor: { id: 1 }, origin: { type: "HTTP" } },
+    context: {
+      correlationId: "request-1",
+      actor: { id: 1 },
+      origin: { type: "HTTP" },
+    },
     editalId: "e1",
     bolsistaId: "b1",
     before,
@@ -74,10 +82,10 @@ test("transicoes automaticas registram conclusao e expiracao", async () => {
     after: { status: "expirado" },
   });
 
-  assert.deepEqual(records.map((record) => record.resourceType), [
-    "edital",
-    "edital_bolsista",
-  ]);
+  assert.deepEqual(
+    records.map((record) => record.resourceType),
+    ["edital", "edital_bolsista"],
+  );
   assert.equal(records[0].metadata.automatic, true);
   assert.equal(records[1].metadata.vinculoId, "v1");
   unregister();

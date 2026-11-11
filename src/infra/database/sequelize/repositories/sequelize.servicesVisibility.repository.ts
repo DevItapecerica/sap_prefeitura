@@ -2,9 +2,7 @@ import db from "../index.js";
 import { ServiceVisibilityRepository } from "../../../../modules/services/domain/repository/service-visibility.repository.js";
 import { ServiceVisibility } from "../../../../modules/services/domain/entity/ServiceVisibility.js";
 
-export class SequelizeServiceVisibilityRepository
-  implements ServiceVisibilityRepository
-{
+export class SequelizeServiceVisibilityRepository implements ServiceVisibilityRepository {
   private readonly model = db.ServiceVisibilities;
 
   async findOneServiceVisibility(
@@ -30,7 +28,11 @@ export class SequelizeServiceVisibilityRepository
     service_id: number,
     visibility = false,
   ): Promise<ServiceVisibility> {
-    const created = await this.model.create({ setor_id, service_id, visibility });
+    const created = await this.model.create({
+      setor_id,
+      service_id,
+      visibility,
+    });
     return this.toEntity(created);
   }
 

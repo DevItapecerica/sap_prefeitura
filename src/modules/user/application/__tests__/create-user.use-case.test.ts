@@ -54,7 +54,11 @@ test("CreateUserUseCase rejects duplicated, invalid and non-institutional email"
     (error: AppError) => error.code === "USER_EMAIL_INVALID",
   );
   await assert.rejects(
-    () => makeUseCase().useCase.execute({ ...userPayload, email: "user@gmail.com" }),
+    () =>
+      makeUseCase().useCase.execute({
+        ...userPayload,
+        email: "user@gmail.com",
+      }),
     (error: AppError) => error.code === "USER_EMAIL_INSTITUTIONAL",
   );
 });

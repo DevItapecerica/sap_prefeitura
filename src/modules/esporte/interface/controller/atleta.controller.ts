@@ -39,13 +39,11 @@ export default class AtletaController {
       after: atletaAuditSnapshot(response),
     });
 
-    return reply
-      .status(201)
-      .send({
-        message: "Created successfully",
-        data: AtletaPresentation.Masked(response),
-        ok: true,
-      });
+    return reply.status(201).send({
+      message: "Created successfully",
+      data: AtletaPresentation.Masked(response),
+      ok: true,
+    });
   };
 
   findAll = async (
@@ -61,14 +59,12 @@ export default class AtletaController {
       returnedCount: response.atletas.length,
     });
 
-    return reply
-      .status(200)
-      .send({
-        message: "Retrieved successfully",
-        data: AtletaPresentation.MaskedList(response.atletas),
-        count: response.count,
-        ok: true,
-      });
+    return reply.status(200).send({
+      message: "Retrieved successfully",
+      data: AtletaPresentation.MaskedList(response.atletas),
+      count: response.count,
+      ok: true,
+    });
   };
 
   findCarteirinhas = async (
@@ -88,14 +84,12 @@ export default class AtletaController {
       returnedCount: response.carterinhas.length,
     });
 
-    return reply
-      .status(200)
-      .send({
-        message: "Retrieved successfully",
-        data: response.carterinhas,
-        count: response.count,
-        ok: true,
-      });
+    return reply.status(200).send({
+      message: "Retrieved successfully",
+      data: response.carterinhas,
+      count: response.count,
+      ok: true,
+    });
   };
 
   findCarteirinhasByAtleta = async (
@@ -117,14 +111,12 @@ export default class AtletaController {
       returnedCount: response.carterinhas.length,
     });
 
-    return reply
-      .status(200)
-      .send({
-        message: "Retrieved successfully",
-        data: response.carterinhas,
-        count: response.count,
-        ok: true,
-      });
+    return reply.status(200).send({
+      message: "Retrieved successfully",
+      data: response.carterinhas,
+      count: response.count,
+      ok: true,
+    });
   };
 
   findOne = async (
@@ -141,13 +133,11 @@ export default class AtletaController {
       resourceId: request.params.uuid,
     });
 
-    return reply
-      .status(200)
-      .send({
-        message: "Retrieved successfully",
-        data: AtletaPresentation.Masked(response),
-        ok: true,
-      });
+    return reply.status(200).send({
+      message: "Retrieved successfully",
+      data: AtletaPresentation.Masked(response),
+      ok: true,
+    });
   };
 
   update = async (
@@ -169,13 +159,11 @@ export default class AtletaController {
       after: atletaAuditSnapshot(response),
     });
 
-    return reply
-      .status(200)
-      .send({
-        message: "Updated successfully",
-        data: AtletaPresentation.Masked(response),
-        ok: true,
-      });
+    return reply.status(200).send({
+      message: "Updated successfully",
+      data: AtletaPresentation.Masked(response),
+      ok: true,
+    });
   };
 
   addModalidade = async (
@@ -190,19 +178,20 @@ export default class AtletaController {
       request.params.uuid,
       request.body,
     );
-    await esporteEventPublisher.publish(ESPORTE_EVENTS.atletaModalidadesUpdated, {
-      context: makeApplicationEventContext(request),
-      before: atletaAuditSnapshot(before),
-      after: atletaAuditSnapshot(response),
-    });
+    await esporteEventPublisher.publish(
+      ESPORTE_EVENTS.atletaModalidadesUpdated,
+      {
+        context: makeApplicationEventContext(request),
+        before: atletaAuditSnapshot(before),
+        after: atletaAuditSnapshot(response),
+      },
+    );
 
-    return reply
-      .status(201)
-      .send({
-        message: "Modalidade linked successfully",
-        data: AtletaPresentation.Masked(response),
-        ok: true,
-      });
+    return reply.status(201).send({
+      message: "Modalidade linked successfully",
+      data: AtletaPresentation.Masked(response),
+      ok: true,
+    });
   };
 
   removeModalidade = async (
@@ -217,15 +206,20 @@ export default class AtletaController {
       request.params.modalidade_uuid,
     );
     const after = await this.atletaService.findOneAtleta(request.params.uuid);
-    await esporteEventPublisher.publish(ESPORTE_EVENTS.atletaModalidadesUpdated, {
-      context: makeApplicationEventContext(request),
-      before: atletaAuditSnapshot(before),
-      after: atletaAuditSnapshot(after),
-    });
+    await esporteEventPublisher.publish(
+      ESPORTE_EVENTS.atletaModalidadesUpdated,
+      {
+        context: makeApplicationEventContext(request),
+        before: atletaAuditSnapshot(before),
+        after: atletaAuditSnapshot(after),
+      },
+    );
 
-    return reply
-      .status(200)
-      .send({ message: "Modalidade unlinked successfully", data: { deleted }, ok: true });
+    return reply.status(200).send({
+      message: "Modalidade unlinked successfully",
+      data: { deleted },
+      ok: true,
+    });
   };
 
   delete = async (
@@ -263,13 +257,11 @@ export default class AtletaController {
       after: carterinhaAuditSnapshot(response),
     });
 
-    return reply
-      .status(201)
-      .send({
-        message: "Carteirinha created successfully",
-        data: response,
-        ok: true,
-      });
+    return reply.status(201).send({
+      message: "Carteirinha created successfully",
+      data: response,
+      ok: true,
+    });
   };
 
   getCarteirinhaPdf = async (

@@ -24,9 +24,7 @@ export interface ServiceAggregateUpdate {
 }
 
 export type ServiceAggregateErrorCode =
-  | "SERVICE_NOT_FOUND"
-  | "PERMISSION_NOT_FOUND"
-  | "VISIBILITY_NOT_FOUND";
+  "SERVICE_NOT_FOUND" | "PERMISSION_NOT_FOUND" | "VISIBILITY_NOT_FOUND";
 
 export class ServiceAggregateError extends Error {
   constructor(public readonly code: ServiceAggregateErrorCode) {

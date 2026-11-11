@@ -41,7 +41,6 @@ Banco descartável exclusivo em `127.0.0.1:33321`, schema `close_20261028_ft_tes
 
 Fechamento registra a folha emitida, não confirmação bancária. Meses antigos não são fechados automaticamente; o sistema não identifica arquivos anteriormente utilizados fora dele.
 
-
 ### Conferência antes da publicação
 
 Backend: 497 testes, check e build aprovados novamente. Frontend: 157 testes, lint, tipos, build e orçamento aprovados novamente. Playwright: cinco cenários aprovados novamente em desktop/mobile; evidências em .tmp/peaad-prepublish-browser e logs peaad-prepublish-*. Nenhuma mudança funcional após essas verificações.

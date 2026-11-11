@@ -40,7 +40,9 @@ const metricsPlugin: FastifyPluginAsync<MetricsOptions> = async (
     };
     recordHttpRequest(labels, reply.elapsedTime / 1_000);
 
-    const authOperation = new RegExp(/\/(login|refresh|logout|auth)$/).exec(route)?.[1];
+    const authOperation = new RegExp(/\/(login|refresh|logout|auth)$/).exec(
+      route,
+    )?.[1];
 
     if (authOperation) {
       recordAuthRequest(

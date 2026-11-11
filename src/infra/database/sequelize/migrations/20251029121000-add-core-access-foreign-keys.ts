@@ -5,23 +5,28 @@ type OrphanCheck = { name: string; query: string };
 const checks: OrphanCheck[] = [
   {
     name: "users.setor_id -> setors.id",
-    query: "SELECT u.id FROM users u LEFT JOIN setors s ON s.id = u.setor_id WHERE u.setor_id IS NOT NULL AND s.id IS NULL LIMIT 1",
+    query:
+      "SELECT u.id FROM users u LEFT JOIN setors s ON s.id = u.setor_id WHERE u.setor_id IS NOT NULL AND s.id IS NULL LIMIT 1",
   },
   {
     name: "users.role_id -> roles.id",
-    query: "SELECT u.id FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE r.id IS NULL LIMIT 1",
+    query:
+      "SELECT u.id FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE r.id IS NULL LIMIT 1",
   },
   {
     name: "permissions.service_id -> services.id",
-    query: "SELECT p.id FROM permissions p LEFT JOIN services s ON s.id = p.service_id WHERE s.id IS NULL LIMIT 1",
+    query:
+      "SELECT p.id FROM permissions p LEFT JOIN services s ON s.id = p.service_id WHERE s.id IS NULL LIMIT 1",
   },
   {
     name: "service_visibilities.setor_id -> setors.id",
-    query: "SELECT v.id FROM service_visibilities v LEFT JOIN setors s ON s.id = v.setor_id WHERE s.id IS NULL LIMIT 1",
+    query:
+      "SELECT v.id FROM service_visibilities v LEFT JOIN setors s ON s.id = v.setor_id WHERE s.id IS NULL LIMIT 1",
   },
   {
     name: "service_visibilities.service_id -> services.id",
-    query: "SELECT v.id FROM service_visibilities v LEFT JOIN services s ON s.id = v.service_id WHERE s.id IS NULL LIMIT 1",
+    query:
+      "SELECT v.id FROM service_visibilities v LEFT JOIN services s ON s.id = v.service_id WHERE s.id IS NULL LIMIT 1",
   },
 ];
 
@@ -98,11 +103,27 @@ export default {
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.removeConstraint("service_visibilities", "fk_service_visibilities_service_id", { transaction });
-      await queryInterface.removeConstraint("service_visibilities", "fk_service_visibilities_setor_id", { transaction });
-      await queryInterface.removeConstraint("permissions", "fk_permissions_service_id", { transaction });
-      await queryInterface.removeConstraint("users", "fk_users_role_id", { transaction });
-      await queryInterface.removeConstraint("users", "fk_users_setor_id", { transaction });
+      await queryInterface.removeConstraint(
+        "service_visibilities",
+        "fk_service_visibilities_service_id",
+        { transaction },
+      );
+      await queryInterface.removeConstraint(
+        "service_visibilities",
+        "fk_service_visibilities_setor_id",
+        { transaction },
+      );
+      await queryInterface.removeConstraint(
+        "permissions",
+        "fk_permissions_service_id",
+        { transaction },
+      );
+      await queryInterface.removeConstraint("users", "fk_users_role_id", {
+        transaction,
+      });
+      await queryInterface.removeConstraint("users", "fk_users_setor_id", {
+        transaction,
+      });
     });
   },
 };

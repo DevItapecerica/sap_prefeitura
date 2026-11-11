@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildLegacyEditaisFromVinculos, selectCurrentVinculo } from "./ft-vinculo-period.service.js";
+import {
+  buildLegacyEditaisFromVinculos,
+  selectCurrentVinculo,
+} from "./ft-vinculo-period.service.js";
 
 const link = (data: Record<string, unknown>) => ({
   id: "v1",
@@ -12,19 +15,33 @@ const link = (data: Record<string, unknown>) => ({
 });
 
 test("vinculo ativo tem prioridade sobre expirado ou cancelado mais recente", () => {
-  const ativo = link({ id: "ativo", status: "ativo", data_vinculo: "2026-01-01" });
-  assert.equal(selectCurrentVinculo([
-    ativo,
-    link({ id: "expirado", data_vinculo: "2026-10-01" }),
-    link({ id: "cancelado", status: "cancelado", data_vinculo: "2026-11-01" }),
-  ]).id, "ativo");
+  const ativo = link({
+    id: "ativo",
+    status: "ativo",
+    data_vinculo: "2026-01-01",
+  });
+  assert.equal(
+    selectCurrentVinculo([
+      ativo,
+      link({ id: "expirado", data_vinculo: "2026-10-01" }),
+      link({
+        id: "cancelado",
+        status: "cancelado",
+        data_vinculo: "2026-11-01",
+      }),
+    ]).id,
+    "ativo",
+  );
 });
 
 test("entre ativos escolhe o de data de vinculo mais recente", () => {
-  assert.equal(selectCurrentVinculo([
-    link({ id: "antigo", status: "ativo", data_vinculo: "2026-01-01" }),
-    link({ id: "recente", status: "ativo", data_vinculo: "2026-06-01" }),
-  ]).id, "recente");
+  assert.equal(
+    selectCurrentVinculo([
+      link({ id: "antigo", status: "ativo", data_vinculo: "2026-01-01" }),
+      link({ id: "recente", status: "ativo", data_vinculo: "2026-06-01" }),
+    ]).id,
+    "recente",
+  );
 });
 
 test("sem ativo escolhe o historico mais recente e nao remove repeticoes", () => {
@@ -38,32 +55,66 @@ test("sem ativo escolhe o historico mais recente e nao remove repeticoes", () =>
 });
 
 test("desempata pela criacao mais recente quando a data do vinculo e igual", () => {
-  assert.equal(selectCurrentVinculo([
-    link({ id: "primeiro", data_vinculo: "2026-06-01", createdAt: "2026-06-01T08:00:00.000Z" }),
-    link({ id: "ultimo", data_vinculo: "2026-06-01", createdAt: "2026-06-01T09:00:00.000Z" }),
-  ]).id, "ultimo");
+  assert.equal(
+    selectCurrentVinculo([
+      link({
+        id: "primeiro",
+        data_vinculo: "2026-06-01",
+        createdAt: "2026-06-01T08:00:00.000Z",
+      }),
+      link({
+        id: "ultimo",
+        data_vinculo: "2026-06-01",
+        createdAt: "2026-06-01T09:00:00.000Z",
+      }),
+    ]).id,
+    "ultimo",
+  );
 });
 
 test("aceita modelos, ignora valores vazios e usa o id como ultimo desempate", () => {
   const model = {
-    toJSON: () => link({ id: "z", data_vinculo: "2026-06-01", createdAt: undefined }),
+    toJSON: () =>
+      link({ id: "z", data_vinculo: "2026-06-01", createdAt: undefined }),
   };
-  assert.equal(selectCurrentVinculo([
-    null,
-    link({ id: "a", data_vinculo: "2026-06-01", createdAt: undefined }),
-    model,
-  ]).id, "z");
-  assert.doesNotThrow(() => selectCurrentVinculo([
-    link({ id: undefined, data_vinculo: "2026-06-01", createdAt: undefined }),
-    link({ id: undefined, data_vinculo: "2026-06-01", createdAt: undefined }),
-  ]));
+  assert.equal(
+    selectCurrentVinculo([
+      null,
+      link({ id: "a", data_vinculo: "2026-06-01", createdAt: undefined }),
+      model,
+    ]).id,
+    "z",
+  );
+  assert.doesNotThrow(() =>
+    selectCurrentVinculo([
+      link({ id: undefined, data_vinculo: "2026-06-01", createdAt: undefined }),
+      link({ id: undefined, data_vinculo: "2026-06-01", createdAt: undefined }),
+    ]),
+  );
 });
 
 test("reconstroi um edital legado por edital sem perder os vinculos originais", () => {
   const vinculos = [
-    link({ id: "expirado", edital_id: "e1", status: "expirado", data_vinculo: "2026-09-01", edital: { id: "e1", name: "Edital 1" } }),
-    link({ id: "ativo", edital_id: "e1", status: "ativo", data_vinculo: "2026-01-01", edital: { id: "e1", name: "Edital 1" } }),
-    link({ id: "outro", edital_id: "e2", status: "cancelado", edital: { id: "e2", name: "Edital 2" } }),
+    link({
+      id: "expirado",
+      edital_id: "e1",
+      status: "expirado",
+      data_vinculo: "2026-09-01",
+      edital: { id: "e1", name: "Edital 1" },
+    }),
+    link({
+      id: "ativo",
+      edital_id: "e1",
+      status: "ativo",
+      data_vinculo: "2026-01-01",
+      edital: { id: "e1", name: "Edital 1" },
+    }),
+    link({
+      id: "outro",
+      edital_id: "e2",
+      status: "cancelado",
+      edital: { id: "e2", name: "Edital 2" },
+    }),
   ];
 
   const editais = buildLegacyEditaisFromVinculos(vinculos);
@@ -80,5 +131,8 @@ test("ignora vinculos sem edital e cria compatibilidade mesmo sem objeto aninhad
     link({ id: "sem-edital", edital_id: undefined }),
     link({ id: "valido", edital_id: "e1", edital: undefined }),
   ]);
-  assert.deepEqual(editais.map((edital) => edital.id), ["e1"]);
+  assert.deepEqual(
+    editais.map((edital) => edital.id),
+    ["e1"],
+  );
 });

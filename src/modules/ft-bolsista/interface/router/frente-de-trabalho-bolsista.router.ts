@@ -4,11 +4,15 @@ import { requirePermission } from "../../../acess-controll/interface/require-per
 import type { FrenteTrabalhoBolsistaController as FrenteTrabalhoBolsistaControllerType } from "../controller/frente-de-trabalho-bolsista.controller.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 
-export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync<{controller?: typeof FrenteTrabalhoBolsistaControllerType}> = async (fastify, options) => {
-  const FrenteTrabalhoBolsistaController = options.controller ?? (await import("../controller/frente-de-trabalho-bolsista.controller.js")).FrenteTrabalhoBolsistaController;
+export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync<{
+  controller?: typeof FrenteTrabalhoBolsistaControllerType;
+}> = async (fastify, options) => {
+  const FrenteTrabalhoBolsistaController =
+    options.controller ??
+    (await import("../controller/frente-de-trabalho-bolsista.controller.js"))
+      .FrenteTrabalhoBolsistaController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("ft");
-
 
   const tag = ["PEAAD - Bolsista"];
   const security = [{ JWTToken: [] }];

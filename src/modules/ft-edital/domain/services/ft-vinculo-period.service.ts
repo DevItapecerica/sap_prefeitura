@@ -1,4 +1,4 @@
-import { businessDate } from './edital-workflow.policy.js';
+import { businessDate } from "./edital-workflow.policy.js";
 export interface VinculoPeriodo {
   inicio: string;
   fim: string;
@@ -13,14 +13,28 @@ export const toDateOnly = (value?: string | Date | null): string => {
 
 export const getVinculoOperationalEnd = (source: any): string => {
   const vinculo = source?.toJSON?.() ?? source;
-  return [vinculo?.canceled_at, vinculo?.concluded_at, vinculo?.expired_at, vinculo?.expire_at].filter(Boolean).map(toDateOnly).sort((left, right) => left.localeCompare(right))[0] || '';
+  return (
+    [
+      vinculo?.canceled_at,
+      vinculo?.concluded_at,
+      vinculo?.expired_at,
+      vinculo?.expire_at,
+    ]
+      .filter(Boolean)
+      .map(toDateOnly)
+      .sort((left, right) => left.localeCompare(right))[0] || ""
+  );
 };
 
 export const vinculoIntersectsPeriod = (
   vinculo: any,
   periodo: VinculoPeriodo,
 ): boolean => {
-  if (vinculo?.status === 'convocado' || ('ativado_em' in vinculo && !vinculo.ativado_em)) return false;
+  if (
+    vinculo?.status === "convocado" ||
+    ("ativado_em" in vinculo && !vinculo.ativado_em)
+  )
+    return false;
   const inicio = toDateOnly(vinculo?.data_vinculo);
   const fim = getVinculoOperationalEnd(vinculo);
   return (

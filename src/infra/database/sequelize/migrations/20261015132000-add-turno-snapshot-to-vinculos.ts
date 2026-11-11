@@ -12,7 +12,10 @@ export default {
     await queryInterface.sequelize.transaction(async (transaction) => {
       const existing = await queryInterface.describeTable(TABLE);
       for (const [name, definition] of Object.entries(COLUMNS)) {
-        if (!existing[name]) await queryInterface.addColumn(TABLE, name, definition, { transaction });
+        if (!existing[name])
+          await queryInterface.addColumn(TABLE, name, definition, {
+            transaction,
+          });
       }
       await queryInterface.sequelize.query(
         `UPDATE ${TABLE} be JOIN turnos t ON t.uuid = be.turno_id
@@ -29,7 +32,8 @@ export default {
     await queryInterface.sequelize.transaction(async (transaction) => {
       const existing = await queryInterface.describeTable(TABLE);
       for (const name of Object.keys(COLUMNS).reverse()) {
-        if (existing[name]) await queryInterface.removeColumn(TABLE, name, { transaction });
+        if (existing[name])
+          await queryInterface.removeColumn(TABLE, name, { transaction });
       }
     });
   },

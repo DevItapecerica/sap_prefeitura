@@ -12,7 +12,11 @@ const routes: FastifyPluginAsync = async (fastify) => {
     method: "POST",
     url: "/login",
     config: {
-      audit: { failureAction: "LOGIN_FAILED", module: "auth", resourceType: "session" },
+      audit: {
+        failureAction: "LOGIN_FAILED",
+        module: "auth",
+        resourceType: "session",
+      },
       rateLimit: { max: 5, timeWindow: "1 minute" },
     },
     schema: {
@@ -38,12 +42,15 @@ const routes: FastifyPluginAsync = async (fastify) => {
             message: { type: "string", example: "Login bem sucedido" },
             token: { type: "string", example: "token" },
             ok: { type: "boolean", example: true },
-            user: { type: "object", properties: {
-              id: { type: "number", example: 1 },
-              name: { type: "string", example: "admin" },
-              setor_id: { type: "string", example: "admin" },
-              role_id: { type: "string", example: "admin" },
-            } },
+            user: {
+              type: "object",
+              properties: {
+                id: { type: "number", example: 1 },
+                name: { type: "string", example: "admin" },
+                setor_id: { type: "string", example: "admin" },
+                role_id: { type: "string", example: "admin" },
+              },
+            },
           },
         },
         ...errorResponseSchema,
@@ -56,7 +63,11 @@ const routes: FastifyPluginAsync = async (fastify) => {
     method: "GET",
     url: "/auth",
     config: {
-      audit: { failureAction: "ACCESS_DENIED", module: "auth", resourceType: "session" },
+      audit: {
+        failureAction: "ACCESS_DENIED",
+        module: "auth",
+        resourceType: "session",
+      },
       rateLimit: { max: 30, timeWindow: "1 minute" },
     },
     preHandler: AuthMiddleware.verifyJWT,
@@ -69,12 +80,15 @@ const routes: FastifyPluginAsync = async (fastify) => {
           type: "object",
           properties: {
             message: { type: "string", example: "Login bem sucedido" },
-            user: { type: "object", properties: {
-              id: { type: "number", example: 1 },
-              name: { type: "string", example: "admin" },
-              setor_id: { type: "string", example: "admin" },
-              role_id: { type: "string", example: "admin" },
-            } },
+            user: {
+              type: "object",
+              properties: {
+                id: { type: "number", example: 1 },
+                name: { type: "string", example: "admin" },
+                setor_id: { type: "string", example: "admin" },
+                role_id: { type: "string", example: "admin" },
+              },
+            },
             ok: { type: "boolean", example: true },
           },
         },
@@ -88,7 +102,11 @@ const routes: FastifyPluginAsync = async (fastify) => {
     method: "POST",
     url: "/refresh",
     config: {
-      audit: { failureAction: "ACCESS_DENIED", module: "auth", resourceType: "session" },
+      audit: {
+        failureAction: "ACCESS_DENIED",
+        module: "auth",
+        resourceType: "session",
+      },
       rateLimit: { max: 10, timeWindow: "1 minute" },
     },
     schema: {
@@ -114,7 +132,11 @@ const routes: FastifyPluginAsync = async (fastify) => {
     method: "POST",
     url: "/logout",
     config: {
-      audit: { failureAction: "LOGOUT", module: "auth", resourceType: "session" },
+      audit: {
+        failureAction: "LOGOUT",
+        module: "auth",
+        resourceType: "session",
+      },
       rateLimit: { max: 20, timeWindow: "1 minute" },
     },
     schema: {

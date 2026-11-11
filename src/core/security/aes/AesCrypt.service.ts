@@ -14,7 +14,9 @@ export default class AesCryptService implements IAesCrypt {
 
   private getKey() {
     const key = Buffer.from(SECRET_KEY);
-    return key.length === 32 ? key : createHash("sha256").update(SECRET_KEY).digest();
+    return key.length === 32
+      ? key
+      : createHash("sha256").update(SECRET_KEY).digest();
   }
 
   encrypt = async (data: string) => {

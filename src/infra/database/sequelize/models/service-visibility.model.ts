@@ -9,16 +9,15 @@ import {
 
 // ─── Classe do modelo ────────────────────────────────────────────
 
-export interface ServiceVisibilitiesDB
-  extends Model<
-    InferAttributes<ServiceVisibilitiesDB>,
-    InferCreationAttributes<ServiceVisibilitiesDB>
-  > {
-    id: CreationOptional<number>;
-    setor_id: number;
-    service_id: number;
-    visibility: CreationOptional<boolean | null>;
-  }
+export interface ServiceVisibilitiesDB extends Model<
+  InferAttributes<ServiceVisibilitiesDB>,
+  InferCreationAttributes<ServiceVisibilitiesDB>
+> {
+  id: CreationOptional<number>;
+  setor_id: number;
+  service_id: number;
+  visibility: CreationOptional<boolean | null>;
+}
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const ServiceVisibilities = sequelize.define<ServiceVisibilitiesDB>(

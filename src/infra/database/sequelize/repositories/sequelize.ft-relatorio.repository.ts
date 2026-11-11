@@ -27,7 +27,9 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
     new Sha256CryptService(),
   );
   async findEditalById(id: string) {
-    const edital = await db.Edital.findByPk(id, { transaction: this.transaction });
+    const edital = await db.Edital.findByPk(id, {
+      transaction: this.transaction,
+    });
 
     return edital ? this.toFtEdital(edital) : null;
   }
@@ -49,7 +51,10 @@ export class SequelizeFtRelatorioRepository implements FtRelatorioRepository {
   ) {
     const bolsistas = await db.Bolsistas.findAll({
       transaction: this.transaction,
-      order: [[{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"], ['id', 'ASC']],
+      order: [
+        [{ model: db.MunicipeModel, as: "municipe" }, "nome", "ASC"],
+        ["id", "ASC"],
+      ],
       include: [
         { model: db.MunicipeModel, as: "municipe", required: true },
         {

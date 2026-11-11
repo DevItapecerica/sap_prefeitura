@@ -28,9 +28,7 @@ export class SequelizeUserRepository implements UserRepository {
     return user ? this.toEntity(user) : null;
   };
 
-  getAllUser = async (
-    query: UserQuery,
-  ) => {
+  getAllUser = async (query: UserQuery) => {
     const { page, limit, search, order, setorId } = query;
     const queryOrder = order ? order.split(":") : ["id", "desc"];
     const queryLimit = limit ? Number(limit) : undefined;
@@ -67,10 +65,7 @@ export class SequelizeUserRepository implements UserRepository {
     };
   };
 
-  updateUser = async (
-    id: number,
-    data: User,
-  ): Promise<User> => {
+  updateUser = async (id: number, data: User): Promise<User> => {
     const payload = {
       name: data.name,
       email: data.email,

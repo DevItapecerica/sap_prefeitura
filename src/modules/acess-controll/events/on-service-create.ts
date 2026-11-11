@@ -1,6 +1,9 @@
 import { FastifyBaseLogger } from "fastify";
 import { EventSubscriber } from "../../../core/event/event-contracts.js";
-import { ServiceEventMap, SERVICE_EVENTS } from "../../services/application/events/service.events.js";
+import {
+  ServiceEventMap,
+  SERVICE_EVENTS,
+} from "../../services/application/events/service.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerServiceCreatedHandler = (
@@ -18,4 +21,3 @@ export const registerServiceCreatedHandler = (
       );
     }
   });
-

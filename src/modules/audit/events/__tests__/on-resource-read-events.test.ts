@@ -24,7 +24,8 @@ class FakeResourceReadSubscriber {
     }[eventName] as "listed" | "viewed" | "exported";
     (this as any)[property] = handler;
     return () => {
-      if ((this as any)[property] === handler) (this as any)[property] = undefined;
+      if ((this as any)[property] === handler)
+        (this as any)[property] = undefined;
     };
   }
 }

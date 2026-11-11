@@ -32,7 +32,12 @@ export class SequelizeServiceAggregateRepository implements ServiceAggregateRepo
       if (!rows) throw new ServiceAggregateError("SERVICE_NOT_FOUND");
 
       const before = this.toAggregate(rows);
-      if ("permissions" in input) throw new AppError("Legacy permissions are not accepted",400,"VALIDATION_ERROR");
+      if ("permissions" in input)
+        throw new AppError(
+          "Legacy permissions are not accepted",
+          400,
+          "VALIDATION_ERROR",
+        );
       this.validateVisibilities(id, input.visibility ?? [], before.visibility);
 
       await rows.service.update(

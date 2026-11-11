@@ -40,39 +40,93 @@ test("access models expose the database relationships", async () => {
     model.associate?.(models);
   }
 
-  assert.ok(models.ServiceModel.options.indexes.some((i: any) => i.unique && JSON.stringify(i.fields) === JSON.stringify(['id', 'module_key'])));
+  assert.ok(
+    models.ServiceModel.options.indexes.some(
+      (i: any) =>
+        i.unique &&
+        JSON.stringify(i.fields) === JSON.stringify(["id", "module_key"]),
+    ),
+  );
   assert.equal(models.PermissionActionModel.rawAttributes.id.primaryKey, true);
-  assert.equal(models.PermissionActionModel.rawAttributes.service_id.allowNull, false);
-  assert.equal(models.PermissionActionModel.getTableName(), 'permission_actions');
-  assert.equal(models.RolePermissionsModel.getTableName(), 'role_permissions');
-  for (const field of ['role_id', 'permission_action_id']) {
-    assert.equal(models.RolePermissionsModel.rawAttributes[field].onDelete, 'RESTRICT');
-    assert.equal(models.RolePermissionsModel.rawAttributes[field].onUpdate, 'CASCADE');
-    assert.equal(models.RolePermissionsModel.rawAttributes[field].allowNull, false);
+  assert.equal(
+    models.PermissionActionModel.rawAttributes.service_id.allowNull,
+    false,
+  );
+  assert.equal(
+    models.PermissionActionModel.getTableName(),
+    "permission_actions",
+  );
+  assert.equal(models.RolePermissionsModel.getTableName(), "role_permissions");
+  for (const field of ["role_id", "permission_action_id"]) {
+    assert.equal(
+      models.RolePermissionsModel.rawAttributes[field].onDelete,
+      "RESTRICT",
+    );
+    assert.equal(
+      models.RolePermissionsModel.rawAttributes[field].onUpdate,
+      "CASCADE",
+    );
+    assert.equal(
+      models.RolePermissionsModel.rawAttributes[field].allowNull,
+      false,
+    );
   }
   assert.equal(models.PermissionActionModel.options.paranoid, false);
   assert.equal(models.RolePermissionsModel.options.paranoid, false);
-  assert.equal(models.PermissionActionModel.rawAttributes.module_key.allowNull, false);
+  assert.equal(
+    models.PermissionActionModel.rawAttributes.module_key.allowNull,
+    false,
+  );
   assert.equal(models.ServiceModel.rawAttributes.module_key.allowNull, false);
-  assert.equal(models.RolePermissionsModel.rawAttributes.allowed.defaultValue, false);
-  assert.equal(models.RolePermissionsModel.associations.role.target, models.RolesModel);
-  assert.equal(models.RolePermissionsModel.associations.permissionAction.target, models.PermissionActionModel);
-  assert.equal(models.ServiceModel.associations.permissionActions.target, models.PermissionActionModel);
-  assert.equal(models.RolesModel.associations.rolePermissions.target, models.RolePermissionsModel);
+  assert.equal(
+    models.RolePermissionsModel.rawAttributes.allowed.defaultValue,
+    false,
+  );
+  assert.equal(
+    models.RolePermissionsModel.associations.role.target,
+    models.RolesModel,
+  );
+  assert.equal(
+    models.RolePermissionsModel.associations.permissionAction.target,
+    models.PermissionActionModel,
+  );
+  assert.equal(
+    models.ServiceModel.associations.permissionActions.target,
+    models.PermissionActionModel,
+  );
+  assert.equal(
+    models.RolesModel.associations.rolePermissions.target,
+    models.RolePermissionsModel,
+  );
   assert.equal(models.UserModel.associations.setor.target, models.SetorModel);
   assert.equal(models.UserModel.associations.role.target, models.RolesModel);
-  assert.equal(models.UserModel.associations.sessions.target, models.UserSessionModel);
-  assert.equal(models.PermissionsModel.associations.service.target, models.ServiceModel);
-  assert.equal(models.ServiceVisibilities.associations.setor.target, models.SetorModel);
-  assert.equal(models.ServiceVisibilities.associations.service.target, models.ServiceModel);
+  assert.equal(
+    models.UserModel.associations.sessions.target,
+    models.UserSessionModel,
+  );
+  assert.equal(
+    models.PermissionsModel.associations.service.target,
+    models.ServiceModel,
+  );
+  assert.equal(
+    models.ServiceVisibilities.associations.setor.target,
+    models.SetorModel,
+  );
+  assert.equal(
+    models.ServiceVisibilities.associations.service.target,
+    models.ServiceModel,
+  );
   assert.deepEqual(models.UserModel.rawAttributes.setor_id.references, {
     model: "setors",
     key: "id",
   });
-  assert.deepEqual(models.PermissionsModel.rawAttributes.service_id.references, {
-    model: "services",
-    key: "id",
-  });
+  assert.deepEqual(
+    models.PermissionsModel.rawAttributes.service_id.references,
+    {
+      model: "services",
+      key: "id",
+    },
+  );
 
   await sequelize.close();
 });
@@ -87,7 +141,11 @@ test("municipe resource models mirror FK and date metadata", async () => {
   const CarteirinhaModel = carterinhaModel(sequelize, DataTypes);
   const CarteirinhaEsporteModel = carterinhaEsporteModel(sequelize, DataTypes);
 
-  for (const model of [AtletaModel, CarteirinhaModel, CarteirinhaEsporteModel]) {
+  for (const model of [
+    AtletaModel,
+    CarteirinhaModel,
+    CarteirinhaEsporteModel,
+  ]) {
     assert.deepEqual(model.rawAttributes.municipe_uuid.references, {
       model: "municipes",
       key: "uuid",
@@ -96,8 +154,14 @@ test("municipe resource models mirror FK and date metadata", async () => {
     assert.equal(model.rawAttributes.municipe_uuid.onUpdate, "CASCADE");
   }
 
-  assert.equal((CarteirinhaModel.rawAttributes.emissao.type as any).key, "DATE");
-  assert.equal((CarteirinhaModel.rawAttributes.validade.type as any).key, "DATE");
+  assert.equal(
+    (CarteirinhaModel.rawAttributes.emissao.type as any).key,
+    "DATE",
+  );
+  assert.equal(
+    (CarteirinhaModel.rawAttributes.validade.type as any).key,
+    "DATE",
+  );
 
   await sequelize.close();
 });

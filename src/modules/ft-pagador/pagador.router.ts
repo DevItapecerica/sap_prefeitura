@@ -54,8 +54,12 @@ const capacityResource = {
   },
 };
 
-export const PagadorRouter: FastifyPluginAsync<{controller?: typeof PagadorControllerType}> = async (fastify, options) => {
-  const PagadorController = options.controller ?? (await import("./pagador.controller.js")).PagadorController;
+export const PagadorRouter: FastifyPluginAsync<{
+  controller?: typeof PagadorControllerType;
+}> = async (fastify, options) => {
+  const PagadorController =
+    options.controller ??
+    (await import("./pagador.controller.js")).PagadorController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("ft");
 

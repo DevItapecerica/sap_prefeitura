@@ -6,12 +6,7 @@ import {
   Registry,
 } from "@prometheus-io/client";
 
-export type Dependency =
-  | "database"
-  | "email"
-  | "pdf"
-  | "antivirus"
-  | "audit";
+export type Dependency = "database" | "email" | "pdf" | "antivirus" | "audit";
 export type DependencyResult = "success" | "error" | "not_configured";
 export type DatabasePoolStats = {
   total: number;

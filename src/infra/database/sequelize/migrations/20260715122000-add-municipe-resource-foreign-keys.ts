@@ -60,9 +60,13 @@ export default {
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
       for (const resource of [...resources].reverse()) {
-        await queryInterface.removeConstraint(resource.table, resource.constraint, {
-          transaction,
-        });
+        await queryInterface.removeConstraint(
+          resource.table,
+          resource.constraint,
+          {
+            transaction,
+          },
+        );
       }
     });
   },

@@ -27,7 +27,10 @@ const plain = (value: any) => value?.toJSON?.() ?? value;
 
 export class FrenteTrabalhoBolsistaController {
   static readonly gerarEspelhoPonto = async (
-    request: FastifyRequest<{ Params: { id: string }; Querystring: { edital_id: string; mes: string } }>,
+    request: FastifyRequest<{
+      Params: { id: string };
+      Querystring: { edital_id: string; mes: string };
+    }>,
     reply: FastifyReply,
   ) => {
     const result = await gerarEspelhoPonto.execute(
@@ -37,12 +40,18 @@ export class FrenteTrabalhoBolsistaController {
       request.id,
     );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
-      context: makeApplicationEventContext(request), module: "ft-bolsista",
-      resourceType: "espelho_ponto", resourceId: request.params.id,
-      filters: { editalId: request.query.edital_id, mes: request.query.mes }, returnedCount: 1,
+      context: makeApplicationEventContext(request),
+      module: "ft-bolsista",
+      resourceType: "espelho_ponto",
+      resourceId: request.params.id,
+      filters: { editalId: request.query.edital_id, mes: request.query.mes },
+      returnedCount: 1,
     });
-    reply.type(result.contentType).header("Content-Disposition", result.contentDisposition);
-    if (result.contentLength) reply.header("Content-Length", result.contentLength);
+    reply
+      .type(result.contentType)
+      .header("Content-Disposition", result.contentDisposition);
+    if (result.contentLength)
+      reply.header("Content-Length", result.contentLength);
     return reply.status(200).send(result.file);
   };
   static readonly getBolsistas = async (
@@ -61,7 +70,9 @@ export class FrenteTrabalhoBolsistaController {
   };
 
   static readonly getBolsistasParaVinculo = async (
-    request: FastifyRequest<{ Querystring: FtBolsistaVinculoCandidatesQueryDto }>,
+    request: FastifyRequest<{
+      Querystring: FtBolsistaVinculoCandidatesQueryDto;
+    }>,
     reply: FastifyReply,
   ) => {
     const data = await service.getBolsistasParaVinculo(request.query);
@@ -81,8 +92,11 @@ export class FrenteTrabalhoBolsistaController {
   ) => {
     const data = await service.getAniversariantes(request.query.mes);
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
-      context: makeApplicationEventContext(request), module: "ft-bolsista",
-      resourceType: "aniversariante", filters: request.query, returnedCount: data.count,
+      context: makeApplicationEventContext(request),
+      module: "ft-bolsista",
+      resourceType: "aniversariante",
+      filters: request.query,
+      returnedCount: data.count,
     });
     return reply.status(200).send(data);
   };
@@ -185,7 +199,9 @@ export class FrenteTrabalhoBolsistaController {
   };
 
   static readonly prorrogate = async (
-    request: FastifyRequest<{ Body: { bolsistas: FtBolsistaProrrogacaoDto[] } }>,
+    request: FastifyRequest<{
+      Body: { bolsistas: FtBolsistaProrrogacaoDto[] };
+    }>,
     reply: FastifyReply,
   ) => {
     const { bolsistas } = request.body;
@@ -255,7 +271,9 @@ export class FrenteTrabalhoBolsistaController {
       after: result.after,
     });
 
-    return reply.status(201).send({ message: "Bolsista alterado com sucesso!" });
+    return reply
+      .status(201)
+      .send({ message: "Bolsista alterado com sucesso!" });
   };
 
   static readonly createFalta = async (
@@ -315,25 +333,43 @@ export class FrenteTrabalhoBolsistaController {
   };
 
   static readonly createOcorrencia = async (
-    request: FastifyRequest<{ Params: { id: string }; Body: FtBolsistaOcorrenciaDto }>,
+    request: FastifyRequest<{
+      Params: { id: string };
+      Body: FtBolsistaOcorrenciaDto;
+    }>,
     reply: FastifyReply,
   ) => {
-    const response = await service.createOcorrencia(request.params.id, request.body, Number(request.user.id));
+    const response = await service.createOcorrencia(
+      request.params.id,
+      request.body,
+      Number(request.user.id),
+    );
     await eventPublisher.publish(FT_BOLSISTA_EVENTS.created, {
-      context: makeApplicationEventContext(request), resourceType: "ocorrencia",
-      resourceId: String(plain(response.ocorrencia)?.id ?? ""), after: plain(response.ocorrencia),
+      context: makeApplicationEventContext(request),
+      resourceType: "ocorrencia",
+      resourceId: String(plain(response.ocorrencia)?.id ?? ""),
+      after: plain(response.ocorrencia),
     });
     return reply.status(201).send(response);
   };
 
   static readonly listOcorrencias = async (
-    request: FastifyRequest<{ Params: { id: string }; Querystring: FtBolsistaOcorrenciaQueryDto }>,
+    request: FastifyRequest<{
+      Params: { id: string };
+      Querystring: FtBolsistaOcorrenciaQueryDto;
+    }>,
     reply: FastifyReply,
   ) => {
-    const response = await service.listOcorrencias(request.params.id, request.query);
+    const response = await service.listOcorrencias(
+      request.params.id,
+      request.query,
+    );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
-      context: makeApplicationEventContext(request), module: "ft-bolsista", resourceType: "ocorrencia",
-      filters: { ...request.query, bolsistaId: request.params.id }, returnedCount: response.ocorrencias.length,
+      context: makeApplicationEventContext(request),
+      module: "ft-bolsista",
+      resourceType: "ocorrencia",
+      filters: { ...request.query, bolsistaId: request.params.id },
+      returnedCount: response.ocorrencias.length,
     });
     return reply.status(200).send(response);
   };
@@ -342,10 +378,15 @@ export class FrenteTrabalhoBolsistaController {
     request: FastifyRequest<{ Params: { id: string; ocorrenciaId: string } }>,
     reply: FastifyReply,
   ) => {
-    const response = await service.deleteOcorrencia(request.params.id, request.params.ocorrenciaId);
+    const response = await service.deleteOcorrencia(
+      request.params.id,
+      request.params.ocorrenciaId,
+    );
     await eventPublisher.publish(FT_BOLSISTA_EVENTS.deleted, {
-      context: makeApplicationEventContext(request), resourceType: "ocorrencia",
-      resourceId: request.params.ocorrenciaId, before: response.before,
+      context: makeApplicationEventContext(request),
+      resourceType: "ocorrencia",
+      resourceId: request.params.ocorrenciaId,
+      before: response.before,
     });
     const { before: _before, ...payload } = response;
     return reply.status(200).send(payload);

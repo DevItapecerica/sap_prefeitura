@@ -13,16 +13,22 @@ export default {
       );
 
       if (!exists) {
-        await queryInterface.bulkInsert("services", [{
-          id: AUDIT_SERVICE_ID,
-          name: "Auditoria",
-          description: "Consulta e exportacao de eventos de auditoria",
-          url: "/services/11/admin/audit",
-          tag: "admin",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          deletedAt: null,
-        }], { transaction });
+        await queryInterface.bulkInsert(
+          "services",
+          [
+            {
+              id: AUDIT_SERVICE_ID,
+              name: "Auditoria",
+              description: "Consulta e exportacao de eventos de auditoria",
+              url: "/services/11/admin/audit",
+              tag: "admin",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              deletedAt: null,
+            },
+          ],
+          { transaction },
+        );
       }
 
       await ensureServiceAccessDefaultsForSeed(
@@ -35,9 +41,21 @@ export default {
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.bulkDelete("service_visibilities", { service_id: AUDIT_SERVICE_ID }, { transaction });
-      await queryInterface.bulkDelete("permissions", { service_id: AUDIT_SERVICE_ID }, { transaction });
-      await queryInterface.bulkDelete("services", { id: AUDIT_SERVICE_ID }, { transaction });
+      await queryInterface.bulkDelete(
+        "service_visibilities",
+        { service_id: AUDIT_SERVICE_ID },
+        { transaction },
+      );
+      await queryInterface.bulkDelete(
+        "permissions",
+        { service_id: AUDIT_SERVICE_ID },
+        { transaction },
+      );
+      await queryInterface.bulkDelete(
+        "services",
+        { id: AUDIT_SERVICE_ID },
+        { transaction },
+      );
     });
   },
 };

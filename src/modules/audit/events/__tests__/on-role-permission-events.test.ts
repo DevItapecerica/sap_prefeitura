@@ -3,7 +3,12 @@ import test from "node:test";
 import { Permissions } from "../../../permission/domain/entity/Permission.js";
 import { EventHandler } from "../../../../core/event/event-contracts.js";
 import { PermissionUpdatedEvent } from "../../../permission/application/events/permission.events.js";
-import { ROLE_EVENTS, RoleCreatedEvent, RoleDeletedEvent, RoleUpdatedEvent } from "../../../roles/application/events/role.events.js";
+import {
+  ROLE_EVENTS,
+  RoleCreatedEvent,
+  RoleDeletedEvent,
+  RoleUpdatedEvent,
+} from "../../../roles/application/events/role.events.js";
 import { Roles } from "../../../roles/domain/entity/Role.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { registerPermissionAuditHandlers } from "../on-permission-events.js";
@@ -20,7 +25,9 @@ class FakeRoleSubscriber {
       [ROLE_EVENTS.deleted]: "deleted",
     }[eventName] as "created" | "updated" | "deleted";
     (this as any)[property] = handler;
-    return () => { (this as any)[property] = undefined; };
+    return () => {
+      (this as any)[property] = undefined;
+    };
   }
 }
 
@@ -28,7 +35,9 @@ class FakePermissionSubscriber {
   updated?: EventHandler<PermissionUpdatedEvent>;
   subscribe(_eventName: string, handler: EventHandler<any>) {
     this.updated = handler;
-    return () => { this.updated = undefined; };
+    return () => {
+      this.updated = undefined;
+    };
   }
 }
 
@@ -42,21 +51,50 @@ test("role and permission events create complete audit snapshots", async () => {
   const roleEvents = new FakeRoleSubscriber();
   const permissionEvents = new FakePermissionSubscriber();
   const records: RecordAuditDto[] = [];
-  const recorder = { record: async (input: RecordAuditDto) => { records.push(input); } };
+  const recorder = {
+    record: async (input: RecordAuditDto) => {
+      records.push(input);
+    },
+  };
   const logger = { error() {} } as any;
-  const unregisterRole = registerRoleAuditHandlers(roleEvents, recorder, logger);
-  const unregisterPermission = registerPermissionAuditHandlers(permissionEvents, recorder, logger);
+  const unregisterRole = registerRoleAuditHandlers(
+    roleEvents,
+    recorder,
+    logger,
+  );
+  const unregisterPermission = registerPermissionAuditHandlers(
+    permissionEvents,
+    recorder,
+    logger,
+  );
   const beforeRole = new Roles(2, "Gestor");
   const afterRole = new Roles(2, "Operador");
   const beforePermission = new Permissions(6, 2, true, false, false, false, 10);
   const afterPermission = new Permissions(6, 2, true, true, false, false, 10);
 
   try {
-    await roleEvents.created?.({ context: context("role-create"), role: beforeRole });
-    await roleEvents.updated?.({ context: context("role-update"), before: beforeRole, after: afterRole });
-    await roleEvents.deleted?.({ context: context("role-delete"), before: { role: afterRole, permissions: [afterPermission] } });
-    await permissionEvents.updated?.({ context: context("permission-update"), before: beforePermission, after: afterPermission });
-    assert.deepEqual(records.map((record) => record.action), ["CREATE", "UPDATE", "DELETE", "UPDATE"]);
+    await roleEvents.created?.({
+      context: context("role-create"),
+      role: beforeRole,
+    });
+    await roleEvents.updated?.({
+      context: context("role-update"),
+      before: beforeRole,
+      after: afterRole,
+    });
+    await roleEvents.deleted?.({
+      context: context("role-delete"),
+      before: { role: afterRole, permissions: [afterPermission] },
+    });
+    await permissionEvents.updated?.({
+      context: context("permission-update"),
+      before: beforePermission,
+      after: afterPermission,
+    });
+    assert.deepEqual(
+      records.map((record) => record.action),
+      ["CREATE", "UPDATE", "DELETE", "UPDATE"],
+    );
     assert.equal((records[2].before as any).permissions.length, 1);
     assert.equal(records[3].before, beforePermission);
     assert.equal(records[3].after, afterPermission);
@@ -70,27 +108,61 @@ test("failed role and permission audit remains best-effort", async () => {
   const roleEvents = new FakeRoleSubscriber();
   const permissionEvents = new FakePermissionSubscriber();
   let errors = 0;
-  const recorder = { record: async () => { throw new Error("outbox unavailable"); } };
-  const logger = { error() { errors += 1; } } as any;
+  const recorder = {
+    record: async () => {
+      throw new Error("outbox unavailable");
+    },
+  };
+  const logger = {
+    error() {
+      errors += 1;
+    },
+  } as any;
   registerRoleAuditHandlers(roleEvents, recorder, logger);
   registerPermissionAuditHandlers(permissionEvents, recorder, logger);
   const role = new Roles(2, "Gestor");
   const permission = new Permissions(6, 2, true, false, false, false, 10);
   await roleEvents.created?.({ context: context("failed-role"), role });
-  await permissionEvents.updated?.({ context: context("failed-permission"), before: permission, after: permission });
+  await permissionEvents.updated?.({
+    context: context("failed-permission"),
+    before: permission,
+    after: permission,
+  });
   assert.equal(errors, 2);
 });
 
 test("role action permission audit identifies target role and authenticated actor", async () => {
- const events = new FakePermissionSubscriber();
- const records: RecordAuditDto[] = [];
- const unregister = registerPermissionAuditHandlers(events, {record: async input => {records.push(input);}}, {error() {}} as any);
- try {
-  await events.updated?.({context: context("role-actions"), before: {id:2,role_id:2,permissions:[{permission_action_id:50,allowed:false}]},after:{id:2,role_id:2,permissions:[{permission_action_id:50,allowed:true}]}});
-  assert.equal(records.length,1);
-  assert.equal(records[0].resourceType,"role_permission");
-  assert.equal(records[0].resourceId,"2");
-  assert.equal((records[0].after as any).role_id,2);
-  assert.equal(records[0].actor?.userId,context("role-actions").actor?.id);
- } finally {unregister();}
+  const events = new FakePermissionSubscriber();
+  const records: RecordAuditDto[] = [];
+  const unregister = registerPermissionAuditHandlers(
+    events,
+    {
+      record: async (input) => {
+        records.push(input);
+      },
+    },
+    { error() {} } as any,
+  );
+  try {
+    await events.updated?.({
+      context: context("role-actions"),
+      before: {
+        id: 2,
+        role_id: 2,
+        permissions: [{ permission_action_id: 50, allowed: false }],
+      },
+      after: {
+        id: 2,
+        role_id: 2,
+        permissions: [{ permission_action_id: 50, allowed: true }],
+      },
+    });
+    assert.equal(records.length, 1);
+    assert.equal(records[0].resourceType, "role_permission");
+    assert.equal(records[0].resourceId, "2");
+    assert.equal((records[0].after as any).role_id, 2);
+    assert.equal(records[0].actor?.userId, context("role-actions").actor?.id);
+  } finally {
+    unregister();
+  }
 });

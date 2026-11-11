@@ -12,19 +12,19 @@ export interface UserDB extends Model<
   InferAttributes<UserDB>,
   InferCreationAttributes<UserDB>
 > {
-   id: CreationOptional<number>;
-   name: string;
-   email: string;
-   ramal: string | null;
-   password: string;
+  id: CreationOptional<number>;
+  name: string;
+  email: string;
+  ramal: string | null;
+  password: string;
 
-   setor_id: number | null;
-   role_id: number;
-   firstLogin: boolean;
+  setor_id: number | null;
+  role_id: number;
+  firstLogin: boolean;
 
-   createdAt: CreationOptional<Date>;
-   updatedAt: CreationOptional<Date>;
-   deletedAt: CreationOptional<Date | null>;
+  createdAt: CreationOptional<Date>;
+  updatedAt: CreationOptional<Date>;
+  deletedAt: CreationOptional<Date | null>;
 }
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {

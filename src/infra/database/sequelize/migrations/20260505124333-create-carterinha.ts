@@ -4,56 +4,60 @@ import { QueryInterface, DataTypes } from "sequelize";
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.createTable("carterinhas", {
-        uuid: {
-          type: DataTypes.UUID,
-          allowNull: false,
-          primaryKey: true,
-        },
-        emissao: {
-          type: DataTypes.DATE,
-          allowNull: false,
-        },
+      await queryInterface.createTable(
+        "carterinhas",
+        {
+          uuid: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            primaryKey: true,
+          },
+          emissao: {
+            type: DataTypes.DATE,
+            allowNull: false,
+          },
 
-        validade: {
-          type: DataTypes.DATE,
-          allowNull: true,
-          defaultValue: null,
-        },
+          validade: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
+          },
 
-        municipe_uuid: {
-          type: DataTypes.UUID,
-          allowNull: false,
-        },
+          municipe_uuid: {
+            type: DataTypes.UUID,
+            allowNull: false,
+          },
 
-        origem: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
+          origem: {
+            type: DataTypes.STRING,
+            allowNull: false,
+          },
 
-        atividade_uuid: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
+          atividade_uuid: {
+            type: DataTypes.STRING,
+            allowNull: true,
+          },
 
-        author: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
+          author: {
+            type: DataTypes.STRING,
+            allowNull: false,
+          },
 
-        createdAt: {
-          type: DataTypes.DATE,
-          allowNull: false,
+          createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+          },
+          updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+          },
+          deletedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+          },
         },
-        updatedAt: {
-          type: DataTypes.DATE,
-          allowNull: false,
-        },
-        deletedAt: {
-          type: DataTypes.DATE,
-          allowNull: true,
-        },
-      }, { transaction });
+        { transaction },
+      );
     });
   },
 

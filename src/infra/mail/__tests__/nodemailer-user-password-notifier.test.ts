@@ -9,7 +9,9 @@ import {
 test("NodemailerUserPasswordNotifier sends the temporary password", async () => {
   let message: Record<string, string> | undefined;
   const transport: MailTransport = {
-    sendMail: async (input) => { message = input; },
+    sendMail: async (input) => {
+      message = input;
+    },
   };
   const notifier = new NodemailerUserPasswordNotifier(transport);
 
@@ -20,7 +22,9 @@ test("NodemailerUserPasswordNotifier sends the temporary password", async () => 
 
 test("NodemailerUserPasswordNotifier normalizes transport failures", async () => {
   const notifier = new NodemailerUserPasswordNotifier({
-    sendMail: async () => { throw new Error("offline"); },
+    sendMail: async () => {
+      throw new Error("offline");
+    },
   });
   await assert.rejects(
     () => notifier.sendTemporaryPassword("user@example.com", "Temporaria1"),

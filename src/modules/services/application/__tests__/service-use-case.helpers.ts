@@ -22,7 +22,10 @@ export class FakeServicesRepository {
 
   getAllServices(query: ServiceQuery) {
     this.lastQuery = query;
-    return Promise.resolve({ services: [...this.services.values()], count: this.services.size });
+    return Promise.resolve({
+      services: [...this.services.values()],
+      count: this.services.size,
+    });
   }
 
   getOneServices(id: number) {
@@ -31,7 +34,16 @@ export class FakeServicesRepository {
 
   createServices(data: ServiceWriteData) {
     this.writes.push("create-service");
-    const service = new Services(7, data.name, data.description, data.tag, data.url, now, now, null);
+    const service = new Services(
+      7,
+      data.name,
+      data.description,
+      data.tag,
+      data.url,
+      now,
+      now,
+      null,
+    );
     this.services.set(7, service);
     return Promise.resolve(service);
   }
@@ -40,7 +52,16 @@ export class FakeServicesRepository {
     this.writes.push("update-service");
     const current = this.services.get(id);
     if (this.failUpdate || !current) return Promise.resolve(null);
-    const updated = new Services(id, data.name, data.description, data.tag, data.url, current.createdAt, now, null);
+    const updated = new Services(
+      id,
+      data.name,
+      data.description,
+      data.tag,
+      data.url,
+      current.createdAt,
+      now,
+      null,
+    );
     this.services.set(id, updated);
     return Promise.resolve(updated);
   }
@@ -60,21 +81,33 @@ export class FakeVisibilityRepository {
   writes: string[] = [];
 
   findOneServiceVisibility(serviceId: number) {
-    return Promise.resolve(this.visibilities.filter((item) => item.service_id === serviceId));
+    return Promise.resolve(
+      this.visibilities.filter((item) => item.service_id === serviceId),
+    );
   }
 
-  createServiceVisibility(setorId: number, serviceId: number, visibility = false) {
+  createServiceVisibility(
+    setorId: number,
+    serviceId: number,
+    visibility = false,
+  ) {
     const created = new ServiceVisibility(setorId, serviceId, visibility, 3);
     this.visibilities.push(created);
     return Promise.resolve(created);
   }
 
   findVisibilityByServiceAndSetor(setorId: number, serviceId: number) {
-    return Promise.resolve(this.visibilities.find((item) => item.setor_id === setorId && item.service_id === serviceId) ?? null);
+    return Promise.resolve(
+      this.visibilities.find(
+        (item) => item.setor_id === setorId && item.service_id === serviceId,
+      ) ?? null,
+    );
   }
 
   findVisibilityBySetor(setorId: number | string) {
-    return Promise.resolve(this.visibilities.filter((item) => item.setor_id === Number(setorId)));
+    return Promise.resolve(
+      this.visibilities.filter((item) => item.setor_id === Number(setorId)),
+    );
   }
 
   updateServiceVisibility(id: number, visibility: boolean) {
@@ -82,7 +115,12 @@ export class FakeVisibilityRepository {
     const index = this.visibilities.findIndex((item) => item.id === id);
     if (index < 0) return Promise.resolve(null);
     const current = this.visibilities[index];
-    const updated = new ServiceVisibility(current.setor_id, current.service_id, visibility, current.id);
+    const updated = new ServiceVisibility(
+      current.setor_id,
+      current.service_id,
+      visibility,
+      current.id,
+    );
     this.visibilities[index] = updated;
     return Promise.resolve(updated);
   }
@@ -96,7 +134,9 @@ export class FakePermissionRepository {
   writes: string[] = [];
 
   getByServiceId(serviceId: number) {
-    return Promise.resolve(this.permissions.filter((item) => item.service_id === serviceId));
+    return Promise.resolve(
+      this.permissions.filter((item) => item.service_id === serviceId),
+    );
   }
 
   updatePermissions(id: number, data: Partial<Permissions>) {
@@ -118,7 +158,11 @@ export class FakePermissionRepository {
   }
 
   findReadableByRole(roleId: number | string) {
-    return Promise.resolve(this.permissions.filter((item) => item.role_id === Number(roleId) && item.read));
+    return Promise.resolve(
+      this.permissions.filter(
+        (item) => item.role_id === Number(roleId) && item.read,
+      ),
+    );
   }
 }
 
@@ -145,14 +189,17 @@ export class FakeServiceAggregateRepository {
 
     const visibilityIds = new Set<number>();
     for (const item of input.visibility ?? []) {
-      const stored = before.visibility.find((visibility) => visibility.id === item.id);
+      const stored = before.visibility.find(
+        (visibility) => visibility.id === item.id,
+      );
       if (
         visibilityIds.has(item.id) ||
         !stored ||
         stored.service_id !== id ||
         stored.setor_id !== item.setor_id ||
         item.service_id !== id
-      ) throw new ServiceAggregateError("VISIBILITY_NOT_FOUND");
+      )
+        throw new ServiceAggregateError("VISIBILITY_NOT_FOUND");
       visibilityIds.add(item.id);
     }
 
@@ -182,6 +229,10 @@ export const makeServiceFakes = () => {
     services,
     visibility,
     permissions,
-    aggregate: new FakeServiceAggregateRepository(services, visibility, permissions),
+    aggregate: new FakeServiceAggregateRepository(
+      services,
+      visibility,
+      permissions,
+    ),
   };
 };

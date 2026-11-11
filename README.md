@@ -46,12 +46,12 @@ Ecossistema web formado pela API principal, pelo frontend React e pelo serviço 
 
 ## Componentes
 
-| Componente | Tecnologia | Porta no desenvolvimento | Saúde |
-| --- | --- | ---: | --- |
-| `front_prefeitura` | React 18, Vite e Nginx | 3001 | `/` |
-| `sap_prefeitura` | Node.js 22, TypeScript, Fastify e Sequelize | 3000 | `/health`, `/ready` |
-| `api_PDF` | Node.js 22, TypeScript e Fastify | 3002 | `/health`, `/ready` |
-| `db` | MariaDB 10.11 | somente rede interna | healthcheck nativo |
+| Componente         | Tecnologia                                  | Porta no desenvolvimento | Saúde               |
+| ------------------ | ------------------------------------------- | -----------------------: | ------------------- |
+| `front_prefeitura` | React 18, Vite e Nginx                      |                     3001 | `/`                 |
+| `sap_prefeitura`   | Node.js 22, TypeScript, Fastify e Sequelize |                     3000 | `/health`, `/ready` |
+| `api_PDF`          | Node.js 22, TypeScript e Fastify            |                     3002 | `/health`, `/ready` |
+| `db`               | MariaDB 10.11                               |     somente rede interna | healthcheck nativo  |
 
 O Nginx do frontend encaminha `/api/*` para `/api/v2/*` na API principal. A API principal acessa a API PDF internamente por `http://api_pdf:3002/api/v1`. O projeto `setores_api` não faz parte do ecossistema mantido.
 
@@ -194,13 +194,13 @@ Na execução nativa em desenvolvimento, a ausência da variável usa `sap_prefe
 
 Prefixo de todas as rotas abaixo: `/api/v2/frente-de-trabalho/relatorio`.
 
-| Método e rota | Finalidade | Ação no módulo `ft` |
-| --- | --- | --- |
-| `POST /edital/:id/espelhos-ponto` | Cria o lote de espelhos e retorna `202`. | `solicitar_espelhos_ponto` |
-| `POST /edital/:id/folhas-presenca` | Cria o lote de folhas e retorna `202`. | `solicitar_folhas_presenca` |
-| `GET /downloads` | Lista lotes ainda não excluídos, com `page` e `limit`. | `consultar_downloads` |
-| `GET /downloads/:id` | Baixa uma vez o ZIP concluído. | `baixar_relatorio` |
-| `POST /downloads/:id/retry` | Recoloca um lote com erro em `aguardando`. | `reprocessar_relatorio` |
+| Método e rota                      | Finalidade                                             | Ação no módulo `ft`         |
+| ---------------------------------- | ------------------------------------------------------ | --------------------------- |
+| `POST /edital/:id/espelhos-ponto`  | Cria o lote de espelhos e retorna `202`.               | `solicitar_espelhos_ponto`  |
+| `POST /edital/:id/folhas-presenca` | Cria o lote de folhas e retorna `202`.                 | `solicitar_folhas_presenca` |
+| `GET /downloads`                   | Lista lotes ainda não excluídos, com `page` e `limit`. | `consultar_downloads`       |
+| `GET /downloads/:id`               | Baixa uma vez o ZIP concluído.                         | `baixar_relatorio`          |
+| `POST /downloads/:id/retry`        | Recoloca um lote com erro em `aguardando`.             | `reprocessar_relatorio`     |
 
 As solicitações de lote recebem `{ "mes": "2026-10" }` e respondem com `{ "arquivo": ... }`. Todas as rotas exigem JWT, `ft:acessar`, visibilidade do serviço para o setor e a ação específica. A listagem é compartilhada entre usuários com `ft:consultar_downloads`, sem filtro por solicitante.
 
@@ -286,7 +286,6 @@ curl http://localhost:3002/ready
 - [Auditoria de segurança](SECURITY_AUDIT.md) e [permissões](docs/permissions.md).
 - [Frontend](../front_prefeitura/README.md) e [API PDF](../api_PDF/README.md).
 
-
 ## Extensão: idade máxima por edital e exceções — 2026-10-22
 
 - [x] `idade_maxima` inteira, obrigatória na criação, sem valor padrão e inclusiva. Idade mínima mantida em 18 anos; nascimento vem do munícipe. Referência: data da inscrição e início da convocação/ativação.
@@ -306,7 +305,6 @@ Validação SQL e HTTP feita em instância MariaDB 11.8.2 isolada, loopback:3331
 
 O edital pode ser aberto sem cadastrar pagadores, turnos ou locais previamente. Na convocação comum ou excepcional e na alteração da reserva, pagador e turno permanecem selecionáveis e o local é texto livre obrigatório, de até 255 caracteres. A API recebe `local` em vez de `local_id`; o texto é preservado na participação e nos relatórios. Locais antigos são preservados, sem necessidade de migration para esta alteração. As capacidades de pagador e as vagas do edital continuam verificadas na convocação e na ativação.
 
-
 ## Prorrogação pelo período do edital — 2026-10-23
 
 A prorrogação usa integralmente prorrogacao_meses do edital, contando do término atual da participação. O novo término é a menor data entre esse cálculo e o último dia de vigência do edital; o ajuste para fim de mês e o horário de Brasília são preservados. Exemplo: término em 31/10 e período de 3 meses, com edital até 31/12, resulta em 31/12.
@@ -315,13 +313,11 @@ POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não esco
 
 Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.
 
-
 ## Declarações afirmativas na inscrição — 2026-10-23
 
 Na inscrição comum, por encaixe ou por exceção, as declarações obrigatórias começam desmarcadas: desemprego, ausência de renda, ausência de benefício da Previdência Social, vulnerabilidade atestada e aceite. Cada pendência aparece em vermelho, com mensagem acessível; Confirmar permanece desabilitado até todas serem confirmadas e a seleção/idade serem válidas. A data de residência e as justificativas continuam sujeitas às validações existentes. Vínculo familiar permanece informativo e não bloqueia a inscrição.
 
 A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
-
 
 ## Nome do programa PEAAD — 2026-10-26
 
@@ -330,7 +326,6 @@ O programa passa a ser identificado como **PEAAD - PROGRAMA EMERGENCIAL E ASSIST
 A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
 
 Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
-
 
 ## CSV e fechamento mensal da folha do PEAAD
 
@@ -353,7 +348,6 @@ Meses antigos permanecem abertos até fechamento explícito. Fechamento registra
 ## Correção da sigla — 2026-10-27
 
 A sigla correta é **PEAAD**, mantendo o nome completo PROGRAMA EMERGENCIAL E ASSISTENCIAL DE AUXÍLIO DESEMPREGO. Interface, seed inicial, tags OpenAPI, testes e documentação usam a nova sigla. A migration incremental `20261027120000-rename-ft-service-peaad` atualiza somente o nome do serviço de módulo `ft`, sem mudar IDs, permissões ou rotas. A migration anterior e seus testes permanecem históricos. Nenhuma migration ou seed foi aplicada à base corrente.
-
 
 ## Melhorias operacionais do PEAAD - 2026-10-27
 

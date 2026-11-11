@@ -19,11 +19,18 @@ const rateLimit: FastifyPluginAsync = async (fastify) => {
       "retry-after": true,
     },
     keyGenerator: rateLimitKey,
-    errorResponseBuilder: function (request: FastifyRequest, context: { after: string }) {
-        const error = new AppError("Too many requests. Try again into " + context.after, 429, "TOO_MANY_REQUESTS");
-        throw error;
+    errorResponseBuilder: function (
+      request: FastifyRequest,
+      context: { after: string },
+    ) {
+      const error = new AppError(
+        "Too many requests. Try again into " + context.after,
+        429,
+        "TOO_MANY_REQUESTS",
+      );
+      throw error;
     },
   });
 };
 
-export default fp(rateLimit)
+export default fp(rateLimit);

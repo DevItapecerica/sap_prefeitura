@@ -16,37 +16,37 @@ Implementação local em `feat/permissoes-modulo-recurso` no backend e no fronte
 
 ## Gates executados com Node 22.23.3
 
-| Projeto | Comando | Resultado |
-|---|---|---|
-| Backend | `npm run check` | exit 0 |
-| Backend | `npm test` | exit 0; 435 aprovados; sem falhas/skips |
-| Backend | `npm run test:coverage` | exit 0; thresholds originais preservados |
-| Backend | `npm run build` | exit 0 |
-| Backend | `npm run test:permissions:safety` | exit 0; 20 testes; sem falhas/skips |
-| Backend | `node --import tsx --test scripts/openapi-compatibility.test.ts scripts/openapi-output.test.ts` | testes de normalização/saídas aprovados |
-| Backend | `npm run openapi:generate` | exit 0; contrato canônico e cópia de workspace |
-| Frontend | `npm run typecheck` | exit 0 |
-| Frontend | `npm run lint` | exit 0 |
-| Frontend | `npm test` | exit 0; 36 arquivos / 118 testes aprovados |
-| Frontend | `npm run test:coverage` | exit 0; cobertura do conjunto configurado, não do produto inteiro |
-| Frontend | `npm run contracts:generate` | exit 0; tipos SAP/PDF regenerados |
-| Frontend | `npm run build` | exit 0 |
-| Frontend | `npm run bundle:check` | exit 0 |
-| Frontend | `npm run e2e -- e2e/permissions.spec.js` | exit 0; 3 testes integrados aprovados sem skips; repetidos após correção da corrida no modal |
-| PDF | `npm test` | exit 0; 27 testes aprovados |
-| PDF | `npm run test:coverage` | exit 0 |
-| PDF | `npm run openapi:generate` | exit 0 |
-| PDF | `npm run build` | exit 0 |
+| Projeto  | Comando                                                                                         | Resultado                                                                                    |
+| -------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Backend  | `npm run check`                                                                                 | exit 0                                                                                       |
+| Backend  | `npm test`                                                                                      | exit 0; 435 aprovados; sem falhas/skips                                                      |
+| Backend  | `npm run test:coverage`                                                                         | exit 0; thresholds originais preservados                                                     |
+| Backend  | `npm run build`                                                                                 | exit 0                                                                                       |
+| Backend  | `npm run test:permissions:safety`                                                               | exit 0; 20 testes; sem falhas/skips                                                          |
+| Backend  | `node --import tsx --test scripts/openapi-compatibility.test.ts scripts/openapi-output.test.ts` | testes de normalização/saídas aprovados                                                      |
+| Backend  | `npm run openapi:generate`                                                                      | exit 0; contrato canônico e cópia de workspace                                               |
+| Frontend | `npm run typecheck`                                                                             | exit 0                                                                                       |
+| Frontend | `npm run lint`                                                                                  | exit 0                                                                                       |
+| Frontend | `npm test`                                                                                      | exit 0; 36 arquivos / 118 testes aprovados                                                   |
+| Frontend | `npm run test:coverage`                                                                         | exit 0; cobertura do conjunto configurado, não do produto inteiro                            |
+| Frontend | `npm run contracts:generate`                                                                    | exit 0; tipos SAP/PDF regenerados                                                            |
+| Frontend | `npm run build`                                                                                 | exit 0                                                                                       |
+| Frontend | `npm run bundle:check`                                                                          | exit 0                                                                                       |
+| Frontend | `npm run e2e -- e2e/permissions.spec.js`                                                        | exit 0; 3 testes integrados aprovados sem skips; repetidos após correção da corrida no modal |
+| PDF      | `npm test`                                                                                      | exit 0; 27 testes aprovados                                                                  |
+| PDF      | `npm run test:coverage`                                                                         | exit 0                                                                                       |
+| PDF      | `npm run openapi:generate`                                                                      | exit 0                                                                                       |
+| PDF      | `npm run build`                                                                                 | exit 0                                                                                       |
 
 Não há comando lint backend no manifest atual. `check` é TypeScript, não lint. Os comandos de banco/E2E foram executados por wrappers locais que fornecem variáveis de ambiente sem imprimi-las; equivalem aos scripts documentados, não usam `.env` da aplicação como fallback.
 
 ## Cobertura obtida
 
-| Projeto/escopo | Lines | Statements | Functions | Branches |
-|---|---:|---:|---:|---:|
-| Backend | 94,19% | 94,19% | 96,67% | 90,91% |
-| Frontend — conjunto configurado | 81,99% | 81,61% | 63,12% | 64,57% |
-| PDF — sem alteração funcional | 94,06% | 94,06% | 97,50% | 86,70% |
+| Projeto/escopo                  |  Lines | Statements | Functions | Branches |
+| ------------------------------- | -----: | ---------: | --------: | -------: |
+| Backend                         | 94,19% |     94,19% |    96,67% |   90,91% |
+| Frontend — conjunto configurado | 81,99% |     81,61% |    63,12% |   64,57% |
+| PDF — sem alteração funcional   | 94,06% |     94,06% |    97,50% |   86,70% |
 
 `permission-access.ts` e `permissionServices.ts`: 100% nas quatro métricas. `RolePermissionsPanel.jsx`: lines 100%, statements 94,80%, functions 89,47%, branches 94,54%. Não foram reduzidos thresholds, removidas fontes da cobertura ou introduzidos ignores para obter aprovação.
 

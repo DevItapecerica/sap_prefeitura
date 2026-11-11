@@ -13,9 +13,36 @@ export class FtBolsista {
 
   constructor(...args: any[]) {
     if (args.length > 7) {
-      const [nome, cpf, local, cep, numero, logradouro, bairro, cidade, uf, telefone, status, paymentInfo, id, createdAt, updatedAt, deletedAt] = args;
+      const [
+        nome,
+        cpf,
+        local,
+        cep,
+        numero,
+        logradouro,
+        bairro,
+        cidade,
+        uf,
+        telefone,
+        status,
+        paymentInfo,
+        id,
+        createdAt,
+        updatedAt,
+        deletedAt,
+      ] = args;
       this.municipe_uuid = "";
-      this.municipe = { nome, cpf, cep, numero, rua: logradouro, bairro, cidade, uf, telefone };
+      this.municipe = {
+        nome,
+        cpf,
+        cep,
+        numero,
+        rua: logradouro,
+        bairro,
+        cidade,
+        uf,
+        telefone,
+      };
       this.legacyLocal = local;
       this.legacyStatus = status;
       this.payment_info = paymentInfo;
@@ -26,11 +53,27 @@ export class FtBolsista {
       return;
     }
 
-    [this.municipe_uuid, this.municipe, this.payment_info, this.id, this.createdAt, this.updatedAt, this.deletedAt] = args;
+    [
+      this.municipe_uuid,
+      this.municipe,
+      this.payment_info,
+      this.id,
+      this.createdAt,
+      this.updatedAt,
+      this.deletedAt,
+    ] = args;
   }
 
-  get nome() { return this.municipe?.nome; }
-  get cpf() { return this.municipe?.cpf; }
-  get local() { return this.legacyLocal; }
-  get status() { return this.legacyStatus; }
+  get nome() {
+    return this.municipe?.nome;
+  }
+  get cpf() {
+    return this.municipe?.cpf;
+  }
+  get local() {
+    return this.legacyLocal;
+  }
+  get status() {
+    return this.legacyStatus;
+  }
 }

@@ -3,7 +3,10 @@ import { RandomPasswordGenerator } from "../../../core/security/password/random-
 import { SequelizeUserRepository } from "../../../infra/database/sequelize/repositories/sequelize.user.repository.js";
 import { EventBusAdapter } from "../../../infra/event/event-bus.adapter.js";
 import { NodemailerUserPasswordNotifier } from "../../../infra/mail/nodemailer-user-password-notifier.js";
-import { EventPublisher, EventSubscriber } from "../../../core/event/event-contracts.js";
+import {
+  EventPublisher,
+  EventSubscriber,
+} from "../../../core/event/event-contracts.js";
 import { UserEventMap } from "../application/events/user.events.js";
 import { ChangeUserPasswordUseCase } from "../application/use-case/change-user-password.use-case.js";
 import { CreateUserUseCase } from "../application/use-case/create-user.use-case.js";
@@ -24,7 +27,10 @@ export const makeCreateUserUseCase = () =>
   );
 
 export const makeUpdateUserUseCase = () =>
-  new UpdateUserUseCase(new SequelizeUserRepository(), new EmailPolicyService());
+  new UpdateUserUseCase(
+    new SequelizeUserRepository(),
+    new EmailPolicyService(),
+  );
 
 export const makeGetUserByIdUseCase = () =>
   new GetUserByIdUseCase(new SequelizeUserRepository());

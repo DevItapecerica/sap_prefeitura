@@ -14,9 +14,7 @@ import {
 } from "./audit-event-recorder.js";
 
 type ResourceReadEvent =
-  | ResourceListedEvent
-  | ResourceViewedEvent
-  | ResourceExportedEvent;
+  ResourceListedEvent | ResourceViewedEvent | ResourceExportedEvent;
 
 export const registerResourceReadAuditHandlers = (
   events: EventSubscriber<ResourceReadEventMap>,

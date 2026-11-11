@@ -46,23 +46,23 @@ Uma única prorrogação aplica integralmente o período em meses cadastrado no 
 
 Prefixo: `/api/v2/frente-de-trabalho/edital`. As listas usam `page` baseado em zero e `limit` de 1 a 50 e respondem `{rows,count}`. As mutações do workflow respondem `200`. IDs são UUIDs; corpos rejeitam propriedades extras e coerção de tipos.
 
-| Operação | Rota relativa | Permissão `ft` |
-| --- | --- | --- |
-| Consultar/criar/editar edital | `GET/POST /`, `GET/PUT /:id` | `consultar_edital`, `cadastrar_edital`, `editar_edital` |
-| Abrir/encerrar | `POST /:id/abrir`, `POST /:id/encerrar` | `editar_edital`, `encerrar_edital` |
-| Janela de inscrição | `PUT /:id/janela-inscricoes` | `alterar_janela_inscricoes` |
-| Configurações | `/:id/pagadores`, `/:id/turnos`, `/:id/locais`, `/:id/beneficios` | CRUD correspondente para pagador/turno; `consultar_configuracao_edital` e `editar_configuracao_edital` para local/benefício |
-| Consultar/inscrever | `GET/POST /:id/inscricoes` | `consultar_inscricoes`, `cadastrar_inscricao` |
-| Encaixe | `POST /:id/inscricoes/encaixe` | `encaixar_inscricao` |
-| Inscrever por exceção | `POST /:id/inscricoes/excecao` | `cadastrar_inscricao_excecao` |
-| Convocar | `POST /:id/inscricoes/:inscricaoId/convocar` | `convocar_inscrito` |
-| Convocar por exceção | `POST /:id/inscricoes/:inscricaoId/convocar-excecao` | `convocar_inscrito_excecao` |
-| Consultar participações | `GET /:id/participacoes` | `consultar_vinculos` |
-| Ativar | `POST /:id/participacoes/:participacaoId/ativar` | `ativar_participacao` |
-| Cancelar/concluir | `POST /:id/participacoes/:participacaoId/cancelar` ou `/concluir` | `cancelar_participacao` |
-| Prorrogar/alocar | `POST /:id/participacoes/:participacaoId/prorrogar` ou `/alocar` | `prorrogar_vinculo`, `editar_vinculo` |
-| Faltas/ocorrências | `/:id/participacoes/:participacaoId/faltas` ou `/ocorrencias` | Consulta/registro/exclusão correspondentes |
-| PDF individual | `GET /:id/participacoes/:participacaoId/espelho-ponto` ou `/folha-presenca?mes=AAAA-MM` | `gerar_espelho_ponto`, `gerar_folha_presenca` |
+| Operação                      | Rota relativa                                                                           | Permissão `ft`                                                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Consultar/criar/editar edital | `GET/POST /`, `GET/PUT /:id`                                                            | `consultar_edital`, `cadastrar_edital`, `editar_edital`                                                                     |
+| Abrir/encerrar                | `POST /:id/abrir`, `POST /:id/encerrar`                                                 | `editar_edital`, `encerrar_edital`                                                                                          |
+| Janela de inscrição           | `PUT /:id/janela-inscricoes`                                                            | `alterar_janela_inscricoes`                                                                                                 |
+| Configurações                 | `/:id/pagadores`, `/:id/turnos`, `/:id/locais`, `/:id/beneficios`                       | CRUD correspondente para pagador/turno; `consultar_configuracao_edital` e `editar_configuracao_edital` para local/benefício |
+| Consultar/inscrever           | `GET/POST /:id/inscricoes`                                                              | `consultar_inscricoes`, `cadastrar_inscricao`                                                                               |
+| Encaixe                       | `POST /:id/inscricoes/encaixe`                                                          | `encaixar_inscricao`                                                                                                        |
+| Inscrever por exceção         | `POST /:id/inscricoes/excecao`                                                          | `cadastrar_inscricao_excecao`                                                                                               |
+| Convocar                      | `POST /:id/inscricoes/:inscricaoId/convocar`                                            | `convocar_inscrito`                                                                                                         |
+| Convocar por exceção          | `POST /:id/inscricoes/:inscricaoId/convocar-excecao`                                    | `convocar_inscrito_excecao`                                                                                                 |
+| Consultar participações       | `GET /:id/participacoes`                                                                | `consultar_vinculos`                                                                                                        |
+| Ativar                        | `POST /:id/participacoes/:participacaoId/ativar`                                        | `ativar_participacao`                                                                                                       |
+| Cancelar/concluir             | `POST /:id/participacoes/:participacaoId/cancelar` ou `/concluir`                       | `cancelar_participacao`                                                                                                     |
+| Prorrogar/alocar              | `POST /:id/participacoes/:participacaoId/prorrogar` ou `/alocar`                        | `prorrogar_vinculo`, `editar_vinculo`                                                                                       |
+| Faltas/ocorrências            | `/:id/participacoes/:participacaoId/faltas` ou `/ocorrencias`                           | Consulta/registro/exclusão correspondentes                                                                                  |
+| PDF individual                | `GET /:id/participacoes/:participacaoId/espelho-ponto` ou `/folha-presenca?mes=AAAA-MM` | `gerar_espelho_ponto`, `gerar_folha_presenca`                                                                               |
 
 Todas as operações também exigem JWT, `ft:acessar` e visibilidade pelo setor. As antigas escritas globais de bolsistas, pagadores e turnos retornam `410`; não permitem saltar inscrição/convocação. Os detalhes dos corpos estão no OpenAPI canônico.
 
@@ -91,7 +91,6 @@ O Playwright sobe o Vite de teste em `127.0.0.1:4173`; o proxy é fixo para a AP
 
 Planos: [backend](../codex/plans/ft-centrada-no-edital.md), [frontend](../../front_prefeitura/codex/plans/ft-centrada-no-edital.md) e [geral](../../codex/plans/ft-centrada-no-edital.md).
 
-
 ## Extensão: idade máxima por edital e exceções — 2026-10-22
 
 - [x] `idade_maxima` inteira, obrigatória na criação, sem valor padrão e inclusiva. Idade mínima mantida em 18 anos; nascimento vem do munícipe. Referência: data da inscrição e início da convocação/ativação.
@@ -111,7 +110,6 @@ Validação SQL e HTTP feita em instância MariaDB 11.8.2 isolada, loopback:3331
 
 O edital pode ser aberto sem cadastrar pagadores, turnos ou locais previamente. Na convocação comum ou excepcional e na alteração da reserva, pagador e turno permanecem selecionáveis e o local é texto livre obrigatório, de até 255 caracteres. A API recebe `local` em vez de `local_id`; o texto é preservado na participação e nos relatórios. Locais antigos são preservados, sem necessidade de migration para esta alteração. As capacidades de pagador e as vagas do edital continuam verificadas na convocação e na ativação.
 
-
 ## Prorrogação pelo período do edital — 2026-10-23
 
 A prorrogação usa integralmente prorrogacao_meses do edital, contando do término atual da participação. O novo término é a menor data entre esse cálculo e o último dia de vigência do edital; o ajuste para fim de mês e o horário de Brasília são preservados. Exemplo: término em 31/10 e período de 3 meses, com edital até 31/12, resulta em 31/12.
@@ -120,13 +118,11 @@ POST /:id/participacoes/:participacaoId/prorrogar recebe {}. O cliente não esco
 
 Continua sendo uma única prorrogação manual, para participação ativa e não vencida em edital aberto/vigente. Período zero desabilita a ação. Se a participação já alcança o fim do edital, a operação é recusada sem alterar o vencimento, consumir a prorrogação ou gravar evento de sucesso. Permissão e auditoria transacional permanecem; nenhuma migration é necessária. Publicar frontend e backend compatíveis juntos por causa da mudança do corpo da operação.
 
-
 ## Declarações afirmativas na inscrição — 2026-10-23
 
 Na inscrição comum, por encaixe ou por exceção, as declarações obrigatórias começam desmarcadas: desemprego, ausência de renda, ausência de benefício da Previdência Social, vulnerabilidade atestada e aceite. Cada pendência aparece em vermelho, com mensagem acessível; Confirmar permanece desabilitado até todas serem confirmadas e a seleção/idade serem válidas. A data de residência e as justificativas continuam sujeitas às validações existentes. Vínculo familiar permanece informativo e não bloqueia a inscrição.
 
 A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
-
 
 ## Nome do programa PEAAD — 2026-10-26
 
@@ -135,7 +131,6 @@ O programa passa a ser identificado como **PEAAD - PROGRAMA EMERGENCIAL E ASSIST
 A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.name` do módulo `ft`, preservando ID, URL, categoria, visibilidade, permissões e vínculos. O seed inicial já usa o nome completo para novas instalações; repetir o seed não substitui a migration em bancos existentes. O rollback só reverte o nome quando ainda corresponde ao nome definido pela migration.
 
 Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
-
 
 ## CSV de pagamento do PEAAD
 
@@ -146,7 +141,6 @@ O botão **Pagamento CSV**, dentro do edital em **Relatórios / Downloads**, exp
 O valor líquido é exportado em centavos inteiros: 900,00 → 90000; 900,01 → 90001; 0,01 → 1; zero → 0. CPF contém somente números, mantendo zeros iniciais. Banco, agência, conta e seus dígitos são preservados como texto. A data usa o dia de pagamento do edital no mês de referência, em DDMMAAAA (10/09/2026 → 10092026). Dias inexistentes são limitados ao último dia válido do mês; consultas por intervalo usam o mês da data inicial.
 
 Os cálculos de proporcionalidade e faltas permanecem os mesmos, assim como as linhas de pagamentos de cada pagador; não há consolidação. Campos com ponto e vírgula, aspas ou quebras de linha usam escape CSV. Sem pagamentos, o arquivo fica vazio. A interface continua solicitando somente o mês, com o mesmo download, rota e permissão gerar_relatorio_edital. Relatórios de faltas, presença e PDFs mantêm seus formatos. Nenhuma migration ou seed é necessária.
-
 
 ## Correção da sigla — 2026-10-27
 

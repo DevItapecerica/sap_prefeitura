@@ -20,11 +20,11 @@ Substituir a autorização inferida pelo método HTTP por permissões explícita
 
 ## 3. Contexto verificado
 
-| Projeto | Branch atual/base | HEAD observado | Worktree |
-|---|---|---|---|
-| `sap_prefeitura` | `develop` | `28ec9a29bea9b840f1a8f8b486e3862b1485d592` | limpo |
-| `Prefeitura_APP` | `development` | `5ea0a3813f0f4546e22d2a94bdfc32a7ca5f9bbb` | alteração preexistente em `docker-compose.yml`, preservar |
-| `gerador_de_PDF` | `develop` | `ab1627b7eba66148d9e264ea18d1f2926a10d897` | limpo |
+| Projeto          | Branch atual/base | HEAD observado                             | Worktree                                                  |
+| ---------------- | ----------------- | ------------------------------------------ | --------------------------------------------------------- |
+| `sap_prefeitura` | `develop`         | `28ec9a29bea9b840f1a8f8b486e3862b1485d592` | limpo                                                     |
+| `Prefeitura_APP` | `development`     | `5ea0a3813f0f4546e22d2a94bdfc32a7ca5f9bbb` | alteração preexistente em `docker-compose.yml`, preservar |
+| `gerador_de_PDF` | `develop`         | `ab1627b7eba66148d9e264ea18d1f2926a10d897` | limpo                                                     |
 
 - Comparação com upstream local: `0 0` nos três repositórios. Não houve fetch; isso não comprova o estado atual do GitHub.
 - `gh` não está instalado/disponível no PATH. Issues, subissues e PRs não foram consultados. Não há número de issue fornecido. Antes de implementar, consultar por integração autenticada disponível; se indisponível, registrar a limitação e solicitar os links relevantes, sem inventar vínculos.
@@ -75,24 +75,24 @@ Usar `services.module_key` como código estável do módulo, catálogo persistid
 
 ### 5.1 Modelo de dados exato
 
-| Tabela/campo | Definição |
-|---|---|
-| `services.module_key` | `VARCHAR(64)` ASCII binário, único, não nulo após backfill |
-| `services(id,module_key)` | índice único composto para a FK abaixo |
-| `permission_actions.id` | INTEGER PK auto increment |
-| `permission_actions.service_id` | INTEGER NOT NULL |
-| `permission_actions.module_key` | VARCHAR(64), mesmo charset/collation de `services.module_key`, NOT NULL |
-| `permission_actions.action` | VARCHAR(96) ASCII binário NOT NULL, padrão `^[a-z][a-z0-9_]*$` validado no catálogo |
-| `permission_actions.createdAt/updatedAt` | DATE NOT NULL, convenção existente |
-| catálogo: unicidade | UNIQUE(service_id, action) e UNIQUE(module_key, action) |
-| catálogo: integridade | FK(service_id,module_key) → services(id,module_key), UPDATE CASCADE, DELETE RESTRICT |
-| `role_permissions.id` | INTEGER PK auto increment |
-| `role_permissions.role_id` | INTEGER NOT NULL, FK roles.id, UPDATE CASCADE, DELETE RESTRICT |
-| `role_permissions.permission_action_id` | INTEGER NOT NULL, FK permission_actions.id, UPDATE CASCADE, DELETE RESTRICT |
-| `role_permissions.allowed` | BOOLEAN NOT NULL DEFAULT FALSE |
-| `role_permissions.createdAt/updatedAt` | DATE NOT NULL |
-| concessão: unicidade | UNIQUE(role_id, permission_action_id), mais índice na FK de action |
-| `permission_migration_state` | tabela técnica singleton com `id=1`, `completed` BOOLEAN, `completedAt` DATE nullable; controla finalização do snapshot, não autorização |
+| Tabela/campo                             | Definição                                                                                                                                |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `services.module_key`                    | `VARCHAR(64)` ASCII binário, único, não nulo após backfill                                                                               |
+| `services(id,module_key)`                | índice único composto para a FK abaixo                                                                                                   |
+| `permission_actions.id`                  | INTEGER PK auto increment                                                                                                                |
+| `permission_actions.service_id`          | INTEGER NOT NULL                                                                                                                         |
+| `permission_actions.module_key`          | VARCHAR(64), mesmo charset/collation de `services.module_key`, NOT NULL                                                                  |
+| `permission_actions.action`              | VARCHAR(96) ASCII binário NOT NULL, padrão `^[a-z][a-z0-9_]*$` validado no catálogo                                                      |
+| `permission_actions.createdAt/updatedAt` | DATE NOT NULL, convenção existente                                                                                                       |
+| catálogo: unicidade                      | UNIQUE(service_id, action) e UNIQUE(module_key, action)                                                                                  |
+| catálogo: integridade                    | FK(service_id,module_key) → services(id,module_key), UPDATE CASCADE, DELETE RESTRICT                                                     |
+| `role_permissions.id`                    | INTEGER PK auto increment                                                                                                                |
+| `role_permissions.role_id`               | INTEGER NOT NULL, FK roles.id, UPDATE CASCADE, DELETE RESTRICT                                                                           |
+| `role_permissions.permission_action_id`  | INTEGER NOT NULL, FK permission_actions.id, UPDATE CASCADE, DELETE RESTRICT                                                              |
+| `role_permissions.allowed`               | BOOLEAN NOT NULL DEFAULT FALSE                                                                                                           |
+| `role_permissions.createdAt/updatedAt`   | DATE NOT NULL                                                                                                                            |
+| concessão: unicidade                     | UNIQUE(role_id, permission_action_id), mais índice na FK de action                                                                       |
+| `permission_migration_state`             | tabela técnica singleton com `id=1`, `completed` BOOLEAN, `completedAt` DATE nullable; controla finalização do snapshot, não autorização |
 
 Não usar `paranoid` nas duas tabelas novas: revogar = atualizar `allowed=false`, não excluir/recriar. Isso evita a unicidade problemática com `deletedAt` e conserva o histórico pelo mecanismo de auditoria existente. Usuário/serviço excluído logicamente nunca pode ser autorizado, mesmo com concessão verdadeira na role. O model atual de roles não possui `deletedAt`: validar sua existência, sem inventar soft delete nessa tabela.
 
@@ -102,18 +102,18 @@ O `module_key` repetido no catálogo atende ao identificador textual solicitado 
 
 Mapeamento fixo confirmado pelos seeds e routers, não por nome/tag:
 
-| service_id | module_key |
-|---:|---|
-| 1 | `usuarios` |
-| 2 | `setores` |
-| 3 | `servicos` |
-| 4 | `roles` |
-| 5 | `demandas_ti` (legado inativo, não reativar) |
-| 6 | `ft` |
-| 7 | `iptu` |
-| 9 | `municipes` |
-| 10 | `esporte` |
-| 11 | `auditoria` |
+| service_id | module_key                                   |
+| ---------: | -------------------------------------------- |
+|          1 | `usuarios`                                   |
+|          2 | `setores`                                    |
+|          3 | `servicos`                                   |
+|          4 | `roles`                                      |
+|          5 | `demandas_ti` (legado inativo, não reativar) |
+|          6 | `ft`                                         |
+|          7 | `iptu`                                       |
+|          9 | `municipes`                                  |
+|         10 | `esporte`                                    |
+|         11 | `auditoria`                                  |
 
 Serviços legados fora do mapa recebem código `legado_<id>` por migration, com somente a ação `acessar`. Não criar rotas para eles, não reativar registros excluídos e não tentar adivinhar funcionalidades pelo nome. Antes do deploy, apresentar a relação desses módulos ao responsável; existência de rota de negócio não inventariada bloqueia a ativação.
 
@@ -129,42 +129,42 @@ Criar `sap_prefeitura/src/modules/acess-controll/domain/permission-catalog.ts` c
 
 Nos caminhos abaixo, `B` significa arquivo `sap_prefeitura/src/modules/ft-bolsista/interface/router/frente-de-trabalho-bolsista.router.ts`; `E`: `sap_prefeitura/src/modules/ft-edital/interface/router/ft-edital.router.ts`; `R`: `sap_prefeitura/src/modules/ft-relatorio/interface/router/ft-relatorio.router.ts`. Caminhos são relativos ao prefixo já registrado por cada módulo; preservar prefixos existentes.
 
-| Arquivo/handler ou rota | Ação | Flag inicial |
-|---|---|---|
-| entrada do módulo | `acessar` | read |
-| B: getBolsistas, getOneBolsista | `consultar_bolsista` | read |
-| B: getBolsistasParaVinculo | `consultar_candidatos_vinculo` | read |
-| B: getAniversariantes | `consultar_aniversariantes` | read |
-| B: getToExpire, incluindo `/toexpire` e `/toExpire` | `consultar_vinculos_a_vencer` | read |
-| B: getBolsistaEdital; E: getEditalWithBolsista, getAllEditalWithBolsista | `consultar_vinculos` | read |
-| B: getHistoricoBolsista | `consultar_historico_bolsista` | read |
-| B: createBolsista | `cadastrar_bolsista` | write |
-| B: updateBolsista | `editar_bolsista` | edit |
-| B: deleteBolsista | `excluir_bolsista` | del |
-| B: cancelBolsistaEdital | `remover_bolsista` | edit |
-| B: prorrogate | `prorrogar_vinculo` | edit |
-| B: createFalta | `registrar_falta` | write |
-| B: listFaltas | `consultar_faltas` | read |
-| B: deleteFalta | `excluir_falta` | del |
-| B: createOcorrencia | `registrar_ocorrencia` | write |
-| B: listOcorrencias | `consultar_ocorrencias` | read |
-| B: deleteOcorrencia | `excluir_ocorrencia` | del |
-| B: gerarEspelhoPonto | `gerar_espelho_ponto` | read |
-| E: getEdital, getEditalById | `consultar_edital` | read |
-| E: postEdital | `cadastrar_edital` | write |
-| E: updateEdital | `editar_edital` | edit |
-| E: deleteEdital | `excluir_edital` | del |
-| E: vincularBolsista | `vincular_bolsista` | write |
-| E: atualizarVinculo | `editar_vinculo` | edit |
-| E: getRelatory; R: gerarRelatorioEdital | `gerar_relatorio_edital` | read |
-| R: gerarRelatorioFaltasEdital | `gerar_relatorio_faltas` | read |
-| R: gerarListaPresencaEdital | `gerar_lista_presenca` | read |
-| R: solicitarEspelhosPonto | `solicitar_espelhos_ponto` | write |
-| R: solicitarFolhasPresenca | `solicitar_folhas_presenca` | write |
-| R: listarDownloads | `consultar_downloads` | read |
-| R: baixarArquivo | `baixar_relatorio` | read |
-| R: retryDownload | `reprocessar_relatorio` | write |
-| `sap_prefeitura/src/modules/espelho-ponto/interface/router/espelho-ponto.router.ts`: render | `gerar_espelho_ponto` | read, sem importar o acesso amplo antigo dessa rota |
+| Arquivo/handler ou rota                                                                     | Ação                           | Flag inicial                                        |
+| ------------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------- |
+| entrada do módulo                                                                           | `acessar`                      | read                                                |
+| B: getBolsistas, getOneBolsista                                                             | `consultar_bolsista`           | read                                                |
+| B: getBolsistasParaVinculo                                                                  | `consultar_candidatos_vinculo` | read                                                |
+| B: getAniversariantes                                                                       | `consultar_aniversariantes`    | read                                                |
+| B: getToExpire, incluindo `/toexpire` e `/toExpire`                                         | `consultar_vinculos_a_vencer`  | read                                                |
+| B: getBolsistaEdital; E: getEditalWithBolsista, getAllEditalWithBolsista                    | `consultar_vinculos`           | read                                                |
+| B: getHistoricoBolsista                                                                     | `consultar_historico_bolsista` | read                                                |
+| B: createBolsista                                                                           | `cadastrar_bolsista`           | write                                               |
+| B: updateBolsista                                                                           | `editar_bolsista`              | edit                                                |
+| B: deleteBolsista                                                                           | `excluir_bolsista`             | del                                                 |
+| B: cancelBolsistaEdital                                                                     | `remover_bolsista`             | edit                                                |
+| B: prorrogate                                                                               | `prorrogar_vinculo`            | edit                                                |
+| B: createFalta                                                                              | `registrar_falta`              | write                                               |
+| B: listFaltas                                                                               | `consultar_faltas`             | read                                                |
+| B: deleteFalta                                                                              | `excluir_falta`                | del                                                 |
+| B: createOcorrencia                                                                         | `registrar_ocorrencia`         | write                                               |
+| B: listOcorrencias                                                                          | `consultar_ocorrencias`        | read                                                |
+| B: deleteOcorrencia                                                                         | `excluir_ocorrencia`           | del                                                 |
+| B: gerarEspelhoPonto                                                                        | `gerar_espelho_ponto`          | read                                                |
+| E: getEdital, getEditalById                                                                 | `consultar_edital`             | read                                                |
+| E: postEdital                                                                               | `cadastrar_edital`             | write                                               |
+| E: updateEdital                                                                             | `editar_edital`                | edit                                                |
+| E: deleteEdital                                                                             | `excluir_edital`               | del                                                 |
+| E: vincularBolsista                                                                         | `vincular_bolsista`            | write                                               |
+| E: atualizarVinculo                                                                         | `editar_vinculo`               | edit                                                |
+| E: getRelatory; R: gerarRelatorioEdital                                                     | `gerar_relatorio_edital`       | read                                                |
+| R: gerarRelatorioFaltasEdital                                                               | `gerar_relatorio_faltas`       | read                                                |
+| R: gerarListaPresencaEdital                                                                 | `gerar_lista_presenca`         | read                                                |
+| R: solicitarEspelhosPonto                                                                   | `solicitar_espelhos_ponto`     | write                                               |
+| R: solicitarFolhasPresenca                                                                  | `solicitar_folhas_presenca`    | write                                               |
+| R: listarDownloads                                                                          | `consultar_downloads`          | read                                                |
+| R: baixarArquivo                                                                            | `baixar_relatorio`             | read                                                |
+| R: retryDownload                                                                            | `reprocessar_relatorio`        | write                                               |
+| `sap_prefeitura/src/modules/espelho-ponto/interface/router/espelho-ponto.router.ts`: render | `gerar_espelho_ponto`          | read, sem importar o acesso amplo antigo dessa rota |
 
 `ft:remover_bolsista` significa somente cancelar/inativar vínculo, não apagar cadastro. Manter os nomes de UI “Inativar bolsista”/“Cancelar vínculo” e documentar essa correspondência.
 
@@ -176,17 +176,17 @@ Para `sap_prefeitura/src/modules/ft-turno/turno.router.ts`: list/get → `consul
 
 Cada módulo abaixo também contém `acessar`/read.
 
-| Arquivo exato | Módulo | Handlers → ação / flag |
-|---|---|---|
-| `sap_prefeitura/src/modules/user/interface/routes/user.routes.ts` | usuarios | getAllByQuery/getOne → consultar_usuario/read; cadastrar → cadastrar_usuario/write; update → editar_usuario/edit; delete → excluir_usuario/del; alterPassword → alterar_senha_usuario/edit |
-| `sap_prefeitura/src/modules/setor/interface/router/setor.router.ts` | setores | getSetores/getOneSetor → consultar_setor/read; postSetor → cadastrar_setor/write; updateSetor → editar_setor/edit; deleteSetor → excluir_setor/del |
-| `sap_prefeitura/src/modules/roles/interface/routes/roles.router.ts` | roles | GET lista/detalhe → consultar_role/read; POST → cadastrar_role/write; PUT → editar_role/edit; DELETE → excluir_role/del |
-| `sap_prefeitura/src/modules/services/interface/router/services.router.ts` | servicos | getService/getOneService → consultar_servico/read; updateService → editar_servico/edit; criação/exclusão removidas |
-| `sap_prefeitura/src/modules/permission/interface/routes/permission.router.ts` | servicos | catálogo e concessões administrativas GET → consultar_permissoes/read; concessões PUT → gerenciar_permissoes/edit; leitura própria `/me` → JWT, sem poder consultar outro usuário |
-| `sap_prefeitura/src/modules/municipe/interface/routes/municipe.router.ts` | municipes | getMunicipe/getMunicipeById → consultar_municipe/read; postMunicipe → cadastrar_municipe/write; updateMunicipe → editar_municipe/edit |
-| `sap_prefeitura/src/modules/esporte/interface/router/atleta.router.ts` | esporte | findAll/findOne → consultar_atleta/read; create → cadastrar_atleta/write; update → editar_atleta/edit; delete → excluir_atleta/del; addModalidade → vincular_modalidade/write; removeModalidade → remover_modalidade/del; findCarteirinhas/findCarteirinhasByAtleta → consultar_carteirinha/read; createCarteirinha → emitir_carteirinha/write; getCarteirinhaPdf → gerar_pdf_carteirinha/read |
-| `sap_prefeitura/src/modules/esporte/interface/router/modalidade.router.ts` | esporte | findAll/findOne → consultar_modalidade/read; create → cadastrar_modalidade/write; update → editar_modalidade/edit; delete → excluir_modalidade/del |
-| `sap_prefeitura/src/modules/audit/interface/audit.routes.ts` | auditoria | list/detail → consultar_auditoria/read; export → exportar_auditoria/write |
+| Arquivo exato                                                                 | Módulo    | Handlers → ação / flag                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sap_prefeitura/src/modules/user/interface/routes/user.routes.ts`             | usuarios  | getAllByQuery/getOne → consultar_usuario/read; cadastrar → cadastrar_usuario/write; update → editar_usuario/edit; delete → excluir_usuario/del; alterPassword → alterar_senha_usuario/edit                                                                                                                                                                                                     |
+| `sap_prefeitura/src/modules/setor/interface/router/setor.router.ts`           | setores   | getSetores/getOneSetor → consultar_setor/read; postSetor → cadastrar_setor/write; updateSetor → editar_setor/edit; deleteSetor → excluir_setor/del                                                                                                                                                                                                                                             |
+| `sap_prefeitura/src/modules/roles/interface/routes/roles.router.ts`           | roles     | GET lista/detalhe → consultar_role/read; POST → cadastrar_role/write; PUT → editar_role/edit; DELETE → excluir_role/del                                                                                                                                                                                                                                                                        |
+| `sap_prefeitura/src/modules/services/interface/router/services.router.ts`     | servicos  | getService/getOneService → consultar_servico/read; updateService → editar_servico/edit; criação/exclusão removidas                                                                                                                                                                                                                                                                             |
+| `sap_prefeitura/src/modules/permission/interface/routes/permission.router.ts` | servicos  | catálogo e concessões administrativas GET → consultar_permissoes/read; concessões PUT → gerenciar_permissoes/edit; leitura própria `/me` → JWT, sem poder consultar outro usuário                                                                                                                                                                                                              |
+| `sap_prefeitura/src/modules/municipe/interface/routes/municipe.router.ts`     | municipes | getMunicipe/getMunicipeById → consultar_municipe/read; postMunicipe → cadastrar_municipe/write; updateMunicipe → editar_municipe/edit                                                                                                                                                                                                                                                          |
+| `sap_prefeitura/src/modules/esporte/interface/router/atleta.router.ts`        | esporte   | findAll/findOne → consultar_atleta/read; create → cadastrar_atleta/write; update → editar_atleta/edit; delete → excluir_atleta/del; addModalidade → vincular_modalidade/write; removeModalidade → remover_modalidade/del; findCarteirinhas/findCarteirinhasByAtleta → consultar_carteirinha/read; createCarteirinha → emitir_carteirinha/write; getCarteirinhaPdf → gerar_pdf_carteirinha/read |
+| `sap_prefeitura/src/modules/esporte/interface/router/modalidade.router.ts`    | esporte   | findAll/findOne → consultar_modalidade/read; create → cadastrar_modalidade/write; update → editar_modalidade/edit; delete → excluir_modalidade/del                                                                                                                                                                                                                                             |
+| `sap_prefeitura/src/modules/audit/interface/audit.routes.ts`                  | auditoria | list/detail → consultar_auditoria/read; export → exportar_auditoria/write                                                                                                                                                                                                                                                                                                                      |
 
 `iptu` e módulos legados sem router mantêm somente `acessar`; este trabalho não cria endpoints novos desses domínios.
 
@@ -212,18 +212,18 @@ Remover os hooks globais que passam `request.method`; manter `verifyJWT` registr
 
 Manter prefixo atual `/api/v2`; os caminhos relativos não mudam para autenticação, usuários, roles e operações de negócio.
 
-| Endpoint | Autorização | Contrato |
-|---|---|---|
-| GET `/permissions/catalog?service_id=6&page=0&limit=25` | servicos:acessar + consultar_permissoes | `{permission:[{id,service_id,module,action}],count,ok:true}`; paginação 0-based; limite 1..100 |
-| GET `/permissions/me` | JWT | `{permissions:[{service_id,module,actions:string[]}],ok:true}` com ações da role atual do usuário autenticado, filtradas pelo setor atual; rejeitar user_id/role_id fornecidos pelo cliente |
-| GET `/permissions?role_id=2&service_id=6&page=0&limit=25` | servicos:acessar + consultar_permissoes | catálogo LEFT JOIN concessões da role, `{permission:[{permission_action_id,role_id,service_id,module,action,allowed}],count,ok:true}`; ausência retorna false |
-| PUT `/permissions/role/:roleId` | servicos:acessar + gerenciar_permissoes | body abaixo; retorno 204; alteração atômica de até 100 ações; omitidas permanecem inalteradas; afeta toda a role |
-| GET `/service/user` | JWT | serviços visíveis ao setor atual e com `acessar=true` na role atual; cada serviço inclui `module` e `actions:string[]`; sem flags CRUD |
-| GET `/service/:id`, GET `/service` | servicos:acessar + consultar_servico | metadados + catálogo quando necessário; não retornar concessões de todas as roles por padrão |
-| PUT `/service/:id` | servicos:acessar + editar_servico | `{service:{name,description,url,tag?},visibility?:[...]}`; rejeitar campo legado `permissions` e `module_key` |
-| POST `/service`, DELETE `/service/:id` | inexistentes | remover registros e OpenAPI; 404 pelo handler padrão, sem efeito no banco |
-| GET `/permissions/:id`, PUT `/permissions/:id` legados | removidos | não reinterpretar IDs antigos como IDs novos; resposta 404 |
-| `/permissions/user/:userId` | inexistente | não criar endpoint de concessão individual; resposta 404 |
+| Endpoint                                                  | Autorização                             | Contrato                                                                                                                                                                                    |
+| --------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET `/permissions/catalog?service_id=6&page=0&limit=25`   | servicos:acessar + consultar_permissoes | `{permission:[{id,service_id,module,action}],count,ok:true}`; paginação 0-based; limite 1..100                                                                                              |
+| GET `/permissions/me`                                     | JWT                                     | `{permissions:[{service_id,module,actions:string[]}],ok:true}` com ações da role atual do usuário autenticado, filtradas pelo setor atual; rejeitar user_id/role_id fornecidos pelo cliente |
+| GET `/permissions?role_id=2&service_id=6&page=0&limit=25` | servicos:acessar + consultar_permissoes | catálogo LEFT JOIN concessões da role, `{permission:[{permission_action_id,role_id,service_id,module,action,allowed}],count,ok:true}`; ausência retorna false                               |
+| PUT `/permissions/role/:roleId`                           | servicos:acessar + gerenciar_permissoes | body abaixo; retorno 204; alteração atômica de até 100 ações; omitidas permanecem inalteradas; afeta toda a role                                                                            |
+| GET `/service/user`                                       | JWT                                     | serviços visíveis ao setor atual e com `acessar=true` na role atual; cada serviço inclui `module` e `actions:string[]`; sem flags CRUD                                                      |
+| GET `/service/:id`, GET `/service`                        | servicos:acessar + consultar_servico    | metadados + catálogo quando necessário; não retornar concessões de todas as roles por padrão                                                                                                |
+| PUT `/service/:id`                                        | servicos:acessar + editar_servico       | `{service:{name,description,url,tag?},visibility?:[...]}`; rejeitar campo legado `permissions` e `module_key`                                                                               |
+| POST `/service`, DELETE `/service/:id`                    | inexistentes                            | remover registros e OpenAPI; 404 pelo handler padrão, sem efeito no banco                                                                                                                   |
+| GET `/permissions/:id`, PUT `/permissions/:id` legados    | removidos                               | não reinterpretar IDs antigos como IDs novos; resposta 404                                                                                                                                  |
+| `/permissions/user/:userId`                               | inexistente                             | não criar endpoint de concessão individual; resposta 404                                                                                                                                    |
 
 Body exato para concessão à role:
 
@@ -345,7 +345,10 @@ import { permissionKey } from "./permission-key.js";
 
 test("monta chave explícita sem depender de método HTTP", () => {
   assert.equal(permissionKey("ft", "remover_bolsista"), "ft:remover_bolsista");
-  assert.notEqual(permissionKey("ft", "remover_bolsista"), permissionKey("ft", "excluir_bolsista"));
+  assert.notEqual(
+    permissionKey("ft", "remover_bolsista"),
+    permissionKey("ft", "excluir_bolsista"),
+  );
 });
 
 test("rejeita componentes ambíguos e não normaliza silenciosamente", () => {
@@ -364,8 +367,12 @@ Executar `node --import tsx --test src/modules/acess-controll/domain/permission-
 const componentPattern = /^[a-z][a-z0-9_]*$/;
 
 export function permissionKey(module: string, action: string): string {
-  if (!componentPattern.test(module) || module.length > 64 ||
-      !componentPattern.test(action) || action.length > 96) {
+  if (
+    !componentPattern.test(module) ||
+    module.length > 64 ||
+    !componentPattern.test(action) ||
+    action.length > 96
+  ) {
     throw new TypeError("Invalid permission key");
   }
   return `${module}:${action}`;
@@ -497,7 +504,9 @@ export function canPerform(
   action: string,
 ): boolean {
   const current = permissions.find((item) => item.module === module);
-  return Boolean(current?.actions.includes("acessar") && current.actions.includes(action));
+  return Boolean(
+    current?.actions.includes("acessar") && current.actions.includes(action),
+  );
 }
 ```
 
@@ -508,14 +517,22 @@ import { canPerform } from "./permission-access";
 
 describe("canPerform", () => {
   it("separa remover vínculo de excluir cadastro", () => {
-    const grants = [{ service_id: 6, module: "ft", actions: ["acessar", "remover_bolsista"] }];
+    const grants = [
+      { service_id: 6, module: "ft", actions: ["acessar", "remover_bolsista"] },
+    ];
     expect(canPerform(grants, "ft", "remover_bolsista")).toBe(true);
     expect(canPerform(grants, "ft", "excluir_bolsista")).toBe(false);
     expect(canPerform(grants, "esporte", "remover_bolsista")).toBe(false);
   });
   it("nega ausência e ausência de entrada do módulo", () => {
     expect(canPerform([], "ft", "remover_bolsista")).toBe(false);
-    expect(canPerform([{ service_id: 6, module: "ft", actions: ["remover_bolsista"] }], "ft", "remover_bolsista")).toBe(false);
+    expect(
+      canPerform(
+        [{ service_id: 6, module: "ft", actions: ["remover_bolsista"] }],
+        "ft",
+        "remover_bolsista",
+      ),
+    ).toBe(false);
   });
 });
 ```
@@ -538,27 +555,27 @@ Criar teste primeiro; executar `(cd Prefeitura_APP && npm test -- src/context/us
 
 Para cada linha abaixo: escrever/adaptar teste do componente primeiro; observar RED com can diferente por ação; substituir leitura de flag pelo `can` da seção 6; observar GREEN. Não manter uma conversão genérica das novas ações de volta para quatro flags.
 
-| Arquivo exato | Alteração mínima |
-|---|---|
-| `Prefeitura_APP/src/components/components-ft/edital/Table/EditalTable.jsx` | separar editar_vinculo e remover_bolsista, hoje dentro do mesmo bloco; Novo Edital, Vincular e Relatório têm guards independentes |
-| `Prefeitura_APP/src/components/components-ft/bolsistas/Table/BolsistasTable.jsx` | consultar/editar/excluir/cadastrar separados; histórico, faltas e ocorrências não dependem de uma flag global |
-| `Prefeitura_APP/src/components/components-ft/bolsistas/modal/FT_Bolsista_Faltas_Modal.jsx` | consultar_faltas, registrar_falta e excluir_falta independentes |
-| `Prefeitura_APP/src/components/components-ft/bolsistas/modal/FT_Bolsista_Ocorrencias_Modal.jsx` | consultar_ocorrencias, registrar_ocorrencia e excluir_ocorrencia independentes |
-| `Prefeitura_APP/src/components/components-ft/bolsistas/modal/FT_Bolsista_Prorrogate_Bolsista.jsx` | prorrogar_vinculo |
-| `Prefeitura_APP/src/components/components-ft/edital/modal/Relatorio_Edital_Modal.jsx` | guard por operação do relatório, não write global |
-| `Prefeitura_APP/src/components/components-ft/pagadores/Pagadores.jsx` | consultar/cadastrar/editar/excluir pagador |
-| `Prefeitura_APP/src/components/components-ft/turnos/Turnos.jsx` | consultar/cadastrar/editar/excluir turno |
-| `Prefeitura_APP/src/pages/municipes/components/MunicipeTable.jsx` | consultar/cadastrar/editar munícipe |
-| `Prefeitura_APP/src/pages/esporte/components/modalidade/Table.jsx` | CRUD de modalidade independente do CRUD de atleta |
-| `Prefeitura_APP/src/pages/esporte/components/atleta/Table.jsx` | atleta/carteirinha/vínculo modalidade separados |
-| `Prefeitura_APP/src/pages/esporte/components/atleta/ModalAtleta.jsx` | vincular/remover modalidade separados de cadastrar atleta |
-| `Prefeitura_APP/src/pages/audit/Audit.jsx` | consultar_auditoria e exportar_auditoria separados |
-| `Prefeitura_APP/src/pages/admin/users/table/UserTable.jsx` | ações usuarios independentes |
-| `Prefeitura_APP/src/pages/admin/setor/table/SetorTable.jsx` | ações setores independentes |
-| `Prefeitura_APP/src/pages/admin/roles/table/RolesTable.jsx` | ações de gestão de roles independentes; criar role não concede ações, que são configuradas no painel específico |
-| `Prefeitura_APP/src/pages/Services.jsx` | navegação por module/acessar, atualizar Services.authorization.test.jsx |
-| `Prefeitura_APP/src/components/components-ft/downloads/DownloadsRelatorios.jsx` | somente consultar_downloads inicia listagem/polling; baixar_relatorio e reprocessar_relatorio têm botões e handlers independentes; atualizar DownloadsRelatorios.component.test.jsx |
-| `Prefeitura_APP/src/pages/FT_APP.jsx` | não montar/consultar abas sem sua ação de consulta; manter índices/abas consistentes sem chamar APIs proibidas na montagem |
+| Arquivo exato                                                                                     | Alteração mínima                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Prefeitura_APP/src/components/components-ft/edital/Table/EditalTable.jsx`                        | separar editar_vinculo e remover_bolsista, hoje dentro do mesmo bloco; Novo Edital, Vincular e Relatório têm guards independentes                                                   |
+| `Prefeitura_APP/src/components/components-ft/bolsistas/Table/BolsistasTable.jsx`                  | consultar/editar/excluir/cadastrar separados; histórico, faltas e ocorrências não dependem de uma flag global                                                                       |
+| `Prefeitura_APP/src/components/components-ft/bolsistas/modal/FT_Bolsista_Faltas_Modal.jsx`        | consultar_faltas, registrar_falta e excluir_falta independentes                                                                                                                     |
+| `Prefeitura_APP/src/components/components-ft/bolsistas/modal/FT_Bolsista_Ocorrencias_Modal.jsx`   | consultar_ocorrencias, registrar_ocorrencia e excluir_ocorrencia independentes                                                                                                      |
+| `Prefeitura_APP/src/components/components-ft/bolsistas/modal/FT_Bolsista_Prorrogate_Bolsista.jsx` | prorrogar_vinculo                                                                                                                                                                   |
+| `Prefeitura_APP/src/components/components-ft/edital/modal/Relatorio_Edital_Modal.jsx`             | guard por operação do relatório, não write global                                                                                                                                   |
+| `Prefeitura_APP/src/components/components-ft/pagadores/Pagadores.jsx`                             | consultar/cadastrar/editar/excluir pagador                                                                                                                                          |
+| `Prefeitura_APP/src/components/components-ft/turnos/Turnos.jsx`                                   | consultar/cadastrar/editar/excluir turno                                                                                                                                            |
+| `Prefeitura_APP/src/pages/municipes/components/MunicipeTable.jsx`                                 | consultar/cadastrar/editar munícipe                                                                                                                                                 |
+| `Prefeitura_APP/src/pages/esporte/components/modalidade/Table.jsx`                                | CRUD de modalidade independente do CRUD de atleta                                                                                                                                   |
+| `Prefeitura_APP/src/pages/esporte/components/atleta/Table.jsx`                                    | atleta/carteirinha/vínculo modalidade separados                                                                                                                                     |
+| `Prefeitura_APP/src/pages/esporte/components/atleta/ModalAtleta.jsx`                              | vincular/remover modalidade separados de cadastrar atleta                                                                                                                           |
+| `Prefeitura_APP/src/pages/audit/Audit.jsx`                                                        | consultar_auditoria e exportar_auditoria separados                                                                                                                                  |
+| `Prefeitura_APP/src/pages/admin/users/table/UserTable.jsx`                                        | ações usuarios independentes                                                                                                                                                        |
+| `Prefeitura_APP/src/pages/admin/setor/table/SetorTable.jsx`                                       | ações setores independentes                                                                                                                                                         |
+| `Prefeitura_APP/src/pages/admin/roles/table/RolesTable.jsx`                                       | ações de gestão de roles independentes; criar role não concede ações, que são configuradas no painel específico                                                                     |
+| `Prefeitura_APP/src/pages/Services.jsx`                                                           | navegação por module/acessar, atualizar Services.authorization.test.jsx                                                                                                             |
+| `Prefeitura_APP/src/components/components-ft/downloads/DownloadsRelatorios.jsx`                   | somente consultar_downloads inicia listagem/polling; baixar_relatorio e reprocessar_relatorio têm botões e handlers independentes; atualizar DownloadsRelatorios.component.test.jsx |
+| `Prefeitura_APP/src/pages/FT_APP.jsx`                                                             | não montar/consultar abas sem sua ação de consulta; manter índices/abas consistentes sem chamar APIs proibidas na montagem                                                          |
 
 **I1. Regressão central obrigatória.** Atualizar `Prefeitura_APP/src/components/components-ft/edital/Table/EditalTable.component.test.jsx` para três cenários: remover=true/excluir=false; editar_vinculo=true/remover=false; consultar apenas. No primeiro, botão de cancelar vínculo disponível e ação de excluir cadastro ausente no componente correspondente. No segundo, editar disponível, cancelar ausente. Não mockar `can` como função que sempre retorna true.
 

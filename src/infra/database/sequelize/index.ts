@@ -24,9 +24,7 @@ sequelize = new Sequelize(envVar, {
 
 // Carrega todos os models da pasta /model
 const modelDir = path.join(__dirname, "./models");
-const modelFiles = fs
-  .readdirSync(modelDir)
-  .filter(isSequelizeModelFile);
+const modelFiles = fs.readdirSync(modelDir).filter(isSequelizeModelFile);
 
 for (const file of modelFiles) {
   if (file === basename) {

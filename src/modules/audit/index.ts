@@ -102,10 +102,14 @@ const AuditModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
     fastify.log,
   );
   const unregisterPagadorAuditHandlers = registerPagadorAuditHandlers(
-    makePagadorEventSubscriber(), auditService, fastify.log,
+    makePagadorEventSubscriber(),
+    auditService,
+    fastify.log,
   );
   const unregisterTurnoAuditHandlers = registerTurnoAuditHandlers(
-    makeTurnoEventSubscriber(), auditService, fastify.log,
+    makeTurnoEventSubscriber(),
+    auditService,
+    fastify.log,
   );
 
   const worker =

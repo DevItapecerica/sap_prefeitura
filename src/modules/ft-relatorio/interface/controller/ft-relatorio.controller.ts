@@ -1,4 +1,4 @@
-import { makeFtFechamentoFolhaService } from '../../factories/makeFtFechamentoFolhaService.js';
+import { makeFtFechamentoFolhaService } from "../../factories/makeFtFechamentoFolhaService.js";
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   FtRelatorioFaltasQueryDto,
@@ -24,10 +24,18 @@ export class FtRelatorioController {
     request: FastifyRequest<{ Params: { id: string }; Body: { mes: string } }>,
     reply: FastifyReply,
   ) => {
-    const arquivo = await arquivoService.request(request.params.id, request.body.mes, Number(request.user.id));
+    const arquivo = await arquivoService.request(
+      request.params.id,
+      request.body.mes,
+      Number(request.user.id),
+    );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
-      context: makeApplicationEventContext(request), module: "ft-relatorio", resourceType: "lote_espelho_ponto",
-      resourceId: arquivo.id, filters: { editalId: request.params.id, mes: request.body.mes }, returnedCount: 1,
+      context: makeApplicationEventContext(request),
+      module: "ft-relatorio",
+      resourceType: "lote_espelho_ponto",
+      resourceId: arquivo.id,
+      filters: { editalId: request.params.id, mes: request.body.mes },
+      returnedCount: 1,
     });
     return reply.status(202).send({ arquivo });
   };
@@ -43,21 +51,39 @@ export class FtRelatorioController {
       "folhas_presenca",
     );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
-      context: makeApplicationEventContext(request), module: "ft-relatorio", resourceType: "lote_folha_presenca",
-      resourceId: arquivo.id, filters: { editalId: request.params.id, mes: request.body.mes }, returnedCount: 1,
+      context: makeApplicationEventContext(request),
+      module: "ft-relatorio",
+      resourceType: "lote_folha_presenca",
+      resourceId: arquivo.id,
+      filters: { editalId: request.params.id, mes: request.body.mes },
+      returnedCount: 1,
     });
     return reply.status(202).send({ arquivo });
   };
 
   static listarDownloads = async (
-    request: FastifyRequest<{ Querystring: { page?: number; limit?: number; edital_id?: string } }>,
+    request: FastifyRequest<{
+      Querystring: { page?: number; limit?: number; edital_id?: string };
+    }>,
     reply: FastifyReply,
-  ) => reply.status(200).send(await arquivoService.list(request.query.page, request.query.limit, request.query.edital_id));
+  ) =>
+    reply
+      .status(200)
+      .send(
+        await arquivoService.list(
+          request.query.page,
+          request.query.limit,
+          request.query.edital_id,
+        ),
+      );
 
   static retryDownload = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
-  ) => reply.status(202).send({ arquivo: await arquivoService.retry(request.params.id) });
+  ) =>
+    reply
+      .status(202)
+      .send({ arquivo: await arquivoService.retry(request.params.id) });
 
   static baixarArquivo = async (
     request: FastifyRequest<{ Params: { id: string } }>,
@@ -67,25 +93,92 @@ export class FtRelatorioController {
     let sent = false;
     reply.raw.once("finish", () => {
       sent = true;
-      void arquivoService.finishDownload(request.params.id, download.path).catch((error) => request.log.error({ err: error }, "Falha ao excluir relatorio baixado"));
+      void arquivoService
+        .finishDownload(request.params.id, download.path)
+        .catch((error) =>
+          request.log.error(
+            { err: error },
+            "Falha ao excluir relatorio baixado",
+          ),
+        );
     });
     reply.raw.once("close", () => {
-      if (!sent) void arquivoService.releaseDownload(request.params.id).catch((error) => request.log.error({ err: error }, "Falha ao liberar download"));
+      if (!sent)
+        void arquivoService
+          .releaseDownload(request.params.id)
+          .catch((error) =>
+            request.log.error({ err: error }, "Falha ao liberar download"),
+          );
     });
-    download.stream.once("error", () => void arquivoService.releaseDownload(request.params.id).catch((error) => request.log.error({ err: error }, "Falha ao liberar download")));
+    download.stream.once(
+      "error",
+      () =>
+        void arquivoService
+          .releaseDownload(request.params.id)
+          .catch((error) =>
+            request.log.error({ err: error }, "Falha ao liberar download"),
+          ),
+    );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
-      context: makeApplicationEventContext(request), module: "ft-relatorio", resourceType: "arquivo_espelhos_ponto",
-      resourceId: request.params.id, returnedCount: 1,
+      context: makeApplicationEventContext(request),
+      module: "ft-relatorio",
+      resourceType: "arquivo_espelhos_ponto",
+      resourceId: request.params.id,
+      returnedCount: 1,
     });
-    return reply.type("application/zip").header("Content-Disposition", `attachment; filename="${download.record.nome_arquivo}"`).header("Content-Length", download.size).send(download.stream);
+    return reply
+      .type("application/zip")
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${download.record.nome_arquivo}"`,
+      )
+      .header("Content-Length", download.size)
+      .send(download.stream);
   };
-  static consultarFechamento = async (request: FastifyRequest<{ Params: { id: string }; Querystring: { mes: string } }>, reply: FastifyReply) =>
-    reply.send(await fechamentoService.state(request.params.id, request.query.mes));
-  static fecharFolha = async (request: FastifyRequest<{ Params: { id: string }; Body: { mes: string; versao: string } }>, reply: FastifyReply) =>
-    reply.send(await fechamentoService.close(request.params.id, request.body.mes, request.body.versao, { id: request.user.id, requestId: request.id }));
-  static previaPagamento = async (request: FastifyRequest<{ Params: { id: string }; Querystring: FtRelatorioQueryDto }>, reply: FastifyReply) => {
-    const result = await fechamentoService.preview(request.params.id, request.query);
-    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, { context: makeApplicationEventContext(request), module: 'ft-relatorio', resourceType: 'previa_pagamento', resourceId: request.params.id, filters: { ...request.query, editalId: request.params.id }, returnedCount: result.count });
+  static consultarFechamento = async (
+    request: FastifyRequest<{
+      Params: { id: string };
+      Querystring: { mes: string };
+    }>,
+    reply: FastifyReply,
+  ) =>
+    reply.send(
+      await fechamentoService.state(request.params.id, request.query.mes),
+    );
+  static fecharFolha = async (
+    request: FastifyRequest<{
+      Params: { id: string };
+      Body: { mes: string; versao: string };
+    }>,
+    reply: FastifyReply,
+  ) =>
+    reply.send(
+      await fechamentoService.close(
+        request.params.id,
+        request.body.mes,
+        request.body.versao,
+        { id: request.user.id, requestId: request.id },
+      ),
+    );
+  static previaPagamento = async (
+    request: FastifyRequest<{
+      Params: { id: string };
+      Querystring: FtRelatorioQueryDto;
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const result = await fechamentoService.preview(
+      request.params.id,
+      request.query,
+    );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request),
+      module: "ft-relatorio",
+      resourceType: "previa_pagamento",
+      resourceId: request.params.id,
+      filters: { ...request.query, editalId: request.params.id },
+      returnedCount: result.count,
+    });
     return reply.send(result);
   };
 
@@ -112,7 +205,10 @@ export class FtRelatorioController {
     return reply
       .status(200)
       .header("Content-Type", relatorio.type)
-      .header("Content-Disposition", `attachment; filename="${relatorio.fileName}"`)
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${relatorio.fileName}"`,
+      )
       .send(relatorio.csv);
   };
 
@@ -139,7 +235,10 @@ export class FtRelatorioController {
     return reply
       .status(200)
       .header("Content-Type", relatorio.type)
-      .header("Content-Disposition", `attachment; filename="${relatorio.fileName}"`)
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${relatorio.fileName}"`,
+      )
       .send(relatorio.csv);
   };
 
@@ -166,7 +265,10 @@ export class FtRelatorioController {
     return reply
       .status(200)
       .header("Content-Type", relatorio.type)
-      .header("Content-Disposition", `attachment; filename="${relatorio.fileName}"`)
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${relatorio.fileName}"`,
+      )
       .send(relatorio.csv);
   };
 }

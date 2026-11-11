@@ -10,11 +10,11 @@ export interface AuthLoginResponse {
 }
 
 export type JwtUserPayload = {
-  id: number
-  name: string
-  role_id: number
-  setor_id: number | null
-}
+  id: number;
+  name: string;
+  role_id: number;
+  setor_id: number | null;
+};
 
 export type RefreshSessionResponse = {
   token: string;

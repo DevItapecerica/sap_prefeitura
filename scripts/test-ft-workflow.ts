@@ -231,7 +231,8 @@ try {
       actor,
     );
     await service.phase(e.id, "aberto", actor);
-    if (!pay.uuid || !shift.uuid) throw new Error("Fixture requires payer and shift IDs");
+    if (!pay.uuid || !shift.uuid)
+      throw new Error("Fixture requires payer and shift IDs");
     return {
       ...e,
       allocation: {
@@ -832,7 +833,9 @@ try {
       await import("./test-ft-editais-ux.js")
     ).testEditaisUX({ db, crypto, service, actor, base, answers, makeEdital });
 
-    await (await import("./test-ft-beneficios.js")).testBeneficios({ db, crypto, service, actor, answers, makeEdital });
+    await (
+      await import("./test-ft-beneficios.js")
+    ).testBeneficios({ db, crypto, service, actor, answers, makeEdital });
 
     if (process.env.FT_WORKFLOW_TEST_SERVE === "1") {
       // Explicit grants for this disposable fixture only; production grants remain denied.

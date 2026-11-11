@@ -383,9 +383,17 @@ export default {
       for (const item of data) {
         // Defaults may have inserted the same relation under another surrogate ID.
         // Preserve configured visibility, including false; never insert a duplicate pair.
-        if (table === "service_visibilities" && await queryInterface.rawSelect(table, {
-          where: { setor_id: item.setor_id, service_id: item.service_id },
-        }, "id")) continue;
+        if (
+          table === "service_visibilities" &&
+          (await queryInterface.rawSelect(
+            table,
+            {
+              where: { setor_id: item.setor_id, service_id: item.service_id },
+            },
+            "id",
+          ))
+        )
+          continue;
         const isUnique = await queryInterface.rawSelect(
           table,
           {
@@ -418,22 +426,32 @@ export default {
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
     const reversedPayload = [
-        { table: "service_visibilities", data: [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 16] },
-        { table: "permissions", data: Array.from({ length: 28 }, (_, index) => index + 1) },
-        { table: "roles", data: [1, 2, 3, 4] },
+      {
+        table: "service_visibilities",
+        data: [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 16],
+      },
+      {
+        table: "permissions",
+        data: Array.from({ length: 28 }, (_, index) => index + 1),
+      },
+      { table: "roles", data: [1, 2, 3, 4] },
     ];
 
     for (const item of reversedPayload) {
-        const table = item.table;
-        const idsToDelete = item.data;
-        
-        if (idsToDelete.length > 0) {
-            await queryInterface.bulkDelete(table, {
-                id: {
-                    [Op.in]: idsToDelete
-                }
-            }, {});
-        }
+      const table = item.table;
+      const idsToDelete = item.data;
+
+      if (idsToDelete.length > 0) {
+        await queryInterface.bulkDelete(
+          table,
+          {
+            id: {
+              [Op.in]: idsToDelete,
+            },
+          },
+          {},
+        );
+      }
     }
   },
 };

@@ -9,8 +9,26 @@ import { ServiceAccessDefaultsUseCase } from "../service-access-defaults.usecase
 
 class FakeServicesRepository {
   services = [
-    new Services(9, "Municipes", "Cadastro", "outros", "/municipes", new Date(), new Date(), null as any),
-    new Services(10, "Esporte", "Atletas", "outros", "/esporte", new Date(), new Date(), null as any),
+    new Services(
+      9,
+      "Municipes",
+      "Cadastro",
+      "outros",
+      "/municipes",
+      new Date(),
+      new Date(),
+      null as any,
+    ),
+    new Services(
+      10,
+      "Esporte",
+      "Atletas",
+      "outros",
+      "/esporte",
+      new Date(),
+      new Date(),
+      null as any,
+    ),
   ];
 
   async getAllServices() {
@@ -25,7 +43,8 @@ class FakeVisibilityRepository {
     return (
       this.visibilities.find(
         (visibility) =>
-          visibility.setor_id === setorId && visibility.service_id === serviceId,
+          visibility.setor_id === setorId &&
+          visibility.service_id === serviceId,
       ) ?? null
     );
   }
@@ -159,7 +178,9 @@ test("ServiceAccessDefaultsUseCase cria defaults para role e setor novos", async
     ),
   );
   assert.equal(setorThreeVisibilities.length, 2);
-  assert.ok(setorThreeVisibilities.every((visibility) => !visibility.visibility));
+  assert.ok(
+    setorThreeVisibilities.every((visibility) => !visibility.visibility),
+  );
 });
 
 test("ServiceAccessDefaultsUseCase reconcilia defaults de forma idempotente", async () => {

@@ -9,11 +9,7 @@ import { makeHttpRequestFailedEventSubscriber } from "../../../factories/http-re
 
 const makeServer = async (
   statusCode: number,
-  failureAction:
-    | "LOGIN_FAILED"
-    | "CREATE"
-    | "UPDATE"
-    | "VIEW",
+  failureAction: "LOGIN_FAILED" | "CREATE" | "UPDATE" | "VIEW",
   omitRequestedChanges = false,
 ) => {
   const app = Fastify({ logger: false });
@@ -41,10 +37,12 @@ const makeServer = async (
 
 test("ErrorHook publica login inválido sem credencial", async () => {
   const events: HttpRequestFailedEvent[] = [];
-  const unsubscribe =
-    makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, (event) => {
+  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(
+    HTTP_REQUEST_FAILED_EVENT,
+    (event) => {
       events.push(event);
-    });
+    },
+  );
   const app = await makeServer(401, "LOGIN_FAILED");
 
   try {
@@ -65,48 +63,101 @@ test("ErrorHook publica login inválido sem credencial", async () => {
   }
 });
 
-test('ErrorHook omits FT questionnaire and bank payloads but preserves the message in errors and audit', async (t) => {
+test("ErrorHook omits FT questionnaire and bank payloads but preserves the message in errors and audit", async (t) => {
   const events: HttpRequestFailedEvent[] = [];
-  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, event => { events.push(event); });
-  const app = await makeServer(422, 'UPDATE', true);
+  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(
+    HTTP_REQUEST_FAILED_EVENT,
+    (event) => {
+      events.push(event);
+    },
+  );
+  const app = await makeServer(422, "UPDATE", true);
   const logs: unknown[] = [];
-  app.addHook('onRequest', async request => { t.mock.method(request.log, 'error', (entry: unknown) => { logs.push(entry); }); });
+  app.addHook("onRequest", async (request) => {
+    t.mock.method(request.log, "error", (entry: unknown) => {
+      logs.push(entry);
+    });
+  });
   try {
-    const response = await app.inject({ method: 'POST', url: '/resource/7', payload: { respostas: { desempregado: true }, payment_info: { conta: '12345' } } });
+    const response = await app.inject({
+      method: "POST",
+      url: "/resource/7",
+      payload: {
+        respostas: { desempregado: true },
+        payment_info: { conta: "12345" },
+      },
+    });
     assert.equal(response.statusCode, 422);
     assert.equal(events[0].requestedChanges, undefined);
-    assert.equal(events[0].resourceId, '7');
-    assert.equal(events[0].errorMessage, 'declared failure');
-    assert.equal(response.json().message, 'declared failure');
-    assert.deepEqual((logs[0] as any).err, { statusCode: 422, code: 'DECLARED_ERROR', message: 'declared failure' });
-    assert.equal(JSON.stringify(logs).includes('12345'), false);
-  } finally { unsubscribe(); await app.close(); }
+    assert.equal(events[0].resourceId, "7");
+    assert.equal(events[0].errorMessage, "declared failure");
+    assert.equal(response.json().message, "declared failure");
+    assert.deepEqual((logs[0] as any).err, {
+      statusCode: 422,
+      code: "DECLARED_ERROR",
+      message: "declared failure",
+    });
+    assert.equal(JSON.stringify(logs).includes("12345"), false);
+  } finally {
+    unsubscribe();
+    await app.close();
+  }
 });
 
-test('protected error logs and audit never expose internal exception messages', async (t) => {
+test("protected error logs and audit never expose internal exception messages", async (t) => {
   const app = Fastify({ logger: false });
-  const logs: unknown[] = [], events: HttpRequestFailedEvent[] = [];
-  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, event => { events.push(event); });
+  const logs: unknown[] = [],
+    events: HttpRequestFailedEvent[] = [];
+  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(
+    HTTP_REQUEST_FAILED_EVENT,
+    (event) => {
+      events.push(event);
+    },
+  );
   await app.register(ErrorHook);
-  app.addHook('onRequest', async request => { t.mock.method(request.log, 'error', (entry: unknown) => { logs.push(entry); }); });
-  app.post('/protected', { config: { audit: { failureAction: 'UPDATE', module: 'ft-edital', resourceType: 'participacao', omitRequestedChanges: true } } }, async () => { throw new Error('SQL password=secret'); });
+  app.addHook("onRequest", async (request) => {
+    t.mock.method(request.log, "error", (entry: unknown) => {
+      logs.push(entry);
+    });
+  });
+  app.post(
+    "/protected",
+    {
+      config: {
+        audit: {
+          failureAction: "UPDATE",
+          module: "ft-edital",
+          resourceType: "participacao",
+          omitRequestedChanges: true,
+        },
+      },
+    },
+    async () => {
+      throw new Error("SQL password=secret");
+    },
+  );
   try {
-    const response = await app.inject({ method: 'POST', url: '/protected' });
+    const response = await app.inject({ method: "POST", url: "/protected" });
     assert.equal(response.statusCode, 500);
-    assert.equal(response.json().message, 'Erro interno');
-    assert.equal(events[0].errorMessage, 'Erro interno');
-    assert.equal((logs[0] as any).err.message, 'Erro interno');
-    assert.equal(JSON.stringify(logs).includes('secret'), false);
-  } finally { unsubscribe(); await app.close(); }
+    assert.equal(response.json().message, "Erro interno");
+    assert.equal(events[0].errorMessage, "Erro interno");
+    assert.equal((logs[0] as any).err.message, "Erro interno");
+    assert.equal(JSON.stringify(logs).includes("secret"), false);
+  } finally {
+    unsubscribe();
+    await app.close();
+  }
 });
 
 test("ErrorHook converte 401 e 403 em acesso negado", async () => {
   for (const statusCode of [401, 403]) {
     const events: HttpRequestFailedEvent[] = [];
-    const unsubscribe =
-      makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, (event) => {
+    const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(
+      HTTP_REQUEST_FAILED_EVENT,
+      (event) => {
         events.push(event);
-      });
+      },
+    );
     const app = await makeServer(statusCode, "VIEW");
     try {
       await app.inject({ method: "POST", url: "/resource/42" });
@@ -121,10 +172,12 @@ test("ErrorHook converte 401 e 403 em acesso negado", async () => {
 
 test("ErrorHook preserva ação e alterações solicitadas nas demais falhas", async () => {
   const events: HttpRequestFailedEvent[] = [];
-  const unsubscribe =
-    makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, (event) => {
+  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(
+    HTTP_REQUEST_FAILED_EVENT,
+    (event) => {
       events.push(event);
-    });
+    },
+  );
   const app = await makeServer(422, "UPDATE");
 
   try {
@@ -148,10 +201,12 @@ test("ErrorHook preserva ação e alterações solicitadas nas demais falhas", a
 });
 
 test("falha ao publicar auditoria não substitui o erro HTTP original", async () => {
-  const unsubscribe =
-    makeHttpRequestFailedEventSubscriber().subscribe(HTTP_REQUEST_FAILED_EVENT, () => {
+  const unsubscribe = makeHttpRequestFailedEventSubscriber().subscribe(
+    HTTP_REQUEST_FAILED_EVENT,
+    () => {
       throw new Error("audit unavailable");
-    });
+    },
+  );
   const app = await makeServer(400, "CREATE");
 
   try {

@@ -17,17 +17,30 @@ const modalidadeSchema = {
   },
 };
 
-export const ModalidadeRouter: FastifyPluginAsync<{controller?: ModalidadeControllerType}> = async (fastify, options) => {
-  const modalidadeController = options.controller ?? new (await import("../controller/modalidade.controller.js")).default((await import("../../factories/modalidade.factory.js")).default(fastify.log));
+export const ModalidadeRouter: FastifyPluginAsync<{
+  controller?: ModalidadeControllerType;
+}> = async (fastify, options) => {
+  const modalidadeController =
+    options.controller ??
+    new (await import("../controller/modalidade.controller.js")).default(
+      (await import("../../factories/modalidade.factory.js")).default(
+        fastify.log,
+      ),
+    );
 
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("esporte");
 
-
   fastify.route({
     method: "GET",
     url: "/modalidades",
-    config: { audit: { failureAction: "LIST", module: "esporte", resourceType: "modalidade" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "esporte",
+        resourceType: "modalidade",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -60,7 +73,14 @@ export const ModalidadeRouter: FastifyPluginAsync<{controller?: ModalidadeContro
   fastify.route({
     method: "GET",
     url: "/modalidades/:uuid",
-    config: { audit: { failureAction: "VIEW", module: "esporte", resourceType: "modalidade", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "esporte",
+        resourceType: "modalidade",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -88,7 +108,13 @@ export const ModalidadeRouter: FastifyPluginAsync<{controller?: ModalidadeContro
   fastify.route({
     method: "POST",
     url: "/modalidades",
-    config: { audit: { failureAction: "CREATE", module: "esporte", resourceType: "modalidade" } },
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "esporte",
+        resourceType: "modalidade",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -118,7 +144,14 @@ export const ModalidadeRouter: FastifyPluginAsync<{controller?: ModalidadeContro
   fastify.route({
     method: "PUT",
     url: "/modalidades/:uuid",
-    config: { audit: { failureAction: "UPDATE", module: "esporte", resourceType: "modalidade", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "esporte",
+        resourceType: "modalidade",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -152,7 +185,14 @@ export const ModalidadeRouter: FastifyPluginAsync<{controller?: ModalidadeContro
   fastify.route({
     method: "DELETE",
     url: "/modalidades/:uuid",
-    config: { audit: { failureAction: "DELETE", module: "esporte", resourceType: "modalidade", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "DELETE",
+        module: "esporte",
+        resourceType: "modalidade",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],

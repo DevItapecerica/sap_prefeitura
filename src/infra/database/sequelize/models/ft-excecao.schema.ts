@@ -1,4 +1,4 @@
-import { DataTypes as D } from 'sequelize';
+import { DataTypes as D } from "sequelize";
 
 // Authorization belongs to each operation, never to a client-supplied flag.
 export const exceptionColumns = {

@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ApplicationEventContext } from "../../../../core/event/application-event.js";
 import { EventHandler } from "../../../../core/event/event-contracts.js";
-import { USER_EVENTS, UserCreatedEvent, UserDeletedEvent, UserPasswordChangedEvent, UserUpdatedEvent } from "../../../user/application/events/user.events.js";
+import {
+  USER_EVENTS,
+  UserCreatedEvent,
+  UserDeletedEvent,
+  UserPasswordChangedEvent,
+  UserUpdatedEvent,
+} from "../../../user/application/events/user.events.js";
 import { User } from "../../../user/domain/entity/User.js";
 import { RecordAuditDto } from "../../application/dto/audit.dto.js";
 import { registerUserAuditHandlers } from "../on-user-events.js";
@@ -22,7 +28,8 @@ class FakeUserEventSubscriber {
     }[eventName] as "created" | "updated" | "deleted" | "passwordChanged";
     (this as any)[property] = handler;
     return () => {
-      if ((this as any)[property] === handler) (this as any)[property] = undefined;
+      if ((this as any)[property] === handler)
+        (this as any)[property] = undefined;
     };
   }
 }
@@ -46,24 +53,43 @@ test("user events are translated into audit records with before and after", asyn
     { record: async (input) => records.push(input) },
     { error() {} } as any,
   );
-  const before = new User("Antes", "antes@itapecerica.sp.gov.br", null, 1, 2, 7);
-  const after = new User("Depois", "depois@itapecerica.sp.gov.br", null, 2, 3, 7);
+  const before = new User(
+    "Antes",
+    "antes@itapecerica.sp.gov.br",
+    null,
+    1,
+    2,
+    7,
+  );
+  const after = new User(
+    "Depois",
+    "depois@itapecerica.sp.gov.br",
+    null,
+    2,
+    3,
+    7,
+  );
 
   try {
     await events.created?.({ context: context("create-request"), user: after });
-    await events.updated?.({ context: context("update-request"), before, after });
-    await events.deleted?.({ context: context("delete-request"), before: after });
+    await events.updated?.({
+      context: context("update-request"),
+      before,
+      after,
+    });
+    await events.deleted?.({
+      context: context("delete-request"),
+      before: after,
+    });
     await events.passwordChanged?.({
       context: context("password-request"),
       userId: 7,
     });
 
-    assert.deepEqual(records.map((record) => record.action), [
-      "CREATE",
-      "UPDATE",
-      "DELETE",
-      "PASSWORD_CHANGED",
-    ]);
+    assert.deepEqual(
+      records.map((record) => record.action),
+      ["CREATE", "UPDATE", "DELETE", "PASSWORD_CHANGED"],
+    );
     assert.equal(records[0]?.before, null);
     assert.equal(records[0]?.after, after);
     assert.equal(records[1]?.before, before);
@@ -83,8 +109,16 @@ test("failed user audit listener remains best-effort", async () => {
   let logged = false;
   const unregister = registerUserAuditHandlers(
     events,
-    { record: async () => { throw new Error("outbox unavailable"); } },
-    { error() { logged = true; } } as any,
+    {
+      record: async () => {
+        throw new Error("outbox unavailable");
+      },
+    },
+    {
+      error() {
+        logged = true;
+      },
+    } as any,
   );
 
   try {

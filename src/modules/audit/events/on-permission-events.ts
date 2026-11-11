@@ -15,19 +15,25 @@ export const registerPermissionAuditHandlers = (
   auditService: AuditRecorder,
   logger: Pick<FastifyBaseLogger, "error">,
 ) => {
-  const unsubscribe = permissionEvents.subscribe(PERMISSION_EVENTS.updated, (event) =>
-    recordAuditEvent(
-      event,
-      {
-        ...makeAuditBaseRecord(event, "permission", "permissions" in event.after ? "role_permission" : "permission"),
-        action: "UPDATE",
-        resourceId: String(event.after.id),
-        before: event.before,
-        after: event.after,
-      },
-      auditService,
-      logger,
-    ),
+  const unsubscribe = permissionEvents.subscribe(
+    PERMISSION_EVENTS.updated,
+    (event) =>
+      recordAuditEvent(
+        event,
+        {
+          ...makeAuditBaseRecord(
+            event,
+            "permission",
+            "permissions" in event.after ? "role_permission" : "permission",
+          ),
+          action: "UPDATE",
+          resourceId: String(event.after.id),
+          before: event.before,
+          after: event.after,
+        },
+        auditService,
+        logger,
+      ),
   );
   return () => unsubscribe();
 };

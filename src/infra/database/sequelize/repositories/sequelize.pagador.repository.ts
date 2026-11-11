@@ -1,5 +1,9 @@
 import { fn, col, Op, where } from "sequelize";
-import { PagadorCapacity, PagadorInput, PagadorQuery } from "../../../../modules/ft-pagador/domain/pagador.js";
+import {
+  PagadorCapacity,
+  PagadorInput,
+  PagadorQuery,
+} from "../../../../modules/ft-pagador/domain/pagador.js";
 import { PagadorRepository } from "../../../../modules/ft-pagador/domain/pagador.repository.js";
 import { toPagadorCapacity } from "../../../../modules/ft-pagador/domain/pagador-capacity.js";
 import db from "../index.js";
@@ -9,7 +13,9 @@ export class SequelizePagadorRepository implements PagadorRepository {
     const page = Math.max(0, Number(query.page ?? 0));
     const limit = Math.min(100, Math.max(1, Number(query.limit ?? 10)));
     return db.Pagador.findAndCountAll({
-      where: query.search ? { nome: { [Op.like]: `%${String(query.search).trim()}%` } } : undefined,
+      where: query.search
+        ? { nome: { [Op.like]: `%${String(query.search).trim()}%` } }
+        : undefined,
       order: [["nome", "ASC"]],
       offset: page * limit,
       limit,
@@ -27,14 +33,18 @@ export class SequelizePagadorRepository implements PagadorRepository {
     });
   }
 
-  create(input: PagadorInput) { return db.Pagador.create(input); }
+  create(input: PagadorInput) {
+    return db.Pagador.create(input);
+  }
 
   async update(instance: any, input: PagadorInput) {
     await instance.update(input);
     return instance;
   }
 
-  async softDelete(instance: any) { await instance.destroy(); }
+  async softDelete(instance: any) {
+    await instance.destroy();
+  }
 
   async maxActiveOccupation(uuid: string) {
     const rows = await db.BolsistasEdital.findAll({
@@ -46,7 +56,9 @@ export class SequelizePagadorRepository implements PagadorRepository {
     return Math.max(0, ...rows.map((row: any) => Number(row.ocupacao)));
   }
 
-  async listCapacityByEdital(editalId: string): Promise<PagadorCapacity[] | null> {
+  async listCapacityByEdital(
+    editalId: string,
+  ): Promise<PagadorCapacity[] | null> {
     const edital = await db.Edital.findByPk(editalId);
     if (!edital) return null;
 
@@ -64,7 +76,10 @@ export class SequelizePagadorRepository implements PagadorRepository {
       }),
     ]);
     const ativosPorPagador = new Map<string, number>(
-      ocupacoes.map((item: any) => [String(item.pagador_id), Number(item.ativos)] as [string, number]),
+      ocupacoes.map(
+        (item: any) =>
+          [String(item.pagador_id), Number(item.ativos)] as [string, number],
+      ),
     );
 
     return pagadores.map((pagador: any) => {

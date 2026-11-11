@@ -1,4 +1,4 @@
-import EstoqueModule from './modules/ft-estoque/index.js';
+import EstoqueModule from "./modules/ft-estoque/index.js";
 import { FastifyPluginAsync } from "fastify";
 
 import userModule from "./modules/user/index.js";
@@ -25,7 +25,7 @@ const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   const runtimeWorkers = options.runtimeWorkers !== false;
   await fastify.register(AuditModule, { runtimeWorkers });
   fastify.log.info("Audit Module Registrado");
-  
+
   await fastify.register(userModule);
   fastify.log.info("User Module Registrado");
 

@@ -5,7 +5,10 @@ import {
   HTTP_REQUEST_FAILED_EVENT,
 } from "../../../core/event/http-request-failed.events.js";
 import { AuditRecorder } from "../application/contracts/audit-recorder.js";
-import { makeAuditBaseRecord, recordAuditEvent } from "./audit-event-recorder.js";
+import {
+  makeAuditBaseRecord,
+  recordAuditEvent,
+} from "./audit-event-recorder.js";
 
 const getFailureMetadata = (event: {
   action: string;
@@ -33,8 +36,7 @@ export const registerHttpRequestFailedAuditHandler = (
         ...makeAuditBaseRecord(event, event.module, event.resourceType),
         action: event.action,
         resourceId: event.resourceId ?? null,
-        result:
-          event.action === "ACCESS_DENIED" ? "DENIED" : "FAILURE",
+        result: event.action === "ACCESS_DENIED" ? "DENIED" : "FAILURE",
         errorCode: event.errorCode,
         errorMessage: event.errorMessage,
         filters: event.filters,

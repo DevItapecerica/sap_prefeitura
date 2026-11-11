@@ -5,11 +5,14 @@ import { requirePermission } from "../../../acess-controll/interface/require-per
 
 const MUNICIPE_SERVICE_ID = 9;
 
-const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeControllerType}> = async (fastify, options) => {
-  const municipeController = options.controller ?? (await import("../controller/municipe.controller.js")).default;
+const MunicipeRouter: FastifyPluginAsync<{
+  controller?: typeof municipeControllerType;
+}> = async (fastify, options) => {
+  const municipeController =
+    options.controller ??
+    (await import("../controller/municipe.controller.js")).default;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("municipes");
-
 
   const municipeSchema = {
     type: "object",
@@ -78,7 +81,7 @@ const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeController
       complemento: { type: "string" },
     },
   };
-  
+
   const municipeUpdateSchema = {
     type: "object",
     properties: {
@@ -92,12 +95,18 @@ const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeController
       numero: { type: "string" },
       complemento: { type: "string" },
     },
-  }
+  };
 
   fastify.route({
     method: "GET",
     url: "/",
-    config: { audit: { failureAction: "LIST", module: "municipe", resourceType: "municipe" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "municipe",
+        resourceType: "municipe",
+      },
+    },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
@@ -132,7 +141,14 @@ const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeController
   fastify.route({
     method: "GET",
     url: "/:uuid",
-    config: { audit: { failureAction: "VIEW", module: "municipe", resourceType: "municipe", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "municipe",
+        resourceType: "municipe",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
@@ -163,7 +179,13 @@ const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeController
   fastify.route({
     method: "POST",
     url: "/",
-    config: { audit: { failureAction: "CREATE", module: "municipe", resourceType: "municipe" } },
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "municipe",
+        resourceType: "municipe",
+      },
+    },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],
@@ -189,7 +211,14 @@ const MunicipeRouter: FastifyPluginAsync<{controller?: typeof municipeController
   fastify.route({
     method: "PUT",
     url: "/:uuid",
-    config: { audit: { failureAction: "UPDATE", module: "municipe", resourceType: "municipe", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "municipe",
+        resourceType: "municipe",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Municipes"],
       security: [{ JWTToken: [] }],

@@ -6,7 +6,9 @@ import { SequelizeFtBolsistaRepository } from "./sequelize.ft-bolsista.repositor
 const model = (values: Record<string, any>) => ({
   get: (key: string) => values[key],
   set: (updates: Record<string, any>) => Object.assign(values, updates),
-  setDataValue: (key: string, value: any) => { values[key] = value; },
+  setDataValue: (key: string, value: any) => {
+    values[key] = value;
+  },
   toJSON: () => ({ ...values }),
   save: async () => values,
   destroy: async () => undefined,
@@ -19,7 +21,9 @@ const patchMethod = (
 ) => {
   const original = target[key];
   target[key] = replacement;
-  return () => { target[key] = original; };
+  return () => {
+    target[key] = original;
+  };
 };
 
 test("pagina bolsistas antes de carregar seus multiplos vinculos", async () => {
@@ -29,14 +33,28 @@ test("pagina bolsistas antes de carregar seus multiplos vinculos", async () => {
     received = options;
     return {
       count: 23,
-      rows: Array.from({ length: 10 }, (_, index) => model({
-        id: `b${index}`,
-        municipe: null,
-        bolsistas_edital: [
-          model({ id: `v${index}-old`, edital_id: "e1", status: "expirado", data_vinculo: "2026-09-01", edital: { id: "e1", name: "Edital" } }),
-          model({ id: `v${index}-active`, edital_id: "e1", status: "ativo", data_vinculo: "2026-01-01", edital: { id: "e1", name: "Edital" } }),
-        ],
-      })),
+      rows: Array.from({ length: 10 }, (_, index) =>
+        model({
+          id: `b${index}`,
+          municipe: null,
+          bolsistas_edital: [
+            model({
+              id: `v${index}-old`,
+              edital_id: "e1",
+              status: "expirado",
+              data_vinculo: "2026-09-01",
+              edital: { id: "e1", name: "Edital" },
+            }),
+            model({
+              id: `v${index}-active`,
+              edital_id: "e1",
+              status: "ativo",
+              data_vinculo: "2026-01-01",
+              edital: { id: "e1", name: "Edital" },
+            }),
+          ],
+        }),
+      ),
     };
   };
 
@@ -52,8 +70,15 @@ test("pagina bolsistas antes de carregar seus multiplos vinculos", async () => {
     assert.equal(received.offset, 10);
     assert.equal(received.limit, 10);
     assert.equal(received.subQuery, undefined);
-    assert.equal(received.include.some((include: any) => include.as === "edital"), false);
-    assert.equal(received.include.find((include: any) => include.as === "bolsistas_edital")?.separate, true);
+    assert.equal(
+      received.include.some((include: any) => include.as === "edital"),
+      false,
+    );
+    assert.equal(
+      received.include.find((include: any) => include.as === "bolsistas_edital")
+        ?.separate,
+      true,
+    );
     const first = result.rows[0].toJSON();
     assert.equal(first.bolsistas_edital.length, 2);
     assert.equal(first.edital.length, 1);
@@ -73,12 +98,24 @@ test("executa persistencia e transacoes do agregado de bolsista", async () => {
   const falta = model({ id: "f1" });
   const ocorrencia = model({ id: "o1" });
   const restores = [
-    patchMethod(db.sequelize, "transaction", async (callback) => callback({ id: "tx" })),
-    patchMethod(db.Bolsistas, "findByPk", async (id) => id === "missing" ? null : bolsista),
+    patchMethod(db.sequelize, "transaction", async (callback) =>
+      callback({ id: "tx" }),
+    ),
+    patchMethod(db.Bolsistas, "findByPk", async (id) =>
+      id === "missing" ? null : bolsista,
+    ),
     patchMethod(db.Bolsistas, "findOne", async () => bolsista),
-    patchMethod(db.Bolsistas, "create", async (data) => { calls.push("bolsista:create"); return model({ id: "b1", ...data }); }),
-    patchMethod(db.MunicipeModel, "findByPk", async () => model({ uuid: "m1" })),
-    patchMethod(db.PaymentInfo, "create", async (data) => { calls.push(`payment:${data.bolsista_id ?? "direto"}`); return paymentInfo; }),
+    patchMethod(db.Bolsistas, "create", async (data) => {
+      calls.push("bolsista:create");
+      return model({ id: "b1", ...data });
+    }),
+    patchMethod(db.MunicipeModel, "findByPk", async () =>
+      model({ uuid: "m1" }),
+    ),
+    patchMethod(db.PaymentInfo, "create", async (data) => {
+      calls.push(`payment:${data.bolsista_id ?? "direto"}`);
+      return paymentInfo;
+    }),
     patchMethod(db.Edital, "findByPk", async () => model({ id: "e1" })),
     patchMethod(db.BolsistasEdital, "findOne", async () => vinculo),
     patchMethod(db.BolsistasEdital, "findByPk", async () => vinculo),
@@ -101,13 +138,26 @@ test("executa persistencia e transacoes do agregado de bolsista", async () => {
       { banco: "001" },
     );
     assert.equal(created.bolsista.get("id"), "b1");
-    assert.deepEqual(calls, ["bolsista:create", "payment:b1", "bolsista:create", "payment:b1"]);
-    assert.equal(await repository.updateWithPaymentInfo(bolsista, paymentInfo, { banco: "104" }), bolsista);
+    assert.deepEqual(calls, [
+      "bolsista:create",
+      "payment:b1",
+      "bolsista:create",
+      "payment:b1",
+    ]);
+    assert.equal(
+      await repository.updateWithPaymentInfo(bolsista, paymentInfo, {
+        banco: "104",
+      }),
+      bolsista,
+    );
     assert.equal((await repository.findEditalById("e1"))?.get("id"), "e1");
     assert.equal(await repository.findVinculo("b1", "e1", "ativo"), vinculo);
     assert.equal(await repository.findVinculo("b1", "e1"), vinculo);
     assert.equal(await repository.findVinculoById("v1"), vinculo);
-    assert.equal(await repository.findFaltaByBolsistaEditalData("b1", "e1", "2026-10-01"), falta);
+    assert.equal(
+      await repository.findFaltaByBolsistaEditalData("b1", "e1", "2026-10-01"),
+      falta,
+    );
     await repository.destroyBolsista(bolsista);
     await repository.cancelVinculo(bolsista, vinculo, "Encerrado");
     assert.equal(vinculo.get("status"), "cancelado");
@@ -166,7 +216,10 @@ test("monta consultas de faltas, ocorrencias e historicos", async () => {
 
   try {
     assert.equal((await repository.findAniversariantesAtivos()).length, 1);
-    assert.equal((await repository.findToExpire(new Date("2026-11-01"))).count, 1);
+    assert.equal(
+      (await repository.findToExpire(new Date("2026-11-01"))).count,
+      1,
+    );
     assert.equal((await repository.findByEditalId("e1")).length, 1);
     const rows = await repository.findHistoricoByBolsistaId("b1");
     assert.equal(rows[0].get("turno").nome, "Historico");
@@ -180,7 +233,12 @@ test("monta consultas de faltas, ocorrencias e historicos", async () => {
     assert.equal(received.faltas.offset, 10);
     assert.equal(received.faltas.where.edital_id, "e1");
     await repository.findAndCountFaltasByBolsista("b1");
-    await repository.findFaltasByBolsistaPeriodo("b1", "e1", "2026-10-01", "2026-10-31");
+    await repository.findFaltasByBolsistaPeriodo(
+      "b1",
+      "e1",
+      "2026-10-01",
+      "2026-10-31",
+    );
     await repository.findAndCountOcorrenciasByBolsista("b1", {
       edital_id: "e1",
       bolsista_edital_id: "v1",
@@ -210,17 +268,36 @@ test("pagina candidatos elegiveis com cursor opaco", async () => {
       bolsistas_edital: vinculos,
     });
   const rows = [candidate("b1", "Ana"), candidate("b2", "Bia")];
-  const restoreEdital = patchMethod(db.Edital, 'findByPk', async () => model({ id: 'e1', idade_maxima: 65, permitir_retorno: true, permitir_participacao_anterior: true }));
+  const restoreEdital = patchMethod(db.Edital, "findByPk", async () =>
+    model({
+      id: "e1",
+      idade_maxima: 65,
+      permitir_retorno: true,
+      permitir_participacao_anterior: true,
+    }),
+  );
   let calls = 0;
-  const restore = patchMethod(db.Bolsistas, "findAll", async () => calls++ === 0 ? rows : []);
+  const restore = patchMethod(db.Bolsistas, "findAll", async () =>
+    calls++ === 0 ? rows : [],
+  );
 
   try {
     await assert.rejects(
-      () => repository.findAndCountVinculoCandidates({ edital_id: "e1", data_vinculo: "2026-10-01", limit: "0" }),
+      () =>
+        repository.findAndCountVinculoCandidates({
+          edital_id: "e1",
+          data_vinculo: "2026-10-01",
+          limit: "0",
+        }),
       (error: any) => error.statusCode === 400,
     );
     await assert.rejects(
-      () => repository.findAndCountVinculoCandidates({ edital_id: "e1", data_vinculo: "2026-10-01", cursor: "invalido" }),
+      () =>
+        repository.findAndCountVinculoCandidates({
+          edital_id: "e1",
+          data_vinculo: "2026-10-01",
+          cursor: "invalido",
+        }),
       (error: any) => error.statusCode === 400,
     );
     const first = await repository.findAndCountVinculoCandidates({
@@ -255,21 +332,38 @@ test("ignora candidatos inelegiveis e aceita somente quem atende as politicas", 
     id: string,
     nascimento: string | null,
     vinculos: any[] = [],
-  ) => model({
-    id,
-    municipe: model({ nome: id, nascimento }),
-    bolsistas_edital: vinculos,
-  });
+  ) =>
+    model({
+      id,
+      municipe: model({ nome: id, nascimento }),
+      bolsistas_edital: vinculos,
+    });
   const rows = [
-    candidate("ativo", "1990-01-01", [model({ edital_id: "outro", status: "ativo" })]),
-    candidate("retorno-mesmo-mes", "1990-01-01", [model({ edital_id: "e1", status: "cancelado", ativado_em: '2026-09-01', canceled_at: "2026-10-02" })]),
+    candidate("ativo", "1990-01-01", [
+      model({ edital_id: "outro", status: "ativo" }),
+    ]),
+    candidate("retorno-mesmo-mes", "1990-01-01", [
+      model({
+        edital_id: "e1",
+        status: "cancelado",
+        ativado_em: "2026-09-01",
+        canceled_at: "2026-10-02",
+      }),
+    ]),
     candidate("sem-nascimento", null),
     candidate("data-invalida", "invalida"),
     candidate("idade-excedida", "1950-01-01"),
     candidate("elegivel", "1990-01-01"),
   ];
   const restore = patchMethod(db.Bolsistas, "findAll", async () => rows);
-  const restoreEdital = patchMethod(db.Edital, 'findByPk', async () => model({ id: 'e1', idade_maxima: 65, permitir_retorno: true, permitir_participacao_anterior: true }));
+  const restoreEdital = patchMethod(db.Edital, "findByPk", async () =>
+    model({
+      id: "e1",
+      idade_maxima: 65,
+      permitir_retorno: true,
+      permitir_participacao_anterior: true,
+    }),
+  );
 
   try {
     const result = await repository.findAndCountVinculoCandidates({
@@ -277,7 +371,10 @@ test("ignora candidatos inelegiveis e aceita somente quem atende as politicas", 
       data_vinculo: "2026-10-20",
       limit: "10",
     });
-    assert.deepEqual(result.rows.map((row: any) => row.get("id")), ["elegivel"]);
+    assert.deepEqual(
+      result.rows.map((row: any) => row.get("id")),
+      ["elegivel"],
+    );
     assert.equal(result.hasMore, false);
     assert.equal(result.nextCursor, null);
   } finally {
@@ -289,7 +386,10 @@ test("ignora candidatos inelegiveis e aceita somente quem atende as politicas", 
 test("hidrata municipe e cobre buscas sem texto e por CPF", async () => {
   const repository = new SequelizeFtBolsistaRepository();
   (repository as any).municipeMapper = {
-    toDomain: async (value: any) => ({ ...value, nome: "Nome descriptografado" }),
+    toDomain: async (value: any) => ({
+      ...value,
+      nome: "Nome descriptografado",
+    }),
   };
   const row = model({
     id: "b1",
@@ -311,7 +411,12 @@ test("hidrata municipe e cobre buscas sem texto e por CPF", async () => {
     await repository.findAndCount({ search: "" });
     await repository.findAndCount({ search: "529.982.247-25" });
     assert.equal(queries[0].include[0].where, undefined);
-    assert.equal(queries[1].include[0].where[Object.getOwnPropertySymbols(queries[1].include[0].where)[0]].length, 2);
+    assert.equal(
+      queries[1].include[0].where[
+        Object.getOwnPropertySymbols(queries[1].include[0].where)[0]
+      ].length,
+      2,
+    );
   } finally {
     restores.reverse().forEach((restore) => restore());
   }

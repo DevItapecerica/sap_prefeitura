@@ -12,7 +12,10 @@ test("AtletaService busca, atualiza, remove e cria carterinha", async () => {
 
   assert.equal((await service.findAllAtletas()).count, 1);
   assert.equal((await service.findOneAtleta("atl-1")).municipe_uuid, "mun-1");
-  assert.equal((await service.updateAtleta("atl-1", { ativo: false })).ativo, false);
+  assert.equal(
+    (await service.updateAtleta("atl-1", { ativo: false })).ativo,
+    false,
+  );
   await service.addModalidadeToAtleta("atl-1", { modalidade_uuid: "mod-1" });
   const carterinha = await service.createCarteirinha("atl-1", 9, {
     observacao: "Liberado",

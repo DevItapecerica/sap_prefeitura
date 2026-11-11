@@ -23,9 +23,7 @@ export class SequelizeRolesRepository implements RolesRepository {
   async findAll(query: RoleQuery): Promise<RoleListResult> {
     const { page, limit, search, order } = query;
     const [field, direction] = order.split(":");
-    const where = search
-      ? { name: { [Op.like]: `%${search}%` } }
-      : undefined;
+    const where = search ? { name: { [Op.like]: `%${search}%` } } : undefined;
     const result = await this.roles.findAndCountAll({
       where,
       limit,
@@ -69,11 +67,20 @@ export class SequelizeRolesRepository implements RolesRepository {
       });
       if (user) return { status: "in_use" };
 
-      const grant = await this.permissions.findOne({where: {role_id: id}, transaction, lock});
-      if (grant) return {status: "in_use"};
-      const before = {role: this.toRole(role), permissions: []};
-      try { await role.destroy({transaction}); }
-      catch (error) { if (error instanceof ForeignKeyConstraintError) return {status: "in_use"}; throw error; }
+      const grant = await this.permissions.findOne({
+        where: { role_id: id },
+        transaction,
+        lock,
+      });
+      if (grant) return { status: "in_use" };
+      const before = { role: this.toRole(role), permissions: [] };
+      try {
+        await role.destroy({ transaction });
+      } catch (error) {
+        if (error instanceof ForeignKeyConstraintError)
+          return { status: "in_use" };
+        throw error;
+      }
       return { status: "deleted", before };
     });
   }
@@ -81,5 +88,4 @@ export class SequelizeRolesRepository implements RolesRepository {
   private toRole(row: Model): Roles {
     return new Roles(Number(row.get("id")), String(row.get("name")));
   }
-
 }

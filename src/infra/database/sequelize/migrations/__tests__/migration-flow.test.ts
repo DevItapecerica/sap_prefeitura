@@ -12,20 +12,30 @@ import normalizeBolsistasMigration, {
   normalizeDigits,
 } from "../20261013170000-normalize-bolsistas-to-municipes.js";
 import AesCryptService from "../../../../../core/security/aes/AesCrypt.service.js";
-import pagadoresMigration, { PAGADORES_INICIAIS } from "../20261014100000-create-pagadores-and-move-to-vinculos.js";
+import pagadoresMigration, {
+  PAGADORES_INICIAIS,
+} from "../20261014100000-create-pagadores-and-move-to-vinculos.js";
 import auditErrorMessageMigration from "../20261014170000-add-error-message-to-audit-logs.js";
 import relatorioTipoMigration from "../20261015120000-add-tipo-ft-relatorio-arquivos.js";
 
-const transaction = async (callback: (transaction: object) => Promise<void>) => callback({});
+const transaction = async (callback: (transaction: object) => Promise<void>) =>
+  callback({});
 
 test("audit error message migration is idempotent and reversible", async () => {
   let hasErrorMessage = false;
   let added = 0;
   let removed = 0;
   const queryInterface = {
-    describeTable: async () => hasErrorMessage ? { error_message: { type: "TEXT" } } : {},
-    addColumn: async () => { hasErrorMessage = true; added += 1; },
-    removeColumn: async () => { hasErrorMessage = false; removed += 1; },
+    describeTable: async () =>
+      hasErrorMessage ? { error_message: { type: "TEXT" } } : {},
+    addColumn: async () => {
+      hasErrorMessage = true;
+      added += 1;
+    },
+    removeColumn: async () => {
+      hasErrorMessage = false;
+      removed += 1;
+    },
   } as unknown as QueryInterface;
 
   await auditErrorMessageMigration.up(queryInterface);
@@ -42,14 +52,18 @@ test("report file type migration is idempotent and reversible", async () => {
   let added = 0;
   let removed = 0;
   const queryInterface = {
-    describeTable: async () => hasType ? { tipo: { type: "VARCHAR(32)" } } : {},
+    describeTable: async () =>
+      hasType ? { tipo: { type: "VARCHAR(32)" } } : {},
     addColumn: async (_table: string, column: string, definition: any) => {
       assert.equal(column, "tipo");
       assert.equal(definition.defaultValue, "espelhos_ponto");
       hasType = true;
       added += 1;
     },
-    removeColumn: async () => { hasType = false; removed += 1; },
+    removeColumn: async () => {
+      hasType = false;
+      removed += 1;
+    },
   } as unknown as QueryInterface;
 
   await relatorioTipoMigration.up(queryInterface);
@@ -65,7 +79,9 @@ test("roles down removes dependent tables first", async () => {
   const dropped: string[] = [];
   const queryInterface = {
     sequelize: { transaction },
-    dropTable: async (table: string) => { dropped.push(table); },
+    dropTable: async (table: string) => {
+      dropped.push(table);
+    },
   } as unknown as QueryInterface;
   await rolesMigration.down(queryInterface);
   assert.deepEqual(dropped, ["service_visibilities", "permissions", "roles"]);
@@ -75,9 +91,14 @@ test("core access constraints reject orphaned records before DDL", async () => {
   let constraintsAdded = 0;
   const queryInterface = {
     sequelize: { transaction, query: async () => [{ id: 99 }] },
-    addConstraint: async () => { constraintsAdded += 1; },
+    addConstraint: async () => {
+      constraintsAdded += 1;
+    },
   } as unknown as QueryInterface;
-  await assert.rejects(() => constraintsMigration.up(queryInterface), /orphaned record/);
+  await assert.rejects(
+    () => constraintsMigration.up(queryInterface),
+    /orphaned record/,
+  );
   assert.equal(constraintsAdded, 0);
 });
 
@@ -85,7 +106,12 @@ test("setor migration stays schema-only without timestamp columns", async () => 
   let columns: Record<string, unknown> = {};
   const queryInterface = {
     sequelize: { transaction },
-    createTable: async (_table: string, definition: Record<string, unknown>) => { columns = definition; },
+    createTable: async (
+      _table: string,
+      definition: Record<string, unknown>,
+    ) => {
+      columns = definition;
+    },
   } as unknown as QueryInterface;
   await setorMigration.up(queryInterface);
   assert.deepEqual(Object.keys(columns), ["id", "name", "description"]);
@@ -95,7 +121,9 @@ test("bolsistas edital primary key migration does not add an existing id column"
   let columnsAdded = 0;
   const queryInterface = {
     describeTable: async () => ({ id: { type: "CHAR(36)" } }),
-    addColumn: async () => { columnsAdded += 1; },
+    addColumn: async () => {
+      columnsAdded += 1;
+    },
     removeConstraint: async () => {},
     addConstraint: async () => {},
   } as unknown as QueryInterface;
@@ -109,7 +137,9 @@ test("bolsistas edital primary key migration adds id when it is missing", async 
   let columnsAdded = 0;
   const queryInterface = {
     describeTable: async () => ({ bolsista_id: { type: "CHAR(36)" } }),
-    addColumn: async () => { columnsAdded += 1; },
+    addColumn: async () => {
+      columnsAdded += 1;
+    },
     removeConstraint: async () => {},
     addConstraint: async () => {},
   } as unknown as QueryInterface;
@@ -124,9 +154,16 @@ test("bolsistas edital observacao migration is reversible and idempotent", async
   let columnsAdded = 0;
   let columnsRemoved = 0;
   const queryInterface = {
-    describeTable: async () => hasObservacao ? { observacao: { type: "TEXT" } } : {},
-    addColumn: async () => { hasObservacao = true; columnsAdded += 1; },
-    removeColumn: async () => { hasObservacao = false; columnsRemoved += 1; },
+    describeTable: async () =>
+      hasObservacao ? { observacao: { type: "TEXT" } } : {},
+    addColumn: async () => {
+      hasObservacao = true;
+      columnsAdded += 1;
+    },
+    removeColumn: async () => {
+      hasObservacao = false;
+      columnsRemoved += 1;
+    },
   } as unknown as QueryInterface;
 
   await bolsistaEditalObservacaoMigration.up(queryInterface);
@@ -142,7 +179,9 @@ test("municipe resource constraints reject orphaned records before DDL", async (
   let constraintsAdded = 0;
   const queryInterface = {
     sequelize: { transaction, query: async () => [{ uuid: "orphan" }] },
-    addConstraint: async () => { constraintsAdded += 1; },
+    addConstraint: async () => {
+      constraintsAdded += 1;
+    },
   } as unknown as QueryInterface;
 
   await assert.rejects(
@@ -157,8 +196,12 @@ test("municipe resource constraints are added and removed in dependency order", 
   const removed: string[] = [];
   const queryInterface = {
     sequelize: { transaction, query: async () => [] },
-    addConstraint: async (table: string) => { added.push(table); },
-    removeConstraint: async (table: string) => { removed.push(table); },
+    addConstraint: async (table: string) => {
+      added.push(table);
+    },
+    removeConstraint: async (table: string) => {
+      removed.push(table);
+    },
   } as unknown as QueryInterface;
 
   await municipeResourceConstraintsMigration.up(queryInterface);
@@ -181,12 +224,13 @@ test("users email migration replaces only the unique email index with a regular 
   const added: Array<{ name: string; unique: boolean }> = [];
   const removed: string[] = [];
   const queryInterface = {
-    showIndex: async () => [...indexes].map(([name, index]) => ({
-      name,
-      primary: name === "PRIMARY",
-      unique: index.nonUnique === 0,
-      fields: index.columns.map((attribute) => ({ attribute })),
-    })),
+    showIndex: async () =>
+      [...indexes].map(([name, index]) => ({
+        name,
+        primary: name === "PRIMARY",
+        unique: index.nonUnique === 0,
+        fields: index.columns.map((attribute) => ({ attribute })),
+      })),
     addIndex: async (
       _table: string,
       columns: string[],
@@ -250,7 +294,7 @@ const legacyBolsista = {
 };
 
 const makeBolsistaMigrationQueryInterface = (
-  rows: typeof legacyBolsista[],
+  rows: (typeof legacyBolsista)[],
   existing: Record<string, unknown> | undefined = undefined,
   validation: {
     missing?: number;
@@ -269,7 +313,8 @@ const makeBolsistaMigrationQueryInterface = (
       transaction,
       query: async (sql: string) => {
         if (sql.startsWith("SELECT id, nome")) return rows;
-        if (sql.startsWith("SELECT uuid, nome")) return existing ? [existing] : [];
+        if (sql.startsWith("SELECT uuid, nome"))
+          return existing ? [existing] : [];
         if (sql.includes("WHERE municipe_uuid IS NULL")) {
           if (validation.missingResultEmpty) return [];
           return [{ count: validation.missing ?? 0 }];
@@ -279,7 +324,9 @@ const makeBolsistaMigrationQueryInterface = (
           return [{ count: validation.archiveCount ?? rows.length }];
         }
         if (sql.includes("GROUP BY municipe_uuid")) {
-          return validation.duplicateLinks ? [{ municipe_uuid: "duplicate" }] : [];
+          return validation.duplicateLinks
+            ? [{ municipe_uuid: "duplicate" }]
+            : [];
         }
         if (sql.includes("WHERE be.local IS NULL")) {
           return validation.missingLocals ? [{ id: "missing-local" }] : [];
@@ -287,11 +334,21 @@ const makeBolsistaMigrationQueryInterface = (
         return [];
       },
     },
-    createTable: async (table: string) => { schemaActions.push(`create:${table}`); },
-    addColumn: async (table: string, field: string) => { schemaActions.push(`add:${table}.${field}`); },
-    changeColumn: async (table: string, field: string) => { schemaActions.push(`change:${table}.${field}`); },
-    bulkInsert: async (table: string, records: any[]) => { inserts.push({ table, records }); },
-    bulkUpdate: async (table: string, values: any, where: any) => { updates.push({ table, values, where }); },
+    createTable: async (table: string) => {
+      schemaActions.push(`create:${table}`);
+    },
+    addColumn: async (table: string, field: string) => {
+      schemaActions.push(`add:${table}.${field}`);
+    },
+    changeColumn: async (table: string, field: string) => {
+      schemaActions.push(`change:${table}.${field}`);
+    },
+    bulkInsert: async (table: string, records: any[]) => {
+      inserts.push({ table, records });
+    },
+    bulkUpdate: async (table: string, values: any, where: any) => {
+      updates.push({ table, values, where });
+    },
     addConstraint: async () => {},
     addIndex: async () => {},
     removeColumn: async () => {},
@@ -306,7 +363,9 @@ test("bolsista normalization handles an empty database", async () => {
   await normalizeBolsistasMigration.up(migration.qi);
 
   assert.equal(migration.inserts.length, 0);
-  assert.ok(migration.schemaActions.includes("create:bolsistas_legacy_archive"));
+  assert.ok(
+    migration.schemaActions.includes("create:bolsistas_legacy_archive"),
+  );
   assert.ok(migration.schemaActions.includes("add:bolsistas.municipe_uuid"));
 });
 
@@ -319,14 +378,31 @@ test("bolsista normalization archives, creates municipe and copies local", async
 
   await normalizeBolsistasMigration.up(migration.qi);
 
-  assert.equal(migration.inserts.filter((item) => item.table === "bolsistas_legacy_archive").length, 1);
-  const createdMunicipe = migration.inserts.find((item) => item.table === "municipes")?.records[0];
+  assert.equal(
+    migration.inserts.filter(
+      (item) => item.table === "bolsistas_legacy_archive",
+    ).length,
+    1,
+  );
+  const createdMunicipe = migration.inserts.find(
+    (item) => item.table === "municipes",
+  )?.records[0];
   assert.equal(createdMunicipe.nascimento, null);
   assert.equal(createdMunicipe.complemento, null);
   assert.equal(createdMunicipe.author, "migration:issue-37");
   assert.notEqual(createdMunicipe.cpf, "52998224725");
-  assert.ok(migration.updates.some((item) => item.table === "bolsistas" && item.values.municipe_uuid));
-  assert.ok(migration.updates.some((item) => item.table === "bolsistas_edital" && item.values.local === legacyBolsista.local));
+  assert.ok(
+    migration.updates.some(
+      (item) => item.table === "bolsistas" && item.values.municipe_uuid,
+    ),
+  );
+  assert.ok(
+    migration.updates.some(
+      (item) =>
+        item.table === "bolsistas_edital" &&
+        item.values.local === legacyBolsista.local,
+    ),
+  );
 });
 
 test("bolsista normalization reuses municipe and records divergent field names only", async () => {
@@ -343,11 +419,17 @@ test("bolsista normalization reuses municipe and records divergent field names o
     cep: await encrypted("06850000"),
     numero: await encrypted(legacyBolsista.numero),
   };
-  const migration = makeBolsistaMigrationQueryInterface([legacyBolsista], existing);
+  const migration = makeBolsistaMigrationQueryInterface(
+    [legacyBolsista],
+    existing,
+  );
 
   await normalizeBolsistasMigration.up(migration.qi);
 
-  assert.equal(migration.inserts.some((item) => item.table === "municipes"), false);
+  assert.equal(
+    migration.inserts.some((item) => item.table === "municipes"),
+    false,
+  );
   const divergence = migration.inserts.find(
     (item) => item.table === "bolsistas_migration_divergences",
   )?.records[0];
@@ -370,7 +452,10 @@ test("bolsista normalization records every divergent reused field without values
     cep: await encrypted("00000000"),
     numero: await encrypted("999"),
   };
-  const migration = makeBolsistaMigrationQueryInterface([rowWithoutPhone], existing);
+  const migration = makeBolsistaMigrationQueryInterface(
+    [rowWithoutPhone],
+    existing,
+  );
 
   await normalizeBolsistasMigration.up(migration.qi);
 
@@ -378,10 +463,20 @@ test("bolsista normalization records every divergent reused field without values
     (item) => item.table === "bolsistas_migration_divergences",
   )?.records[0];
   assert.deepEqual(JSON.parse(divergence.divergent_fields), [
-    "telefone", "rua", "bairro", "cidade", "uf", "cep", "numero",
+    "telefone",
+    "rua",
+    "bairro",
+    "cidade",
+    "uf",
+    "cep",
+    "numero",
   ]);
   assert.deepEqual(Object.keys(divergence).sort(), [
-    "bolsista_id", "createdAt", "divergent_fields", "id", "municipe_uuid",
+    "bolsista_id",
+    "createdAt",
+    "divergent_fields",
+    "id",
+    "municipe_uuid",
   ]);
 });
 
@@ -400,12 +495,17 @@ test("bolsista normalization does not report equal nullable reused data", async 
     cep: await encrypted("06850000"),
     numero: await encrypted(legacyBolsista.numero),
   };
-  const migration = makeBolsistaMigrationQueryInterface([rowWithoutPhone], existing);
+  const migration = makeBolsistaMigrationQueryInterface(
+    [rowWithoutPhone],
+    existing,
+  );
 
   await normalizeBolsistasMigration.up(migration.qi);
 
   assert.equal(
-    migration.inserts.some((item) => item.table === "bolsistas_migration_divergences"),
+    migration.inserts.some(
+      (item) => item.table === "bolsistas_migration_divergences",
+    ),
     false,
   );
 });
@@ -416,7 +516,9 @@ test("bolsista normalization creates nullable optional migrated data", async () 
 
   await normalizeBolsistasMigration.up(migration.qi);
 
-  const createdMunicipe = migration.inserts.find((item) => item.table === "municipes")?.records[0];
+  const createdMunicipe = migration.inserts.find(
+    (item) => item.table === "municipes",
+  )?.records[0];
   assert.equal(createdMunicipe.telefone, null);
 });
 
@@ -435,7 +537,10 @@ test("bolsista normalization rejects missing validation aggregates", async () =>
 for (const scenario of [
   { validation: { missing: 1 }, message: "without municipe_uuid" },
   { validation: { archiveCount: 0 }, message: "archive count mismatch" },
-  { validation: { duplicateLinks: true }, message: "Duplicate municipe linkage" },
+  {
+    validation: { duplicateLinks: true },
+    message: "Duplicate municipe linkage",
+  },
   { validation: { missingLocals: true }, message: "without local" },
 ] as const) {
   test(`bolsista normalization aborts validation: ${scenario.message}`, async () => {
@@ -453,8 +558,14 @@ for (const scenario of [
 }
 
 test("bolsista normalization rejects duplicate legacy CPFs before writing data", async () => {
-  const duplicate = { ...legacyBolsista, id: "33333333-3333-4333-8333-333333333333" };
-  const migration = makeBolsistaMigrationQueryInterface([legacyBolsista, duplicate]);
+  const duplicate = {
+    ...legacyBolsista,
+    id: "33333333-3333-4333-8333-333333333333",
+  };
+  const migration = makeBolsistaMigrationQueryInterface([
+    legacyBolsista,
+    duplicate,
+  ]);
 
   await assert.rejects(
     () => normalizeBolsistasMigration.up(migration.qi),
@@ -469,26 +580,52 @@ test("bolsista normalization rollback restores archive before dropping support t
   const queryInterface = {
     sequelize: {
       transaction,
-      query: async () => { actions.push("restore"); return []; },
+      query: async () => {
+        actions.push("restore");
+        return [];
+      },
     },
-    addColumn: async (_table: string, field: string) => { actions.push(`add:${field}`); },
-    removeIndex: async () => { actions.push("remove:index"); },
-    removeConstraint: async () => { actions.push("remove:constraint"); },
-    removeColumn: async (_table: string, field: string) => { actions.push(`remove:${field}`); },
-    changeColumn: async () => { actions.push("birth:required"); },
-    dropTable: async (table: string) => { actions.push(`drop:${table}`); },
+    addColumn: async (_table: string, field: string) => {
+      actions.push(`add:${field}`);
+    },
+    removeIndex: async () => {
+      actions.push("remove:index");
+    },
+    removeConstraint: async () => {
+      actions.push("remove:constraint");
+    },
+    removeColumn: async (_table: string, field: string) => {
+      actions.push(`remove:${field}`);
+    },
+    changeColumn: async () => {
+      actions.push("birth:required");
+    },
+    dropTable: async (table: string) => {
+      actions.push(`drop:${table}`);
+    },
   } as unknown as QueryInterface;
 
   await normalizeBolsistasMigration.down(queryInterface);
 
-  assert.ok(actions.indexOf("restore") < actions.indexOf("drop:bolsistas_legacy_archive"));
+  assert.ok(
+    actions.indexOf("restore") <
+      actions.indexOf("drop:bolsistas_legacy_archive"),
+  );
   assert.ok(actions.includes("drop:bolsistas_migration_divergences"));
   assert.ok(actions.includes("birth:required"));
 });
 
 const makePagadoresMigrationQueryInterface = (
-  links: Array<{ id: string; bolsista_id: string; pagador_id: string | null }> = [],
-  paymentRows: Array<{ id: string; bolsista_id: string; pagador_id: string | null }> = [],
+  links: Array<{
+    id: string;
+    bolsista_id: string;
+    pagador_id: string | null;
+  }> = [],
+  paymentRows: Array<{
+    id: string;
+    bolsista_id: string;
+    pagador_id: string | null;
+  }> = [],
 ) => {
   const tables = new Set<string>();
   const columns: Record<string, Set<string>> = {
@@ -500,12 +637,19 @@ const makePagadoresMigrationQueryInterface = (
   const seeded = new Set<string>();
   const qi = {
     tableExists: async (table: string) => tables.has(table),
-    describeTable: async (table: string) => Object.fromEntries([...(columns[table] ?? new Set())].map((column) => [column, {}])),
+    describeTable: async (table: string) =>
+      Object.fromEntries(
+        [...(columns[table] ?? new Set())].map((column) => [column, {}]),
+      ),
     sequelize: {
       transaction,
       query: async (sql: string, options: any = {}) => {
-        if (sql.startsWith("SELECT uuid FROM pagadores WHERE")) return seeded.has(options.replacements.uuid) ? [{ uuid: options.replacements.uuid }] : [];
-        if (sql === "SELECT id, bolsista_id, pagador_id FROM payment_info") return paymentRows;
+        if (sql.startsWith("SELECT uuid FROM pagadores WHERE"))
+          return seeded.has(options.replacements.uuid)
+            ? [{ uuid: options.replacements.uuid }]
+            : [];
+        if (sql === "SELECT id, bolsista_id, pagador_id FROM payment_info")
+          return paymentRows;
         if (sql.startsWith("SELECT be.id")) return links;
         if (sql.includes("pagadores_migration_pending WHERE")) return [];
         if (sql.includes("COUNT(*) AS total")) return [{ total: 0 }];
@@ -513,14 +657,31 @@ const makePagadoresMigrationQueryInterface = (
         return [];
       },
     },
-    createTable: async (table: string) => { tables.add(table); actions.push(`create:${table}`); },
-    dropTable: async (table: string) => { tables.delete(table); actions.push(`drop:${table}`); },
-    addColumn: async (table: string, column: string) => { columns[table] ??= new Set(); columns[table].add(column); actions.push(`add:${table}.${column}`); },
-    removeColumn: async (table: string, column: string) => { columns[table]?.delete(column); actions.push(`remove:${table}.${column}`); },
-    addConstraint: async () => {}, removeConstraint: async () => {}, addIndex: async () => {}, removeIndex: async () => {},
+    createTable: async (table: string) => {
+      tables.add(table);
+      actions.push(`create:${table}`);
+    },
+    dropTable: async (table: string) => {
+      tables.delete(table);
+      actions.push(`drop:${table}`);
+    },
+    addColumn: async (table: string, column: string) => {
+      columns[table] ??= new Set();
+      columns[table].add(column);
+      actions.push(`add:${table}.${column}`);
+    },
+    removeColumn: async (table: string, column: string) => {
+      columns[table]?.delete(column);
+      actions.push(`remove:${table}.${column}`);
+    },
+    addConstraint: async () => {},
+    removeConstraint: async () => {},
+    addIndex: async () => {},
+    removeIndex: async () => {},
     bulkInsert: async (table: string, records: any[]) => {
       inserts.push({ table, records });
-      if (table === "pagadores") records.forEach((record) => seeded.add(record.uuid));
+      if (table === "pagadores")
+        records.forEach((record) => seeded.add(record.uuid));
     },
   } as unknown as QueryInterface;
   return { qi, inserts, actions, tables, columns };
@@ -529,7 +690,10 @@ const makePagadoresMigrationQueryInterface = (
 test("pagadores migration seeds eight records and removes payer from payment info", async () => {
   const migration = makePagadoresMigrationQueryInterface();
   await pagadoresMigration.up(migration.qi);
-  assert.equal(migration.inserts.filter((item) => item.table === "pagadores").length, PAGADORES_INICIAIS.length);
+  assert.equal(
+    migration.inserts.filter((item) => item.table === "pagadores").length,
+    PAGADORES_INICIAIS.length,
+  );
   assert.ok(migration.actions.includes("add:bolsistas_edital.pagador_id"));
   assert.ok(migration.actions.includes("remove:payment_info.pagador_id"));
 });
@@ -538,28 +702,51 @@ test("pagadores migration can be safely reexecuted", async () => {
   const migration = makePagadoresMigrationQueryInterface();
   await pagadoresMigration.up(migration.qi);
   await pagadoresMigration.up(migration.qi);
-  assert.equal(migration.inserts.filter((item) => item.table === "pagadores").length, PAGADORES_INICIAIS.length);
+  assert.equal(
+    migration.inserts.filter((item) => item.table === "pagadores").length,
+    PAGADORES_INICIAIS.length,
+  );
 });
 
 test("pagadores migration audits unknown legacy payer without PII", async () => {
-  const migration = makePagadoresMigrationQueryInterface([{ id: "v1", bolsista_id: "b1", pagador_id: "desconhecido" }]);
+  const migration = makePagadoresMigrationQueryInterface([
+    { id: "v1", bolsista_id: "b1", pagador_id: "desconhecido" },
+  ]);
   await pagadoresMigration.up(migration.qi);
-  const pending = migration.inserts.find((item) => item.table === "pagadores_migration_pending")?.records[0];
-  assert.deepEqual(Object.keys(pending).sort(), ["bolsista_edital_id", "bolsista_id", "createdAt", "legacy_pagador_id", "motivo", "uuid"]);
+  const pending = migration.inserts.find(
+    (item) => item.table === "pagadores_migration_pending",
+  )?.records[0];
+  assert.deepEqual(Object.keys(pending).sort(), [
+    "bolsista_edital_id",
+    "bolsista_id",
+    "createdAt",
+    "legacy_pagador_id",
+    "motivo",
+    "uuid",
+  ]);
   assert.equal(pending.motivo, "NAO_RECONHECIDO");
 });
 
 test("pagadores migration archives the original payment payer for lossless rollback", async () => {
-  const migration = makePagadoresMigrationQueryInterface([], [{ id: "pi1", bolsista_id: "b1", pagador_id: PAGADORES_INICIAIS[0][0] }]);
+  const migration = makePagadoresMigrationQueryInterface(
+    [],
+    [{ id: "pi1", bolsista_id: "b1", pagador_id: PAGADORES_INICIAIS[0][0] }],
+  );
   await pagadoresMigration.up(migration.qi);
-  const archived = migration.inserts.find((item) => item.table === "payment_info_pagador_legacy")?.records[0];
+  const archived = migration.inserts.find(
+    (item) => item.table === "payment_info_pagador_legacy",
+  )?.records[0];
   assert.equal(archived.payment_info_id, "pi1");
   assert.equal(archived.pagador_id, PAGADORES_INICIAIS[0][0]);
 });
 
 test("pagadores migration rollback aborts when a bolsista has multiple payers", async () => {
   const migration = makePagadoresMigrationQueryInterface();
-  (migration.qi.sequelize.query as any) = async (sql: string) => sql.includes("COUNT(DISTINCT pagador_id)") ? [{ bolsista_id: "b1" }] : [];
-  await assert.rejects(() => pagadoresMigration.down(migration.qi), /multiplos pagadores/);
+  (migration.qi.sequelize.query as any) = async (sql: string) =>
+    sql.includes("COUNT(DISTINCT pagador_id)") ? [{ bolsista_id: "b1" }] : [];
+  await assert.rejects(
+    () => pagadoresMigration.down(migration.qi),
+    /multiplos pagadores/,
+  );
   assert.equal(migration.actions.length, 0);
 });

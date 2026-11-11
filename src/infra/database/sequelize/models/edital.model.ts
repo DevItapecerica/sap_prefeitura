@@ -1,5 +1,5 @@
 import { DataTypes, Sequelize } from "sequelize";
-import { editalColumns } from './ft-edital.schema.js';
+import { editalColumns } from "./ft-edital.schema.js";
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const Edital = sequelize.define(

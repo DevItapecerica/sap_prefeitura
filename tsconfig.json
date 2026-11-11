@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-      // File Layout
+    // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
-        
+
     "module": "nodenext",
     "target": "esnext",
-    
+
     // Recommended Options
     "strict": true,
     "isolatedModules": true,

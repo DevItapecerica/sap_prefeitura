@@ -6,10 +6,9 @@ import { makeServiceAccessDefaults } from "../factories/service-access-defaults.
 import { makeSetorEventSubscriber } from "../../setor/factories/setor.factories.js";
 import { makeServiceEventSubscriber } from "../../services/factories/service.factories.js";
 import { makeRoleEventSubscriber } from "../../roles/factories/role.factories.js";
-export const registerAccessControlEvents: FastifyPluginAsync<{ reconcile?: boolean }> = async function (
-  fastify,
-  options,
-) {
+export const registerAccessControlEvents: FastifyPluginAsync<{
+  reconcile?: boolean;
+}> = async function (fastify, options) {
   fastify.log.info("Registering access control events");
   const serviceAccessDefaults = makeServiceAccessDefaults();
 

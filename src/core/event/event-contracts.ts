@@ -7,9 +7,7 @@ export type EventName<TEvents extends EventMap> = Extract<
   string
 >;
 
-export type EventHandler<TEvent> = (
-  event: TEvent,
-) => Promise<void> | void;
+export type EventHandler<TEvent> = (event: TEvent) => Promise<void> | void;
 
 export type Unsubscribe = () => void;
 

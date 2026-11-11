@@ -34,12 +34,22 @@ class FakeModel {
 }
 
 class FakeFtBolsistaRepository implements FtBolsistaRepository {
-  async findFaltasByBolsistaPeriodo() { return []; }
-  async findAniversariantesAtivos() { return []; }
-  async createOcorrencia(data: any) { return new FakeModel({ id: "ocorrencia-1", ...data }); }
-  async findOcorrenciaById() { return null; }
+  async findFaltasByBolsistaPeriodo() {
+    return [];
+  }
+  async findAniversariantesAtivos() {
+    return [];
+  }
+  async createOcorrencia(data: any) {
+    return new FakeModel({ id: "ocorrencia-1", ...data });
+  }
+  async findOcorrenciaById() {
+    return null;
+  }
   async destroyOcorrencia() {}
-  async findAndCountOcorrenciasByBolsista() { return { count: 0, rows: [] }; }
+  async findAndCountOcorrenciasByBolsista() {
+    return { count: 0, rows: [] };
+  }
   public duplicatedCpf = false;
   public missingBolsista = false;
   public missingEdital = false;
@@ -73,7 +83,11 @@ class FakeFtBolsistaRepository implements FtBolsistaRepository {
   private bolsista = new FakeModel({
     id: "bolsista-1",
     municipe_uuid: "11111111-1111-4111-8111-111111111111",
-    municipe: { uuid: "11111111-1111-4111-8111-111111111111", nome: "Maria", cpf: "52998224725" },
+    municipe: {
+      uuid: "11111111-1111-4111-8111-111111111111",
+      nome: "Maria",
+      cpf: "52998224725",
+    },
     payment_info: this.paymentInfo,
   });
 
@@ -279,7 +293,6 @@ describe("ft-bolsista utils", () => {
     assert.equal(isValidCpf("111.111.111-11"), false);
     assert.equal(isValidCpf("123"), false);
   });
-
 });
 
 describe("FtBolsistaService", () => {
@@ -332,10 +345,16 @@ describe("FtBolsistaService", () => {
   });
 
   it("atualiza bolsista usando repository transacional", async () => {
-    const response = await service.saveBolsista(validBolsistaPayload(), "bolsista-1");
+    const response = await service.saveBolsista(
+      validBolsistaPayload(),
+      "bolsista-1",
+    );
 
     assert.equal(repository.updateWithPaymentInfoCalled, true);
-    assert.equal(response.get("municipe_uuid"), "11111111-1111-4111-8111-111111111111");
+    assert.equal(
+      response.get("municipe_uuid"),
+      "11111111-1111-4111-8111-111111111111",
+    );
   });
 
   it("prorroga vinculos validos", async () => {
@@ -407,11 +426,10 @@ describe("FtBolsistaService", () => {
   for (const observacao of [undefined, "", "   "]) {
     it(`rejeita cancelamento com observacao invalida: ${String(observacao)}`, async () => {
       await assertAppError(
-        () => service.cancelBolsistaEdital(
-          "bolsista-1",
-          "edital-1",
-          { observacao } as any,
-        ),
+        () =>
+          service.cancelBolsistaEdital("bolsista-1", "edital-1", {
+            observacao,
+          } as any),
         400,
         "Observacao e obrigatoria",
       );
@@ -424,11 +442,10 @@ describe("FtBolsistaService", () => {
     repository.inactiveEdital = true;
 
     await assertAppError(
-      () => service.cancelBolsistaEdital(
-        "bolsista-1",
-        "edital-1",
-        { observacao: "Cancelamento" },
-      ),
+      () =>
+        service.cancelBolsistaEdital("bolsista-1", "edital-1", {
+          observacao: "Cancelamento",
+        }),
       400,
       "Edital inativo",
     );
@@ -440,11 +457,10 @@ describe("FtBolsistaService", () => {
     repository.vinculoStatus = "inativo";
 
     await assertAppError(
-      () => service.cancelBolsistaEdital(
-        "bolsista-1",
-        "edital-1",
-        { observacao: "Cancelamento" },
-      ),
+      () =>
+        service.cancelBolsistaEdital("bolsista-1", "edital-1", {
+          observacao: "Cancelamento",
+        }),
       400,
       "Bolsista inativo neste edital",
     );
@@ -668,7 +684,10 @@ describe("FtBolsistaService", () => {
       findByEditalId: async () => null,
     };
     await assertAppError(
-      () => new FtBolsistaService(emptyRepository as any).getBolsistaByEditalId("edital-1"),
+      () =>
+        new FtBolsistaService(emptyRepository as any).getBolsistaByEditalId(
+          "edital-1",
+        ),
       404,
       "Nenhum bolsista encontrado",
     );
@@ -681,24 +700,34 @@ describe("FtBolsistaService", () => {
     };
 
     await assertAppError(
-      () => new FtBolsistaService(missingMunicipeRepository as any).createBolsista(data),
+      () =>
+        new FtBolsistaService(missingMunicipeRepository as any).createBolsista(
+          data,
+        ),
       404,
       "Municipe not found",
     );
   });
 
   it("usa o modelo criado quando a releitura do bolsista nao retorna registro", async () => {
-    const created = new FakeModel({ id: "created", municipe_uuid: "municipe-1" });
+    const created = new FakeModel({
+      id: "created",
+      municipe_uuid: "municipe-1",
+    });
     const payment = new FakeModel({ id: "payment", bco: "001" });
     const fallbackRepository = {
       findMunicipeById: async () => ({ uuid: "municipe-1" }),
       findByMunicipeUuid: async () => null,
-      createWithPaymentInfo: async () => ({ bolsista: created, paymentInfo: payment }),
+      createWithPaymentInfo: async () => ({
+        bolsista: created,
+        paymentInfo: payment,
+      }),
       findById: async () => null,
     };
 
-    const response = await new FtBolsistaService(fallbackRepository as any)
-      .createBolsista(validBolsistaPayload());
+    const response = await new FtBolsistaService(
+      fallbackRepository as any,
+    ).createBolsista(validBolsistaPayload());
 
     assert.equal(response.id, "created");
     assert.equal(response.payment_info.id, "payment");
@@ -706,12 +735,16 @@ describe("FtBolsistaService", () => {
 
   it("rejeita atualizacao sem dados bancarios cadastrados", async () => {
     const noPaymentRepository = {
-      findById: async () => new FakeModel({ id: "bolsista-1", payment_info: null }),
+      findById: async () =>
+        new FakeModel({ id: "bolsista-1", payment_info: null }),
     };
 
     await assertAppError(
-      () => new FtBolsistaService(noPaymentRepository as any)
-        .updateBolsista(validBolsistaPayload(), "bolsista-1"),
+      () =>
+        new FtBolsistaService(noPaymentRepository as any).updateBolsista(
+          validBolsistaPayload(),
+          "bolsista-1",
+        ),
       400,
       "Dados bancarios nao encontrados",
     );
@@ -726,7 +759,10 @@ describe("FtBolsistaService", () => {
 
     repository.missingEdital = true;
     await assertAppError(
-      () => service.prorrogate([{ bolsista_id: "bolsista-1", edital_id: "edital-1" }]),
+      () =>
+        service.prorrogate([
+          { bolsista_id: "bolsista-1", edital_id: "edital-1" },
+        ]),
       404,
       "Edital not found",
     );
@@ -734,14 +770,18 @@ describe("FtBolsistaService", () => {
 
   it("valida identificadores e recursos no cancelamento", async () => {
     await assertAppError(
-      () => service.cancelBolsistaEdital("", "edital-1", { observacao: "Teste" }),
+      () =>
+        service.cancelBolsistaEdital("", "edital-1", { observacao: "Teste" }),
       400,
       "Bolsista e edital sao obrigatorios",
     );
 
     repository.missingBolsista = true;
     await assertAppError(
-      () => service.cancelBolsistaEdital("bolsista-1", "edital-1", { observacao: "Teste" }),
+      () =>
+        service.cancelBolsistaEdital("bolsista-1", "edital-1", {
+          observacao: "Teste",
+        }),
       404,
       "Bolsista ou Edital nao encontrados",
     );
@@ -749,31 +789,51 @@ describe("FtBolsistaService", () => {
 
   it("valida os campos obrigatorios e recursos da falta", async () => {
     await assertAppError(
-      () => service.createFalta("", { edital_id: "edital-1", data_falta: "2026-06-09" }),
+      () =>
+        service.createFalta("", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
       400,
       "Bolsista e obrigatorio",
     );
     await assertAppError(
-      () => service.createFalta("bolsista-1", { edital_id: "", data_falta: "2026-06-09" }),
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "",
+          data_falta: "2026-06-09",
+        }),
       400,
       "Edital e obrigatorio",
     );
     await assertAppError(
-      () => service.createFalta("bolsista-1", { edital_id: "edital-1", data_falta: "" }),
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "",
+        }),
       400,
       "Data da falta e obrigatoria",
     );
 
     repository.missingBolsista = true;
     await assertAppError(
-      () => service.createFalta("bolsista-1", { edital_id: "edital-1", data_falta: "2026-06-09" }),
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
       404,
       "Bolsista not found",
     );
     repository.missingBolsista = false;
     repository.missingEdital = true;
     await assertAppError(
-      () => service.createFalta("bolsista-1", { edital_id: "edital-1", data_falta: "2026-06-09" }),
+      () =>
+        service.createFalta("bolsista-1", {
+          edital_id: "edital-1",
+          data_falta: "2026-06-09",
+        }),
       404,
       "Edital not found",
     );
@@ -788,10 +848,15 @@ describe("FtBolsistaService", () => {
     );
 
     const wrongOwnerRepository = {
-      findFaltaById: async () => new FakeModel({ id: "falta-1", bolsista_id: "outro" }),
+      findFaltaById: async () =>
+        new FakeModel({ id: "falta-1", bolsista_id: "outro" }),
     };
     await assertAppError(
-      () => new FtBolsistaService(wrongOwnerRepository as any).deleteFalta("bolsista-1", "falta-1"),
+      () =>
+        new FtBolsistaService(wrongOwnerRepository as any).deleteFalta(
+          "bolsista-1",
+          "falta-1",
+        ),
       404,
       "Falta not found",
     );

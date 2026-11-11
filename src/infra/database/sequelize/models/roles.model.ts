@@ -9,7 +9,10 @@ import {
 
 // ─── Classe do modelo ────────────────────────────────────────────
 
-interface RolesDB extends Model<InferAttributes<RolesDB>, InferCreationAttributes<RolesDB>> {
+interface RolesDB extends Model<
+  InferAttributes<RolesDB>,
+  InferCreationAttributes<RolesDB>
+> {
   id: CreationOptional<number>;
   name: string;
 }
@@ -32,11 +35,16 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
     {
       tableName: "roles",
       timestamps: false,
-    }
+    },
   );
 
   (Roles as any).associate = (models: any) => {
-    Roles.hasMany(models.RolePermissionsModel, { foreignKey: 'role_id', as: 'rolePermissions', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
+    Roles.hasMany(models.RolePermissionsModel, {
+      foreignKey: "role_id",
+      as: "rolePermissions",
+      onDelete: "RESTRICT",
+      onUpdate: "CASCADE",
+    });
     Roles.hasMany(models.UserModel, {
       foreignKey: "role_id",
       as: "users",

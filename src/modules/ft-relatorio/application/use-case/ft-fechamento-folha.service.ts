@@ -89,10 +89,9 @@ export class FtFechamentoFolhaService {
     ]
       .sort((left, right) => left.localeCompare(right))
       .pop()!;
-    const data_fim = [
-      month.data_fim,
-      dateOnly(edital.data_vencimento),
-    ].sort((left, right) => left.localeCompare(right))[0];
+    const data_fim = [month.data_fim, dateOnly(edital.data_vencimento)].sort(
+      (left, right) => left.localeCompare(right),
+    )[0];
     if (data_inicio > data_fim)
       throw ftError(422, "Mês fora da vigência do edital.");
     return { data_inicio, data_fim };

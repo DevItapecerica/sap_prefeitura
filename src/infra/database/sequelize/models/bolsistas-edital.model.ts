@@ -1,5 +1,5 @@
 import { DataTypes, Sequelize } from "sequelize";
-import { exceptionColumns } from './ft-excecao.schema.js';
+import { exceptionColumns } from "./ft-excecao.schema.js";
 
 export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   const BolsistasEdital = sequelize.define(
@@ -111,7 +111,10 @@ export default (sequelize: Sequelize, dataTypes: typeof DataTypes) => {
   );
 
   (BolsistasEdital as any).associate = (models: any) => {
-    BolsistasEdital.belongsTo(models.FtInscricao, { foreignKey: 'inscricao_id', as: 'inscricao' });
+    BolsistasEdital.belongsTo(models.FtInscricao, {
+      foreignKey: "inscricao_id",
+      as: "inscricao",
+    });
     BolsistasEdital.belongsTo(models.Bolsistas, {
       foreignKey: "bolsista_id",
       as: "bolsista",

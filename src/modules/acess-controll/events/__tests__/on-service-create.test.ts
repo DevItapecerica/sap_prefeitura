@@ -9,7 +9,9 @@ class FakeSubscriber {
   created?: EventHandler<ServiceCreatedEvent>;
   subscribe(_eventName: string, handler: EventHandler<any>) {
     this.created = handler;
-    return () => { if (this.created === handler) this.created = undefined; };
+    return () => {
+      if (this.created === handler) this.created = undefined;
+    };
   }
 }
 
@@ -18,10 +20,23 @@ test("service created handler creates access defaults and unsubscribes", async (
   const received: number[] = [];
   const unsubscribe = registerServiceCreatedHandler(
     events,
-    { ensureForService: async (id: number) => { received.push(id); } } as any,
+    {
+      ensureForService: async (id: number) => {
+        received.push(id);
+      },
+    } as any,
     { error: () => undefined } as any,
   );
-  const service = new Services(12, "Novo", "Novo", "outros", "/novo", new Date(), new Date(), null);
+  const service = new Services(
+    12,
+    "Novo",
+    "Novo",
+    "outros",
+    "/novo",
+    new Date(),
+    new Date(),
+    null,
+  );
 
   await events.created?.({
     context: { correlationId: "request-1", origin: { type: "HTTP" } },
@@ -38,13 +53,32 @@ test("service created handler contains access default failures", async () => {
   const errors: unknown[] = [];
   registerServiceCreatedHandler(
     events,
-    { ensureForService: async () => { throw new Error("offline"); } } as any,
-    { error: (input: unknown) => { errors.push(input); } } as any,
+    {
+      ensureForService: async () => {
+        throw new Error("offline");
+      },
+    } as any,
+    {
+      error: (input: unknown) => {
+        errors.push(input);
+      },
+    } as any,
   );
 
-  await assert.doesNotReject(async () => events.created!({
-    context: { correlationId: "request-2", origin: { type: "HTTP" } },
-    service: new Services(12, "Novo", "Novo", "outros", "/novo", new Date(), new Date(), null),
-  }));
+  await assert.doesNotReject(async () =>
+    events.created!({
+      context: { correlationId: "request-2", origin: { type: "HTTP" } },
+      service: new Services(
+        12,
+        "Novo",
+        "Novo",
+        "outros",
+        "/novo",
+        new Date(),
+        new Date(),
+        null,
+      ),
+    }),
+  );
   assert.equal(errors.length, 1);
 });

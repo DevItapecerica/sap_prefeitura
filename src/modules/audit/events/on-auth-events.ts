@@ -5,7 +5,10 @@ import {
   AUTH_EVENTS,
 } from "../../auth/application/events/auth.events.js";
 import { AuditRecorder } from "../application/contracts/audit-recorder.js";
-import { makeAuditBaseRecord, recordAuditEvent } from "./audit-event-recorder.js";
+import {
+  makeAuditBaseRecord,
+  recordAuditEvent,
+} from "./audit-event-recorder.js";
 
 export const registerAuthAuditHandlers = (
   events: EventSubscriber<AuthEventMap>,

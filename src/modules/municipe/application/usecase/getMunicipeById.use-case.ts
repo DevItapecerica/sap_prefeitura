@@ -20,7 +20,7 @@ export default class getMunicipeByIdUseCase {
 
     const municipeMapper = new MunicipeMapper(this.aesCrypt, this.sha256Crypt);
     const municipe = await municipeMapper.toDomain(response);
-    
+
     return municipe;
   }
 }

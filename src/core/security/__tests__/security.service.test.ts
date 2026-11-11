@@ -5,7 +5,8 @@ import { BcryptService } from "../bcrypt/bcrypt.service.js";
 import { RandomPasswordGenerator } from "../password/random-password-generator.service.js";
 
 process.env.NODE_ENV ??= "test";
-process.env.DATABASE_URL ??= "mariadb://user:pass@localhost:3306/app_prefeitura_test";
+process.env.DATABASE_URL ??=
+  "mariadb://user:pass@localhost:3306/app_prefeitura_test";
 process.env.SECRET_KEY ??= "12345678901234567890123456789012";
 process.env.MAIL_ADRESS ??= "test@example.com";
 process.env.MAIL_PASSWORD ??= "password";
@@ -36,7 +37,8 @@ test("RandomPasswordGenerator creates an eight-character password", () => {
 });
 
 test("AesCryptService criptografa e descriptografa dados", async () => {
-  const { default: AesCryptService } = await import("../aes/AesCrypt.service.js");
+  const { default: AesCryptService } =
+    await import("../aes/AesCrypt.service.js");
   const service = new AesCryptService();
 
   const encrypted = await service.encrypt("dado sensivel");

@@ -33,7 +33,9 @@ export const runAdminSeed = async (
     );
 
     if (!adminRoleId) {
-      throw new Error("Admin role must be seeded before the bootstrap administrator");
+      throw new Error(
+        "Admin role must be seeded before the bootstrap administrator",
+      );
     }
 
     const existingAdmin = await queryInterface.rawSelect(
@@ -51,22 +53,30 @@ export const runAdminSeed = async (
     );
 
     if (!setorId) {
-      throw new Error("Technology setor must be seeded before the bootstrap administrator");
+      throw new Error(
+        "Technology setor must be seeded before the bootstrap administrator",
+      );
     }
 
     const credentials = getBootstrapCredentials(env);
-    await queryInterface.bulkInsert("users", [{
-      name: "admin",
-      email: credentials.email,
-      ramal: "0000",
-      password: await hash(credentials.password, 10),
-      setor_id: Number(setorId),
-      firstLogin: true,
-      role_id: Number(adminRoleId),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    }], { transaction });
+    await queryInterface.bulkInsert(
+      "users",
+      [
+        {
+          name: "admin",
+          email: credentials.email,
+          ramal: "0000",
+          password: await hash(credentials.password, 10),
+          setor_id: Number(setorId),
+          firstLogin: true,
+          role_id: Number(adminRoleId),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+        },
+      ],
+      { transaction },
+    );
   });
 };
 
@@ -76,7 +86,8 @@ export default {
   },
 
   down: async (queryInterface: QueryInterface): Promise<void> => {
-    const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim() || DEFAULT_ADMIN_EMAIL;
+    const email =
+      process.env.BOOTSTRAP_ADMIN_EMAIL?.trim() || DEFAULT_ADMIN_EMAIL;
     await queryInterface.bulkDelete("users", { email });
   },
 };

@@ -29,10 +29,10 @@ test("UpdateServiceUseCase returns complete before and after aggregates", async 
 
 test("UpdateServiceUseCase allows updating only the service", async () => {
   const fakes = makeServiceFakes();
-  const result = await new UpdateServiceUseCase(fakes.aggregate).execute(
-    6,
-    { ...servicePayload, tag: undefined },
-  );
+  const result = await new UpdateServiceUseCase(fakes.aggregate).execute(6, {
+    ...servicePayload,
+    tag: undefined,
+  });
 
   assert.equal(result.after.services.tag, "ft");
   assert.deepEqual(fakes.permissions.writes, []);
@@ -44,9 +44,10 @@ test("UpdateServiceUseCase validates all links before writing", async () => {
   const useCase = new UpdateServiceUseCase(fakes.aggregate);
 
   await assert.rejects(
-    () => useCase.execute(6, servicePayload, [
-      { id: 2, setor_id: 99, service_id: 6, visibility: true },
-    ]),
+    () =>
+      useCase.execute(6, servicePayload, [
+        { id: 2, setor_id: 99, service_id: 6, visibility: true },
+      ]),
     (error: AppError) => error.code === "VISIBILITY_NOT_FOUND",
   );
   assert.deepEqual(fakes.services.writes, []);

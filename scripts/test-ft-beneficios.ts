@@ -133,9 +133,14 @@ export async function testBeneficios({
   ]);
   assert.equal(race.filter((r) => r.status === "fulfilled").length, 1);
   const delivered = (await service.history(e.id)).rows[0];
-  const coverage: BenefitCoverageModel | null = await db.FtBeneficioRetirada.findOne({where:{entrega_id:delivered.id}});
+  const coverage: BenefitCoverageModel | null =
+    await db.FtBeneficioRetirada.findOne({
+      where: { entrega_id: delivered.id },
+    });
   assert.ok(coverage);
-  await assert.rejects(db.FtBeneficioRetirada.create(coverage.get({plain:true})));
+  await assert.rejects(
+    db.FtBeneficioRetirada.create(coverage.get({ plain: true })),
+  );
   const rollbackService = beneficiosTestClient(
     new SequelizeBeneficiosUnitOfWork(
       () => ({

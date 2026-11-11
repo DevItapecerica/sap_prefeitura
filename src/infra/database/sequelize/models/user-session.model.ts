@@ -7,11 +7,10 @@ import {
   DataTypes,
 } from "sequelize";
 
-export interface UserSessionDB
-  extends Model<
-    InferAttributes<UserSessionDB>,
-    InferCreationAttributes<UserSessionDB>
-  > {
+export interface UserSessionDB extends Model<
+  InferAttributes<UserSessionDB>,
+  InferCreationAttributes<UserSessionDB>
+> {
   id: CreationOptional<number>;
   userId: number;
   refreshTokenHash: string;

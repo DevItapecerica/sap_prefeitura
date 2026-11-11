@@ -1,6 +1,9 @@
 import { FastifyBaseLogger } from "fastify";
 import { EventSubscriber } from "../../../core/event/event-contracts.js";
-import { SetorEventMap, SETOR_EVENTS } from "../../setor/application/events/setor.events.js";
+import {
+  SetorEventMap,
+  SETOR_EVENTS,
+} from "../../setor/application/events/setor.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerSetorCreatedHandler = (
@@ -18,4 +21,3 @@ export const registerSetorCreatedHandler = (
       );
     }
   });
-

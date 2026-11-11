@@ -3,7 +3,8 @@ import test from "node:test";
 import Fastify from "fastify";
 
 process.env.NODE_ENV ??= "test";
-process.env.DATABASE_URL ??= "mariadb://user:pass@localhost:3306/app_prefeitura_test";
+process.env.DATABASE_URL ??=
+  "mariadb://user:pass@localhost:3306/app_prefeitura_test";
 process.env.SECRET_KEY ??= "12345678901234567890123456789012";
 process.env.MAIL_ADRESS ??= "test@example.com";
 process.env.MAIL_PASSWORD ??= "password";
@@ -24,7 +25,11 @@ test("rate limit retorna 429 e Retry-After ao exceder limite da rota", async () 
   const { default: rateLimit } = await import("../rateLimit.js");
   const app = Fastify({ trustProxy: false });
   await app.register(rateLimit);
-  app.get("/limited", { config: { rateLimit: { max: 1, timeWindow: "1 minute" } } }, async () => ({ ok: true }));
+  app.get(
+    "/limited",
+    { config: { rateLimit: { max: 1, timeWindow: "1 minute" } } },
+    async () => ({ ok: true }),
+  );
   const first = await app.inject({ method: "GET", url: "/limited" });
   const second = await app.inject({ method: "GET", url: "/limited" });
   assert.equal(first.statusCode, 200);

@@ -6,14 +6,24 @@ import { AuditQueryDto } from "../application/dto/audit.dto.js";
 
 export const AUDIT_SERVICE_ID = 11;
 
-export const AuditRoutes: FastifyPluginAsync<{controller?: typeof AuditControllerType}> = async (fastify, options) => {
-  const AuditController = options.controller ?? (await import("./audit.controller.js")).AuditController;
+export const AuditRoutes: FastifyPluginAsync<{
+  controller?: typeof AuditControllerType;
+}> = async (fastify, options) => {
+  const AuditController =
+    options.controller ??
+    (await import("./audit.controller.js")).AuditController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("auditoria");
   fastify.get<{ Querystring: AuditQueryDto }>(
     "/",
     {
-      config: { audit: { failureAction: "LIST", module: "audit", resourceType: "audit" } },
+      config: {
+        audit: {
+          failureAction: "LIST",
+          module: "audit",
+          resourceType: "audit",
+        },
+      },
       preHandler: allow("consultar_auditoria"),
     },
     AuditController.list,
@@ -21,7 +31,14 @@ export const AuditRoutes: FastifyPluginAsync<{controller?: typeof AuditControlle
   fastify.get<{ Params: { id: string } }>(
     "/:id",
     {
-      config: { audit: { failureAction: "VIEW", module: "audit", resourceType: "audit", resourceIdParam: "id" } },
+      config: {
+        audit: {
+          failureAction: "VIEW",
+          module: "audit",
+          resourceType: "audit",
+          resourceIdParam: "id",
+        },
+      },
       preHandler: allow("consultar_auditoria"),
     },
     AuditController.detail,
@@ -29,7 +46,13 @@ export const AuditRoutes: FastifyPluginAsync<{controller?: typeof AuditControlle
   fastify.post<{ Body: AuditQueryDto }>(
     "/export",
     {
-      config: { audit: { failureAction: "EXPORT", module: "audit", resourceType: "audit" } },
+      config: {
+        audit: {
+          failureAction: "EXPORT",
+          module: "audit",
+          resourceType: "audit",
+        },
+      },
       preHandler: allow("exportar_auditoria"),
     },
     AuditController.export,

@@ -93,7 +93,6 @@ Usar datas civis de Brasília e limites fixos nesta etapa:
 
 Em 2026-10-27, os dois repositórios estavam limpos. O fetch confirmou as bases atualizadas; o merge com `--ff-only` não precisou avançar commits. A branch `feature/peaad-melhorias-fluxo` foi criada em ambos. Nesta etapa foram criadas somente as branches e os planos; não houve alteração de código, migration, seed, commit ou push.
 
-
 ## Evidências de implementação — 2026-10-27
 
 Os seis itens foram implementados na branch `feature/peaad-melhorias-fluxo` do frontend e backend. READMEs, OpenAPI e tipos gerados foram atualizados. Não houve commit ou push nesta entrega.

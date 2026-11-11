@@ -11,18 +11,39 @@ export const runFtReportWorker = async (logger: FastifyBaseLogger) => {
   running = true;
   try {
     let result;
-    do { result = await makeFtRelatorioArquivoWorker().run(); } while (result.processed > 0 && result.backlog > 0);
-  } catch (error) { logger.error({ err: error }, "FT report worker failed"); }
-  finally { running = false; }
+    do {
+      result = await makeFtRelatorioArquivoWorker().run();
+    } while (result.processed > 0 && result.backlog > 0);
+  } catch (error) {
+    logger.error({ err: error }, "FT report worker failed");
+  } finally {
+    running = false;
+  }
 };
 
 export const startFtReportWorker = (logger: FastifyBaseLogger) => {
   const wake = () => void runFtReportWorker(logger);
   eventBus.on("FT_REPORT_BATCH_AVAILABLE", wake);
   const polling = setInterval(wake, POLL_MS);
-  const cleanup = setInterval(() => void makeFtRelatorioArquivoWorker().purge().catch((error) => logger.error({ err: error }, "FT report cleanup failed")), CLEANUP_MS);
-  polling.unref(); cleanup.unref(); wake();
-  return { stop: () => { eventBus.off("FT_REPORT_BATCH_AVAILABLE", wake); clearInterval(polling); clearInterval(cleanup); } };
+  const cleanup = setInterval(
+    () =>
+      void makeFtRelatorioArquivoWorker()
+        .purge()
+        .catch((error) =>
+          logger.error({ err: error }, "FT report cleanup failed"),
+        ),
+    CLEANUP_MS,
+  );
+  polling.unref();
+  cleanup.unref();
+  wake();
+  return {
+    stop: () => {
+      eventBus.off("FT_REPORT_BATCH_AVAILABLE", wake);
+      clearInterval(polling);
+      clearInterval(cleanup);
+    },
+  };
 };
 
 export const __testing = { POLL_MS, CLEANUP_MS };

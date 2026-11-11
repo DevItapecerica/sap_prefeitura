@@ -1,8 +1,6 @@
 import type { AuditableAction } from "../../../../core/event/auditable-action.js";
 
-export {
-  AUDITABLE_ACTIONS as AUDIT_ACTIONS,
-} from "../../../../core/event/auditable-action.js";
+export { AUDITABLE_ACTIONS as AUDIT_ACTIONS } from "../../../../core/event/auditable-action.js";
 export type AuditAction = AuditableAction;
 export type AuditResult = "SUCCESS" | "FAILURE" | "DENIED";
 

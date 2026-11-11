@@ -1,4 +1,7 @@
-import { requireAgeLimit, validateHistory } from '../../../../modules/ft-edital/domain/services/edital-workflow.policy.js';
+import {
+  requireAgeLimit,
+  validateHistory,
+} from "../../../../modules/ft-edital/domain/services/edital-workflow.policy.js";
 import { Op } from "sequelize";
 import db from "../index.js";
 import { FtBolsistaRepository } from "../../../../modules/ft-bolsista/domain/repositories/ft-bolsista.repository.js";
@@ -193,7 +196,7 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
     }
     const search = String(rawSearch).trim();
     const edital = await db.Edital.findByPk(editalId);
-    if (!edital) throw ftError(404, 'Edital nao encontrado');
+    if (!edital) throw ftError(404, "Edital nao encontrado");
     const config = edital.toJSON();
     requireAgeLimit(config);
     const referenceDate = query.data_vinculo || todayInSaoPaulo();
@@ -275,9 +278,15 @@ export class SequelizeFtBolsistaRepository implements FtBolsistaRepository {
         if (!nascimento) continue;
         try {
           if (
-            calcularIdadeNaData(nascimento, referenceDate) <= Number(config.idade_maxima) && calcularIdadeNaData(nascimento, referenceDate) >= 18
+            calcularIdadeNaData(nascimento, referenceDate) <=
+              Number(config.idade_maxima) &&
+            calcularIdadeNaData(nascimento, referenceDate) >= 18
           ) {
-            validateHistory(config, vinculos.map(v => v.toJSON?.() ?? v), String(referenceDate).slice(0, 10));
+            validateHistory(
+              config,
+              vinculos.map((v) => v.toJSON?.() ?? v),
+              String(referenceDate).slice(0, 10),
+            );
             eligible.push(row);
             if (eligible.length > limit) break;
           }

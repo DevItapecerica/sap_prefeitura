@@ -4,22 +4,26 @@ import { QueryInterface, DataTypes } from "sequelize";
 export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     await queryInterface.sequelize.transaction(async (transaction) => {
-      await queryInterface.createTable("setors", {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        allowNull: false,
-        primaryKey: true,
-      },
-      name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      description: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      }, { transaction });
+      await queryInterface.createTable(
+        "setors",
+        {
+          id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            allowNull: false,
+            primaryKey: true,
+          },
+          name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+          },
+          description: {
+            type: DataTypes.STRING,
+            allowNull: true,
+          },
+        },
+        { transaction },
+      );
     });
   },
 

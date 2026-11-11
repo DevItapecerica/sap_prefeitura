@@ -24,7 +24,10 @@ export class FakeUserRepository implements UserRepository {
 
   getAllUser(query: UserQuery) {
     this.lastQuery = query;
-    return Promise.resolve({ user: [...this.users.values()], count: this.users.size });
+    return Promise.resolve({
+      user: [...this.users.values()],
+      count: this.users.size,
+    });
   }
 
   getUserById(id: number) {

@@ -1,7 +1,9 @@
 # FT centrada no edital
 
 ## Objetivo e decisões
+
 Edital é a entrada principal. Fluxo: inscrição interna -> convocação com reserva -> ativação manual com confirmação bancária. Base nova; nenhuma exclusão automática de banco.
+
 - Configuração por edital: vigência, janela de inscrição em America/Sao_Paulo, vagas, capacidades dos pagadores, locais, turnos, cargas semanal e mensal independentes, auxílio, benefícios com nome/descrição, duração e uma prorrogação limitada.
 - Parâmetros por edital para participação anterior em outros editais e retorno ao mesmo edital; ambos false inicialmente. Inscrições em vários editais são permitidas; apenas uma convocação/participação corrente por pessoa.
 - Participação anterior conta somente quando houve ativação. Retorno permitido apenas no mês seguinte ao encerramento. Cancelamento antes da ativação não conta.
@@ -11,6 +13,7 @@ Edital é a entrada principal. Fluxo: inscrição interna -> convocação com re
 - Condições bloqueadas após primeira convocação; capacidades não podem ficar abaixo da ocupação. Vigência só pode aumentar depois disso.
 
 ## Etapas
+
 1. Branch feature/ft-centrada-no-edital nos repositórios front e back; registrar planos.
 2. Migrations, modelos, regras e transações; permissões e auditoria.
 3. HTTP, contratos e adaptação de relatórios/worker/scheduler, sem atalhos legados.
@@ -18,15 +21,18 @@ Edital é a entrada principal. Fluxo: inscrição interna -> convocação com re
 5. Testes de regras, HTTP, banco descartável e fluxo de navegador; builds e documentação.
 
 ## Aceite
+
 Reservas concorrentes não excedem vagas/capacidade. Banco obrigatório somente na ativação. Estados anteriores e histórico preservados. Convocados nunca geram pagamento/frequência. Testar permissões, isolamento de edital, prazo/encaixe, elegibilidade, repetição/retorno, prorrogação, relatórios e encerramento.
 Não executar migrations/reset na base corrente. Instalar em schema vazio separado; implantar frontend/backend juntos.
 
 ## Progresso
+
 - [x] Decisões de produto e leitura do edital PDF.
 - [x] Branches criadas e planos registrados.
 - [x] Implementação e validação; evidências abaixo.
 
 ## Resultado da implementação — 2026-10-22
+
 - [x] Modelo, migration com precheck, reversão vazia e proteção do histórico.
 - [x] Inscrição, encaixe, convocação, reserva atômica e ativação bancária manual.
 - [x] Configurações por edital, parâmetros, prorrogação e encerramento/scheduler.
@@ -41,13 +47,11 @@ Não executar migrations/reset na base corrente. Instalar em schema vazio separa
 - Ambiente local de validação: Node 24.6.0 e MariaDB 11.8.2. A combinação Docker Node 22/MariaDB 10.11 não foi executada nesta estação; manter verificação no ambiente alvo antes da implantação.
 - Implantação: preparar schema FT vazio, migrations/seeds e concessões explícitas das novas ações; publicar frontend/backend compatíveis juntos.
 
-
 ## Backend
+
 Preservar munícipe/bolsista como identidade. Inscrição única pessoa/edital e múltiplas participações históricas. Usar IDs de participação nas mutações e histórico; estados convocado/ativo/cancelado/concluido/expirado.
 Rotas sob /frente-de-trabalho/edital; configuração isolada por edital. Locks da identidade, edital e pagadores; validar capacidades e regras dentro da transação. Respostas paginadas e schemas estritos. Auditoria sem questionário ou dados bancários. Novas permissões negadas por padrão; atribuição explícita.
 Migrations reversíveis para instalação limpa, sem conversão de dados antigos. Atualizar contrato canônico e documentação. Testar transações com MariaDB descartável opt-in; não usar .env da aplicação para testes destrutivos.
-
-
 
 ## Extensão: idade máxima por edital e exceções — 2026-10-22
 
@@ -72,7 +76,6 @@ O edital pode ser aberto sem cadastrar pagadores, turnos ou locais previamente. 
 
 Validação antes dos commits do ajuste de local: check/build e 452 testes unitários do backend aprovados. Teste de abertura sem configuração e convocação/ativação com local livre incluído; nenhuma migration necessária.
 
-
 ## Prorrogação pelo período do edital — 2026-10-23
 
 A prorrogação usa integralmente prorrogacao_meses do edital, contando do término atual da participação. O novo término é a menor data entre esse cálculo e o último dia de vigência do edital; o ajuste para fim de mês e o horário de Brasília são preservados. Exemplo: término em 31/10 e período de 3 meses, com edital até 31/12, resulta em 31/12.
@@ -87,7 +90,6 @@ Validação da prorrogação em 2026-10-23: check/build e suíte completa do bac
 
 As falhas de negócio FT_MS (4xx) exibem o motivo retornado pelo backend nos avisos, preservando o código de suporte. A lista e o detalhe de auditoria mostram errorMessage; eventos antigos sem mensagem recebem indicação explícita de ausência. Logs de rotas com payload protegido incluem a mensagem normalizada sem questionário, dados bancários ou detalhes internos de 5xx. O campo já existe na persistência e na API; nenhuma migration foi necessária. Validação: 458 testes backend, 8 testes direcionados do normalizador frontend, 2 cenários Chromium de auditoria desktop/mobile, lint/typecheck/build/orçamento aprovados.
 
-
 ## Declarações afirmativas na inscrição — 2026-10-23
 
 Na inscrição comum, por encaixe ou por exceção, as declarações obrigatórias começam desmarcadas: desemprego, ausência de renda, ausência de benefício da Previdência Social, vulnerabilidade atestada e aceite. Cada pendência aparece em vermelho, com mensagem acessível; Confirmar permanece desabilitado até todas serem confirmadas e a seleção/idade serem válidas. A data de residência e as justificativas continuam sujeitas às validações existentes. Vínculo familiar permanece informativo e não bloqueia a inscrição.
@@ -95,7 +97,6 @@ Na inscrição comum, por encaixe ou por exceção, as declarações obrigatóri
 A interface apresenta “Não possui renda de qualquer natureza” e “Não recebe benefício da Previdência Social”. Marcar essas declarações envia possui_renda=false e recebe_previdencia=false; o contrato e as regras do backend permanecem os mesmos. O detalhe interpreta os booleanos antigos conforme o novo texto e mostra “Não informado” para respostas ausentes, sem presumir confirmação. Nenhuma migration, seed ou permissão nova é necessária.
 
 Validação das declarações em 2026-10-23: 151 testes frontend e 458 backend aprovados; lint/typecheck/build/orçamento do frontend e check do backend aprovados. Nove cenários Chromium com API sintética passaram em desktop (1280px) e mobile (390px), cobrindo inscrição comum, encaixe, exceção, pendências acessíveis e detalhe de respostas antigas. O teste real de integração foi adaptado aos novos textos, mas não foi executado nesta alteração; nenhuma migration ou seed foi aplicada.
-
 
 ## Nome do programa PEAAD — 2026-10-26
 
@@ -106,7 +107,6 @@ A migration `20261026120000-rename-ft-service-peead` atualiza somente `services.
 Rotas `/frente-de-trabalho`, módulo `ft`, ações, arquivos, tabelas e códigos técnicos permanecem compatíveis. Tags descritivas do OpenAPI usam PEAAD. Auditorias históricas e PDFs já gerados não são reescritos; não foi encontrada a denominação anterior nos geradores de PDF. A migration deve ser aplicada pelo procedimento normal de implantação; não foi executada, nem foi executado seed na base corrente.
 
 Validação PEAAD em 2026-10-26: 151 testes frontend e 459 backend aprovados; lint/typecheck/build/orçamento frontend e check/build backend aprovados. Oito cenários Chromium passaram (seis jornadas críticas e dois cenários PEAAD desktop/mobile, estes também reexecutados com saída 0). A migration foi validada em teste unitário com QueryInterface simulado, incluindo repetição, identidade por module_key e rollback sem sobrescrever nome posterior; nenhuma execução em banco real. OpenAPI regenerado com alteração somente das tags descritivas; tipos regenerados sem mudança semântica. Busca final pelo nome anterior encontrou somente a constante do rollback e sua fixture de teste.
-
 
 ## Correção da sigla — 2026-10-27
 

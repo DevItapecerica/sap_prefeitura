@@ -3,7 +3,7 @@ import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin"; // Importe o fastify-plugin
 import { CORS_ORIGINS } from "../env.js";
 
-const CorsConfig: FastifyPluginAsync = async (fastify, opts)  => {
+const CorsConfig: FastifyPluginAsync = async (fastify, opts) => {
   const allowedOrigins = CORS_ORIGINS.split(",").map((origin) => origin.trim());
 
   fastify.register(Cors, {

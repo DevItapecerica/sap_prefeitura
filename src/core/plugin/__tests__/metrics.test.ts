@@ -58,7 +58,10 @@ test("metrics usa cliente oficial, rotas normalizadas e pool coletado no scrape"
   assert.match(response.body, /result="not_configured"/);
   assert.match(response.body, /sap_audit_worker_items_total/);
   assert.match(response.body, /sap_audit_worker_runs_total/);
-  assert.match(response.body, /sap_audit_backlog\{service="sap-prefeitura"\} 3/);
+  assert.match(
+    response.body,
+    /sap_audit_backlog\{service="sap-prefeitura"\} 3/,
+  );
   assert.match(
     response.body,
     /sap_feature_available\{feature="antivirus",service="sap-prefeitura"\} 0/,

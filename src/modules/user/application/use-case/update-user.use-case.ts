@@ -11,10 +11,7 @@ export class UpdateUserUseCase {
     private readonly emailPolicy: EmailPolicyService,
   ) {}
 
-  async execute(
-    id: number,
-    data: UpdateUserDto,
-  ): Promise<UpdateUserResultDto> {
+  async execute(id: number, data: UpdateUserDto): Promise<UpdateUserResultDto> {
     const user = new User(
       data.name,
       data.email,

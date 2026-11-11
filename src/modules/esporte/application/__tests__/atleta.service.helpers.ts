@@ -47,7 +47,10 @@ export class FakeAtletaRepository {
     return { restored: false };
   }
 
-  async removeModalidadeFromAtleta(atleta_uuid: string, modalidade_uuid: string) {
+  async removeModalidadeFromAtleta(
+    atleta_uuid: string,
+    modalidade_uuid: string,
+  ) {
     const atleta = this.atletas.get(atleta_uuid);
     if (!atleta?.modalidades) return false;
 
@@ -128,7 +131,9 @@ export class FakeCarterinhaRepository {
   }
 
   async findById(id: string) {
-    return this.carterinhas.find((carterinha) => carterinha.uuid === id) ?? null;
+    return (
+      this.carterinhas.find((carterinha) => carterinha.uuid === id) ?? null
+    );
   }
 }
 
@@ -158,7 +163,9 @@ export class FakeCreateCarterinhaEsporteUseCase {
       this.payload.modalidade,
       author,
       this.payload.observacao || null,
-      this.payload.validade_exame ? new Date(this.payload.validade_exame) : null,
+      this.payload.validade_exame
+        ? new Date(this.payload.validade_exame)
+        : null,
       this.payload.foto,
       "cart-1",
     );

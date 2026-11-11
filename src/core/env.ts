@@ -41,10 +41,7 @@ export const MAIL_ADRESS = must("MAIL_ADRESS");
 export const MAIL_PASSWORD = must("MAIL_PASSWORD");
 export const MAIL_HOST = must("MAIL_HOST");
 export const MAIL_PORT = optionalPort("MAIL_PORT", 25);
-export const MAIL_SECURE = optionalBoolean(
-  "MAIL_SECURE",
-  MAIL_PORT === 465,
-);
+export const MAIL_SECURE = optionalBoolean("MAIL_SECURE", MAIL_PORT === 465);
 
 export const CORS_ORIGINS = must("CORS_ORIGINS");
 

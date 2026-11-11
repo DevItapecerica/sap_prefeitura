@@ -57,7 +57,9 @@ const carterinhaSchema = {
     validade: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
     modalidade: { type: "string", example: "Futebol" },
     observacao: { anyOf: [{ type: "string" }, { type: "null" }] },
-    validade_exame: { anyOf: [{ type: "string", format: "date" }, { type: "null" }] },
+    validade_exame: {
+      anyOf: [{ type: "string", format: "date" }, { type: "null" }],
+    },
     municipe_uuid: { type: "string", example: "uuid" },
     author: { type: "string", example: "1" },
     createdAt: { type: "string", example: "2026-06-02T00:00:00.000Z" },
@@ -66,17 +68,28 @@ const carterinhaSchema = {
   },
 };
 
-export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType}> = async (fastify, options) => {
-  const atletaController = options.controller ?? new (await import("../controller/atleta.controller.js")).default((await import("../../factories/atleta.factory.js")).default(fastify.log));
+export const AtletaRouter: FastifyPluginAsync<{
+  controller?: AtletaControllerType;
+}> = async (fastify, options) => {
+  const atletaController =
+    options.controller ??
+    new (await import("../controller/atleta.controller.js")).default(
+      (await import("../../factories/atleta.factory.js")).default(fastify.log),
+    );
 
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("esporte");
 
-
   fastify.route({
     method: "GET",
     url: "/atletas",
-    config: { audit: { failureAction: "LIST", module: "esporte", resourceType: "atleta" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "esporte",
+        resourceType: "atleta",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -111,7 +124,13 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "GET",
     url: "/carteirinhas",
-    config: { audit: { failureAction: "LIST", module: "esporte", resourceType: "carteirinha_esporte" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "esporte",
+        resourceType: "carteirinha_esporte",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -144,7 +163,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "GET",
     url: "/atletas/:uuid",
-    config: { audit: { failureAction: "VIEW", module: "esporte", resourceType: "atleta", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "esporte",
+        resourceType: "atleta",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -172,7 +198,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "GET",
     url: "/atletas/:uuid/carteirinhas",
-    config: { audit: { failureAction: "LIST", module: "esporte", resourceType: "carteirinha_esporte", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "LIST",
+        module: "esporte",
+        resourceType: "carteirinha_esporte",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -210,7 +243,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "GET",
     url: "/carteirinhas/:uuid/pdf",
-    config: { audit: { failureAction: "EXPORT", module: "esporte", resourceType: "carteirinha_esporte", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "EXPORT",
+        module: "esporte",
+        resourceType: "carteirinha_esporte",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -241,7 +281,13 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "POST",
     url: "/atletas",
-    config: { audit: { failureAction: "CREATE", module: "esporte", resourceType: "atleta" } },
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "esporte",
+        resourceType: "atleta",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -272,7 +318,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "PUT",
     url: "/atletas/:uuid",
-    config: { audit: { failureAction: "UPDATE", module: "esporte", resourceType: "atleta", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "esporte",
+        resourceType: "atleta",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -306,7 +359,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "DELETE",
     url: "/atletas/:uuid",
-    config: { audit: { failureAction: "DELETE", module: "esporte", resourceType: "atleta", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "DELETE",
+        module: "esporte",
+        resourceType: "atleta",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -337,7 +397,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "POST",
     url: "/atletas/:uuid/modalidades",
-    config: { audit: { failureAction: "UPDATE", module: "esporte", resourceType: "atleta", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "esporte",
+        resourceType: "atleta",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -373,7 +440,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "DELETE",
     url: "/atletas/:uuid/modalidades/:modalidade_uuid",
-    config: { audit: { failureAction: "UPDATE", module: "esporte", resourceType: "atleta", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "esporte",
+        resourceType: "atleta",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],
@@ -407,7 +481,14 @@ export const AtletaRouter: FastifyPluginAsync<{controller?: AtletaControllerType
   fastify.route({
     method: "POST",
     url: "/atletas/:uuid/carteirinha",
-    config: { audit: { failureAction: "CREATE", module: "esporte", resourceType: "carteirinha_esporte", resourceIdParam: "uuid" } },
+    config: {
+      audit: {
+        failureAction: "CREATE",
+        module: "esporte",
+        resourceType: "carteirinha_esporte",
+        resourceIdParam: "uuid",
+      },
+    },
     schema: {
       tags: ["Esporte"],
       security: [{ JWTToken: [] }],

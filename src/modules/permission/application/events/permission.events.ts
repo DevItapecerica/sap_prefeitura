@@ -15,4 +15,8 @@ export interface PermissionEventMap {
   [PERMISSION_EVENTS.updated]: PermissionUpdatedEvent;
 }
 
-export interface RolePermissionAuditSnapshot {id: number; role_id: number; permissions: {permission_action_id: number; allowed: boolean}[]}
+export interface RolePermissionAuditSnapshot {
+  id: number;
+  role_id: number;
+  permissions: { permission_action_id: number; allowed: boolean }[];
+}

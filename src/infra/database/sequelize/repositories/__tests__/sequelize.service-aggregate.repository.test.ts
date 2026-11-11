@@ -31,19 +31,30 @@ const makeDatabase = (description: string | null = "PEAAD") => {
   let failPermission = false;
   let failVisibility = false;
   let failService = false;
-  const service = new FakeRow({
-    id: 6,
-    name: "FT",
-    description,
-    tag: "ft",
-    url: "/ft",
-    createdAt: new Date("2026-01-01"),
-    updatedAt: new Date("2026-01-01"),
-    deletedAt: null,
-  }, () => failService);
+  const service = new FakeRow(
+    {
+      id: 6,
+      name: "FT",
+      description,
+      tag: "ft",
+      url: "/ft",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+      deletedAt: null,
+    },
+    () => failService,
+  );
   const permissions = [
     new FakeRow(
-      { id: 1, service_id: 6, role_id: 1, read: true, write: false, edit: false, del: false },
+      {
+        id: 1,
+        service_id: 6,
+        role_id: 1,
+        read: true,
+        write: false,
+        edit: false,
+        del: false,
+      },
       () => failPermission,
     ),
   ];
@@ -64,10 +75,16 @@ const makeDatabase = (description: string | null = "PEAAD") => {
       },
     },
     PermissionsModel: {
-      findAll: async (options: object) => { lockCalls.push(options); return permissions; },
+      findAll: async (options: object) => {
+        lockCalls.push(options);
+        return permissions;
+      },
     },
     ServiceVisibilities: {
-      findAll: async (options: object) => { lockCalls.push(options); return visibilities; },
+      findAll: async (options: object) => {
+        lockCalls.push(options);
+        return visibilities;
+      },
     },
     sequelize: {
       transaction: async <T>(work: (transaction: any) => Promise<T>) => {
@@ -91,17 +108,21 @@ const makeDatabase = (description: string | null = "PEAAD") => {
     permissions,
     visibilities,
     lockCalls,
-    failPermission: () => { failPermission = true; },
-    failVisibility: () => { failVisibility = true; },
-    failService: () => { failService = true; },
+    failPermission: () => {
+      failPermission = true;
+    },
+    failVisibility: () => {
+      failVisibility = true;
+    },
+    failService: () => {
+      failService = true;
+    },
   };
 };
 
 const update = {
   service: { name: "FT atualizado", description: "Atualizado", url: "/ft" },
-  visibility: [
-    { id: 1, service_id: 6, setor_id: 1, visibility: true },
-  ],
+  visibility: [{ id: 1, service_id: 6, setor_id: 1, visibility: true }],
 };
 
 test("service aggregate repository updates atomically and returns snapshots", async () => {
@@ -113,11 +134,16 @@ test("service aggregate repository updates atomically and returns snapshots", as
   assert.equal(result.after.services.name, "FT atualizado");
   assert.deepEqual(result.after.permissions, []);
   assert.equal(result.after.visibility[0].visibility, true);
-  assert.ok(fake.lockCalls.slice(0, 2).every((options: any) => options.lock === "UPDATE"));
+  assert.ok(
+    fake.lockCalls
+      .slice(0, 2)
+      .every((options: any) => options.lock === "UPDATE"),
+  );
 });
 
 test("service aggregate repository preserves plain-text descriptions", async () => {
-  const description = "Atendimento à população, com \"prioridade\".\nSegunda linha.";
+  const description =
+    'Atendimento à população, com "prioridade".\nSegunda linha.';
   const fake = makeDatabase(description);
 
   const loaded = await fake.repository.findById(6);
@@ -134,15 +160,22 @@ test("service aggregate repository preserves null descriptions", async () => {
 });
 
 test("service aggregate repository keeps descriptions unchanged across updates", async () => {
-  const description = "Atendimento à população, com \"prioridade\".\nSegunda linha.";
+  const description =
+    'Atendimento à população, com "prioridade".\nSegunda linha.';
   const fake = makeDatabase(description);
   const unchangedDescriptionUpdate = {
     ...update,
     service: { ...update.service, description },
   };
 
-  const firstUpdate = await fake.repository.update(6, unchangedDescriptionUpdate);
-  const secondUpdate = await fake.repository.update(6, unchangedDescriptionUpdate);
+  const firstUpdate = await fake.repository.update(
+    6,
+    unchangedDescriptionUpdate,
+  );
+  const secondUpdate = await fake.repository.update(
+    6,
+    unchangedDescriptionUpdate,
+  );
 
   assert.equal(firstUpdate.before.services.description, description);
   assert.equal(firstUpdate.after.services.description, description);
@@ -166,8 +199,10 @@ test("service aggregate repository rolls back permission and visibility failures
 });
 
 test("service aggregate refuses legacy grant writes without touching preserved data", async () => {
- const fake = makeDatabase();
- await assert.rejects(fake.repository.update(6, {...update, permissions: []} as any));
- assert.equal(fake.service.state.name, "FT");
- assert.equal(fake.permissions[0].state.write, false);
+  const fake = makeDatabase();
+  await assert.rejects(
+    fake.repository.update(6, { ...update, permissions: [] } as any),
+  );
+  assert.equal(fake.service.state.name, "FT");
+  assert.equal(fake.permissions[0].state.write, false);
 });

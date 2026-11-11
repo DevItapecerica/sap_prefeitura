@@ -9,7 +9,10 @@ import {
   EsporteUpdatedEvent,
 } from "../../esporte/application/events/esporte.events.js";
 import { AuditRecorder } from "../application/contracts/audit-recorder.js";
-import { makeAuditBaseRecord, recordAuditEvent } from "./audit-event-recorder.js";
+import {
+  makeAuditBaseRecord,
+  recordAuditEvent,
+} from "./audit-event-recorder.js";
 
 export const registerEsporteAuditHandlers = (
   events: EventSubscriber<EsporteEventMap>,
@@ -23,29 +26,61 @@ export const registerEsporteAuditHandlers = (
       : "";
   };
   const created = (event: EsporteCreatedEvent) =>
-    recordAuditEvent(event, {
-      ...makeAuditBaseRecord(event, "esporte", event.resourceType),
-      action: "CREATE", resourceId: id(event.after), result: "SUCCESS",
-      before: null, after: event.after,
-    }, auditService, logger);
+    recordAuditEvent(
+      event,
+      {
+        ...makeAuditBaseRecord(event, "esporte", event.resourceType),
+        action: "CREATE",
+        resourceId: id(event.after),
+        result: "SUCCESS",
+        before: null,
+        after: event.after,
+      },
+      auditService,
+      logger,
+    );
   const updated = (event: EsporteUpdatedEvent) =>
-    recordAuditEvent(event, {
-      ...makeAuditBaseRecord(event, "esporte", event.resourceType),
-      action: "UPDATE", resourceId: id(event.after), result: "SUCCESS",
-      before: event.before, after: event.after,
-    }, auditService, logger);
+    recordAuditEvent(
+      event,
+      {
+        ...makeAuditBaseRecord(event, "esporte", event.resourceType),
+        action: "UPDATE",
+        resourceId: id(event.after),
+        result: "SUCCESS",
+        before: event.before,
+        after: event.after,
+      },
+      auditService,
+      logger,
+    );
   const deleted = (event: EsporteDeletedEvent) =>
-    recordAuditEvent(event, {
-      ...makeAuditBaseRecord(event, "esporte", event.resourceType),
-      action: "DELETE", resourceId: id(event.before), result: "SUCCESS",
-      before: event.before, after: null,
-    }, auditService, logger);
+    recordAuditEvent(
+      event,
+      {
+        ...makeAuditBaseRecord(event, "esporte", event.resourceType),
+        action: "DELETE",
+        resourceId: id(event.before),
+        result: "SUCCESS",
+        before: event.before,
+        after: null,
+      },
+      auditService,
+      logger,
+    );
   const modalidadesUpdated = (event: AtletaModalidadesUpdatedEvent) =>
-    recordAuditEvent(event, {
-      ...makeAuditBaseRecord(event, "esporte", "atleta"),
-      action: "UPDATE", resourceId: id(event.after), result: "SUCCESS",
-      before: event.before, after: event.after,
-    }, auditService, logger);
+    recordAuditEvent(
+      event,
+      {
+        ...makeAuditBaseRecord(event, "esporte", "atleta"),
+        action: "UPDATE",
+        resourceId: id(event.after),
+        result: "SUCCESS",
+        before: event.before,
+        after: event.after,
+      },
+      auditService,
+      logger,
+    );
 
   const unsubscribe = [
     events.subscribe(ESPORTE_EVENTS.atletaCreated, created),

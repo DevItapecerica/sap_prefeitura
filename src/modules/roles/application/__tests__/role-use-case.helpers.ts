@@ -4,7 +4,10 @@ import { RoleQuery } from "../../domain/repository/role-query.js";
 import { RoleWriteData } from "../../domain/repository/roles.repository.js";
 
 export class FakeRolesRepository {
-  roles = new Map<number, Roles>([[1, new Roles(1, "Admin")], [2, new Roles(2, "Gestor")]]);
+  roles = new Map<number, Roles>([
+    [1, new Roles(1, "Admin")],
+    [2, new Roles(2, "Gestor")],
+  ]);
   lastQuery?: RoleQuery;
   roleInUse = false;
   failUpdate = false;

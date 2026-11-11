@@ -7,11 +7,10 @@ import {
   DataTypes,
 } from "sequelize";
 
-interface CarterinhaEsporteDB
-  extends Model<
-    InferAttributes<CarterinhaEsporteDB>,
-    InferCreationAttributes<CarterinhaEsporteDB>
-  > {
+interface CarterinhaEsporteDB extends Model<
+  InferAttributes<CarterinhaEsporteDB>,
+  InferCreationAttributes<CarterinhaEsporteDB>
+> {
   uuid: CreationOptional<string>;
   emissao: Date;
   validade: CreationOptional<Date | null>;

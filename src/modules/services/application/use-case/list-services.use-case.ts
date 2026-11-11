@@ -10,22 +10,13 @@ export class ListServicesUseCase {
   constructor(private readonly repository: ServicesRepository) {}
 
   async execute(query: ListServicesDto = {}): Promise<ServiceListResult> {
-    const {
-      search,
-      page = 0,
-      limit,
-      order = "id:desc",
-    } = query;
+    const { search, page = 0, limit, order = "id:desc" } = query;
 
     if (page < 0) {
       throw new AppError("Pagina invalida", 400, "INVALID_PAGE");
     }
     if (!(await ValidateQueryOrder(order, this.allowedOrderFields))) {
-      throw new AppError(
-        "Ordem de busca invalida",
-        400,
-        "INVALID_QUERY_ORDER",
-      );
+      throw new AppError("Ordem de busca invalida", 400, "INVALID_QUERY_ORDER");
     }
 
     return this.repository.getAllServices({

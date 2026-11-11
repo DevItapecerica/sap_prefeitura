@@ -9,7 +9,10 @@ const resourceReadEventPublisher = makeResourceReadEventPublisher();
 
 export default class EspelhoPontoController {
   constructor(private readonly renderPdf: RenderEspelhoPontoPdfUseCase) {}
-  render = async (request: FastifyRequest<{ Body: EspelhoPontoRequestDto }>, reply: FastifyReply) => {
+  render = async (
+    request: FastifyRequest<{ Body: EspelhoPontoRequestDto }>,
+    reply: FastifyReply,
+  ) => {
     const result = await this.renderPdf.execute(request.body, request.id);
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
       context: makeApplicationEventContext(request),
@@ -22,8 +25,11 @@ export default class EspelhoPontoController {
       },
       returnedCount: 1,
     });
-    reply.type(result.contentType).header("Content-Disposition", result.contentDisposition);
-    if (result.contentLength) reply.header("Content-Length", result.contentLength);
+    reply
+      .type(result.contentType)
+      .header("Content-Disposition", result.contentDisposition);
+    if (result.contentLength)
+      reply.header("Content-Length", result.contentLength);
     return reply.status(200).send(result.file);
   };
 }

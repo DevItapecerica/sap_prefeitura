@@ -1,6 +1,9 @@
 import { FastifyBaseLogger } from "fastify";
 import { EventSubscriber } from "../../../core/event/event-contracts.js";
-import { RoleEventMap, ROLE_EVENTS } from "../../roles/application/events/role.events.js";
+import {
+  RoleEventMap,
+  ROLE_EVENTS,
+} from "../../roles/application/events/role.events.js";
 import { ServiceAccessDefaultsUseCase } from "../application/service-access-defaults.usecase.js";
 
 export const registerRoleCreatedHandler = (

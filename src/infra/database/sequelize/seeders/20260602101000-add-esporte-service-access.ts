@@ -35,9 +35,13 @@ export default {
         );
       }
 
-      await ensureServiceAccessDefaultsForSeed(queryInterface, ESPORTE_SERVICE_ID, {
-        transaction,
-      });
+      await ensureServiceAccessDefaultsForSeed(
+        queryInterface,
+        ESPORTE_SERVICE_ID,
+        {
+          transaction,
+        },
+      );
     });
   },
 

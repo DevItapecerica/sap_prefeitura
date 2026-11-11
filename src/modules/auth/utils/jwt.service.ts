@@ -1,4 +1,4 @@
-import jwt, {SignOptions} from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { JWT_KEY } from "../../../core/env.js";
 import { JwtUserPayload } from "../types.js";
 
@@ -12,7 +12,7 @@ export default class JwtServices {
     this.logger.info("Assinando token");
     const token = jwt.sign(
       {
-        ...payload
+        ...payload,
       },
       JWT_KEY,
       {

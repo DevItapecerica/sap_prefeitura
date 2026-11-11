@@ -9,7 +9,7 @@ export default class getMunicipeUseCase {
   constructor(
     private municipeRepository: IMunicipeRepository,
     private aesCrypt: IAesCrypt,
-    private sha256Crypt: ISha256Crypt
+    private sha256Crypt: ISha256Crypt,
   ) {}
   async execute(
     query: QueryParams,
@@ -26,7 +26,9 @@ export default class getMunicipeUseCase {
       searchHash,
     });
 
-    response.municipe = await Promise.all(response.municipe.map((m) => municipeMapper.toDomain(m)));
+    response.municipe = await Promise.all(
+      response.municipe.map((m) => municipeMapper.toDomain(m)),
+    );
 
     return response;
   }

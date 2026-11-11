@@ -2,20 +2,15 @@ import { Op } from "sequelize";
 import db from "../index.js";
 import { ServiceListResult } from "../../../../modules/services/domain/repository/service-list-result.js";
 import { ServiceQuery } from "../../../../modules/services/domain/repository/service-query.js";
-import {
-  ServicesRepository,
-} from "../../../../modules/services/domain/repository/services.repository.js";
+import { ServicesRepository } from "../../../../modules/services/domain/repository/services.repository.js";
 import { Services } from "../../../../modules/services/domain/entity/Services.js";
 
 export class SequelizeServicesRepository implements ServicesRepository {
   private readonly model = db.ServiceModel;
 
-  async getAllServices(
-    query: ServiceQuery,
-  ): Promise<ServiceListResult> {
-
+  async getAllServices(query: ServiceQuery): Promise<ServiceListResult> {
     const { page = 0, limit, search, order = "id:desc" } = query;
-    
+
     const queryOrder = order ? order.split(":") : ["id", "desc"];
     const queryLimit = limit ? Number(limit) : undefined;
 
@@ -40,7 +35,7 @@ export class SequelizeServicesRepository implements ServicesRepository {
       services: services.map((service: any) => this.toEntity(service)),
       count: await this.model.count({ where }),
     };
-}
+  }
 
   async getOneServices(id: number): Promise<Services | null> {
     const data = await this.model.findByPk(id);

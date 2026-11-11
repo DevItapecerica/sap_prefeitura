@@ -1,8 +1,6 @@
 import { Roles } from "../../roles/domain/entity/Role.js";
 import { Services } from "../../services/domain/entity/Services.js";
-import {
-  ServicesRepository,
-} from "../../services/domain/repository/services.repository.js";
+import { ServicesRepository } from "../../services/domain/repository/services.repository.js";
 import { ServiceVisibilityRepository } from "../../services/domain/repository/service-visibility.repository.js";
 import { Setor } from "../../setor/domain/entity/Setor.js";
 import { SetorRepository } from "../../setor/domain/repository/setor.repository.js";
@@ -16,7 +14,9 @@ export class ServiceAccessDefaultsUseCase {
 
   async ensureForService(serviceId: number): Promise<void> {
     const setores = await this.setorRepository.findAllSetor();
-    await Promise.all(setores.map(setor => this.ensureVisibility(setor, serviceId)));
+    await Promise.all(
+      setores.map((setor) => this.ensureVisibility(setor, serviceId)),
+    );
   }
 
   async reconcile(): Promise<void> {
@@ -44,7 +44,10 @@ export class ServiceAccessDefaultsUseCase {
     );
   }
 
-  private async ensureVisibility(setor: Setor, serviceId: number): Promise<void> {
+  private async ensureVisibility(
+    setor: Setor,
+    serviceId: number,
+  ): Promise<void> {
     const existing =
       await this.serviceVisibilityRepository.findVisibilityByServiceAndSetor(
         setor.id,
@@ -59,5 +62,4 @@ export class ServiceAccessDefaultsUseCase {
       setor.id === 1,
     );
   }
-
 }

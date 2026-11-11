@@ -23,17 +23,20 @@ test("stock HTTP guards, immutable fields, strict payloads and delivery/reversal
   const service: any = new Proxy(
     {},
     {
-      get: (_target, method: string) => async (...args: unknown[]) => {
-        calls.push(method);
-        if (method === "deliveries") historyQueries.push({ ...args[0] as Record<string, unknown> });
-        return {
-          id: "d96ceba9-8445-48b9-aa12-7312217d7ec1",
-          rows: [],
-          count: 0,
-          saldo: 2,
-          injected: "hidden",
-        };
-      },
+      get:
+        (_target, method: string) =>
+        async (...args: unknown[]) => {
+          calls.push(method);
+          if (method === "deliveries")
+            historyQueries.push({ ...(args[0] as Record<string, unknown>) });
+          return {
+            id: "d96ceba9-8445-48b9-aa12-7312217d7ec1",
+            rows: [],
+            count: 0,
+            saldo: 2,
+            injected: "hidden",
+          };
+        },
     },
   );
   await app.register(EstoqueRouter, {
@@ -198,13 +201,32 @@ test("stock HTTP guards, immutable fields, strict payloads and delivery/reversal
     );
     assert.equal((await app.inject("/itens?limit=51")).statusCode, 400);
     grants.clear();
-    assert.equal((await app.inject("/entregas?participacao_id=" + id)).statusCode, 403);
+    assert.equal(
+      (await app.inject("/entregas?participacao_id=" + id)).statusCode,
+      403,
+    );
     grants.add("consultar_entregas_estoque");
     for (const participation of [id, operacao_id]) {
-      assert.equal((await app.inject(`/entregas?participacao_id=${participation}&page=1&limit=20&situacao=todos&tipo=individual`)).statusCode, 200);
-      assert.deepEqual(historyQueries.at(-1), { participacao_id: participation, page: 1, limit: 20, situacao: "todos", tipo: "individual" });
+      assert.equal(
+        (
+          await app.inject(
+            `/entregas?participacao_id=${participation}&page=1&limit=20&situacao=todos&tipo=individual`,
+          )
+        ).statusCode,
+        200,
+      );
+      assert.deepEqual(historyQueries.at(-1), {
+        participacao_id: participation,
+        page: 1,
+        limit: 20,
+        situacao: "todos",
+        tipo: "individual",
+      });
     }
-    assert.equal((await app.inject("/entregas?participacao_id=invalido")).statusCode, 400);
+    assert.equal(
+      (await app.inject("/entregas?participacao_id=invalido")).statusCode,
+      400,
+    );
   } finally {
     await app.close();
     AuthMiddleware.verifyJWT = saved;

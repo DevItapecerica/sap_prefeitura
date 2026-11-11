@@ -41,9 +41,17 @@ export class NodemailerUserPasswordNotifier implements UserPasswordNotifier {
         text: "Lembre-se de alterar sua senha!",
         html: `Sua senha temporária é:<br/> <b>${password}</b> <br/><b>Tenha em mente que ela é de sua responsabilidade, assim como qualquer movimentação usando seu usuário.</b>`,
       });
-      recordDependency("email", "success", (performance.now() - startedAt) / 1_000);
+      recordDependency(
+        "email",
+        "success",
+        (performance.now() - startedAt) / 1_000,
+      );
     } catch (error) {
-      recordDependency("email", "error", (performance.now() - startedAt) / 1_000);
+      recordDependency(
+        "email",
+        "error",
+        (performance.now() - startedAt) / 1_000,
+      );
       const message = error instanceof Error ? error.message : String(error);
       throw new AppError(
         `Erro ao enviar e-mail: ${message}`,

@@ -59,7 +59,9 @@ export default class RolesController {
     request: FastifyRequest<{ Params: { id: number } }>,
     reply: FastifyReply,
   ) => {
-    const role = await makeGetRoleByIdUseCase().execute(Number(request.params.id));
+    const role = await makeGetRoleByIdUseCase().execute(
+      Number(request.params.id),
+    );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.viewed, {
       context: makeApplicationEventContext(request),
       module: "role",

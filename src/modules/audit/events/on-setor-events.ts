@@ -13,7 +13,8 @@ import {
   recordAuditEvent,
 } from "./audit-event-recorder.js";
 
-type SetorAuditEvent = SetorCreatedEvent | SetorUpdatedEvent | SetorDeletedEvent;
+type SetorAuditEvent =
+  SetorCreatedEvent | SetorUpdatedEvent | SetorDeletedEvent;
 
 export const registerSetorAuditHandlers = (
   setorEvents: EventSubscriber<SetorEventMap>,

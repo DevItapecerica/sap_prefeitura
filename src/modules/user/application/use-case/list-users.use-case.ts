@@ -21,11 +21,7 @@ export class ListUsersUseCase {
       throw new AppError("Pagina invalida", 400, "INVALID_PAGE");
     }
     if (!(await ValidateQueryOrder(order, this.allowedOrderFields))) {
-      throw new AppError(
-        "Ordem de busca invalida",
-        400,
-        "INVALID_QUERY_ORDER",
-      );
+      throw new AppError("Ordem de busca invalida", 400, "INVALID_QUERY_ORDER");
     }
 
     return this.repository.getAllUser({

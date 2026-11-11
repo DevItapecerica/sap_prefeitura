@@ -1,6 +1,4 @@
-import {
-  createHash,
-} from "crypto";
+import { createHash } from "crypto";
 import { ISha256Crypt } from "./sha256.interface.js";
 
 export default class Sha256CryptService implements ISha256Crypt {

@@ -1,11 +1,11 @@
 export type genericResponse = {
-    ok: boolean;
-    code: number;
-    message: string;
-}
+  ok: boolean;
+  code: number;
+  message: string;
+};
 
 export interface interfaceErrorResponse extends genericResponse {
-    error?: any;
+  error?: any;
 }
 
 export type QueryParams = {

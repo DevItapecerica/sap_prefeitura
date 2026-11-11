@@ -7,9 +7,7 @@ import {
 import CarterinhaEsporte from "../../../../modules/carterinha-esporte/domain/entity/CarterinhaEsporte.js";
 import CarterinhaEsporteRepository from "../../../../modules/carterinha-esporte/domain/repositories/carterinha-esporte.repository.js";
 
-export class SequelizeCarterinhaEsporteRepository
-  implements CarterinhaEsporteRepository
-{
+export class SequelizeCarterinhaEsporteRepository implements CarterinhaEsporteRepository {
   private model = db.CarteirinhaEsporteModel;
 
   async list(query: QueryCarterinhaEsporteDto): Promise<{

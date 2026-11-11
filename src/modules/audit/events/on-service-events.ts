@@ -13,7 +13,8 @@ import {
   recordAuditEvent,
 } from "./audit-event-recorder.js";
 
-type ServiceAuditEvent = ServiceCreatedEvent | ServiceUpdatedEvent | ServiceDeletedEvent;
+type ServiceAuditEvent =
+  ServiceCreatedEvent | ServiceUpdatedEvent | ServiceDeletedEvent;
 
 export const registerServiceAuditHandlers = (
   serviceEvents: EventSubscriber<ServiceEventMap>,

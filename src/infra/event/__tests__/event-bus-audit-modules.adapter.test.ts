@@ -40,9 +40,13 @@ test("adapter genérico publica mapas tipados e remove subscriptions", async () 
       authCalls++;
     },
   );
-  await makeAuthEventPublisher().publish(AUTH_EVENTS.loginSucceeded, { context });
+  await makeAuthEventPublisher().publish(AUTH_EVENTS.loginSucceeded, {
+    context,
+  });
   unsubscribeAuth();
-  await makeAuthEventPublisher().publish(AUTH_EVENTS.loginSucceeded, { context });
+  await makeAuthEventPublisher().publish(AUTH_EVENTS.loginSucceeded, {
+    context,
+  });
   assert.equal(authCalls, 1);
 
   let municipeCalls = 0;

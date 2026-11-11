@@ -62,10 +62,15 @@ export default class ServicesController {
     request: FastifyRequest,
     reply: FastifyReply,
   ) => {
-    const services = await makeListVisibleServicesUseCase().execute(Number(request.user.id));
+    const services = await makeListVisibleServicesUseCase().execute(
+      Number(request.user.id),
+    );
     await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.listed, {
-      context: makeApplicationEventContext(request), module: "service", resourceType: "service",
-      filters: {visible: true}, returnedCount: services.length,
+      context: makeApplicationEventContext(request),
+      module: "service",
+      resourceType: "service",
+      filters: { visible: true },
+      returnedCount: services.length,
     });
     return reply.status(200).send({
       message: "serviços recuperados com sucesso",
@@ -73,7 +78,6 @@ export default class ServicesController {
       ok: true,
     });
   };
-
 
   static readonly updateService = async (
     request: FastifyRequest<{
@@ -96,5 +100,4 @@ export default class ServicesController {
 
     return reply.status(204).send();
   };
-
 }

@@ -1,6 +1,4 @@
-import {
-  FastifyPluginAsync,
-} from "fastify";
+import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin"; // Importe o fastify-plugin
 
 const LoggerResponse: FastifyPluginAsync = async (fastify) => {

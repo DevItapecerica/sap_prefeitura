@@ -5,8 +5,8 @@ const visibleServiceSchema = {
   ...serviceResourceSchema,
   properties: {
     ...serviceResourceSchema.properties,
-    module: {type: "string"},
-    actions: {type: "array", items: {type: "string"}},
+    module: { type: "string" },
+    actions: { type: "array", items: { type: "string" } },
   },
 };
 

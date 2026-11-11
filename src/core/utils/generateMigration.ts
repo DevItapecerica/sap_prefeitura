@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,13 +9,16 @@ const __dirname = path.dirname(__filename);
 const migrationName = process.argv[2];
 
 if (!migrationName) {
-  console.error('❌ Please provide a migration name.');
+  console.error("❌ Please provide a migration name.");
   process.exit(1);
 }
 
 // Define paths
-const migrationsDir = path.resolve(__dirname, '../../infra/database/sequelize/migrations');
-const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14); // YYYYMMDDHHMMSS
+const migrationsDir = path.resolve(
+  __dirname,
+  "../../infra/database/sequelize/migrations",
+);
+const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14); // YYYYMMDDHHMMSS
 const fileName = `${timestamp}-${migrationName}.ts`;
 const filePath = path.join(migrationsDir, fileName);
 

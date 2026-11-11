@@ -69,10 +69,9 @@ export function extensionEnd(
   const currentEnd = dateOnly(row.expire_at);
   if (currentEnd < businessDate(now))
     throw new PeaadRuleError("PARTICIPATION_EXPIRED", "Vinculo ja expirou");
-  const end = [
-    addMonths(currentEnd, months),
-    dateOnly(e.data_vencimento),
-  ].sort((left, right) => left.localeCompare(right))[0]!;
+  const end = [addMonths(currentEnd, months), dateOnly(e.data_vencimento)].sort(
+    (left, right) => left.localeCompare(right),
+  )[0]!;
   if (end <= currentEnd)
     throw new PeaadRuleError(
       "EXTENSION_AT_PROGRAM_LIMIT",

@@ -23,10 +23,7 @@ export class FakeSetorRepository implements SetorRepository {
     return Promise.resolve(setor);
   }
 
-  updateSetor(
-    id: number,
-    data: Pick<Setor, "name" | "description">,
-  ) {
+  updateSetor(id: number, data: Pick<Setor, "name" | "description">) {
     if (this.failUpdate || !this.setores.has(id)) return Promise.resolve(null);
     const setor = new Setor(id, data.name, data.description);
     this.setores.set(id, setor);

@@ -36,7 +36,12 @@ class FakeMunicipeRepository {
     return municipe;
   }
 
-  async updateMunicipe(_uuid: string, municipe: Municipe, cpfHash?: string, cepHash?: string) {
+  async updateMunicipe(
+    _uuid: string,
+    municipe: Municipe,
+    cpfHash?: string,
+    cepHash?: string,
+  ) {
     this.updatedHash = { cpfHash, cepHash };
     this.municipe = municipe;
     return municipe;
@@ -48,12 +53,29 @@ class FakeMunicipeRepository {
 
   async getMunicipe(query: any) {
     this.lastQuery = query;
-    return { municipe: this.municipe ? [this.municipe] : [], count: this.municipe ? 1 : 0 };
+    return {
+      municipe: this.municipe ? [this.municipe] : [],
+      count: this.municipe ? 1 : 0,
+    };
   }
 }
 
 function makeMunicipe() {
-  return new Municipe("Maria Silva", "52998224725", "2000-06-09", "11999999999", "Rua A", "Centro", "Cidade", "SP", "06850000", "10", null, 1, "mun-1");
+  return new Municipe(
+    "Maria Silva",
+    "52998224725",
+    "2000-06-09",
+    "11999999999",
+    "Rua A",
+    "Centro",
+    "Cidade",
+    "SP",
+    "06850000",
+    "10",
+    null,
+    1,
+    "mun-1",
+  );
 }
 
 test("MunicipePolicyService valida CPF antes da persistencia", () => {
@@ -81,23 +103,42 @@ test("MunicipePresentation mascara dados sensiveis", () => {
 
 test("createMunicipeUseCase cria com hashes e getMunicipeByIdUseCase descriptografa", async () => {
   const repo = new FakeMunicipeRepository();
-  const createUseCase = new createMunicipeUseCase(repo as any, aes as any, sha as any);
+  const createUseCase = new createMunicipeUseCase(
+    repo as any,
+    aes as any,
+    sha as any,
+  );
 
-  const created = await createUseCase.execute(makeMunicipe() as any, "author-1");
+  const created = await createUseCase.execute(
+    makeMunicipe() as any,
+    "author-1",
+  );
 
   assert.equal(created.cpf, "52998224725");
   assert.equal(repo.createdHash.cpfHash, "hash:52998224725");
 
-  const getUseCase = new getMunicipeByIdUseCase(repo as any, aes as any, sha as any);
+  const getUseCase = new getMunicipeByIdUseCase(
+    repo as any,
+    aes as any,
+    sha as any,
+  );
   assert.equal((await getUseCase.execute("mun-1")).cpf, "52998224725");
 });
 
 test("createMunicipeUseCase rejeita CPF invalido antes de consultar ou persistir", async () => {
   const repo = new FakeMunicipeRepository();
-  const useCase = new createMunicipeUseCase(repo as any, aes as any, sha as any);
+  const useCase = new createMunicipeUseCase(
+    repo as any,
+    aes as any,
+    sha as any,
+  );
 
   await assert.rejects(
-    () => useCase.execute({ ...makeMunicipe(), cpf: "11111111111" } as any, "tester"),
+    () =>
+      useCase.execute(
+        { ...makeMunicipe(), cpf: "11111111111" } as any,
+        "tester",
+      ),
     (error: unknown) =>
       error instanceof AppError &&
       error.statusCode === 400 &&
@@ -111,20 +152,28 @@ test("updateMunicipeUseCase atualiza hashes de CPF e CEP junto com dados criptog
   const mapper = new MunicipeMapper(aes as any, sha as any);
   const persisted = await mapper.toPersistence(makeMunicipe());
   repo.municipe = persisted.municipe;
-  const useCase = new updateMunicipeUseCase(repo as any, aes as any, sha as any);
+  const useCase = new updateMunicipeUseCase(
+    repo as any,
+    aes as any,
+    sha as any,
+  );
 
-  const updated = await useCase.execute("mun-1", {
-    cpf: "16899535009",
-    nascimento: "2001-07-10",
-    telefone: "11888888888",
-    rua: "Rua B",
-    bairro: "Centro",
-    cidade: "Cidade",
-    uf: "SP",
-    cep: "06851000",
-    numero: "20",
-    complemento: null,
-  }, "author-2");
+  const updated = await useCase.execute(
+    "mun-1",
+    {
+      cpf: "16899535009",
+      nascimento: "2001-07-10",
+      telefone: "11888888888",
+      rua: "Rua B",
+      bairro: "Centro",
+      cidade: "Cidade",
+      uf: "SP",
+      cep: "06851000",
+      numero: "20",
+      complemento: null,
+    },
+    "author-2",
+  );
 
   assert.equal(repo.updatedHash.cpfHash, "hash:16899535009");
   assert.equal(repo.updatedHash.cepHash, "hash:06851000");
@@ -139,11 +188,19 @@ test("updateMunicipeUseCase aceita update parcial sem recalcular hashes ausentes
   const mapper = new MunicipeMapper(aes as any, sha as any);
   const persisted = await mapper.toPersistence(makeMunicipe());
   repo.municipe = persisted.municipe;
-  const useCase = new updateMunicipeUseCase(repo as any, aes as any, sha as any);
+  const useCase = new updateMunicipeUseCase(
+    repo as any,
+    aes as any,
+    sha as any,
+  );
 
-  const updated = await useCase.execute("mun-1", {
-    telefone: "11777777777",
-  }, "author-2");
+  const updated = await useCase.execute(
+    "mun-1",
+    {
+      telefone: "11777777777",
+    },
+    "author-2",
+  );
 
   assert.equal(repo.updatedHash.cpfHash, undefined);
   assert.equal(repo.updatedHash.cepHash, undefined);
@@ -167,7 +224,14 @@ test("getMunicipeUseCase envia hash para busca por CPF ou CEP", async () => {
 });
 
 test("getMunicipeByIdUseCase rejeita municipe inexistente", async () => {
-  const useCase = new getMunicipeByIdUseCase(new FakeMunicipeRepository() as any, aes as any, sha as any);
+  const useCase = new getMunicipeByIdUseCase(
+    new FakeMunicipeRepository() as any,
+    aes as any,
+    sha as any,
+  );
 
-  await assert.rejects(() => useCase.execute("missing"), (error: AppError) => error.code === "MUNICIPE_NOT_FOUND");
+  await assert.rejects(
+    () => useCase.execute("missing"),
+    (error: AppError) => error.code === "MUNICIPE_NOT_FOUND",
+  );
 });

@@ -30,7 +30,9 @@ await app.ready();
 
 const document = app.swagger() as Record<string, any>;
 for (const [path, operations] of Object.entries(document.paths || {})) {
-  for (const [method, operation] of Object.entries(operations as Record<string, any>)) {
+  for (const [method, operation] of Object.entries(
+    operations as Record<string, any>,
+  )) {
     if (operation && typeof operation === "object" && !operation.operationId) {
       operation.operationId = `${method}_${path}`
         .replace(/[^a-zA-Z0-9]+/g, "_")

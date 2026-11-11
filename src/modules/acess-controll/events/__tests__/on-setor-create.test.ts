@@ -9,7 +9,9 @@ class FakeSubscriber {
   created?: EventHandler<SetorCreatedEvent>;
   subscribe(_eventName: string, handler: EventHandler<any>) {
     this.created = handler;
-    return () => { if (this.created === handler) this.created = undefined; };
+    return () => {
+      if (this.created === handler) this.created = undefined;
+    };
   }
 }
 
@@ -18,7 +20,11 @@ test("setor created handler creates access defaults and unsubscribes", async () 
   const received: Setor[] = [];
   const unsubscribe = registerSetorCreatedHandler(
     events,
-    { ensureForSetor: async (setor: Setor) => { received.push(setor); } } as any,
+    {
+      ensureForSetor: async (setor: Setor) => {
+        received.push(setor);
+      },
+    } as any,
     { error: () => undefined } as any,
   );
   const setor = new Setor(2, "TI", "Tecnologia");
@@ -38,13 +44,23 @@ test("setor created handler contains access default failures", async () => {
   const errors: unknown[] = [];
   registerSetorCreatedHandler(
     events,
-    { ensureForSetor: async () => { throw new Error("offline"); } } as any,
-    { error: (input: unknown) => { errors.push(input); } } as any,
+    {
+      ensureForSetor: async () => {
+        throw new Error("offline");
+      },
+    } as any,
+    {
+      error: (input: unknown) => {
+        errors.push(input);
+      },
+    } as any,
   );
 
-  await assert.doesNotReject(async () => events.created!({
-    context: { correlationId: "request-2", origin: { type: "HTTP" } },
-    setor: new Setor(2, "TI", "Tecnologia"),
-  }));
+  await assert.doesNotReject(async () =>
+    events.created!({
+      context: { correlationId: "request-2", origin: { type: "HTTP" } },
+      setor: new Setor(2, "TI", "Tecnologia"),
+    }),
+  );
   assert.equal(errors.length, 1);
 });

@@ -4,13 +4,26 @@ import AppError from "../../../../core/appError.js";
 import { User } from "../../domain/entity/User.js";
 import { PasswordPolicyService } from "../../domain/services/password-policy.service.js";
 import { ChangeUserPasswordUseCase } from "../use-case/change-user-password.use-case.js";
-import { FakeBcrypt, FakeUserRepository, userPayload } from "./user-use-case.helpers.js";
+import {
+  FakeBcrypt,
+  FakeUserRepository,
+  userPayload,
+} from "./user-use-case.helpers.js";
 
 const makeUseCase = () => {
   const repository = new FakeUserRepository();
   repository.users.set(
     1,
-    new User("User", userPayload.email, "1", 1, 1, 1, false, "hashed:SenhaAtual1"),
+    new User(
+      "User",
+      userPayload.email,
+      "1",
+      1,
+      1,
+      1,
+      false,
+      "hashed:SenhaAtual1",
+    ),
   );
   return {
     repository,

@@ -9,16 +9,21 @@ import { getUserByIdSchema } from "../schemas/get-user-by-id.schema.js";
 import { listUsersSchema } from "../schemas/list-users.schema.js";
 import { updateUserSchema } from "../schemas/update-user.schema.js";
 
-const userRouter: FastifyPluginAsync<{controller?: typeof UserControllerType}> = async (fastify, options) => {
-  const UserController = options.controller ?? (await import("../controller/user.controller.js")).default;
+const userRouter: FastifyPluginAsync<{
+  controller?: typeof UserControllerType;
+}> = async (fastify, options) => {
+  const UserController =
+    options.controller ??
+    (await import("../controller/user.controller.js")).default;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("usuarios");
-
 
   fastify.route({
     method: "GET",
     url: "/",
-    config: { audit: { failureAction: "LIST", module: "user", resourceType: "user" } },
+    config: {
+      audit: { failureAction: "LIST", module: "user", resourceType: "user" },
+    },
     schema: listUsersSchema,
     preHandler: allow("consultar_usuario"),
     handler: UserController.getAllByQuery,
@@ -27,7 +32,14 @@ const userRouter: FastifyPluginAsync<{controller?: typeof UserControllerType}> =
   fastify.route({
     method: "GET",
     url: "/:id",
-    config: { audit: { failureAction: "VIEW", module: "user", resourceType: "user", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "VIEW",
+        module: "user",
+        resourceType: "user",
+        resourceIdParam: "id",
+      },
+    },
     schema: getUserByIdSchema,
     preHandler: allow("consultar_usuario"),
     handler: UserController.getOne,
@@ -36,7 +48,9 @@ const userRouter: FastifyPluginAsync<{controller?: typeof UserControllerType}> =
   fastify.route({
     method: "POST",
     url: "/",
-    config: { audit: { failureAction: "CREATE", module: "user", resourceType: "user" } },
+    config: {
+      audit: { failureAction: "CREATE", module: "user", resourceType: "user" },
+    },
     schema: createUserSchema,
     preHandler: allow("cadastrar_usuario"),
     handler: UserController.cadastrar,
@@ -45,7 +59,14 @@ const userRouter: FastifyPluginAsync<{controller?: typeof UserControllerType}> =
   fastify.route({
     method: "DELETE",
     url: "/:id",
-    config: { audit: { failureAction: "DELETE", module: "user", resourceType: "user", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "DELETE",
+        module: "user",
+        resourceType: "user",
+        resourceIdParam: "id",
+      },
+    },
     schema: deleteUserSchema,
     preHandler: allow("excluir_usuario"),
     handler: UserController.delete,
@@ -54,7 +75,14 @@ const userRouter: FastifyPluginAsync<{controller?: typeof UserControllerType}> =
   fastify.route({
     method: "PUT",
     url: "/:id",
-    config: { audit: { failureAction: "UPDATE", module: "user", resourceType: "user", resourceIdParam: "id" } },
+    config: {
+      audit: {
+        failureAction: "UPDATE",
+        module: "user",
+        resourceType: "user",
+        resourceIdParam: "id",
+      },
+    },
     schema: updateUserSchema,
     preHandler: allow("editar_usuario"),
     handler: UserController.update,
@@ -63,7 +91,13 @@ const userRouter: FastifyPluginAsync<{controller?: typeof UserControllerType}> =
   fastify.route({
     method: "PUT",
     url: "/alter_password",
-    config: { audit: { failureAction: "PASSWORD_CHANGED", module: "user", resourceType: "user" } },
+    config: {
+      audit: {
+        failureAction: "PASSWORD_CHANGED",
+        module: "user",
+        resourceType: "user",
+      },
+    },
     schema: changeUserPasswordSchema,
     preHandler: allow("alterar_senha_usuario"),
     handler: UserController.alterPassword,

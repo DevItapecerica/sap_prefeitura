@@ -60,7 +60,8 @@ const getResourceId = (
 };
 
 const getAttemptedIdentity = (request: FastifyRequest): string | undefined => {
-  if (typeof request.body !== "object" || request.body === null) return undefined;
+  if (typeof request.body !== "object" || request.body === null)
+    return undefined;
   return scalarToString((request.body as Record<string, unknown>).email);
 };
 
@@ -113,7 +114,9 @@ const ErrorHook: FastifyPluginAsync = async (fastify) => {
   fastify.setErrorHandler(async (error, request, reply) => {
     const normalized = normalizeError(error);
     request.log.error({
-      err: request.routeOptions.config.audit?.omitRequestedChanges ? normalized : error,
+      err: request.routeOptions.config.audit?.omitRequestedChanges
+        ? normalized
+        : error,
       route: request.url,
       userId: request.user?.id,
     });

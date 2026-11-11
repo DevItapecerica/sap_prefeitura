@@ -45,15 +45,10 @@ export default class ModalidadeService {
   }
 
   async findOneModalidade(uuid: string): Promise<Modalidade> {
-    const modalidade =
-      await this.modalidadeRepository.findOneModalidade(uuid);
+    const modalidade = await this.modalidadeRepository.findOneModalidade(uuid);
 
     if (!modalidade) {
-      throw new AppError(
-        "Modalidade not found",
-        404,
-        "MODALIDADE_NOT_FOUND",
-      );
+      throw new AppError("Modalidade not found", 404, "MODALIDADE_NOT_FOUND");
     }
 
     return modalidade;
@@ -86,11 +81,7 @@ export default class ModalidadeService {
     );
 
     if (!modalidade) {
-      throw new AppError(
-        "Modalidade not found",
-        404,
-        "MODALIDADE_NOT_FOUND",
-      );
+      throw new AppError("Modalidade not found", 404, "MODALIDADE_NOT_FOUND");
     }
 
     return modalidade;
@@ -100,11 +91,7 @@ export default class ModalidadeService {
     const deleted = await this.modalidadeRepository.deleteModalidade(uuid);
 
     if (!deleted) {
-      throw new AppError(
-        "Modalidade not found",
-        404,
-        "MODALIDADE_NOT_FOUND",
-      );
+      throw new AppError("Modalidade not found", 404, "MODALIDADE_NOT_FOUND");
     }
 
     return deleted;

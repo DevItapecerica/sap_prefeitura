@@ -110,11 +110,7 @@ export const validateImageDataUrl = (
   if (!normalizedValue) {
     if (!required) return null;
 
-    throw new AppError(
-      "Image is required",
-      400,
-      `${errorCodePrefix}_REQUIRED`,
-    );
+    throw new AppError("Image is required", 400, `${errorCodePrefix}_REQUIRED`);
   }
 
   const parsed = parseImageDataUrl(normalizedValue);
@@ -128,7 +124,11 @@ export const validateImageDataUrl = (
   }
 
   if (parsed.buffer.length < minSizeInBytes) {
-    throw new AppError("Image file is too small", 400, `${errorCodePrefix}_INVALID`);
+    throw new AppError(
+      "Image file is too small",
+      400,
+      `${errorCodePrefix}_INVALID`,
+    );
   }
 
   if (maxSizeInBytes && parsed.buffer.length > maxSizeInBytes) {

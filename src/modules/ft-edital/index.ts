@@ -15,7 +15,9 @@ const FtEditalModule: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   await fastify.register(EditalWorkflowRouter, {
     prefix: "/frente-de-trabalho/edital",
   });
-  await fastify.register(BeneficiosRouter, { prefix: "/frente-de-trabalho/edital" });
+  await fastify.register(BeneficiosRouter, {
+    prefix: "/frente-de-trabalho/edital",
+  });
 };
 
 export default FtEditalModule;

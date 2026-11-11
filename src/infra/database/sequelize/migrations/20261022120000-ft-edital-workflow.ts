@@ -19,7 +19,9 @@ export default {
       throw new Error(
         "FT edital workflow requires an empty FT database. Do not reset the application database automatically.",
       );
-    for (const [name, definition] of Object.entries(editalColumns).filter(([name]) => name !== 'idade_maxima'))
+    for (const [name, definition] of Object.entries(editalColumns).filter(
+      ([name]) => name !== "idade_maxima",
+    ))
       await q.addColumn("edital", name, definition);
     for (const table of ["pagadores", "turnos"]) {
       await q.addColumn(table, "edital_id", {
@@ -169,7 +171,9 @@ export default {
       await q.removeColumn(table, "edital_id");
       await q.addIndex(table, ["nome"], { unique: true, name: "nome" });
     }
-    for (const col of Object.keys(editalColumns).filter(name => name !== 'idade_maxima').reverse())
+    for (const col of Object.keys(editalColumns)
+      .filter((name) => name !== "idade_maxima")
+      .reverse())
       await q.removeColumn("edital", col);
   },
 };

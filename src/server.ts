@@ -62,9 +62,17 @@ await fastify.register(healthRoutes, {
         const startedAt = performance.now();
         try {
           await db.sequelize.authenticate();
-          recordDependency("database", "success", (performance.now() - startedAt) / 1_000);
+          recordDependency(
+            "database",
+            "success",
+            (performance.now() - startedAt) / 1_000,
+          );
         } catch (error) {
-          recordDependency("database", "error", (performance.now() - startedAt) / 1_000);
+          recordDependency(
+            "database",
+            "error",
+            (performance.now() - startedAt) / 1_000,
+          );
           throw error;
         }
       },
@@ -82,7 +90,7 @@ await fastify.register(healthRoutes, {
 });
 
 // Registrando hooks
-await fastify.register(LoggerResponse)
+await fastify.register(LoggerResponse);
 fastify.log.info("Logger Registrado");
 
 await fastify.register(ErrorHook);

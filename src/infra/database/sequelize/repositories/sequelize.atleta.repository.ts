@@ -1,6 +1,9 @@
 import { Op } from "sequelize";
 import db from "../index.js";
-import { QueryAtletaDto, UpdateAtletaDto } from "../../../../modules/esporte/application/dto/atleta.dto.js";
+import {
+  QueryAtletaDto,
+  UpdateAtletaDto,
+} from "../../../../modules/esporte/application/dto/atleta.dto.js";
 import AtletaRepository from "../../../../modules/esporte/domain/repository/atleta.repository.js";
 import Atleta from "../../../../modules/esporte/domain/entity/Atleta.js";
 import Municipe from "../../../../modules/municipe/domain/entity/Municipe.js";
@@ -17,7 +20,9 @@ export class SequelizeAtletaRepository implements AtletaRepository {
     return this.toEntity(created);
   }
 
-  async findAllAtletas(query?: QueryAtletaDto): Promise<{ atletas: Atleta[]; count: number }> {
+  async findAllAtletas(
+    query?: QueryAtletaDto,
+  ): Promise<{ atletas: Atleta[]; count: number }> {
     const q = query || {};
     const where: any = {};
     const municipeWhere: any = {};
@@ -77,15 +82,17 @@ export class SequelizeAtletaRepository implements AtletaRepository {
 
   async findOneAtleta(uuid: string): Promise<Atleta | null> {
     const atleta = await this.model.findByPk(uuid, {
-      include: [{
-        model: this.municipeModel,
-        as: "municipe",
-      },
-      {
-        model: this.modalidadeModel,
-        as: "modalidades",
-        through: { attributes: [] },
-      }],
+      include: [
+        {
+          model: this.municipeModel,
+          as: "municipe",
+        },
+        {
+          model: this.modalidadeModel,
+          as: "modalidades",
+          through: { attributes: [] },
+        },
+      ],
     });
 
     return atleta ? this.toEntity(atleta) : null;
@@ -131,7 +138,10 @@ export class SequelizeAtletaRepository implements AtletaRepository {
     return deleted > 0;
   }
 
-  async updateAtleta(uuid: string, data: UpdateAtletaDto): Promise<Atleta | null> {
+  async updateAtleta(
+    uuid: string,
+    data: UpdateAtletaDto,
+  ): Promise<Atleta | null> {
     const atleta = await this.model.findByPk(uuid);
 
     if (!atleta) return null;

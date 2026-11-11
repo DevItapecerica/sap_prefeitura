@@ -60,7 +60,8 @@ export class EditalInsightsService {
             : {};
           const current = inscriptions ? row.participacoes?.[0] : row;
           const base = {
-            beneficios_permitir_encerrados: PERMITIR_RETIRADA_BENEFICIOS_APOS_ENCERRAMENTO,
+            beneficios_permitir_encerrados:
+              PERMITIR_RETIRADA_BENEFICIOS_APOS_ENCERRAMENTO,
             id: row.id,
             bolsista_id: row.bolsista_id,
             nome:
