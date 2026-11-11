@@ -1,5 +1,33 @@
 # SAP Prefeitura — API principal
 
+## Lint e formatação
+
+O backend segue o estilo do módulo `permission`: indentação de dois espaços,
+aspas duplas, ponto e vírgula, vírgulas finais, largura de 80 caracteres e arquivos
+UTF-8 com LF. `.editorconfig` auxilia os editores, `.gitattributes` preserva LF
+nos checkouts e Prettier aplica a formatação.
+
+- `npm run lint`: verifica JavaScript/TypeScript com ESLint, sem escrever arquivos
+  e sem aceitar avisos.
+- `npm run lint:fix`: aplica as correções automáticas do ESLint. Revise o diff.
+- `npm run format`: aplica o padrão de formatação, incluindo `.sequelizerc`.
+- `npm run format:check`: confere a formatação sem alterar arquivos.
+
+O ESLint usa configuração flat, regras recomendadas de JavaScript/TypeScript e
+globais Node; `.sequelizerc` é tratado como CommonJS. Prettier roda separadamente,
+com `eslint-config-prettier` evitando conflitos. As verificações abrangem código,
+testes, scripts e configurações, incluindo migrations e seeds. Dependências,
+builds, cobertura, caches, arquivos de runtime e contratos gerados ficam fora.
+
+Esta adoção não exige eliminar os `any` existentes nem habilita lint dependente
+de tipos. Parâmetros contratuais sem uso são explicitamente prefixados com `_`;
+projeções por rest podem remover campos internos sem consumir a variável
+descartada. Variáveis locais comuns continuam sujeitas à checagem de uso.
+`npm run check` mantém a validação TypeScript de `src` e scripts. O workflow Quality
+também exige lint e formatação, além de arquitetura, tipos, cobertura e build.
+
+Plano e evidências: [sap-eslint-padronizacao.md](codex/plans/sap-eslint-padronizacao.md).
+
 ## Benefícios mensais do PEAAD
 
 O módulo `ft-beneficios` registra retiradas parciais na competência atual de Brasília, com trava por pessoa, edital, benefício e mês. Uma entrega reúne um ou vários benefícios e guarda seus nomes/descrições, responsável e data. Retornos em outra participação não liberam nova retirada no mesmo mês. O estorno é integral, justificado e auditado; não apaga a entrega e pode ocorrer após o encerramento.
