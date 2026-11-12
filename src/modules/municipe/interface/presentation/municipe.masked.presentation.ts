@@ -1,4 +1,5 @@
 import Municipe from "../../domain/entity/Municipe.js";
+import { CpfMask } from "../../../../core/utils/cpf-mask.js";
 
 export default class MunicipePresentation {
   static Masked(mData: Municipe) {
@@ -9,7 +10,7 @@ export default class MunicipePresentation {
     return {
       uuid: mData.uuid,
       nome: mData.nome.split(" ")[0] + " ***",
-      cpf: mData.cpf.replace(/\d(?=\d{3})/g, "*"),
+      cpf: CpfMask.lastThreeDigits(mData.cpf),
       nascimento: Number.isNaN(nascimento) ? null : nascimento,
       cidade: mData.cidade,
       uf: mData.uf,

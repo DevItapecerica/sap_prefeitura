@@ -1,5 +1,13 @@
 # SAP Prefeitura — API principal
 
+## Comprovantes de entrega do PEAAD
+
+Os downloads `GET /frente-de-trabalho/estoque/entregas/:id/comprovante` e `GET /frente-de-trabalho/edital/:id/beneficios/entregas/:entregaId/comprovante` reutilizam as permissões de consulta dos históricos. O módulo `ft-comprovantes` segue rotas → controller → caso de uso → contratos, com repositório Sequelize e gateway HTTP em infraestrutura. Apenas a API PDF renderiza o arquivo, sob demanda, sem armazená-lo. O backend mascara o CPF antes do envio e não envia custos ou dados bancários. Falhas retornam `502 / PDF_SERVICE_UNAVAILABLE`, sem modificar a entrega. A reemissão usa itens históricos, identificação atual e situação de estorno. Plano: `codex/plans/peaad-comprovantes-entrega.md`.
+
+## Máscaras de CPF
+
+A classe pura `CpfMask`, em `src/core/utils/cpf-mask.ts`, centraliza o mascaramento de respostas: `middleDigits` mantém o formato dos comprovantes (`***.234.567-**`) e `lastThreeDigits` mantém o das apresentações de Munícipes/Esportes (`********789`). Ela aceita CPF com ou sem pontuação, preserva zeros e oculta integralmente valores sem onze dígitos. Aplicar somente na saída minimizada, após a descriptografia; não usar em entidades, persistência, hashes, validação ou relatórios que exigem CPF completo. Plano: `codex/plans/mascara-cpf-compartilhada.md`.
+
 ## Lint e formatação
 
 O backend segue o estilo do módulo `permission`: indentação de dois espaços,

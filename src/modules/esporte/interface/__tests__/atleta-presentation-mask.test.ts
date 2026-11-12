@@ -25,3 +25,14 @@ test("AtletaPresentation mascara municipe incluido e minimiza dados pessoais", (
   assert.equal("complemento" in response.municipe, false);
   assert.notEqual(response.municipe.cpf, "12345678900");
 });
+
+test("AtletaPresentation reuses the shared CPF mask for punctuated documents", () => {
+  const athlete = makeAtleta();
+  assert.ok(athlete.municipe);
+  athlete.municipe.cpf = "123.456.789-00";
+  assert.equal(
+    AtletaPresentation.Masked(athlete)?.municipe?.cpf,
+    "********900",
+  );
+  assert.equal(athlete.municipe.cpf, "123.456.789-00");
+});

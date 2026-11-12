@@ -101,6 +101,13 @@ test("MunicipePresentation mascara dados sensiveis", () => {
   assert.equal(masked.nascimento, 2000);
 });
 
+test("MunicipePresentation masks punctuated CPF without changing the domain value", () => {
+  const person = makeMunicipe();
+  person.cpf = "529.982.247-25";
+  assert.equal(MunicipePresentation.Masked(person).cpf, "********725");
+  assert.equal(person.cpf, "529.982.247-25");
+});
+
 test("createMunicipeUseCase cria com hashes e getMunicipeByIdUseCase descriptografa", async () => {
   const repo = new FakeMunicipeRepository();
   const createUseCase = new createMunicipeUseCase(

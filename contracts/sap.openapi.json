@@ -14402,6 +14402,227 @@
         ]
       }
     },
+    "/api/v2/frente-de-trabalho/edital/{id}/beneficios/entregas/{entregaId}/comprovante": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_edital_id_beneficios_entregas_entregaId_comprovante",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entregaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "500": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          },
+          "502": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Baixar comprovante de entrega de benefícios",
+        "tags": [
+          "PEAAD - Benefícios"
+        ]
+      }
+    },
     "/api/v2/frente-de-trabalho/edital/{id}/beneficios/entregas/{entregaId}/estornar": {
       "post": {
         "operationId": "post_api_v2_frente_de_trabalho_edital_id_beneficios_entregas_entregaId_estornar",
@@ -31960,6 +32181,218 @@
           }
         ],
         "summary": "getDelivery",
+        "tags": [
+          "PEAAD - Estoque"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/estoque/entregas/{id}/comprovante": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_estoque_entregas_id_comprovante",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "500": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          },
+          "502": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Baixar comprovante de entrega de materiais",
         "tags": [
           "PEAAD - Estoque"
         ]

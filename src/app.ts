@@ -1,4 +1,5 @@
 import EstoqueModule from "./modules/ft-estoque/index.js";
+import { ComprovantesRouter } from "./modules/ft-comprovantes/interface/comprovantes.router.js";
 import { FastifyPluginAsync } from "fastify";
 
 import userModule from "./modules/user/index.js";
@@ -45,6 +46,7 @@ const App: FastifyPluginAsync<{ runtimeWorkers?: boolean }> = async (
   fastify.log.info("FTEdital Module Registrado");
 
   await fastify.register(EstoqueModule);
+  await fastify.register(ComprovantesRouter, { prefix: "/frente-de-trabalho" });
   await fastify.register(FtBolsistaModule);
   fastify.log.info("FTBolsista Module Registrado");
 
