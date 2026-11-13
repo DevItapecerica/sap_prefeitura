@@ -1,5 +1,11 @@
 # SAP Prefeitura — API principal
 
+## Holerites de folha fechada
+
+Na consulta da folha fechada, cada bolsista pode receber seu holerite individual. `GET /frente-de-trabalho/relatorio/edital/:id/holerites/:bolsistaId?mes=AAAA-MM` devolve PDF; `POST /frente-de-trabalho/relatorio/edital/:id/holerites` com `{ "mes": "AAAA-MM" }` solicita ZIP assíncrono. Ambos exigem `gerar_relatorio_edital` e recusam folha aberta. A seleção usa somente o snapshot, inclusive para participantes encerrados, sem consultar faltas atuais. Novos fechamentos preservam descontos discriminados; os antigos mantêm o total com indicação de detalhamento não registrado. O CSV bancário permanece com nove colunas.
+
+O tipo `holerites` reutiliza fila, retenção e descarte de downloads. Cada pessoa terá um PDF com todas as linhas e pagadores preservados. Falhas individuais são registradas em `falhas.csv` seguro, inclusive quando nenhum PDF é gerado. Consulta, download e reprocessamento conservam suas permissões e exigem também `gerar_relatorio_edital` para holerites. A API PDF renderiza o documento, sem dados bancários. Plano e evidências: `codex/plans/peaad-holerites-folha-fechada.md`.
+
 ## Espelho de ponto: dias futuros identificados
 
 Os espelhos de ponto do PEAAD, individuais e em lote, exibem todos os dias do mês. Datas após a emissão em Brasília ficam como **Dia futuro**, sem horário previsto, marcações ou apontamentos e fora dos totais. Cabeçalho, consultas de vínculos/faltas e observações indicam o corte de apuração, incluindo hoje. Meses passados mantêm o mês completo; mês futuro é recusado. Cada processamento de lote usa uma referência única para todos os bolsistas; uma nova tentativa captura nova referência. Folha de presença, pagamento, holerites e arquivos já gerados mantêm as regras atuais. Plano: `codex/plans/peaad-ajustes-relatorios-espelho-pagamento.md`.
