@@ -339,6 +339,8 @@ export const FtRelatorioRouter: FastifyPluginAsync<{
       tags: relatorioTags,
       security: jwtSecurity,
       summary: "Solicitar espelhos de ponto em lote",
+      description:
+        "Cada execução do lote utiliza uma única referência de Brasília. Os espelhos exibem o mês completo, mas datas após o corte aparecem como Dia futuro e não integram a apuração ou os totais. Destinatários são selecionados até o corte. Mês futuro é recusado.",
       params: editalIdParamsSchema,
       body: {
         type: "object",

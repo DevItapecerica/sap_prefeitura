@@ -3,7 +3,10 @@ import test from "node:test";
 import { FtRelatorioArquivoService } from "../use-case/ft-relatorio-arquivo.service.js";
 import { FtRelatorioPeriodoService } from "../../domain/services/ft-relatorio-periodo.service.js";
 
-const makeService = (hasEdital = true) => {
+const makeService = (
+  hasEdital = true,
+  clock = () => new Date("2026-10-15T12:00:00.000Z"),
+) => {
   let created: any;
   const files = {
     async create(data: any) {
@@ -37,9 +40,7 @@ const makeService = (hasEdital = true) => {
       return hasEdital ? { id: "edital-1", name: "Edital São José" } : null;
     },
   };
-  const period = new FtRelatorioPeriodoService(
-    () => new Date("2026-10-15T12:00:00.000Z"),
-  );
+  const period = new FtRelatorioPeriodoService(clock);
   return {
     service: new FtRelatorioArquivoService(
       files as any,
@@ -56,10 +57,20 @@ const makeService = (hasEdital = true) => {
       },
       { publish: async () => {} },
       period,
+      clock,
     ),
     created: () => created,
   };
 };
+
+test("timesheet request rejects a month that is future in Brasília before creating a job", async () => {
+  const fixture = makeService(true, () => new Date("2026-11-01T02:59:59Z"));
+  await assert.rejects(fixture.service.request("edital-1", "2026-11", 12), {
+    statusCode: 400,
+    code: "FT_MS",
+  });
+  assert.equal(fixture.created(), undefined);
+});
 
 test("solicita lote de folhas de presenca com tipo e nome especificos", async () => {
   const fixture = makeService();
@@ -96,7 +107,7 @@ test("rejeita mes futuro e edital inexistente", async () => {
         12,
         "folhas_presenca",
       ),
-    /mes futuro/,
+    /m[eê]s futuro/,
   );
   await assert.rejects(
     () =>

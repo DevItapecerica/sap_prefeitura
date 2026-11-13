@@ -14,6 +14,7 @@ import { FtRelatorioArquivoRepository } from "../../domain/repositories/ft-relat
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
 import { FtRelatorioPeriodoService } from "../../domain/services/ft-relatorio-periodo.service.js";
 import { FtRelatorioArquivoTipo } from "../../domain/entities/ft-relatorio-arquivo.entity.js";
+import { EspelhoPontoPeriodoPolicy } from "../../../ft-bolsista/domain/services/espelho-ponto-periodo.policy.js";
 
 export class FtRelatorioArquivoService {
   constructor(
@@ -22,6 +23,8 @@ export class FtRelatorioArquivoService {
     private readonly storage: ReportArchiveStorage,
     private readonly events: EventPublisher<ReportBatchEvents>,
     private readonly period = new FtRelatorioPeriodoService(),
+    private readonly clock = () => new Date(),
+    private readonly timesheetPeriod = new EspelhoPontoPeriodoPolicy(),
   ) {}
 
   async request(
@@ -31,7 +34,8 @@ export class FtRelatorioArquivoService {
     tipo: FtRelatorioArquivoTipo = "espelhos_ponto",
   ) {
     try {
-      this.period.resolveMonth({ mes });
+      if (tipo === "folhas_presenca") this.period.resolveMonth({ mes });
+      else this.timesheetPeriod.resolve(mes, this.clock());
       const edital = await this.reports.findEditalById(editalId);
       if (!edital) throw ftError(404, "Edital not found");
       const id = randomUUID();

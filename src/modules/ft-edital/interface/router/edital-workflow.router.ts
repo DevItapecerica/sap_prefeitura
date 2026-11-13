@@ -1016,6 +1016,8 @@ export const EditalWorkflowRouter: FastifyPluginAsync<{
     schema: {
       ...workflowMetadata,
       summary: "gerar espelho ponto",
+      description:
+        "Espelho com todos os dias do mês. Após a data de emissão em Brasília, exibe Dia futuro, sem horário previsto, marcações ou apontamentos e sem efeito nos totais. A apuração inclui hoje; mês futuro é recusado.",
       params: object({ id: uuid, participacaoId: uuid }),
       querystring: pdfQuery,
       response: workflowPdfResponse,

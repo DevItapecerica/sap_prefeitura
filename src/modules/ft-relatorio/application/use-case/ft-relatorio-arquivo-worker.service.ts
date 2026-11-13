@@ -4,32 +4,51 @@ import type { FtRelatorioArquivoDto } from "../../domain/entities/ft-relatorio-a
 import { mapPeaadRuleError } from "../../../ft-bolsista/application/utils/map-peaad-rule-error.js";
 import { FtRelatorioArquivoRepository } from "../../domain/repositories/ft-relatorio-arquivo.repository.js";
 import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.repository.js";
+import { EspelhoPontoPeriodoPolicy } from "../../../ft-bolsista/domain/services/espelho-ponto-periodo.policy.js";
+import { PeaadRuleError } from "../../../ft-bolsista/domain/errors/peaad-rule.error.js";
+import type { EspelhoPontoEmissionContext } from "../../../ft-bolsista/application/dto/espelho-ponto-emission.js";
 
 type PdfGenerator = {
   execute(
     bolsistaId: string,
     editalId: string,
     mes: string,
+    requestId?: string,
+    context?: EspelhoPontoEmissionContext,
   ): Promise<{ file: Buffer }>;
 };
 
 export class FtRelatorioArquivoWorkerService {
   constructor(
-    private readonly files: FtRelatorioArquivoRepository,
-    private readonly reports: FtRelatorioRepository,
+    private readonly files: Pick<
+      FtRelatorioArquivoRepository,
+      | "claimNext"
+      | "countPending"
+      | "progress"
+      | "complete"
+      | "fail"
+      | "findExpired"
+      | "markDeleted"
+    >,
+    private readonly reports: Pick<
+      FtRelatorioRepository,
+      "findBolsistasFaltasByEditalMes"
+    >,
     private readonly espelhoPdf: PdfGenerator,
     private readonly storage: ReportArchiveStorage,
     private readonly folhaPresencaPdf: PdfGenerator = espelhoPdf,
+    private readonly timesheetPeriod = new EspelhoPontoPeriodoPolicy(),
   ) {}
 
   async run(now = new Date()) {
+    const referenceDate = new Date(now.getTime());
     try {
       const stale = new Date(now.getTime() - 30 * 60_000);
       const job = await this.files.claimNext(now, stale);
       if (!job)
         return { processed: 0, backlog: await this.files.countPending() };
       try {
-        await this.process(job);
+        await this.process(job, referenceDate);
       } catch (error) {
         await this.files.fail(job.id, this.safeError(error));
       }
@@ -54,11 +73,18 @@ export class FtRelatorioArquivoWorkerService {
     }
   }
 
-  private async peopleForJob(job: FtRelatorioArquivoDto) {
-    const period = {
+  private async peopleForJob(job: FtRelatorioArquivoDto, referenceDate: Date) {
+    const monthly = {
       data_inicio: `${job.mes}-01`,
       data_fim: this.monthEnd(job.mes),
     };
+    const timesheet =
+      job.tipo === "folhas_presenca"
+        ? null
+        : this.timesheetPeriod.resolve(job.mes, referenceDate);
+    const period = timesheet
+      ? { data_inicio: timesheet.inicio, data_fim: timesheet.fim }
+      : monthly;
     const people = (
       await this.reports.findBolsistasFaltasByEditalMes(job.edital_id, period)
     )
@@ -75,8 +101,8 @@ export class FtRelatorioArquivoWorkerService {
     return people;
   }
 
-  private async process(job: FtRelatorioArquivoDto) {
-    const people = await this.peopleForJob(job);
+  private async process(job: FtRelatorioArquivoDto, referenceDate: Date) {
+    const people = await this.peopleForJob(job, referenceDate);
     await this.files.progress(job.id, people.length, 0, 0);
     const archive = await this.storage.create(job.id);
     let generated = 0;
@@ -92,11 +118,15 @@ export class FtRelatorioArquivoWorkerService {
             try {
               return {
                 person,
-                pdf: await pdf.execute(
-                  String(person.id),
-                  job.edital_id,
-                  job.mes,
-                ),
+                pdf: isFolhaPresenca
+                  ? await pdf.execute(String(person.id), job.edital_id, job.mes)
+                  : await pdf.execute(
+                      String(person.id),
+                      job.edital_id,
+                      job.mes,
+                      undefined,
+                      { referenceDate },
+                    ),
               };
             } catch (error) {
               return {
@@ -156,6 +186,12 @@ export class FtRelatorioArquivoWorkerService {
     ].join("\n");
   }
   private safeError(error: unknown) {
+    if (
+      error instanceof PeaadRuleError &&
+      (error.code === "REPORT_MONTH_FUTURE" ||
+        error.code === "REPORT_MONTH_INVALID")
+    )
+      return error.message;
     const message = error instanceof Error ? error.message : String(error);
     if (/Nenhum bolsista|Nenhum PDF/.test(message)) return message;
     if (/PDF service unavailable/i.test(message))

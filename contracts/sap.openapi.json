@@ -7543,6 +7543,7 @@
     },
     "/api/v2/frente-de-trabalho/bolsista/{id}/espelho-ponto": {
       "get": {
+        "description": "Exibe todos os dias do mês. No mês atual, dias após a emissão em Brasília aparecem como Dia futuro, sem horário previsto, marcações ou apontamentos e fora dos totais. Cabeçalho informa o período apurado. Meses anteriores mantêm o mês completo; mês futuro é recusado.",
         "operationId": "get_api_v2_frente_de_trabalho_bolsista_id_espelho_ponto",
         "parameters": [
           {
@@ -23766,6 +23767,7 @@
     },
     "/api/v2/frente-de-trabalho/edital/{id}/participacoes/{participacaoId}/espelho-ponto": {
       "get": {
+        "description": "Espelho com todos os dias do mês. Após a data de emissão em Brasília, exibe Dia futuro, sem horário previsto, marcações ou apontamentos e sem efeito nos totais. A apuração inclui hoje; mês futuro é recusado.",
         "operationId": "get_api_v2_frente_de_trabalho_edital_id_participacoes_participacaoId_espelho_ponto",
         "parameters": [
           {
@@ -41822,6 +41824,7 @@
     },
     "/api/v2/frente-de-trabalho/relatorio/edital/{id}/espelhos-ponto": {
       "post": {
+        "description": "Cada execução do lote utiliza uma única referência de Brasília. Os espelhos exibem o mês completo, mas datas após o corte aparecem como Dia futuro e não integram a apuração ou os totais. Destinatários são selecionados até o corte. Mês futuro é recusado.",
         "operationId": "post_api_v2_frente_de_trabalho_relatorio_edital_id_espelhos_ponto",
         "parameters": [
           {

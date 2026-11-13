@@ -2,6 +2,8 @@ import { mapPeaadRuleError } from "../utils/map-peaad-rule-error.js";
 import { FtBolsistaRepository } from "../../domain/repositories/ft-bolsista.repository.js";
 import RenderEspelhoPontoPdfUseCase from "../../../espelho-ponto/application/use-case/render-espelho-ponto-pdf.use-case.js";
 import { ftError } from "../utils/ft-error.js";
+import { EspelhoPontoPeriodoPolicy } from "../../domain/services/espelho-ponto-periodo.policy.js";
+import type { EspelhoPontoEmissionContext } from "../dto/espelho-ponto-emission.js";
 import {
   getVinculoOperationalEnd,
   resolveTurnoSnapshot,
@@ -12,8 +14,16 @@ type PdfGateway = Pick<RenderEspelhoPontoPdfUseCase, "execute">;
 
 export class GerarEspelhoPontoBolsistaUseCase {
   constructor(
-    private readonly repository: FtBolsistaRepository,
+    private readonly repository: Pick<
+      FtBolsistaRepository,
+      | "findById"
+      | "findEditalById"
+      | "findHistoricoByBolsistaId"
+      | "findFaltasByBolsistaPeriodo"
+    >,
     private readonly pdfGateway: PdfGateway,
+    private readonly clock = () => new Date(),
+    private readonly period = new EspelhoPontoPeriodoPolicy(),
   ) {}
 
   async execute(
@@ -21,9 +31,13 @@ export class GerarEspelhoPontoBolsistaUseCase {
     editalId: string,
     mes: string,
     requestId?: string,
+    context?: EspelhoPontoEmissionContext,
   ) {
     try {
-      const periodo = this.parseMonth(mes);
+      const periodo = this.period.resolve(
+        mes,
+        context?.referenceDate ?? this.clock(),
+      );
       const bolsista = await this.repository.findById(bolsistaId);
       if (!bolsista) throw ftError(404, "Bolsista not found");
 
@@ -66,7 +80,7 @@ export class GerarEspelhoPontoBolsistaUseCase {
       for (const row of faltas) {
         const falta = this.plain(row);
         const day = this.dateOnly(falta.data_falta);
-        if (!day) continue;
+        if (!day || day < periodo.inicio || day > periodo.fim) continue;
         const notes = faltasPorDia.get(day) ?? [];
         if (falta.observacao) notes.push(String(falta.observacao));
         faltasPorDia.set(day, notes);
@@ -75,29 +89,32 @@ export class GerarEspelhoPontoBolsistaUseCase {
       const person = this.plain(bolsista);
       const municipe = this.plain(person.municipe);
       const notice = this.plain(edital);
-      const days = this.days(periodo.inicio, periodo.fim).map((data) => {
+      const days = this.days(periodo.inicio, periodo.fimMes).map((data) => {
+        const futuro = data > periodo.fim;
         const weekday = new Date(`${data}T00:00:00.000Z`).getUTCDay();
         const inLink =
           data >= inicioVinculo && (!fimVinculo || data <= fimVinculo);
         const hasAbsence = faltasPorDia.has(data);
-        const situacao = !inLink
-          ? "Fora do vínculo"
-          : weekday === 0
-            ? "DSR"
-            : weekday === 6
-              ? "Folga"
-              : hasAbsence
-                ? "Falta"
-                : "Normal";
+        const situacao = futuro
+          ? "Dia futuro"
+          : !inLink
+            ? "Fora do vínculo"
+            : weekday === 0
+              ? "DSR"
+              : weekday === 6
+                ? "Folga"
+                : hasAbsence
+                  ? "Falta"
+                  : "Normal";
         return {
           data,
           situacao,
           horarioPrevisto:
-            inLink && weekday > 0 && weekday < 6 && turno.hora_inicio
+            !futuro && inLink && weekday > 0 && weekday < 6 && turno.hora_inicio
               ? horarioTurno
               : "",
           marcacoes: [] as string[],
-          apontamentos: hasAbsence ? faltasPorDia.get(data)! : [],
+          apontamentos: !futuro && hasAbsence ? faltasPorDia.get(data)! : [],
         };
       });
 
@@ -135,24 +152,13 @@ export class GerarEspelhoPontoBolsistaUseCase {
             atrasoSaidaAntecipada: "00:00",
             faltas: String(faltasPorDia.size),
           },
-          observacoes: `Edital: ${notice.name || editalId}`,
+          observacoes: `Edital: ${notice.name || editalId}${periodo.fim < periodo.fimMes ? `\nApurado até ${periodo.fim.split("-").reverse().join("/")} (Brasília). Datas posteriores: Dia futuro.` : ""}`,
         },
         requestId,
       );
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
-  }
-
-  private parseMonth(value: string) {
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value || ""))
-      throw ftError(400, "Mes invalido");
-    const [year, month] = value.split("-").map(Number);
-    const last = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
-    return {
-      inicio: `${value}-01`,
-      fim: `${value}-${String(last).padStart(2, "0")}`,
-    };
   }
 
   private days(start: string, end: string) {

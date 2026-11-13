@@ -209,6 +209,8 @@ export const FrenteTrabalhoBolsistaRouter: FastifyPluginAsync<{
       tags: tag,
       security,
       summary: "Gerar espelho de ponto mensal do bolsista",
+      description:
+        "Exibe todos os dias do mês. No mês atual, dias após a emissão em Brasília aparecem como Dia futuro, sem horário previsto, marcações ou apontamentos e fora dos totais. Cabeçalho informa o período apurado. Meses anteriores mantêm o mês completo; mês futuro é recusado.",
       params: uuidParam,
       querystring: {
         type: "object",
