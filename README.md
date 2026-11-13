@@ -1,5 +1,9 @@
 # SAP Prefeitura — API principal
 
+## Espelho de ponto: dias futuros identificados
+
+Os espelhos de ponto do PEAAD, individuais e em lote, exibem todos os dias do mês. Datas após a emissão em Brasília ficam como **Dia futuro**, sem horário previsto, marcações ou apontamentos e fora dos totais. Cabeçalho, consultas de vínculos/faltas e observações indicam o corte de apuração, incluindo hoje. Meses passados mantêm o mês completo; mês futuro é recusado. Cada processamento de lote usa uma referência única para todos os bolsistas; uma nova tentativa captura nova referência. Folha de presença, pagamento, holerites e arquivos já gerados mantêm as regras atuais. Plano: `codex/plans/peaad-ajustes-relatorios-espelho-pagamento.md`.
+
 ## Comprovantes de entrega do PEAAD
 
 Os downloads `GET /frente-de-trabalho/estoque/entregas/:id/comprovante` e `GET /frente-de-trabalho/edital/:id/beneficios/entregas/:entregaId/comprovante` reutilizam as permissões de consulta dos históricos. O módulo `ft-comprovantes` segue rotas → controller → caso de uso → contratos, com repositório Sequelize e gateway HTTP em infraestrutura. Apenas a API PDF renderiza o arquivo, sob demanda, sem armazená-lo. O backend mascara o CPF antes do envio e não envia custos ou dados bancários. Falhas retornam `502 / PDF_SERVICE_UNAVAILABLE`, sem modificar a entrega. A reemissão usa itens históricos, identificação atual e situação de estorno. Plano: `codex/plans/peaad-comprovantes-entrega.md`.
