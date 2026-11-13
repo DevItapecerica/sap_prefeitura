@@ -7,6 +7,7 @@ import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.re
 import { EspelhoPontoPeriodoPolicy } from "../../../ft-bolsista/domain/services/espelho-ponto-periodo.policy.js";
 import { PeaadRuleError } from "../../../ft-bolsista/domain/errors/peaad-rule.error.js";
 import type { EspelhoPontoEmissionContext } from "../../../ft-bolsista/application/dto/espelho-ponto-emission.js";
+import type { HoleritesLoteService } from "./holerites-lote.service.js";
 
 type PdfGenerator = {
   execute(
@@ -38,6 +39,7 @@ export class FtRelatorioArquivoWorkerService {
     private readonly storage: ReportArchiveStorage,
     private readonly folhaPresencaPdf: PdfGenerator = espelhoPdf,
     private readonly timesheetPeriod = new EspelhoPontoPeriodoPolicy(),
+    private readonly holerites?: Pick<HoleritesLoteService, "process">,
   ) {}
 
   async run(now = new Date()) {
@@ -102,6 +104,10 @@ export class FtRelatorioArquivoWorkerService {
   }
 
   private async process(job: FtRelatorioArquivoDto, referenceDate: Date) {
+    if (job.tipo === "holerites") {
+      if (!this.holerites) throw new Error("Holerite worker unavailable");
+      return this.holerites.process(job);
+    }
     const people = await this.peopleForJob(job, referenceDate);
     await this.files.progress(job.id, people.length, 0, 0);
     const archive = await this.storage.create(job.id);

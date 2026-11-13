@@ -20,10 +20,16 @@ export class SequelizeFtRelatorioArquivoRepository implements FtRelatorioArquivo
     });
     return row ? this.plain(row) : null;
   }
-  async list(page: number, limit: number, editalId?: string) {
+  async list(
+    page: number,
+    limit: number,
+    editalId?: string,
+    includeHolerites = false,
+  ) {
     const result = await this.model.findAndCountAll({
       where: {
         status: { [Op.ne]: "excluido" },
+        ...(!includeHolerites ? { tipo: { [Op.ne]: "holerites" } } : {}),
         ...(editalId ? { edital_id: editalId } : {}),
       },
       include: [

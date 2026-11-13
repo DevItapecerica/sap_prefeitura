@@ -5,6 +5,7 @@ import type { ReportBatchEvents } from "../application/ports/report-archive.stor
 import { SequelizeFtRelatorioArquivoRepository } from "../../../infra/database/sequelize/repositories/sequelize.ft-relatorio-arquivo.repository.js";
 import { SequelizeFtRelatorioRepository } from "../../../infra/database/sequelize/repositories/sequelize.ft-relatorio.repository.js";
 import { FtRelatorioArquivoService } from "../application/use-case/ft-relatorio-arquivo.service.js";
+import { makeGerarHolerite } from "./makeGerarHolerite.js";
 
 export const makeFtRelatorioArquivoService = () =>
   new FtRelatorioArquivoService(
@@ -12,4 +13,5 @@ export const makeFtRelatorioArquivoService = () =>
     new SequelizeFtRelatorioRepository(),
     new LocalReportArchiveStorage(FT_REPORT_ARCHIVE_DIR),
     new EventBusAdapter<ReportBatchEvents>(),
+    { holerites: makeGerarHolerite() },
   );

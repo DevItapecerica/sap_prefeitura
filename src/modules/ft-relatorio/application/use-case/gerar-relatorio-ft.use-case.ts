@@ -78,7 +78,9 @@ export class GerarRelatorioFtUseCase {
         com_alertas: rows.filter((row) => row.alertas.length).length,
       };
       const versao = createHash("sha256")
-        .update(JSON.stringify({ periodo, rows, csv }))
+        .update(
+          JSON.stringify({ edital_nome: edital.name, periodo, rows, csv }),
+        )
         .digest("hex");
       if (query.versao && query.versao !== versao)
         throw ftError(
@@ -86,6 +88,7 @@ export class GerarRelatorioFtUseCase {
           "Pagamento alterado. Atualize a prévia e confira novamente.",
         );
       return {
+        edital_nome: edital.name,
         rows,
         count: rows.length,
         resumo,

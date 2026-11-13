@@ -21,6 +21,7 @@ export interface PayrollProgram {
   vigencia_inicio?: string | null;
 }
 export interface PayrollSnapshot {
+  edital_nome?: string;
   rows: Array<
     FtRelatorioBolsistaRow & {
       pagador: string;

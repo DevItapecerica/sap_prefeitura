@@ -56,8 +56,7 @@ const makeService = (
         purgeTemporary: async () => {},
       },
       { publish: async () => {} },
-      period,
-      clock,
+      { period, clock },
     ),
     created: () => created,
   };

@@ -147,6 +147,37 @@ function expectedPayment(expected: {
   };
 }
 
+test("itemized deductions reconcile cents without changing proportional or absence calculations", () => {
+  for (const scenario of Object.values(scenarios)) {
+    for (const amount of ["1000.01", "900.00", "0.00"]) {
+      for (const descontar of [true, false]) {
+        const result = new FtRelatorioPagamentoService(descontar).execute(
+          scenario.bolsistas as unknown as FtRelatorioBolsista[],
+          { valor_bolsa: amount, data_vencimento: "2026-12-31" } as FtEdital,
+          scenario.periodo,
+        );
+        for (const row of result.locais.flatMap((group) => group.rows)) {
+          assert.ok(row.descontos_detalhados);
+          assert.equal(
+            row.descontos_detalhados.reduce(
+              (sum, item) => sum + item.centavos,
+              0,
+            ),
+            Math.round(row.desconto * 100),
+          );
+          assert.ok(
+            row.descontos_detalhados.every(
+              (item) => Number.isInteger(item.centavos) && item.centavos >= 0,
+            ),
+          );
+          if (!descontar)
+            assert.equal(row.descontos_detalhados[1]?.centavos, 0);
+        }
+      }
+    }
+  }
+});
+
 test("mantém faltas no relatório sem descontá-las do pagamento", () => {
   const relatorio = executeScenario(scenarios.faltasSemDesconto);
   const row = relatorio.locais[0].rows[0];

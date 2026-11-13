@@ -5,6 +5,7 @@ import { SequelizeFtRelatorioRepository } from "../../../infra/database/sequeliz
 import { makeGerarEspelhoPontoBolsista } from "../../ft-bolsista/factories/makeGerarEspelhoPontoBolsista.js";
 import { makeGerarFolhaPresencaBolsista } from "../../ft-bolsista/factories/makeGerarFolhaPresencaBolsista.js";
 import { FtRelatorioArquivoWorkerService } from "../application/use-case/ft-relatorio-arquivo-worker.service.js";
+import { makeHoleritesLoteService } from "./makeHoleritesLoteService.js";
 
 export const makeFtRelatorioArquivoWorker = () =>
   new FtRelatorioArquivoWorkerService(
@@ -13,4 +14,6 @@ export const makeFtRelatorioArquivoWorker = () =>
     makeGerarEspelhoPontoBolsista(),
     new LocalReportArchiveStorage(FT_REPORT_ARCHIVE_DIR),
     makeGerarFolhaPresencaBolsista(),
+    undefined,
+    makeHoleritesLoteService(),
   );

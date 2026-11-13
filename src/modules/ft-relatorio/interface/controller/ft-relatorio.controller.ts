@@ -11,6 +11,8 @@ import { makeResourceReadEventPublisher } from "../../../../factories/resource-r
 import { makeApplicationEventContext } from "../../../../infra/http/fastify/application-event-context.js";
 import { RESOURCE_READ_EVENTS } from "../../../../core/event/resource-read.events.js";
 import { makeFtRelatorioArquivoService } from "../../factories/makeFtRelatorioArquivoService.js";
+import { makeGerarHolerite } from "../../factories/makeGerarHolerite.js";
+import { canReadHolerites, authorizeHoleriteFile } from "../holerite-access.js";
 
 const gerarRelatorioFtUseCase = makeGerarRelatorioFtUseCase();
 const gerarRelatorioFaltasFtUseCase = makeGerarRelatorioFaltasFtUseCase();
@@ -18,8 +20,58 @@ const gerarListaPresencaFtUseCase = makeGerarListaPresencaFtUseCase();
 const resourceReadEventPublisher = makeResourceReadEventPublisher();
 const fechamentoService = makeFtFechamentoFolhaService();
 const arquivoService = makeFtRelatorioArquivoService();
+const holeriteUseCase = makeGerarHolerite();
 
 export class FtRelatorioController {
+  static baixarHolerite = async (
+    request: FastifyRequest<{
+      Params: { id: string; bolsistaId: string };
+      Querystring: { mes: string };
+    }>,
+    reply: FastifyReply,
+  ) => {
+    const result = await holeriteUseCase.execute(
+      request.params.bolsistaId,
+      request.params.id,
+      request.query.mes,
+      request.id,
+    );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request),
+      module: "ft-relatorio",
+      resourceType: "holerite",
+      resourceId: request.params.bolsistaId,
+      filters: { editalId: request.params.id, mes: request.query.mes },
+      returnedCount: 1,
+    });
+    return reply
+      .type(result.contentType)
+      .header("Content-Disposition", result.contentDisposition)
+      .header("Cache-Control", "no-store")
+      .send(result.file);
+  };
+
+  static solicitarHolerites = async (
+    request: FastifyRequest<{ Params: { id: string }; Body: { mes: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const arquivo = await arquivoService.request(
+      request.params.id,
+      request.body.mes,
+      Number(request.user.id),
+      "holerites",
+    );
+    await resourceReadEventPublisher.publish(RESOURCE_READ_EVENTS.exported, {
+      context: makeApplicationEventContext(request),
+      module: "ft-relatorio",
+      resourceType: "lote_holerites",
+      resourceId: arquivo.id,
+      filters: { editalId: request.params.id, mes: request.body.mes },
+      returnedCount: 1,
+    });
+    return reply.status(202).send({ arquivo });
+  };
+
   static solicitarEspelhosPonto = async (
     request: FastifyRequest<{ Params: { id: string }; Body: { mes: string } }>,
     reply: FastifyReply,
@@ -74,21 +126,25 @@ export class FtRelatorioController {
           request.query.page,
           request.query.limit,
           request.query.edital_id,
+          await canReadHolerites(request),
         ),
       );
 
   static retryDownload = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
-  ) =>
-    reply
+  ) => {
+    await authorizeHoleriteFile(request, arquivoService);
+    return reply
       .status(202)
       .send({ arquivo: await arquivoService.retry(request.params.id) });
+  };
 
   static baixarArquivo = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply,
   ) => {
+    await authorizeHoleriteFile(request, arquivoService);
     const download = await arquivoService.openDownload(request.params.id);
     let sent = false;
     reply.raw.once("finish", () => {

@@ -23,6 +23,11 @@ export type FtRelatorioBolsistaRow = {
   faltas: number;
   valor_bruto: number;
   desconto: number;
+  descontos_detalhados?: Array<{
+    descricao: string;
+    referencia: string;
+    centavos: number;
+  }>;
   valor_liquido: number;
 };
 
@@ -100,6 +105,11 @@ export class FtRelatorioPagamentoService {
         diasSemVinculo + (this.descontarFalta ? faltas : 0);
       const desconto = Math.min(valorBruto, diasDescontados * valorDiario);
       const valorLiquido = Math.max(0, valorBruto - desconto);
+      const descontoCentavos = Math.round(desconto * 100);
+      const proporcionalCentavos = Math.min(
+        descontoCentavos,
+        Math.round(diasSemVinculo * valorDiario * 100),
+      );
 
       if (!grouped[pagador]) {
         grouped[pagador] = [];
@@ -120,6 +130,18 @@ export class FtRelatorioPagamentoService {
         faltas,
         valor_bruto: this.roundCurrency(valorBruto),
         desconto: this.roundCurrency(desconto),
+        descontos_detalhados: [
+          {
+            descricao: "Proporcionalidade do período de participação",
+            referencia: `${diasSemVinculo} dia(s) útil(eis) sem vínculo`,
+            centavos: proporcionalCentavos,
+          },
+          {
+            descricao: "Faltas",
+            referencia: `${faltas} falta(s); ${this.descontarFalta ? "com desconto" : "sem desconto"}`,
+            centavos: descontoCentavos - proporcionalCentavos,
+          },
+        ],
         valor_liquido: this.roundCurrency(valorLiquido),
       });
     }

@@ -40955,7 +40955,8 @@
                           "tipo": {
                             "enum": [
                               "espelhos_ponto",
-                              "folhas_presenca"
+                              "folhas_presenca",
+                              "holerites"
                             ],
                             "type": "string"
                           },
@@ -41399,7 +41400,8 @@
                         "tipo": {
                           "enum": [
                             "espelhos_ponto",
-                            "folhas_presenca"
+                            "folhas_presenca",
+                            "holerites"
                           ],
                           "type": "string"
                         },
@@ -41910,7 +41912,8 @@
                         "tipo": {
                           "enum": [
                             "espelhos_ponto",
-                            "folhas_presenca"
+                            "folhas_presenca",
+                            "holerites"
                           ],
                           "type": "string"
                         },
@@ -42880,7 +42883,8 @@
                         "tipo": {
                           "enum": [
                             "espelhos_ponto",
-                            "folhas_presenca"
+                            "folhas_presenca",
+                            "holerites"
                           ],
                           "type": "string"
                         },
@@ -43058,6 +43062,536 @@
           }
         ],
         "summary": "Solicitar folhas de presenca em lote",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/relatorio/edital/{id}/holerites": {
+      "post": {
+        "operationId": "post_api_v2_frente_de_trabalho_relatorio_edital_id_holerites",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "mes": {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mes"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "arquivo": {
+                      "additionalProperties": true,
+                      "properties": {
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "edital_id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "mensagem_erro": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "mes": {
+                          "type": "string"
+                        },
+                        "nome_arquivo": {
+                          "type": "string"
+                        },
+                        "solicitado_por": {
+                          "type": "number"
+                        },
+                        "status": {
+                          "enum": [
+                            "aguardando",
+                            "processando",
+                            "concluido",
+                            "erro",
+                            "excluido"
+                          ],
+                          "type": "string"
+                        },
+                        "tamanho_bytes": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "tentativas": {
+                          "type": "number"
+                        },
+                        "tipo": {
+                          "enum": [
+                            "espelhos_ponto",
+                            "folhas_presenca",
+                            "holerites"
+                          ],
+                          "type": "string"
+                        },
+                        "total_bolsistas": {
+                          "type": "number"
+                        },
+                        "total_falhas": {
+                          "type": "number"
+                        },
+                        "total_gerados": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Solicitar ZIP de holerites da folha fechada",
+        "tags": [
+          "PEAAD - Relatorio"
+        ]
+      }
+    },
+    "/api/v2/frente-de-trabalho/relatorio/edital/{id}/holerites/{bolsistaId}": {
+      "get": {
+        "operationId": "get_api_v2_frente_de_trabalho_relatorio_edital_id_holerites_bolsistaId",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mes",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "bolsistaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Holerite PDF"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Token de autenticação inválido",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token de autenticação inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Ação não permitida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Ação não permitida"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Recurso não encontrado",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Recurso não encontrado"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro no 400: Requisição inválida",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro no 400: Requisição inválida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Erro interno no servidor",
+                  "properties": {
+                    "code": {
+                      "example": "auth",
+                      "type": "string"
+                    },
+                    "message": {
+                      "example": "Requisição inválida",
+                      "type": "string"
+                    },
+                    "ok": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "statusCode": {
+                      "example": 400,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Erro interno no servidor"
+          }
+        },
+        "security": [
+          {
+            "JWTToken": []
+          }
+        ],
+        "summary": "Baixar holerite individual da folha fechada",
         "tags": [
           "PEAAD - Relatorio"
         ]

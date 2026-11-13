@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import AuthMiddleware from "../../../auth/auth.middleware.js";
+import { configureBodyValidation } from "../../../../infra/http/fastify/body-validation.js";
 import { requirePermission } from "../../../acess-controll/interface/require-permission.js";
 import errorResponseSchema from "../../../../core/schema/errorSchema.js";
 import type { FtRelatorioController as FtRelatorioControllerType } from "../controller/ft-relatorio.controller.js";
@@ -44,7 +45,10 @@ const arquivoSchema = {
   properties: {
     id: { type: "string", format: "uuid" },
     nome_arquivo: { type: "string" },
-    tipo: { type: "string", enum: ["espelhos_ponto", "folhas_presenca"] },
+    tipo: {
+      type: "string",
+      enum: ["espelhos_ponto", "folhas_presenca", "holerites"],
+    },
     status: {
       type: "string",
       enum: ["aguardando", "processando", "concluido", "erro", "excluido"],
@@ -79,12 +83,90 @@ const fechamentoSchema = {
 export const FtRelatorioRouter: FastifyPluginAsync<{
   controller?: typeof FtRelatorioControllerType;
 }> = async (fastify, options) => {
+  configureBodyValidation(fastify, {
+    extraField: (field) => `Campo não permitido no relatório: ${field}.`,
+    invalidType: "Tipo de campo inválido no relatório.",
+  });
   const FtRelatorioController =
     options.controller ??
     (await import("../controller/ft-relatorio.controller.js"))
       .FtRelatorioController;
   fastify.addHook("preHandler", AuthMiddleware.verifyJWT);
   const allow = requirePermission("ft");
+
+  fastify.route({
+    method: "GET",
+    url: "/edital/:id/holerites/:bolsistaId",
+    config: {
+      audit: {
+        failureAction: "EXPORT",
+        module: "ft-relatorio",
+        resourceType: "holerite",
+        resourceIdParam: "bolsistaId",
+      },
+    },
+    schema: {
+      tags: relatorioTags,
+      security: jwtSecurity,
+      summary: "Baixar holerite individual da folha fechada",
+      params: {
+        type: "object",
+        required: ["id", "bolsistaId"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          bolsistaId: { type: "string", format: "uuid" },
+        },
+      },
+      querystring: {
+        ...monthQuerySchema,
+        required: ["mes"],
+        additionalProperties: false,
+      },
+      response: {
+        200: {
+          description: "Holerite PDF",
+          content: {
+            "application/pdf": { schema: { type: "string", format: "binary" } },
+          },
+        },
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("gerar_relatorio_edital"),
+    handler: FtRelatorioController.baixarHolerite,
+  });
+  fastify.route({
+    method: "POST",
+    url: "/edital/:id/holerites",
+    config: {
+      audit: {
+        failureAction: "EXPORT",
+        module: "ft-relatorio",
+        resourceType: "lote_holerites",
+        resourceIdParam: "id",
+        omitRequestedChanges: true,
+      },
+    },
+    schema: {
+      tags: relatorioTags,
+      security: jwtSecurity,
+      summary: "Solicitar ZIP de holerites da folha fechada",
+      params: editalIdParamsSchema,
+      body: {
+        ...monthQuerySchema,
+        required: ["mes"],
+        additionalProperties: false,
+      },
+      response: {
+        202: { type: "object", properties: { arquivo: arquivoSchema } },
+        ...errorResponseSchema,
+        409: errorResponseSchema[400],
+      },
+    },
+    preHandler: allow("gerar_relatorio_edital"),
+    handler: FtRelatorioController.solicitarHolerites,
+  });
 
   const registerCsvRoute = ({
     url,

@@ -15,17 +15,31 @@ import { FtRelatorioRepository } from "../../domain/repositories/ft-relatorio.re
 import { FtRelatorioPeriodoService } from "../../domain/services/ft-relatorio-periodo.service.js";
 import { FtRelatorioArquivoTipo } from "../../domain/entities/ft-relatorio-arquivo.entity.js";
 import { EspelhoPontoPeriodoPolicy } from "../../../ft-bolsista/domain/services/espelho-ponto-periodo.policy.js";
+import type { GerarHoleriteUseCase } from "./gerar-holerite.use-case.js";
 
 export class FtRelatorioArquivoService {
+  private readonly period: FtRelatorioPeriodoService;
+  private readonly clock: () => Date;
+  private readonly timesheetPeriod: EspelhoPontoPeriodoPolicy;
+  private readonly holerites?: Pick<GerarHoleriteUseCase, "folha">;
   constructor(
     private readonly files: FtRelatorioArquivoRepository,
-    private readonly reports: FtRelatorioRepository,
+    private readonly reports: Pick<FtRelatorioRepository, "findEditalById">,
     private readonly storage: ReportArchiveStorage,
     private readonly events: EventPublisher<ReportBatchEvents>,
-    private readonly period = new FtRelatorioPeriodoService(),
-    private readonly clock = () => new Date(),
-    private readonly timesheetPeriod = new EspelhoPontoPeriodoPolicy(),
-  ) {}
+    options: {
+      period?: FtRelatorioPeriodoService;
+      clock?: () => Date;
+      timesheetPeriod?: EspelhoPontoPeriodoPolicy;
+      holerites?: Pick<GerarHoleriteUseCase, "folha">;
+    } = {},
+  ) {
+    this.clock = options.clock ?? (() => new Date());
+    this.period = options.period ?? new FtRelatorioPeriodoService(this.clock);
+    this.timesheetPeriod =
+      options.timesheetPeriod ?? new EspelhoPontoPeriodoPolicy();
+    this.holerites = options.holerites;
+  }
 
   async request(
     editalId: string,
@@ -34,13 +48,23 @@ export class FtRelatorioArquivoService {
     tipo: FtRelatorioArquivoTipo = "espelhos_ponto",
   ) {
     try {
-      if (tipo === "folhas_presenca") this.period.resolveMonth({ mes });
+      if (tipo === "holerites") {
+        if (!this.holerites)
+          throw ftError(503, "Geração de holerites indisponível.");
+        const folha = await this.holerites.folha(editalId, mes);
+        if (!folha.snapshot.rows.length)
+          throw ftError(409, "A folha fechada não contém bolsistas.");
+      } else if (tipo === "folhas_presenca") this.period.resolveMonth({ mes });
       else this.timesheetPeriod.resolve(mes, this.clock());
       const edital = await this.reports.findEditalById(editalId);
       if (!edital) throw ftError(404, "Edital not found");
       const id = randomUUID();
       const prefix =
-        tipo === "folhas_presenca" ? "folhas-presenca" : "espelhos-ponto";
+        tipo === "holerites"
+          ? "holerites"
+          : tipo === "folhas_presenca"
+            ? "folhas-presenca"
+            : "espelhos-ponto";
       const name = `${prefix}-${this.slug(edital.name || editalId)}-${mes}.zip`;
       const created = await this.files.create({
         id,
@@ -62,11 +86,21 @@ export class FtRelatorioArquivoService {
     }
   }
 
-  async list(pageValue: unknown, limitValue: unknown, editalId?: string) {
+  async list(
+    pageValue: unknown,
+    limitValue: unknown,
+    editalId?: string,
+    includeHolerites = false,
+  ) {
     try {
       const page = Math.max(Number(pageValue) || 0, 0);
       const limit = Math.min(Math.max(Number(limitValue) || 10, 1), 100);
-      const result = await this.files.list(page, limit, editalId);
+      const result = await this.files.list(
+        page,
+        limit,
+        editalId,
+        includeHolerites,
+      );
       return {
         arquivos: result.rows.map((row) => this.present(row)),
         count: result.count,
@@ -90,6 +124,12 @@ export class FtRelatorioArquivoService {
     } catch (error) {
       throw mapPeaadRuleError(error);
     }
+  }
+
+  async isHolerite(id: string) {
+    const row = await this.files.findById(id);
+    if (!row) throw ftError(404, "Arquivo not found");
+    return row.tipo === "holerites";
   }
 
   async openDownload(id: string) {

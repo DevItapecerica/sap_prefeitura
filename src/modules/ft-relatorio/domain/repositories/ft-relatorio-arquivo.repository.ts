@@ -7,6 +7,7 @@ export interface FtRelatorioArquivoRepository {
     page: number,
     limit: number,
     editalId?: string,
+    includeHolerites?: boolean,
   ): Promise<{ rows: FtRelatorioArquivoDto[]; count: number }>;
   claimNext(
     now: Date,
